@@ -79,6 +79,9 @@
 
         <!-- NB: Deploy releases to the SciJava Maven repository. -->
         <releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
+
+        <!-- Pinned version properties -->
+        <langchain4j.version>1.8.0</langchain4j.version>
     </properties>
 
     <repositories>
@@ -112,16 +115,30 @@
         </dependency>
 
         <!-- Third-party dependencies -->
-        <!-- For HTTP requests to LLM APIs -->
+        <!-- LangChain4j core -->
         <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
 
-        <!-- For JSON parsing (API requests/responses) -->
+        <!-- LangChain4j providers -->
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
