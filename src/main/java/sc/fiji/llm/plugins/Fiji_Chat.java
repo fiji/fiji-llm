@@ -108,8 +108,8 @@ public class Fiji_Chat extends DynamicCommand {
 			apiKeyItem.setDescription("No stored key found - please enter API key");
 		}
 
-		// Update model choices - pass API key for dynamic model querying
-		final List<String> models = selectedProvider.getAvailableModels(storedKey);
+		// Update model choices
+		final List<String> models = selectedProvider.getAvailableModels();
 		final MutableModuleItem<String> modelItem = getInfo().getMutableInput("model", String.class);
 		modelItem.setChoices(models);
 		
