@@ -8,8 +8,8 @@ import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 
 /**
  * LLM provider plugin for Anthropic (Claude).
@@ -44,7 +44,7 @@ public class AnthropicProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public ChatLanguageModel createChatModel(final String apiKey, final String modelName) {
+	public ChatModel createChatModel(final String apiKey, final String modelName) {
 		return AnthropicChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
@@ -53,7 +53,7 @@ public class AnthropicProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public StreamingChatLanguageModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
 		return AnthropicStreamingChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)

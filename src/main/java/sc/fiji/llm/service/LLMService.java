@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.scijava.service.SciJavaService;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import sc.fiji.llm.provider.LLMProviderPlugin;
 
 /**
@@ -36,7 +36,7 @@ public interface LLMService extends SciJavaService {
 	 * @param modelName the name of the model (e.g., "gpt-4o", "claude-3-5-sonnet")
 	 * @return a configured chat language model
 	 */
-	ChatLanguageModel createChatModel(String providerName, String modelName);
+	ChatModel createChatModel(String providerName, String modelName);
 
 	/**
 	 * Create a streaming chat language model for the specified provider and model.
@@ -45,7 +45,7 @@ public interface LLMService extends SciJavaService {
 	 * @param modelName the name of the model
 	 * @return a configured streaming chat language model
 	 */
-	StreamingChatLanguageModel createStreamingChatModel(String providerName, String modelName);
+	StreamingChatModel createStreamingChatModel(String providerName, String modelName);
 
 	/**
 	 * Create an AI service instance (LangChain4j assistant) with the given interface,
@@ -56,5 +56,5 @@ public interface LLMService extends SciJavaService {
 	 * @param model the chat language model to use
 	 * @return an implementation of the assistant interface
 	 */
-	<T> T createAssistant(Class<T> assistantInterface, ChatLanguageModel model);
+	<T> T createAssistant(Class<T> assistantInterface, ChatModel model);
 }

@@ -7,7 +7,7 @@ import org.scijava.plugin.Parameter;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.service.LLMContextService;
 import sc.fiji.llm.service.LLMService;
@@ -37,7 +37,7 @@ public class LLMExample {
 	 */
 	public void initialize(final String providerName, final String modelName) {
 		// Create the chat model
-		final ChatLanguageModel model = llmService.createChatModel(providerName, modelName);
+		final ChatModel model = llmService.createChatModel(providerName, modelName);
 
 		// Create conversation memory (remembers last 20 messages)
 		this.memory = MessageWindowChatMemory.withMaxMessages(20);

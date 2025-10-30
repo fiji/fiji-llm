@@ -8,8 +8,8 @@ import org.scijava.plugin.PluginService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.provider.LLMProviderPlugin;
 
@@ -39,7 +39,7 @@ public class DefaultLLMService extends AbstractService implements LLMService {
 	}
 
 	@Override
-	public ChatLanguageModel createChatModel(final String providerName, final String modelName) {
+	public ChatModel createChatModel(final String providerName, final String modelName) {
 		final LLMProviderPlugin provider = getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
@@ -54,7 +54,7 @@ public class DefaultLLMService extends AbstractService implements LLMService {
 	}
 
 	@Override
-	public StreamingChatLanguageModel createStreamingChatModel(final String providerName, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String providerName, final String modelName) {
 		final LLMProviderPlugin provider = getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
@@ -69,9 +69,9 @@ public class DefaultLLMService extends AbstractService implements LLMService {
 	}
 
 	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final ChatLanguageModel model) {
+	public <T> T createAssistant(final Class<T> assistantInterface, final ChatModel model) {
 		return AiServices.builder(assistantInterface)
-			.chatLanguageModel(model)
+			.chatModel(model)
 			.build();
 	}
 }

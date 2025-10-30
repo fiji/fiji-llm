@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.scijava.plugin.SciJavaPlugin;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 
 /**
  * Plugin interface for LLM providers.
@@ -49,7 +49,7 @@ public interface LLMProviderPlugin extends SciJavaPlugin {
 	 * @param modelName the name of the model to use
 	 * @return a configured chat language model
 	 */
-	ChatLanguageModel createChatModel(String apiKey, String modelName);
+	ChatModel createChatModel(String apiKey, String modelName);
 
 	/**
 	 * Create a streaming chat language model with the specified API key and model name.
@@ -58,5 +58,5 @@ public interface LLMProviderPlugin extends SciJavaPlugin {
 	 * @param modelName the name of the model to use
 	 * @return a configured streaming chat language model
 	 */
-	StreamingChatLanguageModel createStreamingChatModel(String apiKey, String modelName);
+	StreamingChatModel createStreamingChatModel(String apiKey, String modelName);
 }

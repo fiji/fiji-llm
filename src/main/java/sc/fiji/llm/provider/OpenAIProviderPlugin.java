@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.scijava.plugin.Plugin;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
@@ -44,7 +44,7 @@ public class OpenAIProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public ChatLanguageModel createChatModel(final String apiKey, final String modelName) {
+	public ChatModel createChatModel(final String apiKey, final String modelName) {
 		return OpenAiChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
@@ -53,7 +53,7 @@ public class OpenAIProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public StreamingChatLanguageModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
 		return OpenAiStreamingChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)

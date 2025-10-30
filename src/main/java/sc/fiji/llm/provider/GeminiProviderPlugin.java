@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.scijava.plugin.Plugin;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 
@@ -43,7 +43,7 @@ public class GeminiProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public ChatLanguageModel createChatModel(final String apiKey, final String modelName) {
+	public ChatModel createChatModel(final String apiKey, final String modelName) {
 		return GoogleAiGeminiChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
@@ -52,7 +52,7 @@ public class GeminiProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public StreamingChatLanguageModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
 		return GoogleAiGeminiStreamingChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
