@@ -28,13 +28,20 @@ public class GeminiProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public List<String> getAvailableModels() {
+	public List<String> getAvailableModels(final String apiKey) {
+		// Google AI doesn't provide a public API endpoint to list models
+		// Fall back to hard-coded list
 		return Arrays.asList(
 			"gemini-2.0-flash-exp",
 			"gemini-1.5-pro",
 			"gemini-1.5-flash",
 			"gemini-1.5-flash-8b"
 		);
+	}
+
+	@Override
+	public String getModelsDocumentationUrl() {
+		return "https://ai.google.dev/gemini-api/docs/models";
 	}
 
 	@Override

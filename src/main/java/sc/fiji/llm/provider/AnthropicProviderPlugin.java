@@ -28,7 +28,9 @@ public class AnthropicProviderPlugin implements LLMProviderPlugin {
 	}
 
 	@Override
-	public List<String> getAvailableModels() {
+	public List<String> getAvailableModels(final String apiKey) {
+		// Anthropic doesn't provide an API endpoint to list models
+		// Fall back to hard-coded list
 		return Arrays.asList(
 			"claude-3-5-sonnet-20241022",
 			"claude-3-5-haiku-20241022",
@@ -36,6 +38,11 @@ public class AnthropicProviderPlugin implements LLMProviderPlugin {
 			"claude-3-sonnet-20240229",
 			"claude-3-haiku-20240307"
 		);
+	}
+
+	@Override
+	public String getModelsDocumentationUrl() {
+		return "https://docs.anthropic.com/en/docs/about-claude/models";
 	}
 
 	@Override
