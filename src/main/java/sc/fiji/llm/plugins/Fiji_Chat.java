@@ -1,4 +1,4 @@
-package sc.fiji.llm.ui;
+package sc.fiji.llm.plugins;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -27,11 +27,12 @@ import sc.fiji.llm.service.LLMContextService;
 import sc.fiji.llm.service.LLMService;
 
 /**
- * A basic chat window command for testing the Fiji LLM integration.
- * Demonstrates SciJava parameter dependencies using callbacks.
+ * Interactive chat interface for the Fiji AI Assistant.
+ * Provides a conversational interface to get help with image analysis,
+ * scripting, and general Fiji/ImageJ questions.
  */
-@Plugin(type = Command.class, menuPath = "Plugins>LLM>Chat Window")
-public class ChatCommand extends DynamicCommand {
+@Plugin(type = Command.class, menuPath = "Plugins>Assistants>Fiji Chat")
+public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter
 	private LLMService llmService;
@@ -176,7 +177,7 @@ public class ChatCommand extends DynamicCommand {
 			this.contextService = contextService;
 			
 			// Create the frame
-			frame = new JFrame("Fiji LLM Chat - " + title);
+			frame = new JFrame("Fiji Chat - " + title);
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			frame.setLayout(new BorderLayout());
 			
