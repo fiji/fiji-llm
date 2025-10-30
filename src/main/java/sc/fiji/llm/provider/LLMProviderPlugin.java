@@ -30,13 +30,10 @@ public interface LLMProviderPlugin extends SciJavaPlugin {
 
 	/**
 	 * Get the list of available models for this provider.
-	 * This method will attempt to query the provider's API for the current list of models.
-	 * If the query fails or is not supported, it falls back to a hard-coded list.
 	 *
-	 * @param apiKey optional API key for authentication (may be null if not needed)
 	 * @return list of model names
 	 */
-	List<String> getAvailableModels(String apiKey);
+	List<String> getAvailableModels();
 
 	/**
 	 * Get the URL to the provider's models documentation.
