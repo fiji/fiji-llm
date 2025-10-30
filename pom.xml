@@ -80,6 +80,10 @@
         <!-- NB: Deploy releases to the SciJava Maven repository. -->
         <releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
+        <!-- Java version requirements -->
+        <scijava.jvm.version>17</scijava.jvm.version>
+        <scijava.jvm.build.version>[17,)</scijava.jvm.build.version>
+
         <!-- Pinned version properties -->
         <langchain4j.version>1.8.0</langchain4j.version>
     </properties>
