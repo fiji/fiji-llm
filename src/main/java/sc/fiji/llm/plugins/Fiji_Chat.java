@@ -17,7 +17,7 @@ import org.scijava.command.DynamicCommand;
 import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.widget.ChoiceWidget;
+import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.model.chat.ChatModel;
 import sc.fiji.llm.assistant.FijiAssistant;
@@ -33,6 +33,8 @@ import sc.fiji.llm.service.LLMService;
  */
 @Plugin(type = Command.class, menuPath = "Plugins>Assistants>Fiji Chat")
 public class Fiji_Chat extends DynamicCommand {
+	private static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
+	private static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
 
 	@Parameter
 	private LLMService llmService;
@@ -43,8 +45,10 @@ public class Fiji_Chat extends DynamicCommand {
 	@Parameter
 	private LLMContextService contextService;
 
+	@Parameter
+	private PrefService prefService;
+
 	@Parameter(label = "Provider", 
-			style = ChoiceWidget.RADIO_BUTTON_VERTICAL_STYLE,
 			callback = "providerChanged",
 			persist = false)
 	private String provider;
@@ -77,7 +81,11 @@ public class Fiji_Chat extends DynamicCommand {
 		
 		// Set default provider if available
 		if (providerNames.length > 0) {
-			providerItem.setValue(this, providerNames[0]);
+			String defaultProvider = prefService.get(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
+			if (!providerItem.getChoices().contains(defaultProvider)) {
+				defaultProvider = providerNames[0];
+			}
+			providerItem.setValue(this, defaultProvider);
 			providerChanged();
 		}
 	}
@@ -115,7 +123,11 @@ public class Fiji_Chat extends DynamicCommand {
 		
 		// Set default model
 		if (!models.isEmpty()) {
-			modelItem.setValue(this, models.get(0));
+			String defaultModel = prefService.get(Fiji_Chat.class, LAST_CHAT_MODEL, model);
+			if (!modelItem.getChoices().contains(defaultModel)) {
+				defaultModel = models.get(0);
+			}
+			modelItem.setValue(this, defaultModel);
 		}
 	}
 
@@ -147,6 +159,8 @@ public class Fiji_Chat extends DynamicCommand {
 
 		// Create the chat model
 		try {
+			prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
+			prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
 			final ChatModel chatModel = llmService.createChatModel(provider, model);
 			assistant = llmService.createAssistant(FijiAssistant.class, chatModel);
 		} catch (Exception e) {
