@@ -84,8 +84,7 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter(label = "Authentication Key",
 			description = "API key for the selected provider",
-			persist = false,
-			required = false)
+			persist = false)
 	private String apiKey = "";
 
     @Parameter( label = " ", style = "separator", persist = false, required = false, visibility = ItemVisibility.MESSAGE )
@@ -103,27 +102,42 @@ public class Fiji_Chat extends DynamicCommand {
 			persist = false)
 	private String model;
 
-	private FijiAssistant assistant;
-
 	@Override
 	public void initialize() {
-		// Get available providers and populate the provider choices
-		final List<LLMProviderPlugin> providers = llmService.getAvailableProviders();
-		final String[] providerNames = providers.stream()
-				.map(LLMProviderPlugin::getName)
-				.toArray(String[]::new);
-
-		final MutableModuleItem<String> providerItem = getInfo().getMutableInput("provider", String.class);
-		providerItem.setChoices(List.of(providerNames));
+		// Check if we have everything we need to auto-run
+		String lastProvider = prefService.get(Fiji_Chat.class, LAST_CHAT_PROVIDER, null);
+		String lastModel = prefService.get(Fiji_Chat.class, LAST_CHAT_MODEL, null);
+		String storedKey = lastProvider != null ? apiKeyService.getApiKey(lastProvider) : null;
 		
-		// Set default provider if available
-		if (providerNames.length > 0) {
-			String defaultProvider = prefService.get(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
-			if (!providerItem.getChoices().contains(defaultProvider)) {
-				defaultProvider = providerNames[0];
+		if (lastProvider != null && lastModel != null && storedKey != null) {
+			// Set the parameter values directly
+			getInfo().getMutableInput("provider", String.class).setValue(this, lastProvider);
+			getInfo().getMutableInput("model", String.class).setValue(this, lastModel);
+			getInfo().getMutableInput("apiKey", String.class).setValue(this, storedKey);
+			
+			// Resolve all inputs to skip the dialog
+			for (final var input : getInfo().inputs()) {
+				resolveInput(input.getName());
 			}
-			providerItem.setValue(this, defaultProvider);
-			providerChanged();
+		} else {
+			// Get available providers and populate the provider choices
+			final List<LLMProviderPlugin> providers = llmService.getAvailableProviders();
+			final String[] providerNames = providers.stream()
+					.map(LLMProviderPlugin::getName)
+					.toArray(String[]::new);
+
+			final MutableModuleItem<String> providerItem = getInfo().getMutableInput("provider", String.class);
+			providerItem.setChoices(List.of(providerNames));
+			
+			// Set default provider if available
+			if (providerNames.length > 0) {
+				String defaultProvider = prefService.get(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
+				if (!providerItem.getChoices().contains(defaultProvider)) {
+					defaultProvider = providerNames[0];
+				}
+				providerItem.setValue(this, defaultProvider);
+				providerChanged();
+			}
 		}
 	}
 
@@ -209,13 +223,12 @@ public class Fiji_Chat extends DynamicCommand {
 			prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
 			prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
 			final ChatModel chatModel = llmService.createChatModel(provider, model);
-			assistant = llmService.createAssistant(FijiAssistant.class, chatModel);
+			FijiAssistant assistant = llmService.createAssistant(FijiAssistant.class, chatModel);
+
+			// Launch the chat window using ChatbotService
+			chatbotService.launchChat(assistant, provider + " - " + model);
 		} catch (Exception e) {
 			cancel("Failed to create chat model: " + e.getMessage());
-			return;
 		}
-
-		// Launch the chat window using ChatbotService
-		chatbotService.launchChat(assistant, provider + " - " + model);
 	}
 }
