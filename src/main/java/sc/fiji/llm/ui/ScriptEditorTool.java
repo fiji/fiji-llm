@@ -27,11 +27,11 @@ public class ScriptEditorTool {
           "The editor will open with an empty tab ready for use.")
     public String openScriptEditor() {
         try {
-            if (!TextEditor.instances.isEmpty()) {
+            if (TextEditorUtils.getMostRecentVisibleEditor() != null) {
                 return "Script editor is already open and ready for use.";
             }
             commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
-            
+
             return "Script editor started...";
         } catch (Exception e) {
             return "Failed to open script editor: " + e.getMessage();
@@ -53,12 +53,12 @@ public class ScriptEditorTool {
           "call openScriptEditor first, then call this function again.")
     public String createOrUpdateScript(String scriptName, String content) {
         // TODO could use scriptService.getLanguages()
-        // Check if the script editor is open - fail fast if not
-        if (TextEditor.instances.isEmpty()) {
+        // Check if the script editor is open - fail fast if not. Prefer the
+        // most-recent visible instance.
+        final TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
+        if (textEditor == null) {
             return "Script editor is not open. Please call openScriptEditor first, then try again.";
         }
-        
-        TextEditor textEditor = TextEditor.instances.get(0);
 
         // Check if a tab with this name already exists
         TextEditorTab existingTab = findTabByName(textEditor, scriptName);

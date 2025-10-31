@@ -274,15 +274,16 @@ public class SimpleChatWindow {
     private void addActiveScriptContext() {
         // Try to get the active script from the script editor
         try {
-            // Access the static list of open TextEditor instances
-            if (TextEditor.instances == null || TextEditor.instances.isEmpty()) {
-                // No script editor open - open it
+            // Access the static list of open TextEditor instances and pick
+            // the most-recent one that is visible. TextEditor.instances
+            // appends instances on creation, so the last element is the
+            // newest. If none are visible, open the ScriptEditor.
+            final TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
+            if (textEditor == null) {
+                // No visible editor instance found - open the Script Editor
                 commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
                 return;
             }
-
-            // Get the first (most recently active) editor instance
-            final TextEditor textEditor = TextEditor.instances.get(0);
 
             // Try to obtain the currently selected tab. If a no-arg getTab() exists, use it; otherwise fall back
             TextEditorTab tab = null;
@@ -341,7 +342,7 @@ public class SimpleChatWindow {
                 menu.add(activeItem);
 
                 // Add menu items for all open scripts if there are multiple
-                if (instances.size() > 1 || hasMultipleTabs(instances.get(0))) {
+                if (instances.size() > 1 || hasMultipleTabs(TextEditorUtils.getMostRecentVisibleEditor())) {
                     menu.addSeparator();
 
                     for (final TextEditor textEditor : instances) {
@@ -359,6 +360,9 @@ public class SimpleChatWindow {
         menu.show(button, x, y);
     }
     private boolean hasMultipleTabs(final TextEditor textEditor) {
+        if (textEditor == null) {
+            return false;
+        }
         try {
             int count = 0;
             while (true) {
