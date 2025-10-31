@@ -7,6 +7,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -190,14 +192,67 @@ public class SimpleChatWindow {
                     inputField.requestFocus();
                 });
             } catch (Exception e) {
+                // If this was a rate-limit / quota error, parse a retry delay and show a short system message.
+                final Long retrySecs = parseRetrySeconds(e);
+
                 SwingUtilities.invokeLater(() -> {
-                    appendToChat("Error", "Failed to get response: " + e.getMessage());
+                    if (retrySecs != null && retrySecs > 0) {
+                        appendToChat("System", "Rate limit reached. Please wait ~" + retrySecs + "s before retrying, or select a different model.");
+                    } else {
+                        // Fall back to a short message including the exception summary
+                        final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
+                        if (msg.length() > 300) {
+                            appendToChat("System", "Error: " + msg.substring(0, 300) + "…");
+                        } else {
+                            appendToChat("System", "Error: " + msg);
+                        }
+                    }
+
+                    // Re-enable inputs so the user can change model or try again manually
                     inputField.setEnabled(true);
                     sendButton.setEnabled(true);
                     inputField.requestFocus();
                 });
             }
         }).start();
+    }
+
+    /**
+     * Parse a retry delay in seconds from the exception message chain.
+     * Recognizes patterns like "Please retry in 25.3s" or JSON fields like "retryDelay":"26s".
+     */
+    private Long parseRetrySeconds(final Throwable t) {
+        if (t == null) return null;
+
+        final Pattern p1 = Pattern.compile("Please retry in\\s*([0-9]+(?:\\.[0-9]+)?)s", Pattern.CASE_INSENSITIVE);
+        final Pattern p2 = Pattern.compile("retryDelay.*?(\\d+)s", Pattern.CASE_INSENSITIVE);
+
+        Throwable cur = t;
+        while (cur != null) {
+            final String msg = cur.getMessage();
+            if (msg != null) {
+                Matcher m1 = p1.matcher(msg);
+                if (m1.find()) {
+                    try {
+                        double secs = Double.parseDouble(m1.group(1));
+                        return (long) Math.ceil(secs);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+
+                Matcher m2 = p2.matcher(msg);
+                if (m2.find()) {
+                    try {
+                        long secs = Long.parseLong(m2.group(1));
+                        return secs;
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+            cur = cur.getCause();
+        }
+
+        return null;
     }
 
     private void appendToChat(final String sender, final String message) {
