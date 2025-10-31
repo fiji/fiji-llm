@@ -22,6 +22,9 @@ import javax.swing.SwingUtilities;
 
 import org.scijava.command.CommandService;
 import org.scijava.prefs.PrefService;
+import org.scijava.ui.swing.script.EditorPane;
+import org.scijava.ui.swing.script.TextEditor;
+import org.scijava.ui.swing.script.TextEditorTab;
 
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.service.LLMContextService;
@@ -217,46 +220,47 @@ public class SimpleChatWindow {
         // Try to get the active script from the script editor
         try {
             // Access the static list of open TextEditor instances
-            final Class<?> textEditorClass = Class.forName("org.scijava.ui.swing.script.TextEditor");
-            final java.lang.reflect.Field instancesField = textEditorClass.getField("instances");
-            @SuppressWarnings("unchecked")
-            final java.util.List<Object> instances = (java.util.List<Object>) instancesField.get(null);
-
-            if (instances.isEmpty()) {
+            if (TextEditor.instances == null || TextEditor.instances.isEmpty()) {
                 // No script editor open - open it
                 commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
                 return;
             }
 
             // Get the first (most recently active) editor instance
-            final Object textEditor = instances.get(0);
+            final TextEditor textEditor = TextEditor.instances.get(0);
 
-            // Get the current tab
-            final java.lang.reflect.Method getTabMethod = textEditorClass.getMethod("getTab");
-            final Object tab = getTabMethod.invoke(textEditor);
+            // Try to obtain the currently selected tab. If a no-arg getTab() exists, use it; otherwise fall back
+            TextEditorTab tab = null;
+            try {
+                // Some versions expose a no-arg getTab() for the active tab
+                tab = textEditor.getTab();
+            } catch (Throwable t) {
+                // Fall back to the first tab if no no-arg getTab() is available
+                try {
+                    tab = textEditor.getTab(0);
+                } catch (Throwable t2) {
+                    // Give up if we can't access a tab
+                    throw new RuntimeException("Unable to access script tab", t2);
+                }
+            }
 
-            // Get the title from the tab
-            final java.lang.reflect.Method getTitleMethod = tab.getClass().getMethod("getTitle");
-            final String scriptName = (String) getTitleMethod.invoke(tab);
+            if (tab == null) {
+                appendToChat("Error", "No active script tab available");
+                return;
+            }
 
-            // Get the editor pane from the tab
-            final java.lang.reflect.Field editorPaneField = tab.getClass().getDeclaredField("editorPane");
-            editorPaneField.setAccessible(true);
-            final Object editorPane = editorPaneField.get(tab);
+            // Get the title and editor pane
+            final String scriptName = tab.getTitle();
+            final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 
-            // Get the text content
-            final java.lang.reflect.Method getTextMethod = editorPane.getClass().getMethod("getText");
-            final String scriptContent = (String) getTextMethod.invoke(editorPane);
-
-            // Get the language
-            final java.lang.reflect.Method getLanguageMethod = editorPane.getClass().getMethod("getCurrentLanguage");
-            final Object language = getLanguageMethod.invoke(editorPane);
+            // Get the text content and language
+            final String scriptContent = editorPane.getText();
+            final Object language = editorPane.getCurrentLanguage();
             final String languageName = language != null ? language.toString().toLowerCase() : "unknown";
 
             // Add the script context
             final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, languageName);
             addContextItem(scriptItem);
-
         } catch (Exception e) {
             // If we can't access the script editor, show an error
             appendToChat("Error", "Failed to access script editor: " + e.getMessage());
@@ -267,13 +271,9 @@ public class SimpleChatWindow {
         final JPopupMenu menu = new JPopupMenu();
 
         try {
-            // Access the static list of open TextEditor instances
-            final Class<?> textEditorClass = Class.forName("org.scijava.ui.swing.script.TextEditor");
-            final java.lang.reflect.Field instancesField = textEditorClass.getField("instances");
-            @SuppressWarnings("unchecked")
-            final java.util.List<Object> instances = (java.util.List<Object>) instancesField.get(null);
+            final java.util.List<TextEditor> instances = TextEditor.instances;
 
-            if (instances.isEmpty()) {
+            if (instances == null || instances.isEmpty()) {
                 // No script editor open
                 final JMenuItem openEditorItem = new JMenuItem("Open Script Editor...");
                 openEditorItem.addActionListener(e ->
@@ -286,11 +286,11 @@ public class SimpleChatWindow {
                 menu.add(activeItem);
 
                 // Add menu items for all open scripts if there are multiple
-                if (instances.size() > 1 || hasMultipleTabs(instances.get(0), textEditorClass)) {
+                if (instances.size() > 1 || hasMultipleTabs(instances.get(0))) {
                     menu.addSeparator();
 
-                    for (final Object textEditor : instances) {
-                        addScriptMenuItems(menu, textEditor, textEditorClass);
+                    for (final TextEditor textEditor : instances) {
+                        addScriptMenuItems(menu, textEditor);
                     }
                 }
             }
@@ -303,66 +303,61 @@ public class SimpleChatWindow {
 
         menu.show(button, x, y);
     }
-
-    private boolean hasMultipleTabs(final Object textEditor, final Class<?> textEditorClass) {
+    private boolean hasMultipleTabs(final TextEditor textEditor) {
         try {
-            final java.lang.reflect.Field tabbedField = textEditorClass.getDeclaredField("tabbed");
-            tabbedField.setAccessible(true);
-            final javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane) tabbedField.get(textEditor);
-            return tabbed.getTabCount() > 1;
+            int count = 0;
+            while (true) {
+                try {
+                    TextEditorTab tab = textEditor.getTab(count);
+                    if (tab == null) break;
+                    count++;
+                    if (count > 1) return true;
+                } catch (Exception e) {
+                    break;
+                }
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }
     }
 
-    private void addScriptMenuItems(final JPopupMenu menu, final Object textEditor, final Class<?> textEditorClass) {
+    private void addScriptMenuItems(final JPopupMenu menu, final TextEditor textEditor) {
         try {
-            // Get the tabbed pane
-            final java.lang.reflect.Field tabbedField = textEditorClass.getDeclaredField("tabbed");
-            tabbedField.setAccessible(true);
-            final javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane) tabbedField.get(textEditor);
-            final int tabCount = tabbed.getTabCount();
+            int i = 0;
+            while (true) {
+                TextEditorTab tab = textEditor.getTab(i);
+                if (tab == null) break;
 
-            // Get method to retrieve individual tabs
-            final java.lang.reflect.Method getTabMethod = textEditorClass.getMethod("getTab", int.class);
-
-            for (int i = 0; i < tabCount; i++) {
-                final Object tab = getTabMethod.invoke(textEditor, i);
-                final java.lang.reflect.Method getTitleMethod = tab.getClass().getMethod("getTitle");
-                final String title = (String) getTitleMethod.invoke(tab);
-
+                final String title = tab.getTitle();
                 final int tabIndex = i;
                 final JMenuItem item = new JMenuItem(title);
-                item.addActionListener(e -> addScriptFromTab(textEditor, tabIndex, textEditorClass));
+                item.addActionListener(e -> addScriptFromTab(textEditor, tabIndex));
                 menu.add(item);
+
+                i++;
             }
         } catch (Exception e) {
             // Skip this editor if we can't access its tabs
         }
     }
 
-    private void addScriptFromTab(final Object textEditor, final int tabIndex, final Class<?> textEditorClass) {
+    private void addScriptFromTab(final TextEditor textEditor, final int tabIndex) {
         try {
-            // Get the specific tab
-            final java.lang.reflect.Method getTabMethod = textEditorClass.getMethod("getTab", int.class);
-            final Object tab = getTabMethod.invoke(textEditor, tabIndex);
+            final TextEditorTab tab = textEditor.getTab(tabIndex);
+            if (tab == null) return;
 
             // Get the title
-            final java.lang.reflect.Method getTitleMethod = tab.getClass().getMethod("getTitle");
-            final String scriptName = (String) getTitleMethod.invoke(tab);
+            final String scriptName = tab.getTitle();
 
             // Get the editor pane
-            final java.lang.reflect.Field editorPaneField = tab.getClass().getDeclaredField("editorPane");
-            editorPaneField.setAccessible(true);
-            final Object editorPane = editorPaneField.get(tab);
+            final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 
             // Get the text content
-            final java.lang.reflect.Method getTextMethod = editorPane.getClass().getMethod("getText");
-            final String scriptContent = (String) getTextMethod.invoke(editorPane);
+            final String scriptContent = editorPane.getText();
 
             // Get the language
-            final java.lang.reflect.Method getLanguageMethod = editorPane.getClass().getMethod("getCurrentLanguage");
-            final Object language = getLanguageMethod.invoke(editorPane);
+            final Object language = editorPane.getCurrentLanguage();
             final String languageName = language != null ? language.toString().toLowerCase() : "unknown";
 
             // Add the script context
