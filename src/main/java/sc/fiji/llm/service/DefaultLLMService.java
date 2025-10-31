@@ -8,8 +8,6 @@ import org.scijava.plugin.PluginService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.provider.LLMProviderPlugin;
 
@@ -39,7 +37,12 @@ public class DefaultLLMService extends AbstractService implements LLMService {
 	}
 
 	@Override
-	public ChatModel createChatModel(final String providerName, final String modelName) {
+	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName) {
+			return createAssistant(assistantInterface, providerName, modelName, new Object[0]);
+	}
+
+	@Override
+	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final Object... tools) {
 		final LLMProviderPlugin provider = getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
@@ -50,35 +53,9 @@ public class DefaultLLMService extends AbstractService implements LLMService {
 			throw new IllegalStateException("No API key configured for provider: " + providerName);
 		}
 
-		return provider.createChatModel(apiKey, modelName);
-	}
-
-	@Override
-	public StreamingChatModel createStreamingChatModel(final String providerName, final String modelName) {
-		final LLMProviderPlugin provider = getProvider(providerName);
-		if (provider == null) {
-			throw new IllegalArgumentException("Provider not found: " + providerName);
-		}
-
-		final String apiKey = apiKeyService.getApiKey(providerName);
-		if (apiKey == null) {
-			throw new IllegalStateException("No API key configured for provider: " + providerName);
-		}
-
-		return provider.createStreamingChatModel(apiKey, modelName);
-	}
-
-	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final ChatModel model) {
 		return AiServices.builder(assistantInterface)
-			.chatModel(model)
-			.build();
-	}
-
-	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final ChatModel model, final Object... tools) {
-		return AiServices.builder(assistantInterface)
-			.chatModel(model)
+			.streamingChatModel(provider.createStreamingChatModel(apiKey, modelName))
+			.chatModel(provider.createChatModel(apiKey, modelName))
 			.tools(tools)
 			.build();
 	}

@@ -11,7 +11,6 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
 
-import dev.langchain4j.model.chat.ChatModel;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.provider.LLMProviderPlugin;
 import sc.fiji.llm.service.APIKeyService;
@@ -221,18 +220,17 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 
-		// Create the chat model
+		// Create the assistant
 		try {
 			prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
 			prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
-			final ChatModel chatModel = llmService.createChatModel(provider, model);
 			
 			// Create script editor tool for agentic script manipulation
 			final sc.fiji.llm.ui.ScriptEditorTool scriptTool = 
 				new sc.fiji.llm.ui.ScriptEditorTool(commandService);
 			
 			// Create assistant with tools
-			FijiAssistant assistant = llmService.createAssistant(FijiAssistant.class, chatModel, scriptTool);
+			FijiAssistant assistant = llmService.createAssistant(FijiAssistant.class, provider, model, scriptTool);
 
 			// Launch the chat window using ChatbotService
 			chatbotService.launchChat(assistant, provider + " - " + model);
