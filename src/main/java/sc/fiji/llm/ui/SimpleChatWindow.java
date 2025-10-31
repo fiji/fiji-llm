@@ -41,7 +41,7 @@ public class SimpleChatWindow {
     private final JPanel contextTagsPanel;
     private final List<ContextItem> contextItems;
 
-    public SimpleChatWindow(final FijiAssistant assistant, final LLMContextService contextService, 
+    public SimpleChatWindow(final FijiAssistant assistant, final LLMContextService contextService,
                             final CommandService commandService, final PrefService prefService, final String title) {
         this.assistant = assistant;
         this.contextService = contextService;
@@ -82,7 +82,7 @@ public class SimpleChatWindow {
                     showScriptSelectionMenu(scriptButton, e.getX(), e.getY());
                 }
             }
-            
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) {
@@ -90,20 +90,20 @@ public class SimpleChatWindow {
                 }
             }
         });
-        
+
         leftButtons.add(scriptButton);
         // Add more context type buttons here in the future
-        
+
         // Right side - action buttons
         final JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
-        
+
         final JButton changeModelButton = new JButton("Change Model");
         changeModelButton.addActionListener(e -> changeModel());
         rightButtons.add(changeModelButton);
-        
+
         buttonBar.add(leftButtons, BorderLayout.WEST);
         buttonBar.add(rightButtons, BorderLayout.EAST);
-        
+
         // Context tags panel (shows active context items as removable tags)
         contextTagsPanel = new JPanel();
         contextTagsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
@@ -117,7 +117,7 @@ public class SimpleChatWindow {
         // Input panel container
         final JPanel inputPanelContainer = new JPanel();
         inputPanelContainer.setLayout(new BoxLayout(inputPanelContainer, BoxLayout.Y_AXIS));
-        
+
         // Input panel
         final JPanel inputPanel = new JPanel(new BorderLayout());
         inputField = new JTextField();
@@ -125,7 +125,7 @@ public class SimpleChatWindow {
 
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
-        
+
         inputPanelContainer.add(buttonBar);
         inputPanelContainer.add(contextTagsPanel);
         inputPanelContainer.add(inputPanel);
@@ -166,7 +166,7 @@ public class SimpleChatWindow {
                 // Build context with both plugin context and attached items
                 final StringBuilder fullContext = new StringBuilder();
                 fullContext.append(contextService.buildPluginContext());
-                
+
                 // Add attached context items
                 if (!contextItems.isEmpty()) {
                     fullContext.append("\n\n=== Attached Context ===\n");
@@ -175,7 +175,7 @@ public class SimpleChatWindow {
                         fullContext.append(item.getContent()).append("\n");
                     }
                 }
-                
+
                 final String response = assistant.chat(fullContext.toString(), userMessage);
 
                 SwingUtilities.invokeLater(() -> {
@@ -203,10 +203,10 @@ public class SimpleChatWindow {
     private void changeModel() {
         // Clear the last chat model preference to force model selection dialog
         prefService.remove(sc.fiji.llm.plugins.Fiji_Chat.class, "sc.fiji.chat.lastModel");
-        
+
         // Close this chat window
         frame.dispose();
-        
+
         // Re-invoke the Fiji_Chat command to show the selection dialog
         commandService.run(sc.fiji.llm.plugins.Fiji_Chat.class, true);
     }
@@ -219,42 +219,42 @@ public class SimpleChatWindow {
             final java.lang.reflect.Field instancesField = textEditorClass.getField("instances");
             @SuppressWarnings("unchecked")
             final java.util.List<Object> instances = (java.util.List<Object>) instancesField.get(null);
-            
+
             if (instances.isEmpty()) {
                 // No script editor open - open it
                 commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
                 return;
             }
-            
+
             // Get the first (most recently active) editor instance
             final Object textEditor = instances.get(0);
-            
+
             // Get the current tab
             final java.lang.reflect.Method getTabMethod = textEditorClass.getMethod("getTab");
             final Object tab = getTabMethod.invoke(textEditor);
-            
+
             // Get the title from the tab
             final java.lang.reflect.Method getTitleMethod = tab.getClass().getMethod("getTitle");
             final String scriptName = (String) getTitleMethod.invoke(tab);
-            
+
             // Get the editor pane from the tab
             final java.lang.reflect.Field editorPaneField = tab.getClass().getDeclaredField("editorPane");
             editorPaneField.setAccessible(true);
             final Object editorPane = editorPaneField.get(tab);
-            
+
             // Get the text content
             final java.lang.reflect.Method getTextMethod = editorPane.getClass().getMethod("getText");
             final String scriptContent = (String) getTextMethod.invoke(editorPane);
-            
+
             // Get the language
             final java.lang.reflect.Method getLanguageMethod = editorPane.getClass().getMethod("getCurrentLanguage");
             final Object language = getLanguageMethod.invoke(editorPane);
             final String languageName = language != null ? language.toString().toLowerCase() : "unknown";
-            
+
             // Add the script context
             final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, languageName);
             addContextItem(scriptItem);
-            
+
         } catch (Exception e) {
             // If we can't access the script editor, show an error
             appendToChat("Error", "Failed to access script editor: " + e.getMessage());
@@ -263,18 +263,18 @@ public class SimpleChatWindow {
 
     private void showScriptSelectionMenu(final JButton button, final int x, final int y) {
         final JPopupMenu menu = new JPopupMenu();
-        
+
         try {
             // Access the static list of open TextEditor instances
             final Class<?> textEditorClass = Class.forName("org.scijava.ui.swing.script.TextEditor");
             final java.lang.reflect.Field instancesField = textEditorClass.getField("instances");
             @SuppressWarnings("unchecked")
             final java.util.List<Object> instances = (java.util.List<Object>) instancesField.get(null);
-            
+
             if (instances.isEmpty()) {
                 // No script editor open
                 final JMenuItem openEditorItem = new JMenuItem("Open Script Editor...");
-                openEditorItem.addActionListener(e -> 
+                openEditorItem.addActionListener(e ->
                     commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true));
                 menu.add(openEditorItem);
             } else {
@@ -282,11 +282,11 @@ public class SimpleChatWindow {
                 final JMenuItem activeItem = new JMenuItem("Active Script");
                 activeItem.addActionListener(e -> addActiveScriptContext());
                 menu.add(activeItem);
-                
+
                 // Add menu items for all open scripts if there are multiple
                 if (instances.size() > 1 || hasMultipleTabs(instances.get(0), textEditorClass)) {
                     menu.addSeparator();
-                    
+
                     for (final Object textEditor : instances) {
                         addScriptMenuItems(menu, textEditor, textEditorClass);
                     }
@@ -298,10 +298,10 @@ public class SimpleChatWindow {
             errorItem.setEnabled(false);
             menu.add(errorItem);
         }
-        
+
         menu.show(button, x, y);
     }
-    
+
     private boolean hasMultipleTabs(final Object textEditor, final Class<?> textEditorClass) {
         try {
             final java.lang.reflect.Field tabbedField = textEditorClass.getDeclaredField("tabbed");
@@ -312,7 +312,7 @@ public class SimpleChatWindow {
             return false;
         }
     }
-    
+
     private void addScriptMenuItems(final JPopupMenu menu, final Object textEditor, final Class<?> textEditorClass) {
         try {
             // Get the tabbed pane
@@ -320,15 +320,15 @@ public class SimpleChatWindow {
             tabbedField.setAccessible(true);
             final javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane) tabbedField.get(textEditor);
             final int tabCount = tabbed.getTabCount();
-            
+
             // Get method to retrieve individual tabs
             final java.lang.reflect.Method getTabMethod = textEditorClass.getMethod("getTab", int.class);
-            
+
             for (int i = 0; i < tabCount; i++) {
                 final Object tab = getTabMethod.invoke(textEditor, i);
                 final java.lang.reflect.Method getTitleMethod = tab.getClass().getMethod("getTitle");
                 final String title = (String) getTitleMethod.invoke(tab);
-                
+
                 final int tabIndex = i;
                 final JMenuItem item = new JMenuItem(title);
                 item.addActionListener(e -> addScriptFromTab(textEditor, tabIndex, textEditorClass));
@@ -338,35 +338,35 @@ public class SimpleChatWindow {
             // Skip this editor if we can't access its tabs
         }
     }
-    
+
     private void addScriptFromTab(final Object textEditor, final int tabIndex, final Class<?> textEditorClass) {
         try {
             // Get the specific tab
             final java.lang.reflect.Method getTabMethod = textEditorClass.getMethod("getTab", int.class);
             final Object tab = getTabMethod.invoke(textEditor, tabIndex);
-            
+
             // Get the title
             final java.lang.reflect.Method getTitleMethod = tab.getClass().getMethod("getTitle");
             final String scriptName = (String) getTitleMethod.invoke(tab);
-            
+
             // Get the editor pane
             final java.lang.reflect.Field editorPaneField = tab.getClass().getDeclaredField("editorPane");
             editorPaneField.setAccessible(true);
             final Object editorPane = editorPaneField.get(tab);
-            
+
             // Get the text content
             final java.lang.reflect.Method getTextMethod = editorPane.getClass().getMethod("getText");
             final String scriptContent = (String) getTextMethod.invoke(editorPane);
-            
+
             // Get the language
             final java.lang.reflect.Method getLanguageMethod = editorPane.getClass().getMethod("getCurrentLanguage");
             final Object language = getLanguageMethod.invoke(editorPane);
             final String languageName = language != null ? language.toString().toLowerCase() : "unknown";
-            
+
             // Add the script context
             final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, languageName);
             addContextItem(scriptItem);
-            
+
         } catch (Exception e) {
             appendToChat("Error", "Failed to add script from tab: " + e.getMessage());
         }
@@ -419,11 +419,11 @@ public class SimpleChatWindow {
     private void removeContextItem(final ContextItem item, final JButton tagButton) {
         contextItems.remove(item);
         contextTagsPanel.remove(tagButton);
-        
+
         if (contextItems.isEmpty()) {
             contextTagsPanel.setVisible(false);
         }
-        
+
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
     }
