@@ -28,12 +28,22 @@ import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import sc.fiji.llm.assistant.FijiAssistant;
 
 /**
  * Simple Swing-based chat window for LLM chat.
  */
 public class SimpleChatWindow {
+    private static final String SENDER_USER = "You";
+    private static final String SENDER_ASSISTANT = "Assistant";
+    private static final String SENDER_SYSTEM = "System";
+    private static final String SENDER_ERROR = "Error";
+
     private final FijiAssistant assistant;
     private final CommandService commandService;
     private final PrefService prefService;
@@ -44,6 +54,7 @@ public class SimpleChatWindow {
     private final JPanel contextTagsPanel;
     private final List<ContextItem> contextItems;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
+    private final ChatRequest.Builder chatBuilder;
 
     public SimpleChatWindow(final FijiAssistant assistant, final CommandService commandService, final PrefService prefService, final String title) {
         this.assistant = assistant;
@@ -51,6 +62,11 @@ public class SimpleChatWindow {
         this.prefService = prefService;
         this.contextItems = new ArrayList<>();
         this.contextItemButtons = new java.util.HashMap<>();
+        this.chatBuilder = ChatRequest.builder();
+        final String systemPrompt = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +
+            "processing, and scripting in the Fiji/ImageJ environment.\n\n" +
+            "When you generate or modify scripts for the user, always use the createOrUpdateScript tool.";
+        chatBuilder.messages(new SystemMessage(systemPrompt));
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);
@@ -157,8 +173,22 @@ public class SimpleChatWindow {
             return;
         }
 
+        // Build context with attached items
+        final StringBuilder contextMsg = new StringBuilder();
+
+        if (!contextItems.isEmpty()) {
+            contextMsg.append("===Start of Context Items===\n");
+            for (final ContextItem item : contextItems) {
+                contextMsg.append("\n--- ").append(item.getType()).append(": ").append(item.getLabel()).append(" ---\n");
+                contextMsg.append(item.getContent()).append("\n");
+            }
+            contextMsg.append("===End of Context Items===\n");
+            chatBuilder.messages(new UserMessage(contextMsg.toString()));
+        }
+
         // Display user message
-        appendToChat("You", userMessage);
+        appendToChat(SENDER_USER, userMessage);
+
         inputField.setText("");
         inputField.setEnabled(false);
         sendButton.setEnabled(false);
@@ -166,22 +196,14 @@ public class SimpleChatWindow {
         // Process in background thread
         new Thread(() -> {
             try {
-                // Build context with both plugin context and attached items
-                final StringBuilder fullContext = new StringBuilder();
+                // Create and send ChatRequest
+                final ChatRequest chatRequest = chatBuilder.build();
 
-                // Add attached context items
-                if (!contextItems.isEmpty()) {
-                    fullContext.append("\n\n=== Attached Context ===\n");
-                    for (final ContextItem item : contextItems) {
-                        fullContext.append("\n--- ").append(item.getType()).append(": ").append(item.getLabel()).append(" ---\n");
-                        fullContext.append(item.getContent()).append("\n");
-                    }
-                }
-
-                final String response = assistant.chat(fullContext.toString(), userMessage);
+                final ChatResponse response = assistant.chat(chatRequest);
+                final String assistantMessage = response.aiMessage().text();
 
                 SwingUtilities.invokeLater(() -> {
-                    appendToChat("Assistant", response);
+                    appendToChat(SENDER_ASSISTANT, assistantMessage);
                     inputField.setEnabled(true);
                     sendButton.setEnabled(true);
                     inputField.requestFocus();
@@ -192,14 +214,14 @@ public class SimpleChatWindow {
 
                 SwingUtilities.invokeLater(() -> {
                     if (retrySecs != null && retrySecs > 0) {
-                        appendToChat("System", "Rate limit reached. Please wait ~" + retrySecs + "s before retrying, or select a different model.");
+                        appendToChat(SENDER_SYSTEM, "Rate limit reached. Please wait ~" + retrySecs + "s before retrying, or select a different model.");
                     } else {
                         // Fall back to a short message including the exception summary
                         final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
                         if (msg.length() > 300) {
-                            appendToChat("System", "Error: " + msg.substring(0, 300) + "…");
+                            appendToChat(SENDER_SYSTEM, "Error: " + msg.substring(0, 300) + "…");
                         } else {
-                            appendToChat("System", "Error: " + msg);
+                            appendToChat(SENDER_SYSTEM, "Error: " + msg);
                         }
                     }
 
@@ -253,6 +275,13 @@ public class SimpleChatWindow {
     private void appendToChat(final String sender, final String message) {
         chatArea.append(sender + ": " + message + "\n\n");
         chatArea.setCaretPosition(chatArea.getDocument().getLength());
+
+        // Track messages for API calls
+        if (SENDER_USER.equals(sender)) {
+            chatBuilder.messages(new UserMessage(message));
+        } else if (SENDER_ASSISTANT.equals(sender)) {
+            chatBuilder.messages(new AiMessage(message));
+        }
     }
 
     private void changeModel() {
@@ -296,7 +325,7 @@ public class SimpleChatWindow {
             }
 
             if (tab == null) {
-                appendToChat("Error", "No active script tab available");
+                appendToChat(SENDER_ERROR, "No active script tab available");
                 return;
             }
 
@@ -314,7 +343,7 @@ public class SimpleChatWindow {
             addContextItem(scriptItem);
         } catch (Exception e) {
             // If we can't access the script editor, show an error
-            appendToChat("Error", "Failed to access script editor: " + e.getMessage());
+            appendToChat(SENDER_ERROR, "Failed to access script editor: " + e.getMessage());
         }
     }
 
@@ -419,7 +448,7 @@ public class SimpleChatWindow {
             addContextItem(scriptItem);
 
         } catch (Exception e) {
-            appendToChat("Error", "Failed to add script from tab: " + e.getMessage());
+            appendToChat(SENDER_ERROR, "Failed to add script from tab: " + e.getMessage());
         }
     }
 
