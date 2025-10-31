@@ -40,6 +40,7 @@ public class SimpleChatWindow {
     private final JButton sendButton;
     private final JPanel contextTagsPanel;
     private final List<ContextItem> contextItems;
+    private final java.util.Map<ContextItem, JButton> contextItemButtons;
 
     public SimpleChatWindow(final FijiAssistant assistant, final LLMContextService contextService,
                             final CommandService commandService, final PrefService prefService, final String title) {
@@ -48,6 +49,7 @@ public class SimpleChatWindow {
         this.commandService = commandService;
         this.prefService = prefService;
         this.contextItems = new ArrayList<>();
+        this.contextItemButtons = new java.util.HashMap<>();
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);
@@ -106,7 +108,7 @@ public class SimpleChatWindow {
 
         // Context tags panel (shows active context items as removable tags)
         contextTagsPanel = new JPanel();
-        contextTagsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
+        contextTagsPanel.setLayout(new BorderLayout());
         contextTagsPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new java.awt.Color(200, 220, 240), 1),
             BorderFactory.createEmptyBorder(5, 8, 5, 8)
@@ -373,6 +375,19 @@ public class SimpleChatWindow {
     }
 
     private void addContextItem(final ContextItem item) {
+        // Check for duplicates - don't add the same script twice
+        for (final ContextItem existing : contextItems) {
+            if (existing.getLabel().equals(item.getLabel()) &&
+                existing.getContent().equals(item.getContent())) {
+                // Flash the existing tag to indicate it's already added
+                final JButton existingButton = contextItemButtons.get(existing);
+                if (existingButton != null) {
+                    flashButton(existingButton);
+                }
+                return;
+            }
+        }
+
         contextItems.add(item);
 
         // Truncate label to max length
@@ -386,6 +401,9 @@ public class SimpleChatWindow {
         final JButton tagButton = new JButton(displayLabel + " ✕");
         tagButton.setToolTipText(item.getLabel() + " - Click to remove");
         tagButton.addActionListener(e -> removeContextItem(item, tagButton));
+
+        // Store the button reference
+        contextItemButtons.put(item, tagButton);
 
         // Style the button to look like a flat tag
         tagButton.setFocusPainted(false);
@@ -410,7 +428,27 @@ public class SimpleChatWindow {
             }
         });
 
-        contextTagsPanel.add(tagButton);
+        // Get or create the tags container panel
+        JPanel tagsContainer;
+        if (contextTagsPanel.getComponentCount() == 0) {
+            tagsContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 3));
+            tagsContainer.setOpaque(false);
+            contextTagsPanel.add(tagsContainer, BorderLayout.CENTER);
+
+            // Add "Clear All" button on the right
+            final JButton clearAllButton = new JButton("Clear All");
+            clearAllButton.setToolTipText("Remove all context items");
+            clearAllButton.setFocusPainted(false);
+            clearAllButton.addActionListener(e -> clearAllContext());
+            final JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 3));
+            rightPanel.setOpaque(false);
+            rightPanel.add(clearAllButton);
+            contextTagsPanel.add(rightPanel, BorderLayout.EAST);
+        } else {
+            tagsContainer = (JPanel) contextTagsPanel.getComponent(0);
+        }
+
+        tagsContainer.add(tagButton);
         contextTagsPanel.setVisible(true);
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
@@ -418,7 +456,9 @@ public class SimpleChatWindow {
 
     private void removeContextItem(final ContextItem item, final JButton tagButton) {
         contextItems.remove(item);
-        contextTagsPanel.remove(tagButton);
+        contextItemButtons.remove(item);
+        final JPanel tagsContainer = (JPanel) contextTagsPanel.getComponent(0);
+        tagsContainer.remove(tagButton);
 
         if (contextItems.isEmpty()) {
             contextTagsPanel.setVisible(false);
@@ -426,5 +466,40 @@ public class SimpleChatWindow {
 
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
+    }
+
+    private void clearAllContext() {
+        contextItems.clear();
+        contextItemButtons.clear();
+        contextTagsPanel.removeAll();
+        contextTagsPanel.setVisible(false);
+        contextTagsPanel.revalidate();
+        contextTagsPanel.repaint();
+    }
+
+    private void flashButton(final JButton button) {
+        // Flash the button orange to indicate duplicate
+        final java.awt.Color originalBg = button.getBackground();
+        final java.awt.Color flashColor = new java.awt.Color(255, 165, 0); // Orange
+
+        // Create a timer to flash 3 times
+        final javax.swing.Timer timer = new javax.swing.Timer(150, null);
+        final int[] flashCount = {0};
+
+        timer.addActionListener(e -> {
+            if (flashCount[0] % 2 == 0) {
+                button.setBackground(flashColor);
+            } else {
+                button.setBackground(originalBg);
+            }
+            flashCount[0]++;
+
+            if (flashCount[0] >= 6) { // 3 flashes (on-off-on-off-on-off)
+                timer.stop();
+                button.setBackground(originalBg);
+            }
+        });
+
+        timer.start();
     }
 }
