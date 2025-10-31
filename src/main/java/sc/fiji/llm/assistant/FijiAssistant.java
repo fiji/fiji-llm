@@ -23,7 +23,10 @@ public interface FijiAssistant {
 		"processing, and scripting in the Fiji/ImageJ environment.\n\n" +
 		"Available context:\n{{context}}\n\n" +
 		"Provide clear, accurate, and helpful responses. When suggesting code, " +
-		"prefer ImageJ2/SciJava APIs over legacy ImageJ1 APIs when possible.")
+		"prefer ImageJ2/SciJava APIs over legacy ImageJ1 APIs when possible.\n\n" +
+		"When you generate or modify scripts for the user, use the createOrUpdateScript tool " +
+		"to place the code directly in the Fiji script editor. This allows users to immediately " +
+		"run and modify the code. Always use this tool when providing executable scripts.")
 	String chat(@V("context") String context, @UserMessage String userMessage);
 
 	/**

@@ -57,4 +57,16 @@ public interface LLMService extends SciJavaService {
 	 * @return an implementation of the assistant interface
 	 */
 	<T> T createAssistant(Class<T> assistantInterface, ChatModel model);
+
+	/**
+	 * Create an AI service instance (LangChain4j assistant) with the given interface,
+	 * chat model, and tools.
+	 *
+	 * @param <T> the assistant interface type
+	 * @param assistantInterface the interface class defining the assistant methods
+	 * @param model the chat language model to use
+	 * @param tools the tools (objects with @Tool annotated methods) to make available to the assistant
+	 * @return an implementation of the assistant interface
+	 */
+	<T> T createAssistant(Class<T> assistantInterface, ChatModel model, Object... tools);
 }

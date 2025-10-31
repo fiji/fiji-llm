@@ -74,4 +74,12 @@ public class DefaultLLMService extends AbstractService implements LLMService {
 			.chatModel(model)
 			.build();
 	}
+
+	@Override
+	public <T> T createAssistant(final Class<T> assistantInterface, final ChatModel model, final Object... tools) {
+		return AiServices.builder(assistantInterface)
+			.chatModel(model)
+			.tools(tools)
+			.build();
+	}
 }
