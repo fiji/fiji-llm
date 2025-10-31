@@ -44,25 +44,6 @@ public interface FijiAssistant {
 	TokenStream chatStreaming(@V("context") String context, @UserMessage String userMessage);
 
 	/**
-	 * Generate a script in the specified language for a given task.
-	 *
-	 * @param language the scripting language (e.g., "Groovy", "Python", "JavaScript")
-	 * @param task description of what the script should do
-	 * @param context the Fiji/ImageJ context
-	 * @return the generated script code
-	 */
-	@SystemMessage("You are an expert script generator for Fiji/ImageJ.\n" +
-		"Generate a {{language}} script for the following task: {{task}}\n\n" +
-		"Available context:\n{{context}}\n\n" +
-		"Return ONLY the script code, without explanations or markdown formatting. " +
-		"Use ImageJ2/SciJava APIs when possible.")
-	String generateScript(
-		@V("language") String language,
-		@V("task") String task,
-		@V("context") String context
-	);
-
-	/**
 	 * Explain a code snippet.
 	 *
 	 * @param code the code to explain
