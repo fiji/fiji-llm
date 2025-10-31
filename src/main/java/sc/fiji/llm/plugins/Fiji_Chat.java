@@ -5,6 +5,7 @@ import java.util.List;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.module.MutableModuleItem;
+import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
@@ -21,7 +22,11 @@ import sc.fiji.llm.ui.ChatbotService;
  * Provides a conversational interface to get help with image analysis,
  * scripting, and general Fiji/ImageJ questions.
  */
-@Plugin(type = Command.class, menuPath = "Plugins>Assistants>Fiji Chat")
+@Plugin(type = Command.class, menu = {
+	@Menu(label = "Plugins"),
+	@Menu(label = "Assistants"),
+	@Menu(label = "Fiji Chat", accelerator = "ctrl shift 0")
+})
 public class Fiji_Chat extends DynamicCommand {
 	private static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	private static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
