@@ -22,11 +22,14 @@ import sc.fiji.llm.ui.ChatbotService;
  * Provides a conversational interface to get help with image analysis,
  * scripting, and general Fiji/ImageJ questions.
  */
-@Plugin(type = Command.class, menu = {
-	@Menu(label = "Plugins"),
-	@Menu(label = "Assistants"),
-	@Menu(label = "Fiji Chat", accelerator = "ctrl shift 0")
-})
+	@Plugin(type = Command.class,
+		label = "Welcome to Fiji Chat!",
+		description = "Start a new AI chat",
+		menu = {
+			@Menu(label = "Plugins"),
+			@Menu(label = "Assistants"),
+			@Menu(label = "Fiji Chat", accelerator = "ctrl shift 0")
+		})
 public class Fiji_Chat extends DynamicCommand {
 	private static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	private static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
@@ -43,18 +46,44 @@ public class Fiji_Chat extends DynamicCommand {
 	@Parameter
 	private ChatbotService chatbotService;
 
-	@Parameter(label = "Provider", 
+	@Parameter(label = "",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String welcomeMessage = "<html><body style='width: 425px'>" +
+			"<p>Chat with an AI assistant to get help with your image analysis needs.</p>" +
+			"<p><b>Setup:</b></p>" +
+			"<ol>" +
+			"<li><b>Choose an AI service</b> - Select from available providers (OpenAI, Anthropic, Google, etc.)</li>" +
+			"<li><b>Enter your authentication (API) key</b> - Get this from your provider's website (link below)</li>" +
+			"<li><b>Select a chat model</b> - Different models have varying capabilities and costs (see documentation)</li>" +
+			"</ol>" +
+			"</body></html>";
+
+	@Parameter(label = "AI Service",
 			callback = "providerChanged",
 			persist = false)
 	private String provider;
 
-	@Parameter(label = "API Key", 
+	@Parameter(label = "Get Authentication Key →",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String apiKeyLink = "";
+
+	@Parameter(label = "Authentication Key",
 			description = "API key for the selected provider",
 			persist = false,
 			required = false)
 	private String apiKey = "";
 
-	@Parameter(label = "Model",
+	@Parameter(label = "View Model Info →",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String modelDocLink = "";
+
+	@Parameter(label = "Chat Model",
 			choices = {},
 			callback = "modelChanged",
 			persist = false)
@@ -98,17 +127,27 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 
+		// Update API key link
+		final String apiKeyUrl = selectedProvider.getApiKeyUrl();
+		final MutableModuleItem<String> apiKeyLinkItem = getInfo().getMutableInput("apiKeyLink", String.class);
+		apiKeyLinkItem.setValue(this, "<html><a href=\"" + apiKeyUrl + "\">" + apiKeyUrl + "</a></html>");
+
 		// Check if we have a stored API key for this provider
 		final String storedKey = apiKeyService.getApiKey(provider);
 		final MutableModuleItem<String> apiKeyItem = getInfo().getMutableInput("apiKey", String.class);
 		
 		if (storedKey != null && !storedKey.isEmpty()) {
 			apiKeyItem.setValue(this, "********"); // Mask the stored key
-			apiKeyItem.setDescription("Using stored API key (enter new key to override)");
+			apiKeyItem.setDescription("Using stored key (enter new key to replace it)");
 		} else {
 			apiKeyItem.setValue(this, "");
-			apiKeyItem.setDescription("No stored key found - please enter API key");
+			apiKeyItem.setDescription("Enter your " + provider + " API key from the link above");
 		}
+
+		// Update model documentation link
+		final String modelsUrl = selectedProvider.getModelsDocumentationUrl();
+		final MutableModuleItem<String> modelDocLinkItem = getInfo().getMutableInput("modelDocLink", String.class);
+		modelDocLinkItem.setValue(this, "<html><a href=\"" + modelsUrl + "\">" + modelsUrl + "</a></html>");
 
 		// Update model choices
 		final List<String> models = selectedProvider.getAvailableModels();
