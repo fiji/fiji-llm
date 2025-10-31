@@ -278,7 +278,7 @@ public class SimpleChatWindow {
             // the most-recent one that is visible. TextEditor.instances
             // appends instances on creation, so the last element is the
             // newest. If none are visible, open the ScriptEditor.
-            final TextEditor textEditor = getMostRecentVisibleEditor();
+            final TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
             if (textEditor == null) {
                 // No visible editor instance found - open the Script Editor
                 commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
@@ -323,19 +323,6 @@ public class SimpleChatWindow {
         }
     }
 
-    /**
-     * Return the most-recent visible TextEditor instance, or null if none.
-     */
-    private TextEditor getMostRecentVisibleEditor() {
-        final java.util.List<TextEditor> instances = TextEditor.instances;
-        if (instances == null || instances.isEmpty()) return null;
-        for (int i = instances.size() - 1; i >= 0; i--) {
-            final TextEditor cand = instances.get(i);
-            if (cand != null && cand.isVisible()) return cand;
-        }
-        return null;
-    }
-
     private void showScriptSelectionMenu(final JButton button, final int x, final int y) {
         final JPopupMenu menu = new JPopupMenu();
 
@@ -355,7 +342,7 @@ public class SimpleChatWindow {
                 menu.add(activeItem);
 
                 // Add menu items for all open scripts if there are multiple
-                if (instances.size() > 1 || hasMultipleTabs(getMostRecentVisibleEditor())) {
+                if (instances.size() > 1 || hasMultipleTabs(TextEditorUtils.getMostRecentVisibleEditor())) {
                     menu.addSeparator();
 
                     for (final TextEditor textEditor : instances) {
