@@ -29,14 +29,12 @@ import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import sc.fiji.llm.assistant.FijiAssistant;
-import sc.fiji.llm.service.LLMContextService;
 
 /**
  * Simple Swing-based chat window for LLM chat.
  */
 public class SimpleChatWindow {
     private final FijiAssistant assistant;
-    private final LLMContextService contextService;
     private final CommandService commandService;
     private final PrefService prefService;
     private final JFrame frame;
@@ -47,10 +45,8 @@ public class SimpleChatWindow {
     private final List<ContextItem> contextItems;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
 
-    public SimpleChatWindow(final FijiAssistant assistant, final LLMContextService contextService,
-                            final CommandService commandService, final PrefService prefService, final String title) {
+    public SimpleChatWindow(final FijiAssistant assistant, final CommandService commandService, final PrefService prefService, final String title) {
         this.assistant = assistant;
-        this.contextService = contextService;
         this.commandService = commandService;
         this.prefService = prefService;
         this.contextItems = new ArrayList<>();
@@ -172,7 +168,6 @@ public class SimpleChatWindow {
             try {
                 // Build context with both plugin context and attached items
                 final StringBuilder fullContext = new StringBuilder();
-                fullContext.append(contextService.buildPluginContext());
 
                 // Add attached context items
                 if (!contextItems.isEmpty()) {
