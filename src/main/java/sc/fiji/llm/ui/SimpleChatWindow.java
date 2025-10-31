@@ -64,16 +64,16 @@ public class SimpleChatWindow {
 
         // Button bar with context buttons on left, action buttons on right
         final JPanel buttonBar = new JPanel(new BorderLayout());
-        
+
         // Left side - context buttons
         final JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-        
-        final JButton scriptButton = new JButton("📜 Script");
+
+        final JButton scriptButton = new JButton("📜 Add Script");
         scriptButton.setToolTipText("Add script context (right-click for options)");
-        
+
         // Left-click: add active script
         scriptButton.addActionListener(e -> addActiveScriptContext());
-        
+
         // Right-click: show menu of available scripts
         scriptButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -107,7 +107,11 @@ public class SimpleChatWindow {
         // Context tags panel (shows active context items as removable tags)
         contextTagsPanel = new JPanel();
         contextTagsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
-        contextTagsPanel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        contextTagsPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new java.awt.Color(200, 220, 240), 1),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        contextTagsPanel.setBackground(new java.awt.Color(240, 248, 255)); // Light blue background
         contextTagsPanel.setVisible(false); // Hidden until context items are added
 
         // Input panel container
@@ -370,19 +374,42 @@ public class SimpleChatWindow {
 
     private void addContextItem(final ContextItem item) {
         contextItems.add(item);
-        
-        // Create a removable tag button with emoji and X
-        final JButton tagButton = new JButton(item.getLabel() + " ✕");
-        tagButton.setToolTipText("Click to remove " + item.getType().toLowerCase() + " from context");
+
+        // Truncate label to max length
+        final int maxLabelLength = 15;
+        String displayLabel = item.getLabel();
+        if (displayLabel.length() > maxLabelLength) {
+            displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
+        }
+
+        // Create a removable tag button with truncated label and X
+        final JButton tagButton = new JButton(displayLabel + " ✕");
+        tagButton.setToolTipText(item.getLabel() + " - Click to remove");
         tagButton.addActionListener(e -> removeContextItem(item, tagButton));
-        
-        // Style the button to look like a tag
+
+        // Style the button to look like a flat tag
         tagButton.setFocusPainted(false);
+        tagButton.setContentAreaFilled(false);
+        tagButton.setOpaque(true);
+        tagButton.setBackground(java.awt.Color.WHITE);
         tagButton.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(java.awt.Color.GRAY, 1, true),
-            BorderFactory.createEmptyBorder(2, 8, 2, 8)
+            BorderFactory.createEtchedBorder(),
+            BorderFactory.createEmptyBorder(3, 6, 3, 6)
         ));
-        
+
+        // Add hover effect
+        tagButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                tagButton.setBackground(new java.awt.Color(230, 240, 250));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                tagButton.setBackground(java.awt.Color.WHITE);
+            }
+        });
+
         contextTagsPanel.add(tagButton);
         contextTagsPanel.setVisible(true);
         contextTagsPanel.revalidate();
