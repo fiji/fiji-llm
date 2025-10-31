@@ -2,6 +2,7 @@ package sc.fiji.llm.plugins;
 
 import java.util.List;
 
+import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
 import org.scijava.module.MutableModuleItem;
@@ -23,8 +24,8 @@ import sc.fiji.llm.ui.ChatbotService;
  * scripting, and general Fiji/ImageJ questions.
  */
 	@Plugin(type = Command.class,
-		label = "Welcome to Fiji Chat!",
-		description = "Start a new AI chat",
+		label = "Fiji Chat",
+		description = "Chat with an AI assistant to get help with your image analysis needs",
 		menu = {
 			@Menu(label = "Plugins"),
 			@Menu(label = "Assistants"),
@@ -51,6 +52,7 @@ public class Fiji_Chat extends DynamicCommand {
 			persist = false,
 			required = false)
 	private String welcomeMessage = "<html><body style='width: 425px'>" +
+			"<h2 style='text-align: center'>Welcome to Fiji Chat!</h2>" +
 			"<p>Chat with an AI assistant to get help with your image analysis needs.</p>" +
 			"<p><b>Setup:</b></p>" +
 			"<ol>" +
@@ -60,10 +62,19 @@ public class Fiji_Chat extends DynamicCommand {
 			"</ol>" +
 			"</body></html>";
 
+	@Parameter(label = "",
+        visibility = org.scijava.ItemVisibility.MESSAGE,
+        persist = false,
+        required = false)
+	private String welcomeSeparator = "<html><div style='width: 500px; margin: 15px 0;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
+
 	@Parameter(label = "AI Service",
 			callback = "providerChanged",
 			persist = false)
 	private String provider;
+
+    @Parameter( label = " ", style = "separator", persist = false, required = false, visibility = ItemVisibility.MESSAGE )
+	private String apiSpacer = "";
 
 	@Parameter(label = "Get Authentication Key →",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
@@ -76,6 +87,9 @@ public class Fiji_Chat extends DynamicCommand {
 			persist = false,
 			required = false)
 	private String apiKey = "";
+
+    @Parameter( label = " ", style = "separator", persist = false, required = false, visibility = ItemVisibility.MESSAGE )
+	private String modelSpacer = "";
 
 	@Parameter(label = "View Model Info →",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
