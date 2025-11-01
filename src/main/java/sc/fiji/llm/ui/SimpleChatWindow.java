@@ -22,7 +22,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import org.scijava.Context;
 import org.scijava.command.CommandService;
+import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
 import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.TextEditor;
@@ -41,9 +43,13 @@ import sc.fiji.llm.chat.ScriptContextItem;
 public class SimpleChatWindow {
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
+    @Parameter
+    private CommandService commandService;
+
+    @Parameter
+    private PrefService prefService;
+
     private final FijiAssistant assistant;
-    private final CommandService commandService;
-    private final PrefService prefService;
     private final JFrame frame;
     private final JTextArea chatArea;
     private final JTextField inputField;
@@ -53,10 +59,9 @@ public class SimpleChatWindow {
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
 
-    public SimpleChatWindow(final FijiAssistant assistant, final CommandService commandService, final PrefService prefService, final String title) {
+    public SimpleChatWindow(final Context context, final FijiAssistant assistant, final String title) {
+        context.inject(this);
         this.assistant = assistant;
-        this.commandService = commandService;
-        this.prefService = prefService;
         this.contextItems = new ArrayList<>();
         this.contextItemButtons = new java.util.HashMap<>();
         final String systemPrompt = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +

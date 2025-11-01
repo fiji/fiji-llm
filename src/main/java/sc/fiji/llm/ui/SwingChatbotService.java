@@ -2,10 +2,7 @@ package sc.fiji.llm.ui;
 
 import javax.swing.SwingUtilities;
 
-import org.scijava.command.CommandService;
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.prefs.PrefService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
@@ -17,16 +14,10 @@ import sc.fiji.llm.assistant.FijiAssistant;
 @Plugin(type = Service.class)
 public class SwingChatbotService extends AbstractService implements ChatbotService {
 
-    @Parameter
-    public CommandService commandService;
-
-    @Parameter
-    public PrefService prefService;
-
     @Override
     public void launchChat(FijiAssistant assistant, String title) {
         SwingUtilities.invokeLater(() -> {
-            SimpleChatWindow chatWindow = new SimpleChatWindow(assistant, commandService, prefService, title);
+            SimpleChatWindow chatWindow = new SimpleChatWindow(getContext(), assistant, title);
             chatWindow.show();
         });
     }
