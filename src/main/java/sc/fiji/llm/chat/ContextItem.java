@@ -1,4 +1,4 @@
-package sc.fiji.llm.ui;
+package sc.fiji.llm.chat;
 
 /**
  * Represents a context item that can be added to the chat.
