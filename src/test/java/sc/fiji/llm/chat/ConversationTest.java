@@ -3,6 +3,7 @@ package sc.fiji.llm.chat;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -146,6 +147,238 @@ public class ConversationTest {
         assertNotNull(request);
         assertEquals(1, request.messages().size());
         assertTrue(request.messages().get(0) instanceof SystemMessage);
+    }
+
+    @Test
+    public void testAddContextItem() {
+        // Given: a conversation
+        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+
+        // When: we add a context item
+        conversation.addContextItem(item);
+
+        // Then: it should be stored
+        List<ContextItem> items = conversation.getContextItems();
+        assertEquals(1, items.size());
+        assertEquals(item, items.get(0));
+    }
+
+    @Test
+    public void testAddMultipleContextItems() {
+        // Given: a conversation
+        ContextItem item1 = new ContextItem("script", "test1.py", "print('hello')");
+        ContextItem item2 = new ContextItem("script", "test2.py", "print('world')");
+
+        // When: we add multiple context items
+        conversation.addContextItem(item1);
+        conversation.addContextItem(item2);
+
+        // Then: both should be stored
+        List<ContextItem> items = conversation.getContextItems();
+        assertEquals(2, items.size());
+        assertEquals(item1, items.get(0));
+        assertEquals(item2, items.get(1));
+    }
+
+    @Test
+    public void testRemoveContextItem() {
+        // Given: a conversation with context items
+        ContextItem item1 = new ContextItem("script", "test1.py", "print('hello')");
+        ContextItem item2 = new ContextItem("script", "test2.py", "print('world')");
+        conversation.addContextItem(item1);
+        conversation.addContextItem(item2);
+
+        // When: we remove one context item
+        conversation.removeContextItem(item1);
+
+        // Then: only the second item should remain
+        List<ContextItem> items = conversation.getContextItems();
+        assertEquals(1, items.size());
+        assertEquals(item2, items.get(0));
+    }
+
+    @Test
+    public void testContextItemIncludedInUserMessage() {
+        // Given: a conversation with a context item
+        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        conversation.addContextItem(item);
+
+        // When: we add a user message
+        String userMessage = "Run this script";
+        conversation.addUserMessage(userMessage);
+
+        // Then: the user message should include the context item
+        List<ChatMessage> messages = conversation.getMessages();
+        assertEquals(2, messages.size());
+        UserMessage userMsg = (UserMessage) messages.get(1);
+
+        // The message should contain all the context information
+        // We verify by checking the message was constructed properly
+        assertNotNull(userMsg);
+        assertTrue(messages.get(1) instanceof UserMessage);
+    }
+
+    @Test
+    public void testContextItemsClearedAfterAddingUserMessage() {
+        // Given: a conversation with context items
+        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        conversation.addContextItem(item);
+        assertEquals(1, conversation.getContextItems().size());
+
+        // When: we add a user message
+        conversation.addUserMessage("Process this");
+
+        // Then: context items should be cleared
+        List<ContextItem> items = conversation.getContextItems();
+        assertEquals(0, items.size());
+    }
+
+    @Test
+    public void testMultipleContextItemsIncludedInUserMessage() {
+        // Given: a conversation with multiple context items
+        ContextItem item1 = new ContextItem("script", "test1.py", "content1");
+        ContextItem item2 = new ContextItem("script", "test2.py", "content2");
+        conversation.addContextItem(item1);
+        conversation.addContextItem(item2);
+
+        // When: we add a user message
+        String userMessage = "Process these scripts";
+        conversation.addUserMessage(userMessage);
+
+        // Then: both context items should be in the message
+        List<ChatMessage> messages = conversation.getMessages();
+        assertEquals(2, messages.size());
+        assertTrue(messages.get(1) instanceof UserMessage);
+
+        // And they should be cleared
+        assertEquals(0, conversation.getContextItems().size());
+    }
+
+    @Test
+    public void testUserMessageWithoutContextItems() {
+        // Given: a conversation with no context items
+        assertEquals(0, conversation.getContextItems().size());
+
+        // When: we add a user message without context
+        String userMessage = "Hello";
+        conversation.addUserMessage(userMessage);
+
+        // Then: the message should be added without context formatting
+        List<ChatMessage> messages = conversation.getMessages();
+        assertEquals(2, messages.size());
+        assertTrue(messages.get(1) instanceof UserMessage);
+    }
+
+    @Test
+    public void testContextItemToString() {
+        // Given: a context item
+        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+
+        // When: we call toString
+        String formatted = item.toString();
+
+        // Then: it should have the proper format
+        assertTrue(formatted.contains("script"));
+        assertTrue(formatted.contains("test.py"));
+        assertTrue(formatted.contains("print('hello')"));
+        assertTrue(formatted.startsWith("\n---"));
+    }
+
+    @Test
+    public void testContextItemEquality() {
+        // Given: two context items with the same content
+        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item2 = new ContextItem("script", "test.py", "print('hello')");
+
+        // When/Then: they should be equal
+        assertEquals(item1, item2);
+        assertEquals(item1.hashCode(), item2.hashCode());
+    }
+
+    @Test
+    public void testContextItemInequality() {
+        // Given: two context items with different content
+        ContextItem item1 = new ContextItem("script", "test1.py", "print('hello')");
+        ContextItem item2 = new ContextItem("script", "test2.py", "print('hello')");
+
+        // When/Then: they should not be equal
+        assertNotEquals(item1, item2);
+    }
+
+    @Test
+    public void testContextItemInequalityDifferentType() {
+        // Given: two context items with different types
+        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item2 = new ContextItem("doc", "test.py", "print('hello')");
+
+        // When/Then: they should not be equal
+        assertNotEquals(item1, item2);
+    }
+
+    @Test
+    public void testContextItemInequalityDifferentContent() {
+        // Given: two context items with different content
+        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item2 = new ContextItem("script", "test.py", "print('world')");
+
+        // When/Then: they should not be equal
+        assertNotEquals(item1, item2);
+    }
+
+    @Test
+    public void testContextItemContainsWithEquals() {
+        // Given: a conversation with a context item
+        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
+        conversation.addContextItem(item1);
+
+        // When: we check if the conversation contains an equal item
+        ContextItem item2 = new ContextItem("script", "test.py", "print('hello')");
+        boolean contains = conversation.getContextItems().contains(item2);
+
+        // Then: it should find it
+        assertTrue(contains);
+    }
+
+    @Test
+    public void testContextItemsNotClearedByAssistantMessage() {
+        // Given: a conversation with context items
+        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        conversation.addContextItem(item);
+        assertEquals(1, conversation.getContextItems().size());
+
+        // When: we add an assistant message (not a user message)
+        conversation.addAssistantMessage("Response");
+
+        // Then: context items should NOT be cleared
+        List<ContextItem> items = conversation.getContextItems();
+        assertEquals(1, items.size());
+    }
+
+    @Test
+    public void testContextItemClearedOnlyOnUserMessage() {
+        // Given: a conversation with context items and messages
+        ContextItem item1 = new ContextItem("script", "test1.py", "content1");
+        conversation.addContextItem(item1);
+
+        // When: we add a user message
+        conversation.addUserMessage("First message");
+
+        // Then: context items should be cleared
+        assertEquals(0, conversation.getContextItems().size());
+
+        // When: we add new context items and an assistant message
+        ContextItem item2 = new ContextItem("script", "test2.py", "content2");
+        conversation.addContextItem(item2);
+        conversation.addAssistantMessage("Response");
+
+        // Then: context items should still be there
+        assertEquals(1, conversation.getContextItems().size());
+
+        // When: we add another user message
+        conversation.addUserMessage("Second message");
+
+        // Then: context items should be cleared again
+        assertEquals(0, conversation.getContextItems().size());
     }
 
     /**

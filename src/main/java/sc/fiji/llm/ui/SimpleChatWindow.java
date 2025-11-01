@@ -6,7 +6,6 @@ import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,14 +54,12 @@ public class SimpleChatWindow {
     private final JTextField inputField;
     private final JButton sendButton;
     private final JPanel contextTagsPanel;
-    private final List<ContextItem> contextItems;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
 
     public SimpleChatWindow(final Context context, final FijiAssistant assistant, final String title) {
         context.inject(this);
         this.assistant = assistant;
-        this.contextItems = new ArrayList<>();
         this.contextItemButtons = new java.util.HashMap<>();
         final String systemPrompt = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +
             "processing, and scripting in the Fiji/ImageJ environment.\n\n" +
@@ -174,19 +171,6 @@ public class SimpleChatWindow {
             return;
         }
 
-        // Build context with attached items
-        final StringBuilder contextMsg = new StringBuilder();
-
-        if (!contextItems.isEmpty()) {
-            contextMsg.append("===Start of Context Items===\n");
-            for (final ContextItem item : contextItems) {
-                contextMsg.append("\n--- ").append(item.getType()).append(": ").append(item.getLabel()).append(" ---\n");
-                contextMsg.append(item.getContent()).append("\n");
-            }
-            contextMsg.append("===End of Context Items===\n");
-            conversation.addUserMessage(contextMsg.toString());
-        }
-
         // Display user message
         appendToChat(Sender.USER, userMessage);
 
@@ -279,8 +263,13 @@ public class SimpleChatWindow {
 
         // Track messages for API calls
         switch (sender) {
-            case USER -> conversation.addUserMessage(message);
+            case USER -> {
+                conversation.addUserMessage(message);
+                // Clear context buttons and UI after message is sent
+                clearAllContextButtons();
+            }
             case ASSISTANT -> conversation.addAssistantMessage(message);
+            case SYSTEM, ERROR -> {} // System and error messages are not tracked in conversation
         }
     }
 
@@ -453,20 +442,18 @@ public class SimpleChatWindow {
     }
 
     private void addContextItem(final ContextItem item) {
-        // Check for duplicates - don't add the same script twice
-        for (final ContextItem existing : contextItems) {
-            if (existing.getLabel().equals(item.getLabel()) &&
-                existing.getContent().equals(item.getContent())) {
-                // Flash the existing tag to indicate it's already added
-                final JButton existingButton = contextItemButtons.get(existing);
-                if (existingButton != null) {
-                    flashButton(existingButton);
-                }
-                return;
+        // Check for duplicates using equals() - don't add the same item twice
+        if (conversation.getContextItems().contains(item)) {
+            // Flash the existing tag to indicate it's already added
+            final JButton existingButton = contextItemButtons.get(item);
+            if (existingButton != null) {
+                flashButton(existingButton);
             }
+            return;
         }
 
-        contextItems.add(item);
+        // Add to conversation
+        conversation.addContextItem(item);
 
         // Truncate label to max length
         final int maxLabelLength = 15;
@@ -480,7 +467,7 @@ public class SimpleChatWindow {
         tagButton.setToolTipText(item.getLabel() + " - Click to remove");
         tagButton.addActionListener(e -> removeContextItem(item, tagButton));
 
-        // Store the button reference
+        // Store the button reference (item -> button)
         contextItemButtons.put(item, tagButton);
 
         // Style the button to look like a flat tag
@@ -533,12 +520,12 @@ public class SimpleChatWindow {
     }
 
     private void removeContextItem(final ContextItem item, final JButton tagButton) {
-        contextItems.remove(item);
+        conversation.removeContextItem(item);
         contextItemButtons.remove(item);
         final JPanel tagsContainer = (JPanel) contextTagsPanel.getComponent(0);
         tagsContainer.remove(tagButton);
 
-        if (contextItems.isEmpty()) {
+        if (conversation.getContextItems().isEmpty()) {
             contextTagsPanel.setVisible(false);
         }
 
@@ -546,13 +533,21 @@ public class SimpleChatWindow {
         contextTagsPanel.repaint();
     }
 
-    private void clearAllContext() {
-        contextItems.clear();
+    private void clearAllContextButtons() {
+        // Remove all context items from the conversation
+        for (final ContextItem item : new ArrayList<>(conversation.getContextItems())) {
+            conversation.removeContextItem(item);
+        }
+
         contextItemButtons.clear();
         contextTagsPanel.removeAll();
         contextTagsPanel.setVisible(false);
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
+    }
+
+    private void clearAllContext() {
+        clearAllContextButtons();
     }
 
     private void flashButton(final JButton button) {

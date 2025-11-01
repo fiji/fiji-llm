@@ -16,6 +16,7 @@ import dev.langchain4j.model.chat.request.ChatRequest;
  */
 public class Conversation {
     private final List<ChatMessage> messages;
+    private final List<ContextItem> contextItems;
 
     /**
      * Creates a new conversation with the given system message.
@@ -24,16 +25,58 @@ public class Conversation {
      */
     public Conversation(final String systemPrompt) {
         this.messages = new ArrayList<>();
+        this.contextItems = new ArrayList<>();
         this.messages.add(new SystemMessage(systemPrompt));
     }
 
     /**
-     * Adds a user message to the conversation.
+     * Adds a context item to be included in the next user message.
+     *
+     * @param item the context item to add
+     */
+    public void addContextItem(final ContextItem item) {
+        contextItems.add(item);
+    }
+
+    /**
+     * Removes a context item.
+     *
+     * @param item the context item to remove
+     */
+    public void removeContextItem(final ContextItem item) {
+        contextItems.remove(item);
+    }
+
+    /**
+     * Gets an unmodifiable list of context items.
+     *
+     * @return a list of context items
+     */
+    public List<ContextItem> getContextItems() {
+        return Collections.unmodifiableList(contextItems);
+    }
+
+    /**
+     * Adds a user message to the conversation, including any context items.
+     * After adding the message, clears the context items collection.
      *
      * @param userMessage the user message text
      */
     public void addUserMessage(final String userMessage) {
-        messages.add(new UserMessage(userMessage));
+        final StringBuilder fullMessage = new StringBuilder(userMessage);
+
+        if (!contextItems.isEmpty()) {
+            fullMessage.append("\n\n===Start of Context Items===\n");
+            for (final ContextItem item : contextItems) {
+                fullMessage.append(item);
+            }
+            fullMessage.append("===End of Context Items===\n");
+
+            // Clear context items after they've been added to the message
+            contextItems.clear();
+        }
+
+        messages.add(new UserMessage(fullMessage.toString()));
     }
 
     /**
