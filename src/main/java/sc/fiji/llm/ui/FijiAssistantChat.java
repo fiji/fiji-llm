@@ -92,30 +92,10 @@ public class FijiAssistantChat {
         // Left side - context buttons
         final JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
 
-        final JButton scriptButton = new JButton("📜 Add Script");
-        scriptButton.setToolTipText("Add script context (right-click for options)");
+        // Create a square button with dropdown for script selection
+        final JPanel scriptButtonPanel = createScriptSelectorPanel();
 
-        // Left-click: add active script
-        scriptButton.addActionListener(e -> addActiveScriptContext());
-
-        // Right-click: show menu of available scripts
-        scriptButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) {
-                    showScriptSelectionMenu(scriptButton, e.getX(), e.getY());
-                }
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) {
-                    showScriptSelectionMenu(scriptButton, e.getX(), e.getY());
-                }
-            }
-        });
-
-        leftButtons.add(scriptButton);
+        leftButtons.add(scriptButtonPanel);
         // Add more context type buttons here in the future
 
         // Right side - action buttons
@@ -168,6 +148,76 @@ public class FijiAssistantChat {
     public void show() {
         frame.setVisible(true);
         inputField.requestFocus();
+    }
+
+    private JPanel createScriptSelectorPanel() {
+        final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+        panel.setOpaque(false);
+
+        // Main square button with script icon
+        final JButton mainButton = new JButton("📜");
+        mainButton.setPreferredSize(new Dimension(50, 50));
+        mainButton.setToolTipText("Attach the active script as context");
+        mainButton.setFont(mainButton.getFont().deriveFont(24f));
+        mainButton.setFocusPainted(false);
+
+        // Dropdown button (small arrow button)
+        final JButton dropdownButton = new JButton("▼");
+        dropdownButton.setPreferredSize(new Dimension(30, 50));
+        dropdownButton.setToolTipText("Select a script to attach as context");
+        dropdownButton.setFont(dropdownButton.getFont().deriveFont(10f));
+        dropdownButton.setFocusPainted(false);
+
+        // When main button clicked, add active script
+        mainButton.addActionListener(e -> addActiveScriptContext());
+
+        // When dropdown clicked, show script selection menu
+        dropdownButton.addActionListener(e -> {
+            final JPopupMenu menu = buildScriptSelectionMenu();
+            menu.show(dropdownButton, 0, dropdownButton.getHeight());
+        });
+
+        panel.add(mainButton);
+        panel.add(dropdownButton);
+
+        return panel;
+    }
+
+    private JPopupMenu buildScriptSelectionMenu() {
+        final JPopupMenu menu = new JPopupMenu();
+
+        try {
+            final java.util.List<TextEditor> instances = TextEditor.instances;
+
+            if (instances == null || instances.isEmpty()) {
+                // No script editor open
+                final JMenuItem openEditorItem = new JMenuItem("Open Script Editor...");
+                openEditorItem.addActionListener(e ->
+                    commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true));
+                menu.add(openEditorItem);
+            } else {
+                // Add menu item for the active script
+                final JMenuItem activeItem = new JMenuItem("Active Script");
+                activeItem.addActionListener(e -> addActiveScriptContext());
+                menu.add(activeItem);
+
+                // Add menu items for all open scripts if there are multiple
+                if (instances.size() > 1 || hasMultipleTabs(TextEditorUtils.getMostRecentVisibleEditor())) {
+                    menu.addSeparator();
+
+                    for (final TextEditor textEditor : instances) {
+                        addScriptMenuItems(menu, textEditor);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fallback menu
+            final JMenuItem errorItem = new JMenuItem("(Script editor not available)");
+            errorItem.setEnabled(false);
+            menu.add(errorItem);
+        }
+
+        return menu;
     }
 
     private void sendMessage() {
@@ -325,42 +375,6 @@ public class FijiAssistantChat {
         return sb.toString();
     }
 
-    private void showScriptSelectionMenu(final JButton button, final int x, final int y) {
-        final JPopupMenu menu = new JPopupMenu();
-
-        try {
-            final java.util.List<TextEditor> instances = TextEditor.instances;
-
-            if (instances == null || instances.isEmpty()) {
-                // No script editor open
-                final JMenuItem openEditorItem = new JMenuItem("Open Script Editor...");
-                openEditorItem.addActionListener(e ->
-                    commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true));
-                menu.add(openEditorItem);
-            } else {
-                // Add menu item for the active script
-                final JMenuItem activeItem = new JMenuItem("Active Script");
-                activeItem.addActionListener(e -> addActiveScriptContext());
-                menu.add(activeItem);
-
-                // Add menu items for all open scripts if there are multiple
-                if (instances.size() > 1 || hasMultipleTabs(TextEditorUtils.getMostRecentVisibleEditor())) {
-                    menu.addSeparator();
-
-                    for (final TextEditor textEditor : instances) {
-                        addScriptMenuItems(menu, textEditor);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Fallback menu
-            final JMenuItem errorItem = new JMenuItem("(Script editor not available)");
-            errorItem.setEnabled(false);
-            menu.add(errorItem);
-        }
-
-        menu.show(button, x, y);
-    }
     private boolean hasMultipleTabs(final TextEditor textEditor) {
         if (textEditor == null) {
             return false;
