@@ -15,16 +15,16 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 /**
  * LLM provider plugin for Anthropic (Claude).
  */
-@Plugin(type = LLMProvider.class, name = "Anthropic")
+@Plugin(type = LLMProvider.class, name = "Claude")
 public class AnthropicProvider implements LLMProvider {
 	@Override
 	public String getName() {
-		return "Anthropic";
+		return "Claude";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Anthropic's Claude models";
+		return "Claude models by Anthropic";
 	}
 
 	@Override

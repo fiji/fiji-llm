@@ -15,17 +15,17 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 /**
  * LLM provider plugin for OpenAI (ChatGPT).
  */
-@Plugin(type = LLMProvider.class, name = "OpenAI")
+@Plugin(type = LLMProvider.class, name = "ChatGPT")
 public class OpenAIProvider implements LLMProvider {
 
 	@Override
 	public String getName() {
-		return "OpenAI";
+		return "ChatGPT";
 	}
 
 	@Override
 	public String getDescription() {
-		return "OpenAI's GPT models (ChatGPT)";
+		return "ChatGPT models by OpenAI";
 	}
 
 	@Override
