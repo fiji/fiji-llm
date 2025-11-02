@@ -12,6 +12,9 @@ import dev.langchain4j.service.TokenStream;
  */
 public interface FijiAssistant {
 
+	public static final String SYSTEM_PROMPT = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +
+		"processing, and scripting in the Fiji/ImageJ environment.";
+
 	/**
 	 * General chat interaction with structured messages.
 	 *

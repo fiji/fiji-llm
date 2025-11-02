@@ -60,10 +60,7 @@ public class SimpleChatWindow {
         context.inject(this);
         this.assistant = assistant;
         this.contextItemButtons = new java.util.HashMap<>();
-        final String systemPrompt = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +
-            "processing, and scripting in the Fiji/ImageJ environment.\n\n" +
-            "When you generate or modify scripts for the user, always use the createOrUpdateScript tool.";
-        this.conversation = new Conversation(systemPrompt);
+        this.conversation = new Conversation(FijiAssistant.SYSTEM_PROMPT);
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);
