@@ -78,6 +78,12 @@ public class FijiAssistantChat {
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 
+        // Top navigation bar with model selection
+        final JPanel topNavBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        final JButton changeModelButton = new JButton("Change Model");
+        changeModelButton.addActionListener(e -> changeModel());
+        topNavBar.add(changeModelButton);
+
         // Chat display area
         chatArea = new JTextArea();
         chatArea.setEditable(false);
@@ -86,27 +92,14 @@ public class FijiAssistantChat {
         final JScrollPane scrollPane = new JScrollPane(chatArea);
         scrollPane.setPreferredSize(new Dimension(600, 400));
 
-        // Button bar with context buttons on left, action buttons on right
-        final JPanel buttonBar = new JPanel(new BorderLayout());
-
-        // Left side - context buttons
-        final JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        // Button bar with context buttons on left
+        final JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
 
         // Create a square button with dropdown for script selection
         final JPanel scriptButtonPanel = createScriptSelectorPanel();
 
-        leftButtons.add(scriptButtonPanel);
+        buttonBar.add(scriptButtonPanel);
         // Add more context type buttons here in the future
-
-        // Right side - action buttons
-        final JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
-
-        final JButton changeModelButton = new JButton("Change Model");
-        changeModelButton.addActionListener(e -> changeModel());
-        rightButtons.add(changeModelButton);
-
-        buttonBar.add(leftButtons, BorderLayout.WEST);
-        buttonBar.add(rightButtons, BorderLayout.EAST);
 
         // Context tags panel (shows active context items as removable tags)
         contextTagsPanel = new JPanel();
@@ -125,7 +118,8 @@ public class FijiAssistantChat {
 		// Input panel
 		final JPanel inputPanel = new JPanel(new BorderLayout());
 		inputField = new PlaceholderTextField("Type your message here...");
-		sendButton = new JButton("Send");        inputPanel.add(inputField, BorderLayout.CENTER);
+		sendButton = new JButton("Send");
+		inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
 
         inputPanelContainer.add(buttonBar);
@@ -133,6 +127,7 @@ public class FijiAssistantChat {
         inputPanelContainer.add(inputPanel);
 
         // Add components to frame
+        frame.add(topNavBar, BorderLayout.NORTH);
         frame.add(scrollPane, BorderLayout.CENTER);
         frame.add(inputPanelContainer, BorderLayout.SOUTH);
 
@@ -150,16 +145,25 @@ public class FijiAssistantChat {
         inputField.requestFocus();
     }
 
+    /**
+     * Creates and configures a square icon button with consistent styling.
+     * Used for large icon buttons in the button bar (e.g., script selector, change model).
+     */
+    private JButton createIconButton(final String icon, final String tooltip, final float fontSize) {
+        final JButton button = new JButton(icon);
+        button.setPreferredSize(new Dimension(50, 50));
+        button.setToolTipText(tooltip);
+        button.setFont(button.getFont().deriveFont(fontSize));
+        button.setFocusPainted(false);
+        return button;
+    }
+
     private JPanel createScriptSelectorPanel() {
         final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         panel.setOpaque(false);
 
         // Main square button with script icon
-        final JButton mainButton = new JButton("📜");
-        mainButton.setPreferredSize(new Dimension(50, 50));
-        mainButton.setToolTipText("Attach the active script as context");
-        mainButton.setFont(mainButton.getFont().deriveFont(24f));
-        mainButton.setFocusPainted(false);
+        final JButton mainButton = createIconButton("📜", "Attach the active script as context", 24f);
 
         // Dropdown button (small arrow button)
         final JButton dropdownButton = new JButton("▼");
