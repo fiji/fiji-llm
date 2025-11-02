@@ -283,54 +283,15 @@ public class FijiAssistantChat {
                 return;
             }
 
-            // Get the title and editor pane
-            final String scriptName = tab.getTitle();
-            final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-
-            // Get the text content with line numbers
-            final String scriptContent = addLineNumbers(editorPane.getText());
-
-            // Get error output from TextEditor
-            final String errorOutput = getErrorOutput(textEditor);
-
-            // Get instance and tab indices
-            final int instanceIndex = TextEditor.instances.indexOf(textEditor);
-            int tabIndex = -1;
-            // Find the tab index by comparing references
-            for (int i = 0; ; i++) {
-                try {
-                    TextEditorTab currentTab = textEditor.getTab(i);
-                    if (currentTab == null) break;
-                    if (currentTab == tab) {
-                        tabIndex = i;
-                        break;
-                    }
-                } catch (Exception e) {
-                    break;
-                }
+            // Get the tab index
+            final int tabIndex = findTabIndex(textEditor, tab);
+            if (tabIndex < 0) {
+                appendToChat(Sender.ERROR, "Failed to locate tab index");
+                return;
             }
 
-            // Get selection line numbers if available
-            int selectionStartLine = ScriptContextItem.NO_SELECTION;
-            int selectionEndLine = ScriptContextItem.NO_SELECTION;
-            try {
-                final int caretPos = editorPane.getCaretPosition();
-                selectionStartLine = editorPane.getLineOfOffset(caretPos) + 1; // Lines are 1-indexed
-                selectionEndLine = selectionStartLine;
-
-                // If there's a selection, get the end line
-                if (editorPane.getSelectedText() != null) {
-                    final int selectionStart = editorPane.getSelectionStart();
-                    final int selectionEnd = editorPane.getSelectionEnd();
-                    selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1;
-                    selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
-                }
-            } catch (Exception e) {
-                // If we can't get selection info, just use NO_SELECTION
-            }
-
-            // Add the script context with indices, error output, and selection
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionStartLine, selectionEndLine);
+            // Build and add the script context
+            final ScriptContextItem scriptItem = buildScriptContextItem(textEditor, tab, tabIndex);
             addContextItem(scriptItem);
         } catch (Exception e) {
             // If we can't access the script editor, show an error
@@ -447,47 +408,85 @@ public class FijiAssistantChat {
             final TextEditorTab tab = textEditor.getTab(tabIndex);
             if (tab == null) return;
 
-            // Get the title
-            final String scriptName = tab.getTitle();
-
-            // Get the editor pane
-            final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-
-            // Get the text content with line numbers
-            final String scriptContent = addLineNumbers(editorPane.getText());
-
-            // Get error output from TextEditor
-            final String errorOutput = getErrorOutput(textEditor);
-
-            // Get instance index
-            final int instanceIndex = TextEditor.instances.indexOf(textEditor);
-
-            // Get selection line numbers if available
-            int selectionStartLine = ScriptContextItem.NO_SELECTION;
-            int selectionEndLine = ScriptContextItem.NO_SELECTION;
-            try {
-                final int caretPos = editorPane.getCaretPosition();
-                selectionStartLine = editorPane.getLineOfOffset(caretPos) + 1; // Lines are 1-indexed
-                selectionEndLine = selectionStartLine;
-
-                // If there's a selection, get the end line
-                if (editorPane.getSelectedText() != null) {
-                    final int selectionStart = editorPane.getSelectionStart();
-                    final int selectionEnd = editorPane.getSelectionEnd();
-                    selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1;
-                    selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
-                }
-            } catch (Exception e) {
-                // If we can't get selection info, just use NO_SELECTION
-            }
-
-            // Add the script context with indices, error output, and selection
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionStartLine, selectionEndLine);
+            // Build and add the script context
+            final ScriptContextItem scriptItem = buildScriptContextItem(textEditor, tab, tabIndex);
             addContextItem(scriptItem);
 
         } catch (Exception e) {
             appendToChat(Sender.ERROR, "Failed to add script from tab: " + e.getMessage());
         }
+    }
+
+    /**
+     * Builds a ScriptContextItem from a TextEditor and tab.
+     * Extracts script content, error output, and selection information.
+     */
+    private ScriptContextItem buildScriptContextItem(final TextEditor textEditor, final TextEditorTab tab, final int tabIndex) {
+        // Get the title
+        final String scriptName = tab.getTitle();
+
+        // Get the editor pane
+        final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+
+        // Get the text content with line numbers
+        final String scriptContent = addLineNumbers(editorPane.getText());
+
+        // Get error output from TextEditor
+        final String errorOutput = getErrorOutput(textEditor);
+
+        // Get instance index
+        final int instanceIndex = TextEditor.instances.indexOf(textEditor);
+
+        // Get selection line numbers
+        final int[] selectionLines = getSelectionLineNumbers(editorPane);
+
+        return new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionLines[0], selectionLines[1]);
+    }
+
+    /**
+     * Finds the tab index of a given tab within a TextEditor.
+     * Returns -1 if the tab is not found.
+     */
+    private int findTabIndex(final TextEditor textEditor, final TextEditorTab targetTab) {
+        for (int i = 0; ; i++) {
+            try {
+                TextEditorTab currentTab = textEditor.getTab(i);
+                if (currentTab == null) break;
+                if (currentTab == targetTab) {
+                    return i;
+                }
+            } catch (Exception e) {
+                break;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Extracts selection start and end line numbers from an EditorPane.
+     * Returns an array [startLine, endLine]. Both default to NO_SELECTION if extraction fails.
+     */
+    private int[] getSelectionLineNumbers(final EditorPane editorPane) {
+        int selectionStartLine = ScriptContextItem.NO_SELECTION;
+        int selectionEndLine = ScriptContextItem.NO_SELECTION;
+
+        try {
+            final int caretPos = editorPane.getCaretPosition();
+            selectionStartLine = editorPane.getLineOfOffset(caretPos) + 1; // Lines are 1-indexed
+            selectionEndLine = selectionStartLine;
+
+            // If there's a selection, get the end line
+            if (editorPane.getSelectedText() != null) {
+                final int selectionStart = editorPane.getSelectionStart();
+                final int selectionEnd = editorPane.getSelectionEnd();
+                selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1;
+                selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
+            }
+        } catch (Exception e) {
+            // If we can't get selection info, just use NO_SELECTION
+        }
+
+        return new int[]{selectionStartLine, selectionEndLine};
     }
 
     private void addContextItem(final ContextItem item) {
