@@ -290,6 +290,9 @@ public class FijiAssistantChat {
             // Get the text content and language
             final String scriptContent = editorPane.getText();
 
+            // Get error output from TextEditor
+            final String errorOutput = getErrorOutput(textEditor);
+
             // Get instance and tab indices
             final int instanceIndex = TextEditor.instances.indexOf(textEditor);
             int tabIndex = -1;
@@ -307,13 +310,26 @@ public class FijiAssistantChat {
                 }
             }
 
-            // Add the script context with indices
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex);
+            // Add the script context with indices and error output
+            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput);
             addContextItem(scriptItem);
         } catch (Exception e) {
             // If we can't access the script editor, show an error
             appendToChat(Sender.ERROR, "Failed to access script editor: " + e.getMessage());
         }
+    }
+
+    private String getErrorOutput(final TextEditor textEditor) {
+        try {
+            final javax.swing.JTextArea errorScreen = textEditor.getErrorScreen();
+            if (errorScreen != null) {
+                final String text = errorScreen.getText();
+                return text != null ? text.trim() : "";
+            }
+        } catch (Exception e) {
+            // If we can't access error output, just return empty string
+        }
+        return "";
     }
 
     private void showScriptSelectionMenu(final JButton button, final int x, final int y) {
@@ -408,11 +424,14 @@ public class FijiAssistantChat {
             // Get the text content
             final String scriptContent = editorPane.getText();
 
+            // Get error output from TextEditor
+            final String errorOutput = getErrorOutput(textEditor);
+
             // Get instance index
             final int instanceIndex = TextEditor.instances.indexOf(textEditor);
 
-            // Add the script context with indices
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex);
+            // Add the script context with indices and error output
+            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput);
             addContextItem(scriptItem);
 
         } catch (Exception e) {
