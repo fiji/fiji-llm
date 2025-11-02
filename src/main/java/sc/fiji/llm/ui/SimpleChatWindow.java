@@ -29,8 +29,8 @@ import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.Conversation;
@@ -184,11 +184,10 @@ public class SimpleChatWindow {
                 // Create and send ChatRequest
                 final ChatRequest chatRequest = conversation.buildChatRequest();
 
-                final ChatResponse response = assistant.chat(chatRequest);
-                final String assistantMessage = response.aiMessage().text();
+                final AiMessage message = assistant.chat(chatRequest);
 
                 SwingUtilities.invokeLater(() -> {
-                    appendToChat(Sender.ASSISTANT, assistantMessage);
+                    appendToChat(Sender.ASSISTANT, message.text());
                     inputField.setEnabled(true);
                     sendButton.setEnabled(true);
                     inputField.requestFocus();

@@ -1,5 +1,6 @@
 package sc.fiji.llm.assistant;
 
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.TokenStream;
@@ -17,7 +18,7 @@ public interface FijiAssistant {
 	 * @param chatRequest a {@link ChatRequest} containing messages and parameters
 	 * @return a {@link ChatResponse} with the assistant's response
 	 */
-	ChatResponse chat(ChatRequest chatRequest);
+	AiMessage chat(ChatRequest chatRequest);
 
 	/**
 	 * Streaming chat interaction for real-time responses.
