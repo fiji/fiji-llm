@@ -257,6 +257,8 @@ public class SimpleChatWindow {
     }
 
     private void appendToChat(final Sender sender, final String message) {
+        if (message == null) return;
+
         chatArea.append(sender + ": " + message + "\n\n");
         chatArea.setCaretPosition(chatArea.getDocument().getLength());
 
