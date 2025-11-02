@@ -1,5 +1,7 @@
 package sc.fiji.llm.tools;
 
+import java.io.File;
+
 import javax.swing.SwingUtilities;
 
 import org.scijava.command.CommandService;
@@ -136,7 +138,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 
 			// Set the filename using a File object - this will trigger language detection
 			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-			editorPane.setFileName(new java.io.File(scriptName));
+			editorPane.setFileName(new File(scriptName));
 
 			return "Successfully created script: " + scriptName;
 		} catch (Exception e) {

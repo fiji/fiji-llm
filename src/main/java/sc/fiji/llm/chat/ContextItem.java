@@ -1,5 +1,7 @@
 package sc.fiji.llm.chat;
 
+import java.util.Objects;
+
 /**
  * Represents a context item that can be added to the chat.
  */
@@ -43,9 +45,9 @@ public class ContextItem {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         final ContextItem other = (ContextItem) obj;
-        return java.util.Objects.equals(type, other.type) &&
-               java.util.Objects.equals(label, other.label) &&
-               java.util.Objects.equals(content, other.content);
+        return Objects.equals(type, other.type) &&
+               Objects.equals(label, other.label) &&
+               Objects.equals(content, other.content);
     }
 
     @Override
