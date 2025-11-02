@@ -36,9 +36,9 @@ import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ScriptContextItem;
 
 /**
- * Simple Swing-based chat window for LLM chat.
+ * Swing-based chat window for chatting with LLMs in Fiji.
  */
-public class SimpleChatWindow {
+public class FijiAssistantChat {
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
     @Parameter
@@ -56,7 +56,7 @@ public class SimpleChatWindow {
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
 
-    public SimpleChatWindow(final Context context, final FijiAssistant assistant, final String title) {
+    public FijiAssistantChat(final Context context, final FijiAssistant assistant, final String title) {
         context.inject(this);
         this.assistant = assistant;
         this.contextItemButtons = new java.util.HashMap<>();
