@@ -131,12 +131,10 @@ public class FijiAssistantChat {
         final JPanel inputPanelContainer = new JPanel();
         inputPanelContainer.setLayout(new BoxLayout(inputPanelContainer, BoxLayout.Y_AXIS));
 
-        // Input panel
-        final JPanel inputPanel = new JPanel(new BorderLayout());
-        inputField = new JTextField();
-        sendButton = new JButton("Send");
-
-        inputPanel.add(inputField, BorderLayout.CENTER);
+		// Input panel
+		final JPanel inputPanel = new JPanel(new BorderLayout());
+		inputField = new PlaceholderTextField("Type your message here...");
+		sendButton = new JButton("Send");        inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
 
         inputPanelContainer.add(buttonBar);
