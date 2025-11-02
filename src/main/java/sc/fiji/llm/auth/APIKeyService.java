@@ -1,4 +1,4 @@
-package sc.fiji.llm.service;
+package sc.fiji.llm.auth;
 
 import org.scijava.service.SciJavaService;
 

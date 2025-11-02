@@ -13,9 +13,9 @@ import org.scijava.prefs.PrefService;
 
 import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
+import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProviderPlugin;
 import sc.fiji.llm.provider.ProviderService;
-import sc.fiji.llm.service.APIKeyService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 import sc.fiji.llm.ui.ChatbotService;

@@ -6,9 +6,9 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
 import dev.langchain4j.service.AiServices;
+import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProviderPlugin;
 import sc.fiji.llm.provider.ProviderService;
-import sc.fiji.llm.service.APIKeyService;
 
 /**
  * Default implementation of AssistantService.
