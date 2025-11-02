@@ -124,7 +124,7 @@ public class Fiji_Chat extends DynamicCommand {
 			}
 		} else {
 			// Get available providers and populate the provider choices
-			final List<LLMProvider> providers = providerService.getAvailableProviders();
+			final List<LLMProvider> providers = providerService.getInstances();
 			final String[] providerNames = providers.stream()
 					.map(LLMProvider::getName)
 					.toArray(String[]::new);

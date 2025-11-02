@@ -3,7 +3,7 @@ package sc.fiji.llm.provider;
 import java.time.Duration;
 import java.util.List;
 
-import org.scijava.plugin.SciJavaPlugin;
+import org.scijava.plugin.SingletonPlugin;
 
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -13,7 +13,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
  * Each provider (OpenAI, Anthropic, Google, etc.) implements this interface
  * to provide access to their chat models.
  */
-public interface LLMProvider extends SciJavaPlugin {
+public interface LLMProvider extends SingletonPlugin {
 
 	/** Default timeout duration for API calls */
 	public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
