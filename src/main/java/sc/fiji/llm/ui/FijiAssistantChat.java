@@ -530,7 +530,18 @@ public class FijiAssistantChat {
 
         // Create a removable tag button with truncated label and X
         final JButton tagButton = new JButton(displayLabel + " ✕");
-        tagButton.setToolTipText(item.getLabel() + " - Click to remove");
+
+        // Build tooltip with script name and selection info
+        String tooltipText = item.getLabel() + " - Click to remove";
+        if (item instanceof ScriptContextItem) {
+            final ScriptContextItem scriptItem = (ScriptContextItem) item;
+            tooltipText = scriptItem.getScriptName();
+            if (scriptItem.hasSelection()) {
+                tooltipText += " (lines " + scriptItem.getSelectionStartLine() + "-" + scriptItem.getSelectionEndLine() + ")";
+            }
+            tooltipText += " - Click to remove";
+        }
+        tagButton.setToolTipText(tooltipText);
         tagButton.addActionListener(e -> removeContextItem(item, tagButton));
 
         // Store the button reference (item -> button)
