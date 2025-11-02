@@ -18,12 +18,12 @@ public class DefaultProviderService extends AbstractService implements ProviderS
 	private PluginService pluginService;
 
 	@Override
-	public List<LLMProviderPlugin> getAvailableProviders() {
-		return pluginService.createInstancesOfType(LLMProviderPlugin.class);
+	public List<LLMProvider> getAvailableProviders() {
+		return pluginService.createInstancesOfType(LLMProvider.class);
 	}
 
 	@Override
-	public LLMProviderPlugin getProvider(final String providerName) {
+	public LLMProvider getProvider(final String providerName) {
 		return getAvailableProviders().stream()
 			.filter(p -> p.getName().equals(providerName))
 			.findFirst()

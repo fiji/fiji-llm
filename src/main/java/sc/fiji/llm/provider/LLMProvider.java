@@ -13,7 +13,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
  * Each provider (OpenAI, Anthropic, Google, etc.) implements this interface
  * to provide access to their chat models.
  */
-public interface LLMProviderPlugin extends SciJavaPlugin {
+public interface LLMProvider extends SciJavaPlugin {
 
 	/** Default timeout duration for API calls */
 	public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);

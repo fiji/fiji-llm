@@ -7,7 +7,7 @@ import org.scijava.service.Service;
 
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.auth.APIKeyService;
-import sc.fiji.llm.provider.LLMProviderPlugin;
+import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 
 /**
@@ -29,7 +29,7 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 
 	@Override
 	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final Object... tools) {
-		final LLMProviderPlugin provider = providerService.getProvider(providerName);
+		final LLMProvider provider = providerService.getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
 		}

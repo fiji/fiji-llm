@@ -13,8 +13,8 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 /**
  * LLM provider plugin for Google AI (Gemini).
  */
-@Plugin(type = LLMProviderPlugin.class, name = "Google")
-public class GeminiProviderPlugin implements LLMProviderPlugin {
+@Plugin(type = LLMProvider.class, name = "Google")
+public class GeminiProvider implements LLMProvider {
 
 	@Override
 	public String getName() {

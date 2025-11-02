@@ -14,7 +14,7 @@ import org.scijava.prefs.PrefService;
 import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.auth.APIKeyService;
-import sc.fiji.llm.provider.LLMProviderPlugin;
+import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
@@ -129,9 +129,9 @@ public class Fiji_Chat extends DynamicCommand {
 			}
 		} else {
 			// Get available providers and populate the provider choices
-			final List<LLMProviderPlugin> providers = providerService.getAvailableProviders();
+			final List<LLMProvider> providers = providerService.getAvailableProviders();
 			final String[] providerNames = providers.stream()
-					.map(LLMProviderPlugin::getName)
+					.map(LLMProvider::getName)
 					.toArray(String[]::new);
 
 			final MutableModuleItem<String> providerItem = getInfo().getMutableInput("provider", String.class);
@@ -158,7 +158,7 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 
-		final LLMProviderPlugin selectedProvider = providerService.getProvider(provider);
+		final LLMProvider selectedProvider = providerService.getProvider(provider);
 		if (selectedProvider == null) {
 			return;
 		}

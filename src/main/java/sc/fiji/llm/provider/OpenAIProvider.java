@@ -15,8 +15,8 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 /**
  * LLM provider plugin for OpenAI (ChatGPT).
  */
-@Plugin(type = LLMProviderPlugin.class, name = "OpenAI")
-public class OpenAIProviderPlugin implements LLMProviderPlugin {
+@Plugin(type = LLMProvider.class, name = "OpenAI")
+public class OpenAIProvider implements LLMProvider {
 
 	@Override
 	public String getName() {

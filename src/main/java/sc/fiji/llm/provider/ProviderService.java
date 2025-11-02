@@ -15,13 +15,13 @@ public interface ProviderService extends SciJavaService {
 	 *
 	 * @return list of available LLM providers
 	 */
-	List<LLMProviderPlugin> getAvailableProviders();
+	List<LLMProvider> getAvailableProviders();
 
 	/**
 	 * Get the particular provider plugin for the given name.
 	 *
 	 * @param providerName the name of the desired provider
-	 * @return the corresponding {@link LLMProviderPlugin}, or null if not found
+	 * @return the corresponding {@link LLMProvider}, or null if not found
 	 */
-	LLMProviderPlugin getProvider(String providerName);
+	LLMProvider getProvider(String providerName);
 }
