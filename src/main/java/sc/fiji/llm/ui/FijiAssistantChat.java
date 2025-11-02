@@ -287,8 +287,8 @@ public class FijiAssistantChat {
             final String scriptName = tab.getTitle();
             final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 
-            // Get the text content and language
-            final String scriptContent = editorPane.getText();
+            // Get the text content with line numbers
+            final String scriptContent = addLineNumbers(editorPane.getText());
 
             // Get error output from TextEditor
             final String errorOutput = getErrorOutput(textEditor);
@@ -310,8 +310,27 @@ public class FijiAssistantChat {
                 }
             }
 
-            // Add the script context with indices and error output
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput);
+            // Get selection line numbers if available
+            int selectionStartLine = ScriptContextItem.NO_SELECTION;
+            int selectionEndLine = ScriptContextItem.NO_SELECTION;
+            try {
+                final int caretPos = editorPane.getCaretPosition();
+                selectionStartLine = editorPane.getLineOfOffset(caretPos) + 1; // Lines are 1-indexed
+                selectionEndLine = selectionStartLine;
+
+                // If there's a selection, get the end line
+                if (editorPane.getSelectedText() != null) {
+                    final int selectionStart = editorPane.getSelectionStart();
+                    final int selectionEnd = editorPane.getSelectionEnd();
+                    selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1;
+                    selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
+                }
+            } catch (Exception e) {
+                // If we can't get selection info, just use NO_SELECTION
+            }
+
+            // Add the script context with indices, error output, and selection
+            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionStartLine, selectionEndLine);
             addContextItem(scriptItem);
         } catch (Exception e) {
             // If we can't access the script editor, show an error
@@ -330,6 +349,19 @@ public class FijiAssistantChat {
             // If we can't access error output, just return empty string
         }
         return "";
+    }
+
+    private String addLineNumbers(final String content) {
+        final String[] lines = content.split("\n", -1);
+        final StringBuilder sb = new StringBuilder();
+        final int maxLineNumber = lines.length;
+        final int padding = String.valueOf(maxLineNumber).length();
+
+        for (int i = 0; i < lines.length; i++) {
+            sb.append(String.format("%" + padding + "d | %s", i + 1, lines[i])).append("\n");
+        }
+
+        return sb.toString();
     }
 
     private void showScriptSelectionMenu(final JButton button, final int x, final int y) {
@@ -421,8 +453,8 @@ public class FijiAssistantChat {
             // Get the editor pane
             final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 
-            // Get the text content
-            final String scriptContent = editorPane.getText();
+            // Get the text content with line numbers
+            final String scriptContent = addLineNumbers(editorPane.getText());
 
             // Get error output from TextEditor
             final String errorOutput = getErrorOutput(textEditor);
@@ -430,8 +462,27 @@ public class FijiAssistantChat {
             // Get instance index
             final int instanceIndex = TextEditor.instances.indexOf(textEditor);
 
-            // Add the script context with indices and error output
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput);
+            // Get selection line numbers if available
+            int selectionStartLine = ScriptContextItem.NO_SELECTION;
+            int selectionEndLine = ScriptContextItem.NO_SELECTION;
+            try {
+                final int caretPos = editorPane.getCaretPosition();
+                selectionStartLine = editorPane.getLineOfOffset(caretPos) + 1; // Lines are 1-indexed
+                selectionEndLine = selectionStartLine;
+
+                // If there's a selection, get the end line
+                if (editorPane.getSelectedText() != null) {
+                    final int selectionStart = editorPane.getSelectionStart();
+                    final int selectionEnd = editorPane.getSelectionEnd();
+                    selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1;
+                    selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
+                }
+            } catch (Exception e) {
+                // If we can't get selection info, just use NO_SELECTION
+            }
+
+            // Add the script context with indices, error output, and selection
+            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionStartLine, selectionEndLine);
             addContextItem(scriptItem);
 
         } catch (Exception e) {
