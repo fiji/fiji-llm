@@ -1,49 +1,35 @@
-package sc.fiji.llm.service;
-
-import java.util.List;
+package sc.fiji.llm.assistant;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.plugin.PluginService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.provider.LLMProviderPlugin;
+import sc.fiji.llm.provider.ProviderService;
+import sc.fiji.llm.service.APIKeyService;
 
 /**
- * Default implementation of LLMService.
+ * Default implementation of AssistantService.
  */
 @Plugin(type = Service.class)
-public class DefaultLLMService extends AbstractService implements LLMService {
+public class DefaultAssistantService extends AbstractService implements AssistantService {
 
 	@Parameter
-	private PluginService pluginService;
+	private ProviderService providerService;
 
 	@Parameter
 	private APIKeyService apiKeyService;
 
 	@Override
-	public List<LLMProviderPlugin> getAvailableProviders() {
-		return pluginService.createInstancesOfType(LLMProviderPlugin.class);
-	}
-
-	@Override
-	public LLMProviderPlugin getProvider(final String providerName) {
-		return getAvailableProviders().stream()
-			.filter(p -> p.getName().equals(providerName))
-			.findFirst()
-			.orElse(null);
-	}
-
-	@Override
 	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName) {
-			return createAssistant(assistantInterface, providerName, modelName, new Object[0]);
+		return createAssistant(assistantInterface, providerName, modelName, new Object[0]);
 	}
 
 	@Override
 	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final Object... tools) {
-		final LLMProviderPlugin provider = getProvider(providerName);
+		final LLMProviderPlugin provider = providerService.getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
 		}

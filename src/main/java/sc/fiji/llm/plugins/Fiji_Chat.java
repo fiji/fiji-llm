@@ -11,10 +11,11 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
 
+import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.provider.LLMProviderPlugin;
+import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.service.APIKeyService;
-import sc.fiji.llm.service.LLMService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 import sc.fiji.llm.ui.ChatbotService;
@@ -37,7 +38,10 @@ public class Fiji_Chat extends DynamicCommand {
 	private static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
 
 	@Parameter
-	private LLMService llmService;
+	private ProviderService providerService;
+
+	@Parameter
+	private AssistantService assistantService;
 
 	@Parameter
 	private APIKeyService apiKeyService;
@@ -125,7 +129,7 @@ public class Fiji_Chat extends DynamicCommand {
 			}
 		} else {
 			// Get available providers and populate the provider choices
-			final List<LLMProviderPlugin> providers = llmService.getAvailableProviders();
+			final List<LLMProviderPlugin> providers = providerService.getAvailableProviders();
 			final String[] providerNames = providers.stream()
 					.map(LLMProviderPlugin::getName)
 					.toArray(String[]::new);
@@ -154,7 +158,7 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 
-		final LLMProviderPlugin selectedProvider = llmService.getProvider(provider);
+		final LLMProviderPlugin selectedProvider = providerService.getProvider(provider);
 		if (selectedProvider == null) {
 			return;
 		}
@@ -231,7 +235,7 @@ public class Fiji_Chat extends DynamicCommand {
 			final List<AiToolPlugin> tools = aiToolService.getAvailableTools();
 			
 			// Create assistant with tools
-			FijiAssistant assistant = llmService.createAssistant(FijiAssistant.class, provider, model, tools.toArray());
+			FijiAssistant assistant = assistantService.createAssistant(FijiAssistant.class, provider, model, tools.toArray());
 
 			// Launch the chat window using ChatbotService
 			chatbotService.launchChat(assistant, provider + " - " + model);

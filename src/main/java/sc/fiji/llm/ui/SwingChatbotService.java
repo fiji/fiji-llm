@@ -17,7 +17,7 @@ public class SwingChatbotService extends AbstractService implements ChatbotServi
     @Override
     public void launchChat(FijiAssistant assistant, String title) {
         SwingUtilities.invokeLater(() -> {
-            SimpleChatWindow chatWindow = new SimpleChatWindow(getContext(), assistant, title);
+            FijiAssistantChat chatWindow = new FijiAssistantChat(getContext(), assistant, title);
             chatWindow.show();
         });
     }
