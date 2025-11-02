@@ -1,6 +1,5 @@
 package sc.fiji.llm.provider;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,7 +52,8 @@ public class AnthropicProviderPlugin implements LLMProviderPlugin {
 		return AnthropicChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
-			.timeout(Duration.ofSeconds(60))
+			.maxRetries(DEFAULT_MAX_RETRIES)
+			.timeout(DEFAULT_TIMEOUT)
 			.build();
 	}
 
@@ -62,7 +62,7 @@ public class AnthropicProviderPlugin implements LLMProviderPlugin {
 		return AnthropicStreamingChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
-			.timeout(Duration.ofSeconds(60))
+			.timeout(DEFAULT_TIMEOUT)
 			.build();
 	}
 }

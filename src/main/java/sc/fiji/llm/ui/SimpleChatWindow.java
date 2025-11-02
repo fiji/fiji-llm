@@ -6,8 +6,6 @@ import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -30,6 +28,7 @@ import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItem;
@@ -185,31 +184,23 @@ public class SimpleChatWindow {
                 final ChatRequest chatRequest = conversation.buildChatRequest();
 
                 final AiMessage message = assistant.chat(chatRequest);
+                System.out.println(message);
 
-                SwingUtilities.invokeLater(() -> {
-                    appendToChat(Sender.ASSISTANT, message.text());
-                    inputField.setEnabled(true);
-                    sendButton.setEnabled(true);
-                    inputField.requestFocus();
-                });
+                appendToChat(Sender.ASSISTANT, message.text());
+            } catch (RateLimitException e) {
+                // If this was a rate-limit / quota error show a short system message
+                appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
             } catch (Exception e) {
-                // If this was a rate-limit / quota error, parse a retry delay and show a short system message.
-                final Long retrySecs = parseRetrySeconds(e);
-
+                // Fall back to a short message including the exception summary
+                final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
+                if (msg.length() > 300) {
+                    appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
+                } else {
+                    appendToChat(Sender.SYSTEM, "Error: " + msg);
+                }
+            } finally {
+                // Re-enable inputs so the user can change model or try again manually
                 SwingUtilities.invokeLater(() -> {
-                    if (retrySecs != null && retrySecs > 0) {
-                        appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait ~" + retrySecs + "s before retrying, or select a different model.");
-                    } else {
-                        // Fall back to a short message including the exception summary
-                        final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
-                        if (msg.length() > 300) {
-                            appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
-                        } else {
-                            appendToChat(Sender.SYSTEM, "Error: " + msg);
-                        }
-                    }
-
-                    // Re-enable inputs so the user can change model or try again manually
                     inputField.setEnabled(true);
                     sendButton.setEnabled(true);
                     inputField.requestFocus();
@@ -218,60 +209,24 @@ public class SimpleChatWindow {
         }).start();
     }
 
-    /**
-     * Parse a retry delay in seconds from the exception message chain.
-     * Recognizes patterns like "Please retry in 25.3s" or JSON fields like "retryDelay":"26s".
-     */
-    private Long parseRetrySeconds(final Throwable t) {
-        if (t == null) return null;
-
-        final Pattern p1 = Pattern.compile("Please retry in\\s*([0-9]+(?:\\.[0-9]+)?)s", Pattern.CASE_INSENSITIVE);
-        final Pattern p2 = Pattern.compile("retryDelay.*?(\\d+)s", Pattern.CASE_INSENSITIVE);
-
-        Throwable cur = t;
-        while (cur != null) {
-            final String msg = cur.getMessage();
-            if (msg != null) {
-                Matcher m1 = p1.matcher(msg);
-                if (m1.find()) {
-                    try {
-                        double secs = Double.parseDouble(m1.group(1));
-                        return (long) Math.ceil(secs);
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-
-                Matcher m2 = p2.matcher(msg);
-                if (m2.find()) {
-                    try {
-                        long secs = Long.parseLong(m2.group(1));
-                        return secs;
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-            }
-            cur = cur.getCause();
-        }
-
-        return null;
-    }
-
     private void appendToChat(final Sender sender, final String message) {
         if (message == null) return;
 
-        chatArea.append(sender + ": " + message + "\n\n");
-        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+        SwingUtilities.invokeLater(() -> {
+            chatArea.append(sender + ": " + message + "\n\n");
+            chatArea.setCaretPosition(chatArea.getDocument().getLength());
 
-        // Track messages for API calls
-        switch (sender) {
-            case USER -> {
-                conversation.addUserMessage(message);
-                // Clear context buttons and UI after message is sent
-                clearAllContextButtons();
+            // Track messages for API calls
+            switch (sender) {
+                case USER -> {
+                    conversation.addUserMessage(message);
+                    // Clear context buttons and UI after message is sent
+                    clearAllContextButtons();
+                }
+                case ASSISTANT -> conversation.addAssistantMessage(message);
+                case SYSTEM, ERROR -> {} // System and error messages are not tracked in conversation
             }
-            case ASSISTANT -> conversation.addAssistantMessage(message);
-            case SYSTEM, ERROR -> {} // System and error messages are not tracked in conversation
-        }
+        });
     }
 
     private void changeModel() {

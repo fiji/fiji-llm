@@ -1,6 +1,5 @@
 package sc.fiji.llm.provider;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,7 +66,8 @@ public class OpenAIProviderPlugin implements LLMProviderPlugin {
 		return OpenAiChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
-			.timeout(Duration.ofSeconds(60))
+			.maxRetries(DEFAULT_MAX_RETRIES)
+			.timeout(DEFAULT_TIMEOUT)
 			.build();
 	}
 
@@ -76,7 +76,7 @@ public class OpenAIProviderPlugin implements LLMProviderPlugin {
 		return OpenAiStreamingChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
-			.timeout(Duration.ofSeconds(60))
+			.timeout(DEFAULT_TIMEOUT)
 			.build();
 	}
 }

@@ -1,5 +1,6 @@
 package sc.fiji.llm.provider;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.scijava.plugin.SciJavaPlugin;
@@ -13,6 +14,12 @@ import dev.langchain4j.model.chat.StreamingChatModel;
  * to provide access to their chat models.
  */
 public interface LLMProviderPlugin extends SciJavaPlugin {
+
+	/** Default timeout duration for API calls */
+	public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
+
+	/** Default maximum number of retries for API calls */
+	public static int DEFAULT_MAX_RETRIES = 0;
 
 	/**
 	 * Get the name of this provider.

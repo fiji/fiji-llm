@@ -1,6 +1,5 @@
 package sc.fiji.llm.provider;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -55,7 +54,8 @@ public class GeminiProviderPlugin implements LLMProviderPlugin {
 		return GoogleAiGeminiChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
-			.timeout(Duration.ofSeconds(60))
+			.timeout(DEFAULT_TIMEOUT)
+			.maxRetries(DEFAULT_MAX_RETRIES)
 			.build();
 	}
 
@@ -64,7 +64,7 @@ public class GeminiProviderPlugin implements LLMProviderPlugin {
 		return GoogleAiGeminiStreamingChatModel.builder()
 			.apiKey(apiKey)
 			.modelName(modelName)
-			.timeout(Duration.ofSeconds(60))
+			.timeout(DEFAULT_TIMEOUT)
 			.build();
 	}
 }
