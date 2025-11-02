@@ -482,22 +482,21 @@ public class FijiAssistantChat {
 
     /**
      * Extracts selection start and end line numbers from an EditorPane.
-     * Returns an array [startLine, endLine]. Both default to NO_SELECTION if extraction fails.
+     * Returns an array [startLine, endLine]. Both default to NO_SELECTION if there is no actual highlighted text.
+     * A true selection is indicated by either different start/end lines, or same line with actual selected text.
      */
     private int[] getSelectionLineNumbers(final EditorPane editorPane) {
         int selectionStartLine = ScriptContextItem.NO_SELECTION;
         int selectionEndLine = ScriptContextItem.NO_SELECTION;
 
         try {
-            final int caretPos = editorPane.getCaretPosition();
-            selectionStartLine = editorPane.getLineOfOffset(caretPos) + 1; // Lines are 1-indexed
-            selectionEndLine = selectionStartLine;
+            final String selectedText = editorPane.getSelectedText();
 
-            // If there's a selection, get the end line
-            if (editorPane.getSelectedText() != null) {
+            // Only report selection if there's actual highlighted text
+            if (selectedText != null && !selectedText.isEmpty()) {
                 final int selectionStart = editorPane.getSelectionStart();
                 final int selectionEnd = editorPane.getSelectionEnd();
-                selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1;
+                selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1; // Lines are 1-indexed
                 selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
             }
         } catch (Exception e) {
