@@ -16,8 +16,6 @@ import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
-import sc.fiji.llm.tools.AiToolPlugin;
-import sc.fiji.llm.tools.AiToolService;
 import sc.fiji.llm.ui.ChatbotService;
 
 /**
@@ -51,9 +49,6 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter
 	private ChatbotService chatbotService;
-
-	@Parameter
-	private AiToolService aiToolService;
 
 	@Parameter(label = "",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
@@ -231,11 +226,8 @@ public class Fiji_Chat extends DynamicCommand {
 			prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
 			prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
 			
-			// Get all available AI tools as plugins
-			final List<AiToolPlugin> tools = aiToolService.getAvailableTools();
-			
 			// Create assistant with tools
-			FijiAssistant assistant = assistantService.createAssistant(FijiAssistant.class, provider, model, tools.toArray());
+			FijiAssistant assistant = assistantService.createAssistant(FijiAssistant.class, provider, model);
 
 			// Launch the chat window using ChatbotService
 			chatbotService.launchChat(assistant, provider + " - " + model);

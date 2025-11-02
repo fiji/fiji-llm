@@ -33,7 +33,9 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.Conversation;
+import sc.fiji.llm.chat.ConversationBuilder;
 import sc.fiji.llm.chat.ScriptContextItem;
+import sc.fiji.llm.tools.AiToolService;
 
 /**
  * Swing-based chat window for chatting with LLMs in Fiji.
@@ -41,11 +43,17 @@ import sc.fiji.llm.chat.ScriptContextItem;
 public class FijiAssistantChat {
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
+	private static final String SYSTEM_PROMPT = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +
+		"processing, and scripting in the Fiji/ImageJ environment.";
+
     @Parameter
     private CommandService commandService;
 
     @Parameter
     private PrefService prefService;
+
+	@Parameter
+	private AiToolService aiToolService;
 
     private final FijiAssistant assistant;
     private final JFrame frame;
@@ -60,7 +68,10 @@ public class FijiAssistantChat {
         context.inject(this);
         this.assistant = assistant;
         this.contextItemButtons = new java.util.HashMap<>();
-        this.conversation = new Conversation(FijiAssistant.SYSTEM_PROMPT);
+        this.conversation = new ConversationBuilder()
+            .withBaseSystemMessage(SYSTEM_PROMPT)
+            .withTools(aiToolService.getInstances())
+            .build();
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);
@@ -165,21 +176,23 @@ public class FijiAssistantChat {
             return;
         }
 
-        // Display user message
+        // Add message to conversation synchronously on EDT before spawning background thread
+        conversation.addUserMessage(userMessage);
+
+        // Display user message (this will use invokeLater but message is already in conversation)
         appendToChat(Sender.USER, userMessage);
 
         inputField.setText("");
         inputField.setEnabled(false);
         sendButton.setEnabled(false);
 
-        // Process in background thread
+        // Process in background thread (LLM calls happen OFF the EDT)
         new Thread(() -> {
             try {
-                // Create and send ChatRequest
+                // Create and send ChatRequest (happens on background thread)
                 final ChatRequest chatRequest = conversation.buildChatRequest();
 
                 final AiMessage message = assistant.chat(chatRequest);
-                System.out.println(message);
 
                 appendToChat(Sender.ASSISTANT, message.text());
             } catch (RateLimitException e) {
@@ -207,6 +220,7 @@ public class FijiAssistantChat {
     private void appendToChat(final Sender sender, final String message) {
         if (message == null) return;
 
+        // Always use invokeLater since this can be called from both EDT and background threads
         SwingUtilities.invokeLater(() -> {
             chatArea.append(sender + ": " + message + "\n\n");
             chatArea.setCaretPosition(chatArea.getDocument().getLength());
@@ -214,8 +228,8 @@ public class FijiAssistantChat {
             // Track messages for API calls
             switch (sender) {
                 case USER -> {
-                    conversation.addUserMessage(message);
-                    // Clear context buttons and UI after message is sent
+                    // User message already added to conversation synchronously in sendMessage()
+                    // Just clear context UI
                     clearAllContextButtons();
                 }
                 case ASSISTANT -> conversation.addAssistantMessage(message);
@@ -275,11 +289,26 @@ public class FijiAssistantChat {
 
             // Get the text content and language
             final String scriptContent = editorPane.getText();
-            final Object language = editorPane.getCurrentLanguage();
-            final String languageName = language != null ? language.toString().toLowerCase() : "unknown";
 
-            // Add the script context
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, languageName);
+            // Get instance and tab indices
+            final int instanceIndex = TextEditor.instances.indexOf(textEditor);
+            int tabIndex = -1;
+            // Find the tab index by comparing references
+            for (int i = 0; ; i++) {
+                try {
+                    TextEditorTab currentTab = textEditor.getTab(i);
+                    if (currentTab == null) break;
+                    if (currentTab == tab) {
+                        tabIndex = i;
+                        break;
+                    }
+                } catch (Exception e) {
+                    break;
+                }
+            }
+
+            // Add the script context with indices
+            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex);
             addContextItem(scriptItem);
         } catch (Exception e) {
             // If we can't access the script editor, show an error
@@ -379,12 +408,11 @@ public class FijiAssistantChat {
             // Get the text content
             final String scriptContent = editorPane.getText();
 
-            // Get the language
-            final Object language = editorPane.getCurrentLanguage();
-            final String languageName = language != null ? language.toString().toLowerCase() : "unknown";
+            // Get instance index
+            final int instanceIndex = TextEditor.instances.indexOf(textEditor);
 
-            // Add the script context
-            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, languageName);
+            // Add the script context with indices
+            final ScriptContextItem scriptItem = new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex);
             addContextItem(scriptItem);
 
         } catch (Exception e) {

@@ -9,6 +9,7 @@ import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
+import sc.fiji.llm.tools.AiToolService;
 
 /**
  * Default implementation of AssistantService.
@@ -22,13 +23,11 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 	@Parameter
 	private APIKeyService apiKeyService;
 
-	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName) {
-		return createAssistant(assistantInterface, providerName, modelName, new Object[0]);
-	}
+	@Parameter
+	private AiToolService toolService;
 
 	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final Object... tools) {
+	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName) {
 		final LLMProvider provider = providerService.getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
@@ -42,7 +41,7 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 		return AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(apiKey, modelName))
 			.chatModel(provider.createChatModel(apiKey, modelName))
-			.tools(tools)
+			.tools(toolService.getInstances().toArray())
 			.build();
 	}
 }

@@ -1,6 +1,6 @@
 package sc.fiji.llm.tools;
 
-import org.scijava.plugin.SciJavaPlugin;
+import org.scijava.plugin.SingletonPlugin;
 
 /**
  * Plugin interface for AI tools that can be used by LLM assistants.
@@ -9,7 +9,7 @@ import org.scijava.plugin.SciJavaPlugin;
  * to define the capabilities available to the AI assistant.
  * </p>
  */
-public interface AiToolPlugin extends SciJavaPlugin {
+public interface AiToolPlugin extends SingletonPlugin {
 
 	/**
 	 * Get the name of this tool.
@@ -21,7 +21,7 @@ public interface AiToolPlugin extends SciJavaPlugin {
 	/**
 	 * Get a description of this tool's capabilities.
 	 *
-	 * @return a human-readable description
+	 * @return a description of how this tool should be used by an LLM
 	 */
-	String getDescription();
+	String getUsage();
 }

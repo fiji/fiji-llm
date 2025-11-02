@@ -1,8 +1,12 @@
 package sc.fiji.llm.tools;
 
+import javax.swing.SwingUtilities;
+
 import org.scijava.command.CommandService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.swing.script.EditorPane;
+import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
@@ -21,121 +25,122 @@ public class ScriptEditorTool implements AiToolPlugin {
 
 	@Override
 	public String getName() {
-		return "Script Editor";
+		return "Script Editor Toolset";
 	}
 
 	@Override
-	public String getDescription() {
-		return "Tools for creating and managing scripts in the Fiji script editor";
+	public String getUsage() {
+		return "Create and update scripts in the Fiji script editor. " +
+			"Script language is automatically detected from the file extension. " +
+			"Supported languages: Python (.py), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh), ImageJ Macro (.ijm). " +
+			"Use createScript for new scripts. " +
+			"Use updateScript with ScriptContext indices to modify existing scripts.";
 	}
 
-	/**
-	 * Opens the Fiji script editor window.
-	 *
-	 * @return a message indicating success or failure
-	 */
-	@Tool("Opens the Fiji script editor window. " +
-          "Use this before creating scripts. " +
-          "The editor will open with an empty tab ready for use.")
-	public String openScriptEditor() {
+	@Tool(name = "createScript", value = {
+		"Creates a new script in the Fiji script editor.",
+		"Arg 1 - scriptName: The name of the script file including extension (e.g., 'example.py', 'analysis.groovy', 'macro.ijm').",
+		"Arg 2 - content: The complete source code you wrote for the script.",
+		"Returns: Success message with script name, or ERROR message if creation failed."
+	})
+	public String createScript(final String scriptName, final String content) {
 		try {
-			if (TextEditorUtils.getMostRecentVisibleEditor() != null) {
-				return "Script editor is already open and ready for use.";
-			}
-			commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
-
-			return "Script editor started...";
-		} catch (Exception e) {
-			return "Failed to open script editor: " + e.getMessage();
-		}
-	}
-
-	/**
-	 * Creates a new script or updates an existing one in the script editor.
-	 *
-	 * @param scriptName the name of the script (e.g., "MyScript.groovy")
-	 * @param content the script content/code
-	 * @return a message indicating success or failure
-	 */
-	@Tool("Creates or updates a script in the Fiji script editor with the provided code. " +
-          "Use this when you want to provide executable code to the user. " +
-          "The scriptName should include the file extension (e.g., 'example.groovy'). " +
-          "Valid extensions include: py, groovy, js, java, rb, bsh " +
-          "IMPORTANT: The script editor must be open first. If you get an error that the editor is not open, " +
-          "call openScriptEditor first, then call this function again.")
-	public String createOrUpdateScript(String scriptName, String content) {
-		// TODO could use scriptService.getLanguages()
-		// Check if the script editor is open - fail fast if not. Prefer the
-		// most-recent visible instance.
-		final TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
-		if (textEditor == null) {
-			return "Script editor is not open. Please call openScriptEditor first, then try again.";
-		}
-
-		// Check if a tab with this name already exists
-		TextEditorTab existingTab = findTabByName(textEditor, scriptName);
-
-		if (existingTab != null) {
-			// Update existing tab content
-			existingTab.getEditorPane().setText(content);
-			// Make sure this tab is selected
-			for (int i = 0; i < getTabCount(textEditor); i++) {
-				if (textEditor.getTab(i) == existingTab) {
-					textEditor.switchTo(i);
-					break;
+			// Check if there's an open script editor instance
+			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
+			
+			if (textEditor == null) {
+				// Open a new editor on EDT
+				SwingUtilities.invokeAndWait(() -> commandService.run(ScriptEditor.class, true));
+				
+				// Wait briefly for editor to initialize
+				Thread.sleep(500);
+				
+				textEditor = TextEditorUtils.getMostRecentVisibleEditor();
+				if (textEditor == null) {
+					return "ERROR: Failed to open script editor";
 				}
 			}
-		} else {
+			
+			// Create new tab with the script content on EDT
+			final TextEditor editor = textEditor;
+			final String[] result = new String[1];
+			SwingUtilities.invokeAndWait(() -> {
+				result[0] = createNewTab(editor, scriptName, content);
+			});
+			return result[0];
+		} catch (Exception e) {
+			return "ERROR: Failed to create script: " + e.getMessage();
+		}
+	}
+
+	@Tool(name = "updateScript", value = {
+		"Updates an existing open script with new content.",
+		"Arg 1 - instanceIndex: The script editor instance index, from ScriptContextItem.",
+		"Arg 2 - tabIndex: The tab index within the editor instance, from ScriptContextItem.",
+		"Arg 3 - content: The new content for the indicated script.",
+		"Returns: Success message with indices, or ERROR message if update failed."
+	})
+	public String updateScript(final int instanceIndex, final int tabIndex, final String content) {
+		try {
+			// Validate instance index
+			if (instanceIndex < 0 || instanceIndex >= TextEditor.instances.size()) {
+				return "ERROR: Invalid instance index " + instanceIndex;
+			}
+			
+			final TextEditor textEditor = TextEditor.instances.get(instanceIndex);
+			if (textEditor == null) {
+				return "ERROR: No editor found at instance index " + instanceIndex;
+			}
+			
+			// Perform UI operations on EDT
+			final String[] result = new String[1];
+			SwingUtilities.invokeAndWait(() -> {
+				try {
+					// Validate tab index
+					final TextEditorTab tab = textEditor.getTab(tabIndex);
+					
+					if (tab == null) {
+						result[0] = "ERROR: No tab found at index " + tabIndex;
+						return;
+					}
+					
+					// Update the tab content
+					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+					editorPane.setText(content);
+					
+					// Switch to the updated tab
+					textEditor.switchTo(tabIndex);
+					
+					result[0] = "Successfully updated script at instance " + instanceIndex + ", tab " + tabIndex;
+				} catch (Exception e) {
+					result[0] = "ERROR: Invalid tab index " + tabIndex + ": " + e.getMessage();
+				}
+			});
+			return result[0];
+		} catch (Exception e) {
+			return "ERROR: Failed to update script: " + e.getMessage();
+		}
+	}
+
+	private String createNewTab(final TextEditor textEditor, final String scriptName, final String content) {
+		try {
 			// Extract extension from scriptName
 			String extension = "";
-			int lastDot = scriptName.lastIndexOf('.');
+			final int lastDot = scriptName.lastIndexOf('.');
 			if (lastDot > 0 && lastDot < scriptName.length() - 1) {
 				extension = scriptName.substring(lastDot + 1);
 			}
 
 			// Create new tab - newTab() expects just the extension
-			TextEditorTab tab = textEditor.newTab(content, extension);
+			final TextEditorTab tab = textEditor.newTab(content, extension);
 
 			// Set the filename using a File object - this will trigger language detection
-			// We create a File object (doesn't need to exist on disk) so that
-			// setFileName(File) is called, which internally calls setLanguageByFileName
-			org.scijava.ui.swing.script.EditorPane editorPane =
-				(org.scijava.ui.swing.script.EditorPane) tab.getEditorPane();
+			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 			editorPane.setFileName(new java.io.File(scriptName));
-		}
 
-		return "Successfully created/updated script: " + scriptName;
-	}
-
-	private TextEditorTab findTabByName(TextEditor textEditor, String scriptName) {
-		// Count tabs by iterating until getTab returns null or throws
-		int i = 0;
-		while (true) {
-			try {
-				TextEditorTab tab = textEditor.getTab(i);
-				if (tab == null) break;
-				if (tab.getTitle().equals(scriptName)) {
-					return tab;
-				}
-				i++;
-			} catch (Exception e) {
-				break;
-			}
+			return "Successfully created script: " + scriptName;
+		} catch (Exception e) {
+			return "ERROR: Failed to create new tab: " + e.getMessage();
 		}
-		return null;
-	}
-
-	// Helper method to get tab count
-	private int getTabCount(TextEditor textEditor) {
-		int count = 0;
-		while (true) {
-			try {
-				if (textEditor.getTab(count) == null) break;
-				count++;
-			} catch (Exception e) {
-				break;
-			}
-		}
-		return count;
 	}
 }
