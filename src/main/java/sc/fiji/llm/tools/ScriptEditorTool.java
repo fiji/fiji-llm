@@ -12,6 +12,7 @@ import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
+import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.ui.TextEditorUtils;
 
@@ -34,18 +35,19 @@ public class ScriptEditorTool implements AiToolPlugin {
 	public String getUsage() {
 		return "Create and update scripts in the Fiji script editor. " +
 			"Script names must have a file extension, which determines language automatically. " +
-			"Supported languages: Python (.py), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh), ImageJ Macro (.ijm). " +
-			"Use createScript for new scripts. " +
-			"Use updateScript with ScriptContext indices to modify existing scripts.";
+			"Supported languages: Python (.py), ImageJ Macro (.ijm), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh)  " +
+			"Use createScript to make new scripts. " +
+			"Use updateScript to modify existing scripts.";
 	}
 
 	@Tool(name = "createScript", value = {
-		"Creates a new script in the Fiji script editor.",
-		"Arg 1 - scriptName: The name of the script file including extension (e.g., 'example.py', 'analysis.groovy', 'macro.ijm').",
-		"Arg 2 - content: The complete source code you wrote for the script.",
-		"Returns: Success message with script name, or ERROR message if creation failed."
+		"Create a new script in the Fiji script editor",
+		"Parameters:",
+		"	scriptName - The name of the script file including extension (e.g., 'example.py', 'macro.ijm')",
+		"	content - The complete source code you wrote for the script",
+		"Returns - Success message with script name, or ERROR message if creation failed"
 	})
-	public String createScript(final String scriptName, final String content) {
+	public String createScript(@P("scriptName") final String scriptName, @P("content") final String content) {
 		try {
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
@@ -80,12 +82,13 @@ public class ScriptEditorTool implements AiToolPlugin {
 
 	@Tool(name = "updateScript", value = {
 		"Updates an existing open script with new content.",
-		"Arg 1 - instanceIndex: The script editor instance index, from ScriptContextItem.",
-		"Arg 2 - tabIndex: The tab index within the editor instance, from ScriptContextItem.",
-		"Arg 3 - content: The new content for the indicated script.",
+		"Parameters:",
+		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
+		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
+		"	content - The new content for the indicated script.",
 		"Returns: Success message with indices, or ERROR message if update failed."
 	})
-	public String updateScript(final int instanceIndex, final int tabIndex, final String content) {
+	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
 		try {
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
