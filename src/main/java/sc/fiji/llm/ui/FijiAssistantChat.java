@@ -530,15 +530,24 @@ public class FijiAssistantChat {
         // Add to conversation
         conversation.addContextItem(item);
 
-        // Truncate label to max length
+        // Truncate label to max length (not counting selection info)
         final int maxLabelLength = 15;
         String displayLabel = item.getLabel();
         if (displayLabel.length() > maxLabelLength) {
             displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
         }
 
-        // Create a removable tag button with truncated label and X
-        final JButton tagButton = new JButton(displayLabel + " ✕");
+        // Append selection info if this is a script context item with a selection
+        String selectionInfo = "";
+        if (item instanceof ScriptContextItem) {
+            final ScriptContextItem scriptItem = (ScriptContextItem) item;
+            if (scriptItem.hasSelection()) {
+                selectionInfo = " (" + scriptItem.getSelectionStartLine() + "-" + scriptItem.getSelectionEndLine() + ")";
+            }
+        }
+
+        // Create a removable tag button with truncated label, selection info, and X
+        final JButton tagButton = new JButton(displayLabel + selectionInfo + " ✕");
 
         // Build tooltip with script name and selection info
         String tooltipText = item.getLabel() + " - Click to remove";
