@@ -440,8 +440,8 @@ public class FijiAssistantChat {
      * Extracts script content, error output, and selection information.
      */
     private ScriptContextItem buildScriptContextItem(final TextEditor textEditor, final TextEditorTab tab, final int tabIndex) {
-        // Get the title
-        final String scriptName = tab.getTitle();
+        // Get the title and strip leading asterisks (which indicate unsaved changes)
+        final String scriptName = stripLeadingAsterisks(tab.getTitle());
 
         // Get the editor pane
         final EditorPane editorPane = (EditorPane) tab.getEditorPane();
@@ -459,6 +459,16 @@ public class FijiAssistantChat {
         final int[] selectionLines = getSelectionLineNumbers(editorPane);
 
         return new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionLines[0], selectionLines[1]);
+    }
+
+    /**
+     * Strips leading asterisks from a script name (asterisks indicate unsaved changes).
+     */
+    private String stripLeadingAsterisks(final String scriptName) {
+        if (scriptName == null) {
+            return null;
+        }
+        return scriptName.replaceAll("^\\*+", "");
     }
 
     /**
