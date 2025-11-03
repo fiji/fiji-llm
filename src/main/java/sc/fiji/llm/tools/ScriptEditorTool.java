@@ -47,6 +47,9 @@ public class ScriptEditorTool implements AiToolPlugin {
 	})
 	public String createScript(final String scriptName, final String content) {
 		try {
+			// Strip line numbers from content if present
+			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
+
 			// Check if there's an open script editor instance
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
 			
@@ -67,7 +70,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 			final TextEditor editor = textEditor;
 			final String[] result = new String[1];
 			SwingUtilities.invokeAndWait(() -> {
-				result[0] = createNewTab(editor, scriptName, content);
+				result[0] = createNewTab(editor, scriptName, cleanContent);
 			});
 			return result[0];
 		} catch (Exception e) {
@@ -84,6 +87,9 @@ public class ScriptEditorTool implements AiToolPlugin {
 	})
 	public String updateScript(final int instanceIndex, final int tabIndex, final String content) {
 		try {
+			// Strip line numbers from content if present
+			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
+
 			// Validate instance index
 			if (instanceIndex < 0 || instanceIndex >= TextEditor.instances.size()) {
 				return "ERROR: Invalid instance index " + instanceIndex;
@@ -108,7 +114,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 					
 					// Update the tab content
 					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-					editorPane.setText(content);
+					editorPane.setText(cleanContent);
 					
 					// Switch to the updated tab
 					textEditor.switchTo(tabIndex);

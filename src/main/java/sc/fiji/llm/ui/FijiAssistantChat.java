@@ -367,19 +367,6 @@ public class FijiAssistantChat {
         return "";
     }
 
-    private String addLineNumbers(final String content) {
-        final String[] lines = content.split("\n", -1);
-        final StringBuilder sb = new StringBuilder();
-        final int maxLineNumber = lines.length;
-        final int padding = String.valueOf(maxLineNumber).length();
-
-        for (int i = 0; i < lines.length; i++) {
-            sb.append(String.format("%" + padding + "d | %s", i + 1, lines[i])).append("\n");
-        }
-
-        return sb.toString();
-    }
-
     private boolean hasMultipleTabs(final TextEditor textEditor) {
         if (textEditor == null) {
             return false;
@@ -448,7 +435,7 @@ public class FijiAssistantChat {
         final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 
         // Get the text content with line numbers
-        final String scriptContent = addLineNumbers(editorPane.getText());
+        final String scriptContent = TextEditorUtils.addLineNumbers(editorPane.getText());
 
         // Get error output from TextEditor
         final String errorOutput = getErrorOutput(textEditor);
