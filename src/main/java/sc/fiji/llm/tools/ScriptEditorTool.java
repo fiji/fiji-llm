@@ -33,7 +33,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 	@Override
 	public String getUsage() {
 		return "Create and update scripts in the Fiji script editor. " +
-			"Script language is automatically detected from the file extension. " +
+			"Script names must have a file extension, which determines language automatically. " +
 			"Supported languages: Python (.py), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh), ImageJ Macro (.ijm). " +
 			"Use createScript for new scripts. " +
 			"Use updateScript with ScriptContext indices to modify existing scripts.";
