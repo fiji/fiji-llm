@@ -43,8 +43,9 @@ import sc.fiji.llm.tools.AiToolService;
 public class FijiAssistantChat {
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
-	private static final String SYSTEM_PROMPT = "You are an expert Fiji/ImageJ assistant. You help users with image analysis, " +
-		"processing, and scripting in the Fiji/ImageJ environment.";
+    private static final String SYSTEM_PROMPT = "You are an assistant chatbot running as an integrated plugin within the Fiji (ImageJ) application for scientific image analysis. " +
+        "Your mission is to help users develop reproducible workflows (e.g. via scripts), answer their image analysis questions, and select the best tools for their data and goals. " +
+        "Key elements of your persona: positive, validating, patient, encouraging, understanding.";
 
     @Parameter
     private CommandService commandService;
