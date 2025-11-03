@@ -86,9 +86,10 @@ public class ScriptEditorTool implements AiToolPlugin {
 		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
 		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
 		"	content - The new content for the indicated script.",
+		"	name - (Optional) New script name with extension (e.g., 'renamed.ijm') to change the script language or rename.",
 		"Returns: Success message with indices, or ERROR message if update failed."
 	})
-	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
+	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content, @P(value = "name", required = false) final String name) {
 		try {
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
@@ -119,6 +120,11 @@ public class ScriptEditorTool implements AiToolPlugin {
 					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 					editorPane.setText(cleanContent);
 					
+					// Update the filename if name is provided
+					if (name != null && !name.isEmpty()) {
+						editorPane.setFileName(new File(name));
+					}
+
 					// Switch to the updated tab
 					textEditor.switchTo(tabIndex);
 					
