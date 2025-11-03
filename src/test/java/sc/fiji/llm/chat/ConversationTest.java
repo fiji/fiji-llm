@@ -3,6 +3,7 @@ package sc.fiji.llm.chat;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -378,6 +379,115 @@ public class ConversationTest {
         conversation.addUserMessage("Second message");
 
         // Then: context items should be cleared again
+        assertEquals(0, conversation.getContextItems().size());
+    }
+
+    @Test
+    public void testScriptContextItemMergeKey() {
+        // Given: a script context item
+        ScriptContextItem item = new ScriptContextItem("test.py", "content", 0, 1);
+
+        // When: we get the merge key
+        String mergeKey = item.getMergeKey();
+
+        // Then: it should be constructed from instance and tab indices
+        assertEquals("script:0:1", mergeKey);
+    }
+
+    @Test
+    public void testScriptContextItemMergeWithSameScript() {
+        // Given: two script context items from the same script with different selections
+        String content = "line1\nline2\nline3\nline4\nline5";
+        ScriptContextItem item1 = new ScriptContextItem("test.py", content, 0, 1, "", 1, 2);
+        ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1, "", 4, 5);
+
+        // When: we merge them
+        ContextItem merged = item1.mergeWith(java.util.Collections.singletonList(item2));
+
+        // Then: the result should have both ranges
+        assertNotNull(merged);
+        assertTrue(merged instanceof ScriptContextItem);
+        String mergedStr = merged.toString();
+        assertTrue(mergedStr.contains("Selected lines:"));
+        assertTrue(mergedStr.contains("1-2"));
+        assertTrue(mergedStr.contains("4-5"));
+    }
+
+    @Test
+    public void testScriptContextItemMergeOverlappingRanges() {
+        // Given: two script context items with overlapping selections
+        String content = "line1\nline2\nline3\nline4\nline5";
+        ScriptContextItem item1 = new ScriptContextItem("test.py", content, 0, 1, "", 1, 3);
+        ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1, "", 2, 4);
+
+        // When: we merge them
+        ContextItem merged = item1.mergeWith(java.util.Collections.singletonList(item2));
+
+        // Then: overlapping ranges should be combined into one
+        assertNotNull(merged);
+        String mergedStr = merged.toString();
+        assertTrue(mergedStr.contains("1-4"));
+        // Should not have separate ranges listed
+        assertFalse(mergedStr.contains("1-3"));
+        assertFalse(mergedStr.contains("2-4"));
+    }
+
+    @Test
+    public void testScriptContextItemMergeAdjacentRanges() {
+        // Given: two script context items with adjacent selections
+        String content = "line1\nline2\nline3\nline4\nline5";
+        ScriptContextItem item1 = new ScriptContextItem("test.py", content, 0, 1, "", 1, 2);
+        ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1, "", 3, 4);
+
+        // When: we merge them
+        ContextItem merged = item1.mergeWith(java.util.Collections.singletonList(item2));
+
+        // Then: adjacent ranges should be combined
+        assertNotNull(merged);
+        String mergedStr = merged.toString();
+        assertTrue(mergedStr.contains("1-4"));
+    }
+
+    @Test
+    public void testConversationMergesScriptContextItems() {
+        // Given: a conversation with multiple script items from the same source
+        String scriptContent = "line1\nline2\nline3\nline4\nline5";
+        ScriptContextItem item1 = new ScriptContextItem("script.py", scriptContent, 0, 0, "", 1, 2);
+        ScriptContextItem item2 = new ScriptContextItem("script.py", scriptContent, 0, 0, "", 4, 5);
+
+        conversation.addContextItem(item1);
+        conversation.addContextItem(item2);
+
+        // When: we add a user message (which triggers merging)
+        conversation.addUserMessage("Analyze these selections");
+
+        // Then: the context items should be merged
+        List<ChatMessage> messages = conversation.getMessages();
+        assertEquals(2, messages.size()); // System message + user message
+        assertTrue(messages.get(1) instanceof UserMessage);
+
+        // The conversation context items should be cleared
+        assertEquals(0, conversation.getContextItems().size());
+    }
+
+    @Test
+    public void testConversationPreservesNonMergeableItems() {
+        // Given: a conversation with both mergeable and non-mergeable items
+        String scriptContent = "content";
+        ScriptContextItem scriptItem = new ScriptContextItem("script.py", scriptContent, 0, 0);
+        ContextItem otherItem = new ContextItem("doc", "readme.md", "documentation");
+
+        conversation.addContextItem(scriptItem);
+        conversation.addContextItem(otherItem);
+
+        // When: we add a user message
+        conversation.addUserMessage("Help");
+
+        // Then: both items should be in the conversation (merged into the message)
+        List<ChatMessage> messages = conversation.getMessages();
+        assertEquals(2, messages.size()); // System message + user message
+
+        // And context items should be cleared
         assertEquals(0, conversation.getContextItems().size());
     }
 

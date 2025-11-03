@@ -2,7 +2,9 @@ package sc.fiji.llm.chat;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -58,6 +60,7 @@ public class Conversation {
 
     /**
      * Adds a user message to the conversation, including any context items.
+     * Context items are merged where applicable before being added to the message.
      * After adding the message, clears the context items collection.
      *
      * @param userMessage the user message text
@@ -66,8 +69,10 @@ public class Conversation {
         final StringBuilder fullMessage = new StringBuilder(userMessage);
 
         if (!contextItems.isEmpty()) {
+            final List<ContextItem> itemsToInclude = mergeContextItems(contextItems);
+
             fullMessage.append("\n\n===Start of Context Items===\n");
-            for (final ContextItem item : contextItems) {
+            for (final ContextItem item : itemsToInclude) {
                 fullMessage.append(item);
             }
             fullMessage.append("===End of Context Items===\n");
@@ -77,6 +82,40 @@ public class Conversation {
         }
 
         messages.add(new UserMessage(fullMessage.toString()));
+    }
+
+    /**
+     * Merges context items that share the same merge key.
+     *
+     * @param items the context items to merge
+     * @return a list of items with mergeable items combined
+     */
+    private List<ContextItem> mergeContextItems(final List<ContextItem> items) {
+        final Map<String, List<ContextItem>> groupedByMergeKey = new LinkedHashMap<>();
+        final List<ContextItem> result = new ArrayList<>();
+
+        // Group items by merge key
+        for (final ContextItem item : items) {
+            final String mergeKey = item.getMergeKey();
+            if (mergeKey != null) {
+                groupedByMergeKey.computeIfAbsent(mergeKey, k -> new ArrayList<>()).add(item);
+            } else {
+                result.add(item);
+            }
+        }
+
+        // Build result list with merged items
+        for (final List<ContextItem> group : groupedByMergeKey.values()) {
+            if (group.size() == 1) {
+                result.add(group.get(0));
+            } else {
+                // Merge multiple items with the same key
+                final ContextItem merged = group.get(0).mergeWith(group.subList(1, group.size()));
+                result.add(merged);
+            }
+        }
+
+        return result;
     }
 
     /**

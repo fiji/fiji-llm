@@ -104,4 +104,118 @@ public class ScriptContextItem extends ContextItem {
 	public int hashCode() {
 		return Objects.hash(scriptName, instanceIndex, tabIndex, getContent(), errorOutput, selectionStartLine, selectionEndLine);
 	}
+
+	@Override
+	public String getMergeKey() {
+		return "script:" + instanceIndex + ":" + tabIndex;
+	}
+
+	@Override
+	public ContextItem mergeWith(final java.util.List<ContextItem> others) {
+		// Collect all line ranges from this item and all others
+		final java.util.List<LineRange> ranges = new java.util.ArrayList<>();
+
+		if (hasSelection()) {
+			ranges.add(new LineRange(selectionStartLine, selectionEndLine));
+		}
+
+		for (final ContextItem item : others) {
+			if (item instanceof ScriptContextItem scriptItem) {
+				if (scriptItem.hasSelection()) {
+					ranges.add(new LineRange(scriptItem.selectionStartLine, scriptItem.selectionEndLine));
+				}
+			}
+		}
+
+		// Sort and merge overlapping ranges
+		ranges.sort((a, b) -> Integer.compare(a.start, b.start));
+		final java.util.List<LineRange> mergedRanges = mergeRanges(ranges);
+
+		// Create a new merged item
+		return new MergedScriptContextItem(scriptName, getContent(), instanceIndex, tabIndex, errorOutput, mergedRanges);
+	}
+
+	/**
+	 * Merges overlapping or adjacent line ranges.
+	 */
+	private static java.util.List<LineRange> mergeRanges(final java.util.List<LineRange> ranges) {
+		if (ranges.isEmpty()) {
+			return ranges;
+		}
+
+		final java.util.List<LineRange> merged = new java.util.ArrayList<>();
+		LineRange current = ranges.get(0);
+
+		for (int i = 1; i < ranges.size(); i++) {
+			final LineRange next = ranges.get(i);
+			if (current.end >= next.start - 1) {
+				// Overlapping or adjacent - merge them
+				current = new LineRange(current.start, Math.max(current.end, next.end));
+			} else {
+				// Gap - save current and start new
+				merged.add(current);
+				current = next;
+			}
+		}
+		merged.add(current);
+		return merged;
+	}
+
+	/**
+	 * Formats a list of line ranges into a readable string.
+	 */
+	private static String formatRanges(final java.util.List<LineRange> ranges) {
+		if (ranges.isEmpty()) {
+			return "";
+		}
+
+		final StringBuilder sb = new StringBuilder(" | Selected lines: ");
+		for (int i = 0; i < ranges.size(); i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append(ranges.get(i).start).append("-").append(ranges.get(i).end);
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Represents a range of lines.
+	 */
+	private static class LineRange {
+		final int start;
+		final int end;
+
+		LineRange(final int start, final int end) {
+			this.start = start;
+			this.end = end;
+		}
+	}
+
+	/**
+	 * A script context item that has been merged from multiple selections.
+	 */
+	private static class MergedScriptContextItem extends ScriptContextItem {
+		private final String mergedRangesLabel;
+
+		MergedScriptContextItem(final String scriptName, final String content, final int instanceIndex,
+				final int tabIndex, final String errorOutput, final java.util.List<LineRange> lineRanges) {
+			super(scriptName, content, instanceIndex, tabIndex, errorOutput, NO_SELECTION, NO_SELECTION);
+			this.mergedRangesLabel = formatRanges(lineRanges);
+		}
+
+		@Override
+		public String toString() {
+			final StringBuilder sb = new StringBuilder();
+			sb.append("\n--- Script: ").append(getScriptName()).append(" ---\n");
+			sb.append("Editor index: ").append(getInstanceIndex()).append(" | Tab index: ").append(getTabIndex());
+			sb.append(mergedRangesLabel).append("\n");
+			sb.append("\n").append(getContent()).append("\n");
+			if (!getErrorOutput().isEmpty()) {
+				sb.append("\n--- Errors ---\n");
+				sb.append(getErrorOutput()).append("\n");
+			}
+			return sb.toString();
+		}
+	}
 }

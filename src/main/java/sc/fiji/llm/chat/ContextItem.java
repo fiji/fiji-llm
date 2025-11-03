@@ -29,6 +29,28 @@ public class ContextItem {
     }
 
     /**
+     * Returns a key for grouping mergeable items.
+     * Items with the same merge key can be combined into a single representation.
+     *
+     * @return a key identifying this item's merge group, or null if this item doesn't merge
+     */
+    public String getMergeKey() {
+        return null;
+    }
+
+    /**
+     * Merges this item with others that share the same merge key.
+     * Only called if {@link #getMergeKey()} is non-null.
+     *
+     * @param others context items that share the same merge key as this item
+     * @return a new merged context item
+     * @throws UnsupportedOperationException if this item type doesn't support merging
+     */
+    public ContextItem mergeWith(final java.util.List<ContextItem> others) {
+        throw new UnsupportedOperationException("Merging not supported for " + getClass().getSimpleName());
+    }
+
+    /**
      * Returns a nicely formatted string representation of this context item
      * for inclusion in chat messages.
      */
