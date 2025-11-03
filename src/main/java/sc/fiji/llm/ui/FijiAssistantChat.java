@@ -1,6 +1,7 @@
 package sc.fiji.llm.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
@@ -8,14 +9,12 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
@@ -30,6 +29,7 @@ import org.scijava.ui.swing.script.TextEditorTab;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.Conversation;
@@ -58,7 +58,8 @@ public class FijiAssistantChat {
 
     private final FijiAssistant assistant;
     private final JFrame frame;
-    private final JTextArea chatArea;
+    private final JPanel chatPanel;
+    private final JScrollPane chatScrollPane;
     private final JTextField inputField;
     private final JButton sendButton;
     private final JPanel contextTagsPanel;
@@ -85,13 +86,30 @@ public class FijiAssistantChat {
         changeModelButton.addActionListener(e -> changeModel());
         topNavBar.add(changeModelButton);
 
-        // Chat display area
-        chatArea = new JTextArea();
-        chatArea.setEditable(false);
-        chatArea.setLineWrap(true);
-        chatArea.setWrapStyleWord(true);
-        final JScrollPane scrollPane = new JScrollPane(chatArea);
-        scrollPane.setPreferredSize(new Dimension(600, 400));
+        // Chat display area - MigLayout for proper resizing with messages at bottom
+        chatPanel = new JPanel(new MigLayout(
+            "fillx, wrap, insets 0",  // Fill horizontally, wrap each component to new row
+            "[grow,fill]",             // Column grows and fills
+            "[grow][][]"               // First row grows (pushes content down), then message rows
+        ));
+        chatPanel.setBackground(Color.WHITE);
+
+        // Add a glue panel that will push messages to bottom
+        final JPanel glue = new JPanel();
+        glue.setOpaque(false);
+        chatPanel.add(glue, "pushy, growy"); // This row grows vertically, pushing messages down
+
+        // Add a bottom spacer for 8px padding at the end of messages
+        final JPanel bottomSpacer = new JPanel();
+        bottomSpacer.setOpaque(false);
+        bottomSpacer.setPreferredSize(new Dimension(1, 8));
+        bottomSpacer.setMinimumSize(new Dimension(1, 8));
+        bottomSpacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
+        chatPanel.add(bottomSpacer, "growx, height 8!");
+
+        chatScrollPane = new JScrollPane(chatPanel);
+        chatScrollPane.setPreferredSize(new Dimension(600, 400));
+        chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         // Button bar with context buttons on left
         final JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
@@ -113,8 +131,7 @@ public class FijiAssistantChat {
         contextTagsPanel.setVisible(false); // Hidden until context items are added
 
         // Input panel container
-        final JPanel inputPanelContainer = new JPanel();
-        inputPanelContainer.setLayout(new BoxLayout(inputPanelContainer, BoxLayout.Y_AXIS));
+        final JPanel inputPanelContainer = new JPanel(new MigLayout("fillx, wrap, insets 0", "[grow,fill]", "[][][]"));
 
 		// Input panel
 		final JPanel inputPanel = new JPanel(new BorderLayout());
@@ -123,13 +140,13 @@ public class FijiAssistantChat {
 		inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
 
-        inputPanelContainer.add(buttonBar);
-        inputPanelContainer.add(contextTagsPanel);
-        inputPanelContainer.add(inputPanel);
+        inputPanelContainer.add(buttonBar, "growx");
+        inputPanelContainer.add(contextTagsPanel, "growx");
+        inputPanelContainer.add(inputPanel, "growx");
 
         // Add components to frame
         frame.add(topNavBar, BorderLayout.NORTH);
-        frame.add(scrollPane, BorderLayout.CENTER);
+        frame.add(chatScrollPane, BorderLayout.CENTER);
         frame.add(inputPanelContainer, BorderLayout.SOUTH);
 
         // Set up event handlers
@@ -277,8 +294,39 @@ public class FijiAssistantChat {
 
         // Always use invokeLater since this can be called from both EDT and background threads
         SwingUtilities.invokeLater(() -> {
-            chatArea.append(sender + ": " + message + "\n\n");
-            chatArea.setCaretPosition(chatArea.getDocument().getLength());
+            // Convert Sender enum to MessageType
+            final ChatMessagePanel.MessageType messageType = switch (sender) {
+                case USER -> ChatMessagePanel.MessageType.USER;
+                case ASSISTANT -> ChatMessagePanel.MessageType.ASSISTANT;
+                case SYSTEM -> ChatMessagePanel.MessageType.SYSTEM;
+                case ERROR -> ChatMessagePanel.MessageType.ERROR;
+            };
+
+            // Create and add message panel
+            final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType, message);
+            
+            // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
+            final int componentCount = chatPanel.getComponentCount();
+            if (componentCount >= 2) {
+                final java.awt.Component glue = chatPanel.getComponent(0);
+                final java.awt.Component bottomSpacer = chatPanel.getComponent(componentCount - 1);
+                chatPanel.remove(0); // Remove glue
+                chatPanel.remove(componentCount - 2); // Remove bottom spacer (index shifts after first removal)
+                chatPanel.add(messagePanel, "growx"); // Grow horizontally only
+                chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
+                chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer at end
+            } else {
+                chatPanel.add(messagePanel, "growx");
+            }
+            
+            chatPanel.revalidate();
+            chatPanel.repaint();
+
+            // Scroll to bottom
+            SwingUtilities.invokeLater(() -> {
+                final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
+            });
 
             // Track messages for API calls
             switch (sender) {
