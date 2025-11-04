@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.net.URL;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -92,7 +93,7 @@ public class ChatMessagePanel extends JPanel {
 
 		if (iconPath != null) {
 			try {
-				final java.net.URL iconURL = getClass().getResource(iconPath);
+				final URL iconURL = getClass().getResource(iconPath);
 				if (iconURL != null) {
 					final ImageIcon icon = new ImageIcon(iconURL);
 					return createIconLabel(icon);
