@@ -4,6 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -45,6 +49,7 @@ import sc.fiji.llm.tools.AiToolService;
 public class FijiAssistantChat {
     public static final float CHAT_FONT_SIZE = 16f;
     private static final int INPUT_PANEL_BOTTOM_PADDING = 8;
+    private static final String PLACEHOLDER_TEXT = "Type your message here...";
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
     private static final String SYSTEM_PROMPT = "You are an assistant chatbot running as an integrated plugin within the Fiji (ImageJ) application for scientific image analysis. " +
@@ -140,7 +145,19 @@ public class FijiAssistantChat {
         contextTagsPanel.setVisible(false); // Hidden until context items are added
 
         // Input area - scrollable and resizable
-        inputArea = new JTextArea();
+        inputArea = new JTextArea() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (getText().isEmpty()) {
+                    ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    g.setColor(Color.GRAY);
+                    g.setFont(new Font("Dialog", Font.PLAIN, 14));
+                    g.drawString(PLACEHOLDER_TEXT, 5, 20);
+                }
+            }
+        };
+
         inputArea.setLineWrap(true);
         inputArea.setWrapStyleWord(true);
         inputArea.setFont(inputArea.getFont().deriveFont(CHAT_FONT_SIZE));
