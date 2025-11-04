@@ -142,55 +142,57 @@ public class ChatMessagePanel extends JPanel {
 		label.setMaximumSize(size);
 	}
 
-	private JPanel createMessageBubble(final MessageType type, final String message) {
-		final JPanel bubble = new JPanel(new MigLayout(
-			"insets " + BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING + " " +
-			BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING, "", "")) {
+	   private JPanel createMessageBubble(final MessageType type, final String message) {
+		   final JPanel bubble = new JPanel(new MigLayout(
+			   "insets " + BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING + " " +
+			   BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING, "", "")) {
 
-			private final int RESERVED_WIDTH = (2 * MARGIN) + ICON_SIZE + (2 * MARGIN) + RESERVED_WIDTH_BUFFER;
+			   private final int RESERVED_WIDTH = (2 * MARGIN) + ICON_SIZE + (2 * MARGIN) + RESERVED_WIDTH_BUFFER;
 
-			@Override
-			public Dimension getPreferredSize() {
-				final int availableWidth = calculateAvailableWidth();
-				final Dimension pref = super.getPreferredSize();
-				final int largestChildWidth = findLargestChildWidth();
+			   @Override
+			   public Dimension getPreferredSize() {
+				   final int availableWidth = calculateAvailableWidth();
+				   final Dimension pref = super.getPreferredSize();
+				   final int largestChildWidth = findLargestChildWidth();
 
-				pref.width = Math.min(largestChildWidth, availableWidth);
-				return pref;
-			}
+				   pref.width = Math.min(largestChildWidth, availableWidth);
+				   return pref;
+			   }
 
-			private int calculateAvailableWidth() {
-				int availableWidth = DEFAULT_AVAILABLE_WIDTH;
-				Container parent = getParent();
-				while (parent != null) {
-					final int parentWidth = parent.getWidth();
-					if (parentWidth > 0) {
-						availableWidth = parentWidth;
-						break;
-					}
-					parent = parent.getParent();
-				}
-				return Math.max(MIN_AVAILABLE_WIDTH, availableWidth - RESERVED_WIDTH);
-			}
+			   private int calculateAvailableWidth() {
+				   int availableWidth = DEFAULT_AVAILABLE_WIDTH;
+				   Container parent = getParent();
+				   while (parent != null) {
+					   final int parentWidth = parent.getWidth();
+					   if (parentWidth > 0) {
+						   availableWidth = parentWidth;
+						   break;
+					   }
+					   parent = parent.getParent();
+				   }
+				   return Math.max(MIN_AVAILABLE_WIDTH, availableWidth - RESERVED_WIDTH);
+			   }
 
-			private int findLargestChildWidth() {
-				int largestChildWidth = 0;
-				for (final Component child : getComponents()) {
-					final Dimension childPref = child.getPreferredSize();
-					if (childPref.width > largestChildWidth) {
-						largestChildWidth = childPref.width;
-					}
-				}
-				return largestChildWidth;
-			}
-		};
+			   private int findLargestChildWidth() {
+				   int largestChildWidth = 0;
+				   for (final Component child : getComponents()) {
+					   final Dimension childPref = child.getPreferredSize();
+					   if (childPref.width > largestChildWidth) {
+						   largestChildWidth = childPref.width;
+					   }
+				   }
+				   return largestChildWidth + (2 * BUBBLE_HORIZONTAL_PADDING) + (2 * BORDER_WIDTH);
+			   }
+		   };
 
-		applyBubbleStyle(bubble, type);
-		final JTextPane textPane = createTextPane(type, message);
-		bubble.add(textPane);
+		   applyBubbleStyle(bubble, type);
 
-		return bubble;
-	}
+		   final JTextPane textPane = createTextPane(type, message);
+
+		   bubble.add(textPane);
+
+		   return bubble;
+	   }
 
 	private void applyBubbleStyle(final JPanel bubble, final MessageType type) {
 		final Color bgColor = getBackgroundColor(type);
@@ -226,23 +228,24 @@ public class ChatMessagePanel extends JPanel {
 		textPane.setOpaque(false);
 		textPane.setFont(textPane.getFont().deriveFont(TEXT_FONT_SIZE));
 
-		applyTextAlignment(textPane, type);
-
-		return textPane;
-	}
-
-	private void applyTextAlignment(final JTextPane textPane, final MessageType type) {
 		final StyledDocument doc = textPane.getStyledDocument();
 		final SimpleAttributeSet attrs = new SimpleAttributeSet();
 
 		final int alignment = switch (type) {
-			case USER -> StyleConstants.ALIGN_RIGHT;
-			case ASSISTANT -> StyleConstants.ALIGN_LEFT;
+			case USER, ASSISTANT -> StyleConstants.ALIGN_LEFT;
 			case SYSTEM, ERROR -> StyleConstants.ALIGN_CENTER;
 		};
 
 		StyleConstants.setAlignment(attrs, alignment);
+		// Remove extra paragraph indents
+		StyleConstants.setLeftIndent(attrs, 0f);
+		StyleConstants.setRightIndent(attrs, 0f);
 		doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+
+		// Remove extra JTextPane margin
+		textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
+
+		return textPane;
 	}
 
 	/**
