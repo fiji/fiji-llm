@@ -16,7 +16,7 @@ import sc.fiji.llm.tools.AiToolPlugin;
  */
 public class ConversationBuilder {
 	private String baseSystemMessage;
-	private String usageNotes;
+	private String messageFormat;
 	private final List<AiToolPlugin> tools;
 
 	/**
@@ -27,12 +27,12 @@ public class ConversationBuilder {
 	}
 
 	/**
-	 * Sets the usage notes for AI output formatting expectations.
-	 * @param usageNotes the usage notes string
+	 * Sets the text for guiding AI output formatting expectations.
+	 * @param messageFormatHint the message format hint
 	 * @return this builder for method chaining
 	 */
-	public ConversationBuilder withUsageNotes(final String usageNotes) {
-		this.usageNotes = usageNotes;
+	public ConversationBuilder withMessageFormatHint(final String messageFormatHint) {
+		this.messageFormat = messageFormatHint;
 		return this;
 	}
 
@@ -111,10 +111,10 @@ public class ConversationBuilder {
 		}
 
 		// Add usage notes if present
-		if (usageNotes != null && !usageNotes.isEmpty()) {
+		if (messageFormat != null && !messageFormat.isEmpty()) {
 			if (sb.length() > 0) sb.append("\n\n");
-			sb.append("## Chat Environment\n\n");
-			sb.append(usageNotes).append("\n");
+			sb.append("## Message formatting\n\n");
+			sb.append(messageFormat).append("\n");
 		}
 
 		// Add tools section if tools are available

@@ -77,7 +77,7 @@ public class FijiAssistantChat {
 
         this.conversation = new ConversationBuilder()
             .withBaseSystemMessage(SYSTEM_PROMPT)
-            .withUsageNotes(chatService.usageNotes())
+            .withMessageFormatHint(chatService.messageFormatHint())
             .withTools(aiToolService.getInstances())
             .build();
 
