@@ -224,7 +224,7 @@ public class ChatMessagePanel extends JPanel {
 		final JTextPane textPane = new JTextPane();
 		textPane.setText(message);
 		textPane.setEditable(false);
-		textPane.setFocusable(false);
+		textPane.setFocusable(true); // Allow highlighting and copying
 		textPane.setOpaque(false);
 		textPane.setFont(textPane.getFont().deriveFont(TEXT_FONT_SIZE));
 
