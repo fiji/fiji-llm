@@ -35,6 +35,7 @@ import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationBuilder;
 import sc.fiji.llm.chat.ScriptContextItem;
+import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -343,13 +344,13 @@ public class FijiAssistantChat {
 
     private void changeModel() {
         // Clear the last chat model preference to force model selection dialog
-        prefService.remove(sc.fiji.llm.plugins.Fiji_Chat.class, "sc.fiji.chat.lastModel");
+        prefService.remove(Fiji_Chat.class, Fiji_Chat.LAST_CHAT_MODEL);
 
         // Close this chat window
         frame.dispose();
 
         // Re-invoke the Fiji_Chat command to show the selection dialog
-        commandService.run(sc.fiji.llm.plugins.Fiji_Chat.class, true);
+        commandService.run(Fiji_Chat.class, true);
     }
 
     private void addActiveScriptContext() {

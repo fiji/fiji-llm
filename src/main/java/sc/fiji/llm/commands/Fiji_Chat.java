@@ -1,4 +1,4 @@
-package sc.fiji.llm.plugins;
+package sc.fiji.llm.commands;
 
 import java.util.List;
 
@@ -32,8 +32,8 @@ import sc.fiji.llm.ui.ChatbotService;
 			@Menu(label = "Fiji Chat", accelerator = "ctrl shift 0")
 		})
 public class Fiji_Chat extends DynamicCommand {
-	private static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
-	private static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
+	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
+	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
 
 	@Parameter
 	private ProviderService providerService;
