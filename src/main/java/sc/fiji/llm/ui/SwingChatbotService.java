@@ -13,6 +13,10 @@ import sc.fiji.llm.assistant.FijiAssistant;
  */
 @Plugin(type = Service.class)
 public class SwingChatbotService extends AbstractService implements ChatbotService {
+    @Override
+    public String usageNotes() {
+        return  "Your output is displayed in plain text (no markdown). ";
+    }
 
     @Override
     public void launchChat(FijiAssistant assistant, String title) {

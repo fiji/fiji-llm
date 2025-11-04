@@ -8,5 +8,7 @@ import sc.fiji.llm.assistant.FijiAssistant;
  * Service interface for launching chatbot UIs.
  */
 public interface ChatbotService extends SciJavaService {
+    String usageNotes();
+
     void launchChat(FijiAssistant assistant, String title);
 }

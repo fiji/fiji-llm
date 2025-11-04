@@ -57,6 +57,9 @@ public class FijiAssistantChat {
 	@Parameter
 	private AiToolService aiToolService;
 
+    @Parameter
+    private ChatbotService chatService;
+
     private final FijiAssistant assistant;
     private final JFrame frame;
     private final JPanel chatPanel;
@@ -71,8 +74,10 @@ public class FijiAssistantChat {
         context.inject(this);
         this.assistant = assistant;
         this.contextItemButtons = new java.util.HashMap<>();
+
         this.conversation = new ConversationBuilder()
             .withBaseSystemMessage(SYSTEM_PROMPT)
+            .withUsageNotes(chatService.usageNotes())
             .withTools(aiToolService.getInstances())
             .build();
 
