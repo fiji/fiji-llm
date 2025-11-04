@@ -29,7 +29,7 @@ import sc.fiji.llm.ui.ChatbotService;
 		menu = {
 			@Menu(label = "Plugins"),
 			@Menu(label = "Assistants"),
-			@Menu(label = "Fiji Chat", accelerator = "ctrl shift 0")
+			@Menu(label = "Fiji Chat", accelerator = "CTRL 0")
 		})
 public class Fiji_Chat extends DynamicCommand {
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
