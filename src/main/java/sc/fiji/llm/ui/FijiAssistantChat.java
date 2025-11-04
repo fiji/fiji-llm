@@ -15,7 +15,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import org.scijava.Context;
@@ -66,7 +67,7 @@ public class FijiAssistantChat {
     private final JFrame frame;
     private final JPanel chatPanel;
     private final JScrollPane chatScrollPane;
-    private final JTextField inputField;
+    private final JTextArea inputArea;
     private final JButton sendButton;
     private final JPanel contextTagsPanel;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
@@ -138,29 +139,57 @@ public class FijiAssistantChat {
         contextTagsPanel.setBackground(new java.awt.Color(240, 248, 255)); // Light blue background
         contextTagsPanel.setVisible(false); // Hidden until context items are added
 
-        // Input panel container
-        final JPanel inputPanelContainer = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_BOTTOM_PADDING + " 0", "[grow,fill]", "[][][]"));
+        // Input area - scrollable and resizable
+        inputArea = new JTextArea();
+        inputArea.setLineWrap(true);
+        inputArea.setWrapStyleWord(true);
+        inputArea.setFont(inputArea.getFont().deriveFont(CHAT_FONT_SIZE));
+        final JScrollPane inputScrollPane = new JScrollPane(inputArea);
+        inputScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        inputScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-		// Input panel
-		final JPanel inputPanel = new JPanel(new BorderLayout());
-		inputField = new PlaceholderTextField("Type your message here...");
-		sendButton = new JButton("Send");
-		inputPanel.add(inputField, BorderLayout.CENTER);
-        inputField.setFont(inputField.getFont().deriveFont(16f));
-        inputPanel.add(sendButton, BorderLayout.EAST);
+        // Add KeyListener to handle Enter key (Shift+Enter for newline)
+        inputArea.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER && !e.isShiftDown()) {
+                    e.consume();
+                    sendMessage();
+                }
+            }
+        });
 
-        inputPanelContainer.add(buttonBar, "growx");
-        inputPanelContainer.add(contextTagsPanel, "growx");
-        inputPanelContainer.add(inputPanel, "growx");
+        // Send button - styled to look integrated
+        sendButton = new JButton("Send");
+        sendButton.setFocusPainted(false);
+
+        // Input panel with button bar and input area
+        final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly", "[grow,fill][shrink]", "[grow,fill]"));
+        inputPanel.add(inputScrollPane, "growx, growy, pushy");
+        inputPanel.add(sendButton, "aligny bottom, height 40!");
+
+        // Bottom panel combining context tags, button bar, and input
+        final JPanel bottomPanel = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_BOTTOM_PADDING + " 0", "[grow,fill]", "[][][grow,fill]"));
+        bottomPanel.add(buttonBar, "growx, wrap");
+        bottomPanel.add(contextTagsPanel, "growx, wrap");
+        bottomPanel.add(inputPanel, "growx, growy, pushy, grow");
+
+        // Create a split pane with vertical divider between chat and input
+        final JSplitPane splitPane = new JSplitPane(
+            JSplitPane.VERTICAL_SPLIT,
+            chatScrollPane,
+            bottomPanel
+        );
+        splitPane.setDividerLocation(0.7); // 70% for chat, 30% for input initially
+        splitPane.setResizeWeight(1.0); // Extra space goes to the top (chat area)
+        splitPane.setContinuousLayout(true); // Smooth resizing
 
         // Add components to frame
         frame.add(topNavBar, BorderLayout.NORTH);
-        frame.add(chatScrollPane, BorderLayout.CENTER);
-        frame.add(inputPanelContainer, BorderLayout.SOUTH);
+        frame.add(splitPane, BorderLayout.CENTER);
 
         // Set up event handlers
         sendButton.addActionListener(e -> sendMessage());
-        inputField.addActionListener(e -> sendMessage());
 
         // Finalize frame
         frame.pack();
@@ -169,7 +198,7 @@ public class FijiAssistantChat {
 
     public void show() {
         frame.setVisible(true);
-        inputField.requestFocus();
+        inputArea.requestFocus();
     }
 
     /**
@@ -252,7 +281,7 @@ public class FijiAssistantChat {
     }
 
     private void sendMessage() {
-        final String userMessage = inputField.getText().trim();
+        final String userMessage = inputArea.getText().trim();
         if (userMessage.isEmpty()) {
             return;
         }
@@ -263,8 +292,8 @@ public class FijiAssistantChat {
         // Display user message (this will use invokeLater but message is already in conversation)
         appendToChat(Sender.USER, userMessage);
 
-        inputField.setText("");
-        inputField.setEnabled(false);
+        inputArea.setText("");
+        inputArea.setEnabled(false);
         sendButton.setEnabled(false);
 
         // Process in background thread (LLM calls happen OFF the EDT)
@@ -290,9 +319,9 @@ public class FijiAssistantChat {
             } finally {
                 // Re-enable inputs so the user can change model or try again manually
                 SwingUtilities.invokeLater(() -> {
-                    inputField.setEnabled(true);
+                    inputArea.setEnabled(true);
                     sendButton.setEnabled(true);
-                    inputField.requestFocus();
+                    inputArea.requestFocus();
                 });
             }
         }).start();
