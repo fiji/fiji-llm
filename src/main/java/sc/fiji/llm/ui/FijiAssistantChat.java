@@ -42,6 +42,7 @@ import sc.fiji.llm.tools.AiToolService;
  * Swing-based chat window for chatting with LLMs in Fiji.
  */
 public class FijiAssistantChat {
+    public static final float CHAT_FONT_SIZE = 16f;
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
     private static final String SYSTEM_PROMPT = "You are an assistant chatbot running as an integrated plugin within the Fiji (ImageJ) application for scientific image analysis. " +
@@ -144,6 +145,7 @@ public class FijiAssistantChat {
 		inputField = new PlaceholderTextField("Type your message here...");
 		sendButton = new JButton("Send");
 		inputPanel.add(inputField, BorderLayout.CENTER);
+        inputField.setFont(inputField.getFont().deriveFont(16f));
         inputPanel.add(sendButton, BorderLayout.EAST);
 
         inputPanelContainer.add(buttonBar, "growx");
@@ -309,7 +311,7 @@ public class FijiAssistantChat {
             };
 
             // Create and add message panel
-            final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType, message);
+            final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType, message, CHAT_FONT_SIZE);
             
             // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
             final int componentCount = chatPanel.getComponentCount();

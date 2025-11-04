@@ -35,7 +35,7 @@ public class ChatMessagePanel extends JPanel {
 	private static final int RESERVED_WIDTH_BUFFER = (2 * ICON_SIZE) + BUBBLE_PADDING + BUBBLE_HORIZONTAL_PADDING;
 	private static final int MIN_AVAILABLE_WIDTH = 200;
 	private static final int DEFAULT_AVAILABLE_WIDTH = 600;
-	private static final float TEXT_FONT_SIZE = 13f;
+	private final float textFontSize;
 
 	public enum MessageType {
 		USER,
@@ -45,6 +45,11 @@ public class ChatMessagePanel extends JPanel {
 	}
 
 	public ChatMessagePanel(final MessageType type, final String message) {
+		this(type, message, 13f);
+	}
+
+	public ChatMessagePanel(final MessageType type, final String message, final float fontSize) {
+		this.textFontSize = fontSize;
 		setLayout(new MigLayout("insets 0 0 0 0, fillx", "", "[]"));
 		setOpaque(false);
 
@@ -226,7 +231,7 @@ public class ChatMessagePanel extends JPanel {
 		textPane.setEditable(false);
 		textPane.setFocusable(true); // Allow highlighting and copying
 		textPane.setOpaque(false);
-		textPane.setFont(textPane.getFont().deriveFont(TEXT_FONT_SIZE));
+		textPane.setFont(textPane.getFont().deriveFont(textFontSize));
 
 		final StyledDocument doc = textPane.getStyledDocument();
 		final SimpleAttributeSet attrs = new SimpleAttributeSet();
