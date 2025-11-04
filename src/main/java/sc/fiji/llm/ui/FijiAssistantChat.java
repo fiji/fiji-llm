@@ -77,6 +77,8 @@ public class FijiAssistantChat {
     private final JTextArea inputArea;
     private final JButton sendButton;
     private final JPanel contextTagsPanel;
+    private final JScrollPane contextTagsScrollPane;
+    private final JButton clearAllButton;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
 
@@ -137,14 +139,84 @@ public class FijiAssistantChat {
         // Add more context type buttons here in the future
 
         // Context tags panel (shows active context items as removable tags)
-        contextTagsPanel = new JPanel();
-        contextTagsPanel.setLayout(new BorderLayout());
-        contextTagsPanel.setBorder(BorderFactory.createCompoundBorder(
+        // Create inner panel for tags that will wrap
+        final JPanel tagsContainer = new JPanel() {
+            @Override
+            public Dimension getPreferredSize() {
+                if (getParent() instanceof javax.swing.JViewport) {
+                    int w = ((javax.swing.JViewport) getParent()).getWidth();
+                    
+                    // Calculate wrapped height manually
+                    FlowLayout layout = (FlowLayout) getLayout();
+                    int hgap = layout.getHgap();
+                    int vgap = layout.getVgap();
+                    
+                    int maxWidth = w - (hgap * 2); // Account for horizontal gaps
+                    int currentWidth = hgap;
+                    int currentHeight = vgap;
+                    int rowHeight = 0;
+                    
+                    for (java.awt.Component comp : getComponents()) {
+                        Dimension d = comp.getPreferredSize();
+                        
+                        if (currentWidth + d.width > maxWidth && currentWidth > hgap) {
+                            // Wrap to new row
+                            currentHeight += rowHeight + vgap;
+                            currentWidth = hgap;
+                            rowHeight = 0;
+                        }
+                        
+                        currentWidth += d.width + hgap;
+                        rowHeight = Math.max(rowHeight, d.height);
+                    }
+                    
+                    currentHeight += rowHeight + vgap; // Add final row height
+                    
+                    return new Dimension(w, currentHeight);
+                }
+                return super.getPreferredSize();
+            }
+        };
+        tagsContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
+        tagsContainer.setOpaque(false);
+
+        // Create scrollable container for tags
+        contextTagsScrollPane = new JScrollPane(tagsContainer);
+        contextTagsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        contextTagsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        contextTagsScrollPane.setPreferredSize(new Dimension(600, 36));
+        contextTagsScrollPane.getVerticalScrollBar().setUnitIncrement(5);
+        
+        // Apply light blue background to the scrollpane itself
+        contextTagsScrollPane.setBackground(new java.awt.Color(240, 248, 255)); // Light blue background
+        contextTagsScrollPane.getViewport().setBackground(new java.awt.Color(240, 248, 255));
+        contextTagsScrollPane.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new java.awt.Color(200, 220, 240), 1),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+            BorderFactory.createEmptyBorder(0, 0, 0, 0) // No internal padding
         ));
-        contextTagsPanel.setBackground(new java.awt.Color(240, 248, 255)); // Light blue background
-        contextTagsPanel.setVisible(false); // Hidden until context items are added
+
+        // Create the outer panel that always shows
+        contextTagsPanel = new JPanel(new MigLayout("insets 0, fillx", "[grow,fill][shrink]", "[grow,fill]"));
+        contextTagsPanel.setOpaque(false);
+
+        // Add scrollable tags area in the center
+        contextTagsPanel.add(contextTagsScrollPane, "growx, growy, pushy");
+
+        // Add "Clear All" button on the right (icon button, 28x28 to match send button)
+        final URL closeIconUrl = getClass().getResource("/icons/close-20.png");
+        if (closeIconUrl != null) {
+            clearAllButton = new JButton(new ImageIcon(closeIconUrl));
+        } else {
+            clearAllButton = new JButton("✕");
+        }
+
+        clearAllButton.setToolTipText("Clear all context items");
+        clearAllButton.setFocusPainted(false);
+        clearAllButton.setEnabled(false); // Disabled until context items are added
+        clearAllButton.setForeground(java.awt.Color.RED);
+        clearAllButton.setFont(clearAllButton.getFont().deriveFont(14f));
+        clearAllButton.addActionListener(e -> clearAllContext());
+        contextTagsPanel.add(clearAllButton, "aligny center, height 28!");
 
         // Input area - scrollable and resizable
         inputArea = new JTextArea() {
@@ -687,28 +759,13 @@ public class FijiAssistantChat {
             }
         });
 
-        // Get or create the tags container panel
-        JPanel tagsContainer;
-        if (contextTagsPanel.getComponentCount() == 0) {
-            tagsContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 3));
-            tagsContainer.setOpaque(false);
-            contextTagsPanel.add(tagsContainer, BorderLayout.CENTER);
-
-            // Add "Clear All" button on the right
-            final JButton clearAllButton = new JButton("Clear All");
-            clearAllButton.setToolTipText("Remove all context items");
-            clearAllButton.setFocusPainted(false);
-            clearAllButton.addActionListener(e -> clearAllContext());
-            final JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 3));
-            rightPanel.setOpaque(false);
-            rightPanel.add(clearAllButton);
-            contextTagsPanel.add(rightPanel, BorderLayout.EAST);
-        } else {
-            tagsContainer = (JPanel) contextTagsPanel.getComponent(0);
-        }
-
+        // Get the tags container from the scrollpane's viewport
+        JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
         tagsContainer.add(tagButton);
-        contextTagsPanel.setVisible(true);
+        
+        // Enable the Clear All button now that we have context items
+        clearAllButton.setEnabled(true);
+        
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
     }
@@ -716,11 +773,12 @@ public class FijiAssistantChat {
     private void removeContextItem(final ContextItem item, final JButton tagButton) {
         conversation.removeContextItem(item);
         contextItemButtons.remove(item);
-        final JPanel tagsContainer = (JPanel) contextTagsPanel.getComponent(0);
+        final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
         tagsContainer.remove(tagButton);
 
+        // Disable the Clear All button if no more context items
         if (conversation.getContextItems().isEmpty()) {
-            contextTagsPanel.setVisible(false);
+            clearAllButton.setEnabled(false);
         }
 
         contextTagsPanel.revalidate();
@@ -734,8 +792,9 @@ public class FijiAssistantChat {
         }
 
         contextItemButtons.clear();
-        contextTagsPanel.removeAll();
-        contextTagsPanel.setVisible(false);
+        final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
+        tagsContainer.removeAll();
+        clearAllButton.setEnabled(false);
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
     }
