@@ -43,6 +43,7 @@ import sc.fiji.llm.tools.AiToolService;
  */
 public class FijiAssistantChat {
     public static final float CHAT_FONT_SIZE = 16f;
+    private static final int INPUT_PANEL_BOTTOM_PADDING = 8;
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
     private static final String SYSTEM_PROMPT = "You are an assistant chatbot running as an integrated plugin within the Fiji (ImageJ) application for scientific image analysis. " +
@@ -138,7 +139,7 @@ public class FijiAssistantChat {
         contextTagsPanel.setVisible(false); // Hidden until context items are added
 
         // Input panel container
-        final JPanel inputPanelContainer = new JPanel(new MigLayout("fillx, wrap, insets 0", "[grow,fill]", "[][][]"));
+        final JPanel inputPanelContainer = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_BOTTOM_PADDING + " 0", "[grow,fill]", "[][][]"));
 
 		// Input panel
 		final JPanel inputPanel = new JPanel(new BorderLayout());
