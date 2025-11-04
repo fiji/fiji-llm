@@ -26,6 +26,7 @@ import net.miginfocom.swing.MigLayout;
 public class ChatMessagePanel extends JPanel {
 
 	private static final int ICON_SIZE = 32;
+	private static final int ICON_GAP = 4;
 	private static final int MARGIN = 10;
 	private static final int BUBBLE_PADDING = 8;
 	private static final int BUBBLE_HORIZONTAL_PADDING = 12;
@@ -65,12 +66,12 @@ public class ChatMessagePanel extends JPanel {
 		final JPanel pusher = createInvisibleSpacer();
 		add(pusher, "pushx");
 		add(bubble, "aligny bottom");
-		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN);
+		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN + ", gapbottom " + ICON_GAP);
 	}
 
 	private void layoutAssistantMessage(final JPanel bubble, final JLabel iconLabel) {
 		final JPanel pusher = createInvisibleSpacer();
-		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN);
+		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN + ", gapbottom " + ICON_GAP);
 		add(bubble, "aligny bottom");
 		add(pusher, "pushx");
 	}
