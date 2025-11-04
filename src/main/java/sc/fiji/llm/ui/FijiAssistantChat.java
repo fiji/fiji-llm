@@ -10,9 +10,11 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -48,7 +50,7 @@ import sc.fiji.llm.tools.AiToolService;
  */
 public class FijiAssistantChat {
     public static final float CHAT_FONT_SIZE = 16f;
-    private static final int INPUT_PANEL_BOTTOM_PADDING = 8;
+    private static final int INPUT_PANEL_PADDING = 8;
     private static final String PLACEHOLDER_TEXT = "Type your message here...";
     private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
 
@@ -177,16 +179,22 @@ public class FijiAssistantChat {
         });
 
         // Send button - styled to look integrated
-        sendButton = new JButton("Send");
+        final URL iconUrl = getClass().getResource("/icons/send-20.png");
+        if (iconUrl != null) {
+            sendButton = new JButton(new ImageIcon(iconUrl));
+        } else {
+            sendButton = new JButton("Send");
+        }
         sendButton.setFocusPainted(false);
+        sendButton.setToolTipText("Send message");
 
         // Input panel with button bar and input area
         final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly", "[grow,fill][shrink]", "[grow,fill]"));
         inputPanel.add(inputScrollPane, "growx, growy, pushy");
-        inputPanel.add(sendButton, "aligny bottom, height 40!");
+        inputPanel.add(sendButton, "aligny bottom, height 28!");
 
         // Bottom panel combining context tags, button bar, and input
-        final JPanel bottomPanel = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_BOTTOM_PADDING + " 0", "[grow,fill]", "[][][grow,fill]"));
+        final JPanel bottomPanel = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_PADDING + " " + INPUT_PANEL_PADDING, "[grow,fill]", "[][][grow,fill]"));
         bottomPanel.add(buttonBar, "growx, wrap");
         bottomPanel.add(contextTagsPanel, "growx, wrap");
         bottomPanel.add(inputPanel, "growx, growy, pushy, grow");
