@@ -59,14 +59,23 @@ public final class TextEditorUtils {
     /**
      * Strips line numbers from script content, but only if EVERY line starts with the expected format.
      * Expected format: "NNN | content" where NNN is a line number.
+     * Also strips markdown code fences (```language and ```) if present.
      * Returns the original content unchanged if the format is not consistent.
+     * Returns empty string if content is null.
      */
     public static String stripLineNumbers(final String content) {
-        final String[] lines = content.split("\n", -1);
+        if (content == null) {
+            return "";
+        }
+
+        // First, strip markdown code fences if present
+        String cleanedContent = stripMarkdownCodeFences(content);
+
+        final String[] lines = cleanedContent.split("\n", -1);
 
         // Quick check: if fewer than 2 lines, no consistent format to strip
         if (lines.length < 2) {
-            return content;
+            return cleanedContent;
         }
 
         // Pattern: optional whitespace, digits, space, pipe, space
@@ -76,14 +85,14 @@ public final class TextEditorUtils {
 
         if (pipeIndex <= 0) {
             // No pipe found in first line, can't strip
-            return content;
+            return cleanedContent;
         }
 
         // Check if everything before the pipe is whitespace + digits
         final String beforePipe = firstLine.substring(0, pipeIndex).trim();
         if (!beforePipe.matches("\\d+")) {
             // First line doesn't have line number format
-            return content;
+            return cleanedContent;
         }
 
         // Expected padding width (including leading whitespace)
@@ -97,17 +106,17 @@ public final class TextEditorUtils {
                 // Check if line has the pipe at the expected position
                 if (line.length() < expectedPadding + 3) {
                     // Line too short to have proper format
-                    return content;
+                    return cleanedContent;
                 }
                 final int linePipeIndex = line.indexOf('|', expectedPadding - 1);
                 if (linePipeIndex != pipeIndex) {
                     // Pipe not at expected position
-                    return content;
+                    return cleanedContent;
                 }
                 final String lineNumPart = line.substring(0, pipeIndex).trim();
                 if (!lineNumPart.matches("\\d+")) {
                     // Line number part is not all digits
-                    return content;
+                    return cleanedContent;
                 }
             }
         }
@@ -130,9 +139,44 @@ public final class TextEditorUtils {
 
         final String result = sb.toString();
         // Remove the trailing newline we added if original didn't have one
-        if (!content.endsWith("\n") && result.endsWith("\n")) {
+        if (!cleanedContent.endsWith("\n") && result.endsWith("\n")) {
             return result.substring(0, result.length() - 1);
         }
         return result;
+    }
+
+    /**
+     * Strips markdown code fences from content if present.
+     * Handles both ``` and ```language formats.
+     * Returns the original content if no code fences are found.
+     */
+    private static String stripMarkdownCodeFences(final String content) {
+        if (content == null || content.isEmpty()) {
+            return content;
+        }
+
+        final String trimmed = content.trim();
+        
+        // Check if content starts with ``` (with optional language)
+        if (trimmed.startsWith("```")) {
+            // Find the end of the first line (the opening fence)
+            final int firstNewline = trimmed.indexOf('\n');
+            if (firstNewline == -1) {
+                // Only a code fence, no actual content
+                return "";
+            }
+
+            // Check if content ends with ```
+            if (trimmed.endsWith("```")) {
+                // Find the start of the last line (the closing fence)
+                final int lastFenceStart = trimmed.lastIndexOf("\n```");
+                if (lastFenceStart > firstNewline) {
+                    // Extract content between fences
+                    return trimmed.substring(firstNewline + 1, lastFenceStart);
+                }
+            }
+        }
+
+        return content;
     }
 }

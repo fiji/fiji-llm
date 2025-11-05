@@ -45,11 +45,19 @@ public class ScriptEditorTool implements AiToolPlugin {
 		"Create a new script in the Fiji script editor",
 		"Parameters:",
 		"	scriptName - The name of the script file including extension (e.g., 'example.py', 'macro.ijm')",
-		"	content - The complete source code you wrote for the script",
+		"	content - The complete source code you wrote for the script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
 		"Returns - Success message with script name, or ERROR message if creation failed"
 	})
 	public String createScript(@P("scriptName") final String scriptName, @P("content") final String content) {
 		try {
+			// Validate inputs
+			if (scriptName == null || scriptName.trim().isEmpty()) {
+				return "ERROR: Script name cannot be null or empty";
+			}
+			if (content == null) {
+				return "ERROR: Script content cannot be null";
+			}
+
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
 
@@ -97,11 +105,16 @@ public class ScriptEditorTool implements AiToolPlugin {
 		"Parameters:",
 		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
 		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
-		"	content - The new content for the indicated script.",
+		"	content - The new content for the indicated script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
 		"Returns: Success message with indices, or ERROR message if update failed."
 	})
 	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
 		try {
+			// Validate content
+			if (content == null) {
+				return "ERROR: Script content cannot be null";
+			}
+
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
 
