@@ -189,6 +189,7 @@ public class FijiAssistantChat {
         contextTagsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         contextTagsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         contextTagsScrollPane.setPreferredSize(new Dimension(600, 36));
+        contextTagsScrollPane.setMinimumSize(new Dimension(36, 36));
         contextTagsScrollPane.getVerticalScrollBar().setUnitIncrement(5);
         
         // Apply light blue background to the scrollpane itself
@@ -358,6 +359,7 @@ public class FijiAssistantChat {
                 scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
                 scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
                 scrollPane.setPreferredSize(new Dimension(600, 45));
+                scrollPane.setMinimumSize(new Dimension(45, 45));
                 scrollPane.getVerticalScrollBar().setUnitIncrement(5);
                 scrollPane.setBorder(null);
                 scrollPane.setOpaque(false);
@@ -484,6 +486,7 @@ public class FijiAssistantChat {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setPreferredSize(new Dimension(600, 60)); // Taller to accommodate buttons + labels
+        scrollPane.setMinimumSize(new Dimension(60, 60)); // Taller to accommodate buttons + labels
         scrollPane.getVerticalScrollBar().setUnitIncrement(5);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
