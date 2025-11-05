@@ -2,7 +2,9 @@ package sc.fiji.llm.image;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.ImageIcon;
 
@@ -46,8 +48,8 @@ public class ImageContextSupplier implements ContextItemSupplier {
 	}
 
 	@Override
-	public List<ContextItem> listAvailable() {
-		final List<ContextItem> items = new ArrayList<>();
+	public Set<ContextItem> listAvailable() {
+		final Set<ContextItem> items = new LinkedHashSet<>();
 
 		try {
 			if (imageDisplayService == null) {

@@ -1,8 +1,9 @@
 package sc.fiji.llm.script;
 
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
@@ -44,8 +45,8 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 	}
 
 	@Override
-	public List<ContextItem> listAvailable() {
-		final List<ContextItem> items = new ArrayList<>();
+	public Set<ContextItem> listAvailable() {
+		final Set<ContextItem> items = new LinkedHashSet<>();
 
 		try {
 			final List<TextEditor> instances = TextEditor.instances;

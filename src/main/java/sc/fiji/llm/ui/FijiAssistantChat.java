@@ -15,6 +15,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -475,7 +476,7 @@ public class FijiAssistantChat {
                 dropdownButton.addActionListener(e -> {
                     final JPopupMenu menu = new JPopupMenu();
                     try {
-                        final List<ContextItem> available = supplier.listAvailable();
+                        final Set<ContextItem> available = supplier.listAvailable();
                         if (available == null || available.isEmpty()) {
                             final JMenuItem none = new JMenuItem("(none)");
                             none.setEnabled(false);

@@ -1,6 +1,6 @@
 package sc.fiji.llm.chat;
 
-import java.util.List;
+import java.util.Set;
 
 import javax.swing.ImageIcon;
 
@@ -32,9 +32,9 @@ public interface ContextItemSupplier extends SingletonPlugin {
 	 * For example, a script supplier would list all open scripts.
 	 * This method is called frequently to populate UI elements, so it should be efficient.
 	 *
-	 * @return a list of available context items, or empty list if none available
+	 * @return a set of available context items, or empty set if none available
 	 */
-	List<ContextItem> listAvailable();
+	Set<ContextItem> listAvailable();
 
 	/**
 	 * Creates an active context item from this supplier.
