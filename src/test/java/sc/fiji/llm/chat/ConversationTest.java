@@ -1,13 +1,12 @@
 package sc.fiji.llm.chat;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -512,8 +511,38 @@ public class ConversationTest {
      * Simple test helper implementation of ContextItem for unit tests.
      */
     private static class TestContextItem extends AbstractContextItem {
+        private final String content;
+
         public TestContextItem(String type, String label, String content) {
-            super(type, label, content);
+            super(type, label);
+            this.content = content;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("\n--- ").append(getType()).append(": ").append(getLabel()).append(" ---\n");
+            sb.append(content).append("\n");
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            final TestContextItem other = (TestContextItem) obj;
+            return java.util.Objects.equals(getType(), other.getType()) &&
+                   java.util.Objects.equals(getLabel(), other.getLabel()) &&
+                   java.util.Objects.equals(content, other.content);
+        }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(getType(), getLabel(), content);
         }
     }
 }

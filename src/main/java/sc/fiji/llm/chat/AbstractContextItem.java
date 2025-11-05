@@ -9,12 +9,10 @@ import java.util.Objects;
 public abstract class AbstractContextItem implements ContextItem {
     private final String type;
     private final String label;
-    private final String content;
 
-    public AbstractContextItem(String type, String label, String content) {
+    public AbstractContextItem(String type, String label) {
         this.type = type;
         this.label = label;
-        this.content = content;
     }
 
     @Override
@@ -25,11 +23,6 @@ public abstract class AbstractContextItem implements ContextItem {
     @Override
     public String getLabel() {
         return label;
-    }
-
-    @Override
-    public String getContent() {
-        return content;
     }
 
     /**
@@ -64,7 +57,6 @@ public abstract class AbstractContextItem implements ContextItem {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("\n--- ").append(type).append(": ").append(label).append(" ---\n");
-        sb.append(content).append("\n");
         return sb.toString();
     }
 
@@ -72,14 +64,13 @@ public abstract class AbstractContextItem implements ContextItem {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-        final ContextItem other = (ContextItem) obj;
-        return Objects.equals(type, other.getType()) &&
-               Objects.equals(label, other.getLabel()) &&
-               Objects.equals(content, other.getContent());
+        final AbstractContextItem other = (AbstractContextItem) obj;
+        return Objects.equals(type, other.type) &&
+               Objects.equals(label, other.label);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(type, label, content);
+        return java.util.Objects.hash(type, label);
     }
 }

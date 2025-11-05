@@ -15,6 +15,7 @@ public class ScriptContextItem extends AbstractContextItem {
 	public static final int NO_SELECTION = -1;
 
 	private final String scriptName;
+	private final String scriptBody;
 	private final int instanceIndex;
 	private final int tabIndex;
 	private final String errorOutput;
@@ -35,8 +36,9 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	public ScriptContextItem(String scriptName, String content, int instanceIndex, int tabIndex, String errorOutput,
 			int selectionStartLine, int selectionEndLine) {
-		super("Script", scriptName, content);
+		super("Script", scriptName);
 		this.scriptName = scriptName;
+		this.scriptBody = content;
 		this.instanceIndex = instanceIndex;
 		this.tabIndex = tabIndex;
 		this.errorOutput = errorOutput != null ? errorOutput : "";
@@ -46,6 +48,10 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	public String getScriptName() {
 		return scriptName;
+	}
+
+	public String getScriptBody() {
+		return scriptBody;
 	}
 
 	public int getInstanceIndex() {
@@ -81,7 +87,7 @@ public class ScriptContextItem extends AbstractContextItem {
 			sb.append(" | Selected lines: ").append(selectionStartLine).append("-").append(selectionEndLine);
 		}
 		sb.append("\n");
-		sb.append("\n").append(getContent()).append("\n");
+		sb.append("\n").append(getScriptBody()).append("\n");
 		if (!errorOutput.isEmpty()) {
 			sb.append("\n--- Errors ---\n");
 			sb.append(errorOutput).append("\n");
@@ -97,7 +103,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		return Objects.equals(scriptName, other.scriptName) &&
 				instanceIndex == other.instanceIndex &&
 				tabIndex == other.tabIndex &&
-				Objects.equals(getContent(), other.getContent()) &&
+				Objects.equals(getScriptBody(), other.getScriptBody()) &&
 				Objects.equals(errorOutput, other.errorOutput) &&
 				selectionStartLine == other.selectionStartLine &&
 				selectionEndLine == other.selectionEndLine;
@@ -105,7 +111,7 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(scriptName, instanceIndex, tabIndex, getContent(), errorOutput, selectionStartLine, selectionEndLine);
+		return Objects.hash(scriptName, instanceIndex, tabIndex, getScriptBody(), errorOutput, selectionStartLine, selectionEndLine);
 	}
 
 	@Override
@@ -135,7 +141,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		final java.util.List<LineRange> mergedRanges = mergeRanges(ranges);
 
 		// Create a new merged item
-		return new MergedScriptContextItem(scriptName, getContent(), instanceIndex, tabIndex, errorOutput, mergedRanges);
+		return new MergedScriptContextItem(scriptName, getScriptBody(), instanceIndex, tabIndex, errorOutput, mergedRanges);
 	}
 
 	/**
@@ -213,7 +219,7 @@ public class ScriptContextItem extends AbstractContextItem {
 			sb.append("\n--- Script: ").append(getScriptName()).append(" ---\n");
 			sb.append("Editor index: ").append(getInstanceIndex()).append(" | Tab index: ").append(getTabIndex());
 			sb.append(mergedRangesLabel).append("\n");
-			sb.append("\n").append(getContent()).append("\n");
+			sb.append("\n").append(getScriptBody()).append("\n");
 			if (!getErrorOutput().isEmpty()) {
 				sb.append("\n--- Errors ---\n");
 				sb.append(getErrorOutput()).append("\n");

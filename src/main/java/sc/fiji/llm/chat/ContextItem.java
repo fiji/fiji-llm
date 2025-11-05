@@ -9,7 +9,6 @@ public interface ContextItem {
 
     public String getType();
     public String getLabel();
-    public String getContent();
     public String getMergeKey();
     public ContextItem mergeWith(final List<ContextItem> others);
 }

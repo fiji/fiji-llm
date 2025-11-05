@@ -132,59 +132,11 @@ public class ImageContextSupplier implements ContextItemSupplier {
 			return null;
 		}
 
-		// Build a description of the image for the LLM
-		final String description = buildImageDescription(dataset);
-
 		// Extract all dimensions with their types and lengths
 		final List<ImageContextItem.Dimension> dimensions = extractDimensions(dataset);
 		final String pixelType = dataset.getType().getClass().getSimpleName();
 
-		return new ImageContextItem(imageName, description, dimensions, pixelType);
-	}
-
-	/**
-	 * Builds a descriptive text about the image for the LLM.
-	 */
-	private String buildImageDescription(final Dataset dataset) {
-		final StringBuilder sb = new StringBuilder();
-
-		sb.append("Image: ").append(dataset.getName()).append("\n");
-		sb.append("Dimensions: ");
-
-		// Build dimension string
-		final int numDims = dataset.numDimensions();
-		for (int i = 0; i < numDims; i++) {
-			if (i > 0) {
-				sb.append(" × ");
-			}
-			sb.append(dataset.dimension(i));
-
-			// Try to get the axis type for better readability
-			try {
-				final AxisType axisType = dataset.axis(i).type();
-				if (axisType != null) {
-					sb.append(" (").append(axisType.getLabel()).append(")");
-				}
-			} catch (Exception e) {
-				// Ignore if we can't get axis type
-			}
-		}
-		sb.append("\n");
-
-		// Add pixel type information
-		sb.append("Pixel Type: ").append(dataset.getType().getClass().getSimpleName()).append("\n");
-
-		// Add unit information if available
-		try {
-			final String unit = dataset.axis(0).unit();
-			if (unit != null && !unit.isEmpty()) {
-				sb.append("Unit: ").append(unit).append("\n");
-			}
-		} catch (Exception e) {
-			// Ignore if we can't get unit
-		}
-
-		return sb.toString();
+		return new ImageContextItem(imageName, dimensions, pixelType);
 	}
 
 	/**

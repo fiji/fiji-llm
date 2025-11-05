@@ -61,27 +61,27 @@ public class ImageContextItem extends AbstractContextItem {
 
 	private final String imageName;
 	private final List<Dimension> dimensions;
-	private final String pixelType;	/**
+	private final String pixelType;
+
+	/**
 	 * Creates an image context item with basic metadata.
 	 *
 	 * @param imageName the name of the image/dataset
-	 * @param content a text description of the image for the LLM
 	 */
-	public ImageContextItem(String imageName, String content) {
-		this(imageName, content, Collections.emptyList(), "");
+	public ImageContextItem(String imageName) {
+		this(imageName, Collections.emptyList(), "");
 	}
 
 	/**
 	 * Creates an image context item with detailed metadata.
 	 *
 	 * @param imageName the name of the image/dataset
-	 * @param content a text description of the image for the LLM
 	 * @param dimensions list of dimensions with their types, lengths, and ordering
 	 * @param pixelType the pixel type (e.g., "uint8", "uint16", "float32")
 	 */
-	public ImageContextItem(String imageName, String content, List<Dimension> dimensions,
+	public ImageContextItem(String imageName, List<Dimension> dimensions,
 			String pixelType) {
-		super("Image", imageName, content);
+		super("Image", imageName);
 		this.imageName = imageName;
 		this.dimensions = dimensions != null ? new ArrayList<>(dimensions) : new ArrayList<>();
 		this.pixelType = pixelType != null ? pixelType : "";
