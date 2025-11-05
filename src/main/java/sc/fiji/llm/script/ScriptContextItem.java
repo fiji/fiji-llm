@@ -35,7 +35,7 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	public ScriptContextItem(String scriptName, String content, int instanceIndex, int tabIndex, String errorOutput,
 			int selectionStartLine, int selectionEndLine) {
-		super("Script", "📜 " + scriptName, content);
+		super("Script", scriptName, content);
 		this.scriptName = scriptName;
 		this.instanceIndex = instanceIndex;
 		this.tabIndex = tabIndex;

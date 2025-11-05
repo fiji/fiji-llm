@@ -2,6 +2,8 @@ package sc.fiji.llm.chat;
 
 import java.util.List;
 
+import javax.swing.ImageIcon;
+
 import org.scijava.plugin.SingletonPlugin;
 
 /**
@@ -16,6 +18,14 @@ public interface ContextItemSupplier extends SingletonPlugin {
 	 * @return the display name
 	 */
 	String getDisplayName();
+
+	/**
+	 * Gets an icon for this supplier.
+	 * Used to visually represent the supplier in the UI.
+	 *
+	 * @return the icon, or null if no icon is available
+	 */
+	ImageIcon getIcon();
 
 	/**
 	 * Lists all available context items that can be supplied.

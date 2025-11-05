@@ -1,8 +1,10 @@
 package sc.fiji.llm.script;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 
 import org.scijava.command.CommandService;
@@ -30,6 +32,15 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 	@Override
 	public String getDisplayName() {
 		return "Script";
+	}
+
+	@Override
+	public ImageIcon getIcon() {
+		final URL iconUrl = getClass().getResource("/icons/petition-noun-32.png");
+		if (iconUrl != null) {
+			return new ImageIcon(iconUrl);
+		}
+		return null;
 	}
 
 	@Override
