@@ -37,6 +37,7 @@ public class ChatMessagePanel extends JPanel {
 	private static final int MIN_AVAILABLE_WIDTH = 200;
 	private static final int DEFAULT_AVAILABLE_WIDTH = 600;
 	private final float textFontSize;
+	private JTextPane textPane;
 
 	public enum MessageType {
 		USER,
@@ -193,7 +194,7 @@ public class ChatMessagePanel extends JPanel {
 
 		   applyBubbleStyle(bubble, type);
 
-		   final JTextPane textPane = createTextPane(type, message);
+		   createTextPane(type, message);
 
 		   bubble.add(textPane);
 
@@ -227,7 +228,7 @@ public class ChatMessagePanel extends JPanel {
 	}
 
 	private JTextPane createTextPane(final MessageType type, final String message) {
-		final JTextPane textPane = new JTextPane();
+		textPane = new JTextPane();
 		textPane.setText(message);
 		textPane.setEditable(false);
 		textPane.setFocusable(true); // Allow highlighting and copying
@@ -252,6 +253,32 @@ public class ChatMessagePanel extends JPanel {
 		textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
 
 		return textPane;
+	}
+
+	/**
+	 * Appends text to this message panel (for streaming updates).
+	 * This method is thread-safe and can be called from any thread.
+	 *
+	 * @param text the text to append
+	 */
+	public void appendText(final String text) {
+		if (text == null || text.isEmpty()) {
+			return;
+		}
+
+		if (!javax.swing.SwingUtilities.isEventDispatchThread()) {
+			javax.swing.SwingUtilities.invokeLater(() -> appendText(text));
+			return;
+		}
+
+		if (textPane != null) {
+			try {
+				final StyledDocument doc = textPane.getStyledDocument();
+				doc.insertString(doc.getLength(), text, null);
+			} catch (Exception e) {
+				// Ignore insertion errors
+			}
+		}
 	}
 
 	/**

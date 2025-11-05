@@ -35,7 +35,6 @@ import org.scijava.platform.PlatformService;
 import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import net.miginfocom.swing.MigLayout;
@@ -80,6 +79,7 @@ public class FijiAssistantChat {
     private final JButton clearAllButton;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
+    private ChatMessagePanel currentStreamingPanel;
 
     public FijiAssistantChat(final FijiAssistant assistant, final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService) {
         this.assistant = assistant;
@@ -531,45 +531,103 @@ public class FijiAssistantChat {
             return;
         }
 
-        // Add message to conversation synchronously on EDT before spawning background thread
-        conversation.addUserMessage(userMessage);
-
-        // Display user message (this will use invokeLater but message is already in conversation)
-        appendToChat(Sender.USER, userMessage);
-
         inputArea.setText("");
         inputArea.setEnabled(false);
         sendButton.setEnabled(false);
 
+        // Add message to conversation synchronously
+        conversation.addUserMessage(userMessage);
+
+        // Display both user message and empty assistant panel in the same EDT call for proper ordering
+        SwingUtilities.invokeLater(() -> {
+            // Add user message panel
+            addMessagePanelToChat(ChatMessagePanel.MessageType.USER, userMessage);
+            clearAllContextButtons();
+
+            // Add empty assistant message panel for streaming
+            currentStreamingPanel = createEmptyAssistantMessagePanel();
+        });
+
         // Process in background thread (LLM calls happen OFF the EDT)
-        new Thread(() -> {
+        threadService.run(() -> {
+            final StringBuilder responseBuilder = new StringBuilder();
+            final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
                 // Create and send ChatRequest (happens on background thread)
                 final ChatRequest chatRequest = conversation.buildChatRequest();
 
-                final AiMessage message = assistant.chat(chatRequest);
+                // Use streaming API
+                assistant.chatStreaming(chatRequest)
+                    .onPartialResponse(token -> {
+                        responseBuilder.append(token);
+                        if (currentStreamingPanel != null) {
+                            currentStreamingPanel.appendText(token);
+                            // Scroll to bottom periodically (every 200ms) to avoid excessive updates
+                            final long now = System.currentTimeMillis();
+                            if (now - lastScrollTime[0] > 200) {
+                                lastScrollTime[0] = now;
+                                SwingUtilities.invokeLater(() -> {
+                                    final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+                                    vertical.setValue(vertical.getMaximum());
+                                });
+                            }
+                        }
+                    })
+                    .onCompleteResponse(response -> {
+                        // Add complete message to conversation
+                        conversation.addAssistantMessage(responseBuilder.toString());
+                        currentStreamingPanel = null;
 
-                appendToChat(Sender.ASSISTANT, message.text());
-            } catch (RateLimitException e) {
-                // If this was a rate-limit / quota error show a short system message
-                appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
+                        // Scroll to bottom one final time after streaming completes
+                        SwingUtilities.invokeLater(() -> {
+                            final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+                            vertical.setValue(vertical.getMaximum());
+                            inputArea.setEnabled(true);
+                            sendButton.setEnabled(true);
+                            inputArea.requestFocus();
+                        });
+                    })
+                    .onError(error -> {
+                        currentStreamingPanel = null;
+
+                        // Handle errors
+                        if (error instanceof RateLimitException) {
+                            appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
+                        } else {
+                            final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
+                            if (msg.length() > 300) {
+                                appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
+                            } else {
+                                appendToChat(Sender.SYSTEM, "Error: " + msg);
+                            }
+                        }
+
+                        // Re-enable inputs
+                        SwingUtilities.invokeLater(() -> {
+                            inputArea.setEnabled(true);
+                            sendButton.setEnabled(true);
+                            inputArea.requestFocus();
+                        });
+                    })
+                    .start();
             } catch (Exception e) {
-                // Fall back to a short message including the exception summary
+                currentStreamingPanel = null;
+                
+                // Handle immediate errors (before streaming starts)
                 final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
                 if (msg.length() > 300) {
                     appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
                 } else {
                     appendToChat(Sender.SYSTEM, "Error: " + msg);
                 }
-            } finally {
-                // Re-enable inputs so the user can change model or try again manually
+                
                 SwingUtilities.invokeLater(() -> {
                     inputArea.setEnabled(true);
                     sendButton.setEnabled(true);
                     inputArea.requestFocus();
                 });
             }
-        }).start();
+        });
     }
 
     private void appendToChat(final Sender sender, final String message) {
@@ -585,36 +643,12 @@ public class FijiAssistantChat {
                 case ERROR -> ChatMessagePanel.MessageType.ERROR;
             };
 
-            // Create and add message panel
-            final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType, message, CHAT_FONT_SIZE);
-            
-            // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
-            final int componentCount = chatPanel.getComponentCount();
-            if (componentCount >= 2) {
-                final java.awt.Component glue = chatPanel.getComponent(0);
-                final java.awt.Component bottomSpacer = chatPanel.getComponent(componentCount - 1);
-                chatPanel.remove(0); // Remove glue
-                chatPanel.remove(componentCount - 2); // Remove bottom spacer (index shifts after first removal)
-                chatPanel.add(messagePanel, "growx"); // Grow horizontally only
-                chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
-                chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer at end
-            } else {
-                chatPanel.add(messagePanel, "growx");
-            }
-            
-            chatPanel.revalidate();
-            chatPanel.repaint();
-
-            // Scroll to bottom
-            SwingUtilities.invokeLater(() -> {
-                final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-                vertical.setValue(vertical.getMaximum());
-            });
+            addMessagePanelToChat(messageType, message);
 
             // Track messages for API calls
             switch (sender) {
                 case USER -> {
-                    // User message already added to conversation synchronously in sendMessage()
+                    // User message already added to conversation
                     // Just clear context UI
                     clearAllContextButtons();
                 }
@@ -622,6 +656,69 @@ public class FijiAssistantChat {
                 case SYSTEM, ERROR -> {} // System and error messages are not tracked in conversation
             }
         });
+    }
+
+    /**
+     * Adds a message panel to the chat (must be called on EDT).
+     */
+    private void addMessagePanelToChat(final ChatMessagePanel.MessageType messageType, final String message) {
+        final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType, message, CHAT_FONT_SIZE);
+
+        // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
+        final int componentCount = chatPanel.getComponentCount();
+        if (componentCount >= 2) {
+            final java.awt.Component glue = chatPanel.getComponent(0);
+            final java.awt.Component bottomSpacer = chatPanel.getComponent(componentCount - 1);
+            chatPanel.remove(0); // Remove glue
+            chatPanel.remove(componentCount - 2); // Remove bottom spacer (index shifts after first removal)
+            chatPanel.add(messagePanel, "growx"); // Grow horizontally only
+            chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
+            chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer at end
+        } else {
+            chatPanel.add(messagePanel, "growx");
+        }
+
+        chatPanel.revalidate();
+        chatPanel.repaint();
+
+        // Scroll to bottom
+        SwingUtilities.invokeLater(() -> {
+            final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+            vertical.setValue(vertical.getMaximum());
+        });
+    }
+
+    /**
+     * Creates an empty assistant message panel for streaming.
+     * Must be called on the EDT.
+     */
+    private ChatMessagePanel createEmptyAssistantMessagePanel() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("Must be called on EDT");
+        }
+
+        // Create an empty assistant message panel
+        final ChatMessagePanel messagePanel = new ChatMessagePanel(
+            ChatMessagePanel.MessageType.ASSISTANT, "", CHAT_FONT_SIZE);
+
+        // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
+        final int componentCount = chatPanel.getComponentCount();
+        if (componentCount >= 2) {
+            final java.awt.Component glue = chatPanel.getComponent(0);
+            final java.awt.Component bottomSpacer = chatPanel.getComponent(componentCount - 1);
+            chatPanel.remove(0); // Remove glue
+            chatPanel.remove(componentCount - 2); // Remove bottom spacer (index shifts after first removal)
+            chatPanel.add(messagePanel, "growx"); // Grow horizontally only
+            chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
+            chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer at end
+        } else {
+            chatPanel.add(messagePanel, "growx");
+        }
+
+        chatPanel.revalidate();
+        chatPanel.repaint();
+
+        return messagePanel;
     }
 
     private void changeModel() {
