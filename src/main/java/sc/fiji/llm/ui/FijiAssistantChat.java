@@ -179,6 +179,7 @@ public class FijiAssistantChat {
         };
         tagsContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
         tagsContainer.setOpaque(false);
+        tagsContainer.setToolTipText("Attached items will be included as context with your message");
 
         // Create scrollable container for tags
         contextTagsScrollPane = new JScrollPane(tagsContainer);
