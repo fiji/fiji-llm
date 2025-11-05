@@ -5,6 +5,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
+import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
@@ -27,7 +28,7 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 	private AiToolService toolService;
 
 	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName) {
+	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final ChatMemory chatMemory) {
 		final LLMProvider provider = providerService.getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
@@ -38,10 +39,15 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 			throw new IllegalStateException("No API key configured for provider: " + providerName);
 		}
 
-		return AiServices.builder(assistantInterface)
+		final var builder = AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(apiKey, modelName))
 			.chatModel(provider.createChatModel(apiKey, modelName))
-			.tools(toolService.getInstances().toArray())
-			.build();
+			.tools(toolService.getInstances().toArray());
+
+		if (chatMemory != null) {
+			builder.chatMemory(chatMemory);
+		}
+
+		return builder.build();
 	}
 }

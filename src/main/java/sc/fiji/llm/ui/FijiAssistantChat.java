@@ -36,16 +36,20 @@ import org.scijava.platform.PlatformService;
 import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.exception.RateLimitException;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import net.miginfocom.swing.MigLayout;
+import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.ContextItemService;
 import sc.fiji.llm.chat.ContextItemSupplier;
-import sc.fiji.llm.chat.Conversation;
-import sc.fiji.llm.chat.ConversationBuilder;
 import sc.fiji.llm.commands.Fiji_Chat;
+import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -67,9 +71,12 @@ public class FijiAssistantChat {
     private final PlatformService platformService;
     private final ContextItemService contextItemSupplierService;
     private final ThreadService threadService;
+    private final AiToolService aiToolService;
+    private final ChatbotService chatbotService;
 
     // -- Non-Contextual fields --
-    private final FijiAssistant assistant;
+    private FijiAssistant assistant;
+    private final ChatMemory chatMemory;
     private final JFrame frame;
     private final JPanel chatPanel;
     private final JScrollPane chatScrollPane;
@@ -79,24 +86,30 @@ public class FijiAssistantChat {
     private final JScrollPane contextTagsScrollPane;
     private final JButton clearAllButton;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
-    private final Conversation conversation;
+    private final List<ContextItem> contextItems;
     private ChatMessagePanel currentStreamingPanel;
 
-    public FijiAssistantChat(final FijiAssistant assistant, final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService) {
-        this.assistant = assistant;
+    public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, String providerName, String modelName) {
         this.commandService = commandService;
         this.prefService = prefService;
         this.platformService = platformService;
         this.threadService = threadService;
         this.contextItemSupplierService = contextItemService;
+        this.aiToolService = aiToolService;
+        this.chatbotService = chatService;
 
         this.contextItemButtons = new HashMap<>();
+        this.contextItems = new ArrayList<>();
 
-        this.conversation = new ConversationBuilder()
-            .withBaseSystemMessage(SYSTEM_PROMPT)
-            .withMessageFormatHint(chatService.messageFormatHint())
-            .withTools(aiToolService.getInstances())
-            .build();
+        // Create chat memory with a window of 20 messages (includes tool calls/results)
+        this.chatMemory = MessageWindowChatMemory.withMaxMessages(20);
+
+        // Populate initial system message
+        final String systemMessage = buildSystemMessage();
+        this.chatMemory.add(new SystemMessage(systemMessage));
+
+        // Recreate the assistant with the chat memory for proper tool tracking
+        this.assistant = assistantService.createAssistant(FijiAssistant.class, providerName, modelName, chatMemory);
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);
@@ -536,12 +549,12 @@ public class FijiAssistantChat {
         inputArea.setEnabled(false);
         sendButton.setEnabled(false);
 
-        // Add message to conversation synchronously
-        conversation.addUserMessage(userMessage);
+        // Build user message with context items
+        final String messageWithContext = buildUserMessageWithContext(userMessage);
 
         // Display both user message and empty assistant panel in the same EDT call for proper ordering
         SwingUtilities.invokeLater(() -> {
-            // Add user message panel
+            // Add user message panel (display original without context markers)
             addMessagePanelToChat(ChatMessagePanel.MessageType.USER, userMessage);
             clearAllContextButtons();
 
@@ -554,8 +567,13 @@ public class FijiAssistantChat {
             final StringBuilder responseBuilder = new StringBuilder();
             final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
-                // Create and send ChatRequest (happens on background thread)
-                final ChatRequest chatRequest = conversation.buildChatRequest();
+                // Add user message to chat memory (with context)
+                chatMemory.add(new UserMessage(messageWithContext));
+
+                // Create ChatRequest from chat memory - it now includes history automatically
+                final ChatRequest chatRequest = ChatRequest.builder()
+                    .messages(chatMemory.messages())
+                    .build();
 
                 // Use streaming API
                 assistant.chatStreaming(chatRequest)
@@ -575,8 +593,9 @@ public class FijiAssistantChat {
                         }
                     })
                     .onCompleteResponse(response -> {
-                        // Add complete message to conversation
-                        conversation.addAssistantMessage(responseBuilder.toString());
+                        // Add complete response to chat memory
+                        // LangChain4j automatically adds ToolExecutionRequest/Result messages
+                        chatMemory.add(response.aiMessage());
                         currentStreamingPanel = null;
 
                         // Scroll to bottom one final time after streaming completes
@@ -613,7 +632,7 @@ public class FijiAssistantChat {
                     .start();
             } catch (Exception e) {
                 currentStreamingPanel = null;
-                
+
                 // Handle immediate errors (before streaming starts)
                 final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
                 if (msg.length() > 300) {
@@ -621,7 +640,7 @@ public class FijiAssistantChat {
                 } else {
                     appendToChat(Sender.SYSTEM, "Error: " + msg);
                 }
-                
+
                 SwingUtilities.invokeLater(() -> {
                     inputArea.setEnabled(true);
                     sendButton.setEnabled(true);
@@ -629,6 +648,23 @@ public class FijiAssistantChat {
                 });
             }
         });
+    }
+
+    /**
+     * Builds a user message including context items formatted for the LLM.
+     */
+    private String buildUserMessageWithContext(final String userMessage) {
+        final StringBuilder fullMessage = new StringBuilder(userMessage);
+
+        if (!contextItems.isEmpty()) {
+            fullMessage.append("\n\n===Start of Context Items===\n");
+            for (final ContextItem item : contextItems) {
+                fullMessage.append(item);
+            }
+            fullMessage.append("===End of Context Items===\n");
+        }
+
+        return fullMessage.toString();
     }
 
     private void appendToChat(final Sender sender, final String message) {
@@ -646,16 +682,8 @@ public class FijiAssistantChat {
 
             addMessagePanelToChat(messageType, message);
 
-            // Track messages for API calls
-            switch (sender) {
-                case USER -> {
-                    // User message already added to conversation
-                    // Just clear context UI
-                    clearAllContextButtons();
-                }
-                case ASSISTANT -> conversation.addAssistantMessage(message);
-                case SYSTEM, ERROR -> {} // System and error messages are not tracked in conversation
-            }
+            // System and error messages are not added to chat memory
+            // User and assistant messages are already tracked in chatMemory via sendMessage()
         });
     }
 
@@ -748,7 +776,7 @@ public class FijiAssistantChat {
             return;
         }
         // Check for duplicates using equals() - don't add the same item twice
-        if (conversation.getContextItems().contains(item)) {
+        if (contextItems.contains(item)) {
             // Flash the existing tag to indicate it's already added
             final JButton existingButton = contextItemButtons.get(item);
             if (existingButton != null) {
@@ -757,8 +785,8 @@ public class FijiAssistantChat {
             return;
         }
 
-        // Add to conversation
-        conversation.addContextItem(item);
+        // Add to context items list
+        contextItems.add(item);
 
         // Truncate label to max length
         final int maxLabelLength = 20;
@@ -813,13 +841,13 @@ public class FijiAssistantChat {
     }
 
     private void removeContextItem(final ContextItem item, final JButton tagButton) {
-        conversation.removeContextItem(item);
+        contextItems.remove(item);
         contextItemButtons.remove(item);
         final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
         tagsContainer.remove(tagButton);
 
         // Disable the Clear All button if no more context items
-        if (conversation.getContextItems().isEmpty()) {
+        if (contextItems.isEmpty()) {
             clearAllButton.setEnabled(false);
         }
 
@@ -828,9 +856,9 @@ public class FijiAssistantChat {
     }
 
     private void clearAllContextButtons() {
-        // Remove all context items from the conversation
-        for (final ContextItem item : new ArrayList<>(conversation.getContextItems())) {
-            conversation.removeContextItem(item);
+        // Remove all context items from the list
+        for (final ContextItem item : new ArrayList<>(contextItems)) {
+            contextItems.remove(item);
         }
 
         contextItemButtons.clear();
@@ -843,6 +871,31 @@ public class FijiAssistantChat {
 
     private void clearAllContext() {
         clearAllContextButtons();
+    }
+
+    /**
+     * Builds the initial system message including tool descriptions.
+     */
+    private String buildSystemMessage() {
+        final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
+
+        sb.append(chatbotService.messageFormatHint());
+
+        // Add tool documentation to system message
+        final List<AiToolPlugin> tools = aiToolService.getInstances();
+        if (!tools.isEmpty()) {
+            sb.append("\n\n## Available Tools\n\n");
+            for (final AiToolPlugin tool : tools) {
+                sb.append("- **").append(tool.getName()).append("**: ");
+                final String description = tool.getUsage();
+                if (description != null && !description.isEmpty()) {
+                    sb.append(description);
+                }
+                sb.append("\n");
+            }
+        }
+
+        return sb.toString();
     }
 
     private void flashButton(final JButton button) {

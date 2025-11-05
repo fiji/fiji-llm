@@ -11,6 +11,7 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 import org.scijava.thread.ThreadService;
 
+import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItemService;
 import sc.fiji.llm.tools.AiToolService;
@@ -39,15 +40,18 @@ public class SwingChatbotService extends AbstractService implements ChatbotServi
     @Parameter
     private ThreadService threadService;
 
+    @Parameter
+    private AssistantService assistantService;
+
     @Override
     public String messageFormatHint() {
         return  "Your messages are displayed as plain text (no markdown support)";
     }
 
     @Override
-    public void launchChat(FijiAssistant assistant, String title) {
+    public void launchChat(String title, String providerName, String modelName) {
         SwingUtilities.invokeLater(() -> {
-            FijiAssistantChat chatWindow = new FijiAssistantChat(assistant, title, commandService, prefService, platformService, aiToolService, contextItemService, threadService, this);
+            FijiAssistantChat chatWindow = new FijiAssistantChat(title, commandService, prefService, platformService, aiToolService, contextItemService, threadService, this, assistantService, providerName, modelName);
             chatWindow.show();
         });
     }

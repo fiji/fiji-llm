@@ -225,12 +225,9 @@ public class Fiji_Chat extends DynamicCommand {
 		try {
 			prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
 			prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
-			
-			// Create assistant with tools
-			FijiAssistant assistant = assistantService.createAssistant(FijiAssistant.class, provider, model);
 
-			// Launch the chat window using ChatbotService
-			chatbotService.launchChat(assistant, provider + " - " + model);
+			// Launch the chat window with provider and model info so it can recreate the assistant with memory
+			chatbotService.launchChat(provider + " - " + model, provider, model);
 		} catch (Exception e) {
 			cancel("Failed to create chat model: " + e.getMessage());
 		}
