@@ -56,13 +56,24 @@ public class ScriptEditorTool implements AiToolPlugin {
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
 			
 			if (textEditor == null) {
-				// Open a new editor on EDT
-				SwingUtilities.invokeAndWait(() -> commandService.run(ScriptEditor.class, true));
+				// Open a new editor, checking if we're already on EDT
+				if (SwingUtilities.isEventDispatchThread()) {
+					commandService.run(ScriptEditor.class, true);
+				} else {
+					SwingUtilities.invokeAndWait(() -> commandService.run(ScriptEditor.class, true));
+				}
 				
-				// Wait briefly for editor to initialize
-				Thread.sleep(500);
+				// Poll for up to 5 seconds for editor to become available
+				final long startTime = System.currentTimeMillis();
+				final long timeoutMs = 5000;
+				while (System.currentTimeMillis() - startTime < timeoutMs) {
+					textEditor = TextEditorUtils.getMostRecentVisibleEditor();
+					if (textEditor != null) {
+						break;
+					}
+					Thread.sleep(100);
+				}
 				
-				textEditor = TextEditorUtils.getMostRecentVisibleEditor();
 				if (textEditor == null) {
 					return "ERROR: Failed to open script editor";
 				}
