@@ -38,11 +38,11 @@ import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.FijiAssistant;
-import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationBuilder;
-import sc.fiji.llm.chat.ScriptContextItem;
 import sc.fiji.llm.commands.Fiji_Chat;
+import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.context.ScriptContextItem;
 import sc.fiji.llm.tools.AiToolService;
 
 /**

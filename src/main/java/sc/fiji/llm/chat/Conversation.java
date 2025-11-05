@@ -11,6 +11,7 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import sc.fiji.llm.context.ContextItem;
 
 /**
  * Manages a conversation as a list of messages with a system prompt.

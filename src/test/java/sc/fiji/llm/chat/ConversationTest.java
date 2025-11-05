@@ -15,6 +15,8 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.context.ScriptContextItem;
 
 /**
  * Unit tests for the Conversation class.
