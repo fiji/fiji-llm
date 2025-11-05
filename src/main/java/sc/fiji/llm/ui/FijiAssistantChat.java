@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import org.scijava.command.CommandService;
+import org.scijava.platform.PlatformService;
 import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
@@ -62,6 +64,7 @@ public class FijiAssistantChat {
     // -- Contextual fields --
     private final CommandService commandService;
     private final PrefService prefService;
+    private final PlatformService platformService;
     private final ContextItemService contextItemSupplierService;
     private final ThreadService threadService;
 
@@ -78,10 +81,11 @@ public class FijiAssistantChat {
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
 
-    public FijiAssistantChat(final FijiAssistant assistant, final String title, CommandService commandService, PrefService prefService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService) {
+    public FijiAssistantChat(final FijiAssistant assistant, final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService) {
         this.assistant = assistant;
         this.commandService = commandService;
         this.prefService = prefService;
+        this.platformService = platformService;
         this.threadService = threadService;
         this.contextItemSupplierService = contextItemService;
 
@@ -100,6 +104,23 @@ public class FijiAssistantChat {
 
         // Top navigation bar with model selection
         final JPanel topNavBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+
+        // ImageSC Forum button (left side of nav bar)
+        final JButton forumButton;
+        final URL forumIconUrl = getClass().getResource("/icons/imagesc-icon-32.png");
+        if (forumIconUrl != null) {
+            forumButton = new JButton(new ImageIcon(forumIconUrl));
+            forumButton.setPreferredSize(new Dimension(36, 36));
+            forumButton.setToolTipText("Open ImageSC Forum");
+        } else {
+            forumButton = new JButton("Forum");
+            forumButton.setPreferredSize(new Dimension(36, 36));
+        }
+        forumButton.setFocusPainted(false);
+        forumButton.setToolTipText("Get help on the Image.sc forum");
+        forumButton.addActionListener(e -> openForumInBrowser());
+
+        // Change Model button (right side of nav bar)
         final JButton changeModelButton;
         final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
         if (gearIconUrl != null) {
@@ -111,6 +132,8 @@ public class FijiAssistantChat {
         }
         changeModelButton.setFocusPainted(false);
         changeModelButton.addActionListener(e -> changeModel());
+
+        topNavBar.add(forumButton);
         topNavBar.add(changeModelButton);
 
         // Chat display area - MigLayout for proper resizing with messages at bottom
@@ -610,6 +633,15 @@ public class FijiAssistantChat {
 
         // Re-invoke the Fiji_Chat command to show the selection dialog
         commandService.run(Fiji_Chat.class, true);
+    }
+
+    private void openForumInBrowser() {
+        try {
+            final URI uri = new URI("https://forum.image.sc/tag/llm");
+            platformService.open(uri.toURL());
+        } catch (Exception e) {
+            appendToChat(Sender.ERROR, "Failed to open forum: " + e.getMessage());
+        }
     }
 
     private void addContextItem(final ContextItem item) {
