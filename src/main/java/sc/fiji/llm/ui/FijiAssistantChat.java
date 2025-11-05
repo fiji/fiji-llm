@@ -12,6 +12,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -25,24 +27,21 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
-import org.scijava.Context;
 import org.scijava.command.CommandService;
-import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
-import org.scijava.ui.swing.script.EditorPane;
-import org.scijava.ui.swing.script.TextEditor;
-import org.scijava.ui.swing.script.TextEditorTab;
+import org.scijava.thread.ThreadService;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.FijiAssistant;
+import sc.fiji.llm.chat.ContextItem;
+import sc.fiji.llm.chat.ContextItemService;
+import sc.fiji.llm.chat.ContextItemSupplier;
 import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationBuilder;
 import sc.fiji.llm.commands.Fiji_Chat;
-import sc.fiji.llm.context.ContextItem;
-import sc.fiji.llm.context.ScriptContextItem;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -58,18 +57,13 @@ public class FijiAssistantChat {
         "Your mission is to help users develop reproducible workflows (e.g. via scripts), answer their image analysis questions, and select the best tools for their data and goals. " +
         "Key elements of your persona: positive, validating, patient, encouraging, understanding.";
 
-    @Parameter
-    private CommandService commandService;
+    // -- Contextual fields --
+    private final CommandService commandService;
+    private final PrefService prefService;
+    private final ContextItemService contextItemSupplierService;
+    private final ThreadService threadService;
 
-    @Parameter
-    private PrefService prefService;
-
-	@Parameter
-	private AiToolService aiToolService;
-
-    @Parameter
-    private ChatbotService chatService;
-
+    // -- Non-Contextual fields --
     private final FijiAssistant assistant;
     private final JFrame frame;
     private final JPanel chatPanel;
@@ -82,10 +76,14 @@ public class FijiAssistantChat {
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final Conversation conversation;
 
-    public FijiAssistantChat(final Context context, final FijiAssistant assistant, final String title) {
-        context.inject(this);
+    public FijiAssistantChat(final FijiAssistant assistant, final String title, CommandService commandService, PrefService prefService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService) {
         this.assistant = assistant;
-        this.contextItemButtons = new java.util.HashMap<>();
+        this.commandService = commandService;
+        this.prefService = prefService;
+        this.threadService = threadService;
+        this.contextItemSupplierService = contextItemService;
+
+        this.contextItemButtons = new HashMap<>();
 
         this.conversation = new ConversationBuilder()
             .withBaseSystemMessage(SYSTEM_PROMPT)
@@ -132,10 +130,9 @@ public class FijiAssistantChat {
         // Button bar with context buttons on left
         final JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
 
-        // Create a square button with dropdown for script selection
-        final JPanel scriptButtonPanel = createScriptSelectorPanel();
-
-        buttonBar.add(scriptButtonPanel);
+        // Create selector panels for each ContextItemSupplier discovered
+        final JPanel suppliersPanel = createContextSelectorPanel();
+        buttonBar.add(suppliersPanel);
         // Add more context type buttons here in the future
 
         // Context tags panel (shows active context items as removable tags)
@@ -312,70 +309,87 @@ public class FijiAssistantChat {
         return button;
     }
 
-    private JPanel createScriptSelectorPanel() {
+    /**
+     * Generic selector panel that builds a button + dropdown for each
+     * registered ContextItemSupplier. Falls back to the legacy script
+     * selector if no suppliers are available.
+     */
+    private JPanel createContextSelectorPanel() {
         final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         panel.setOpaque(false);
 
-        // Main square button with script icon
-        final JButton mainButton = createIconButton("📜", "Attach the active script as context", 24f);
-
-        // Dropdown button (small arrow button)
-        final JButton dropdownButton = new JButton("▼");
-        dropdownButton.setPreferredSize(new Dimension(30, 50));
-        dropdownButton.setToolTipText("Select a script to attach as context");
-        dropdownButton.setFont(dropdownButton.getFont().deriveFont(10f));
-        dropdownButton.setFocusPainted(false);
-
-        // When main button clicked, add active script
-        mainButton.addActionListener(e -> addActiveScriptContext());
-
-        // When dropdown clicked, show script selection menu
-        dropdownButton.addActionListener(e -> {
-            final JPopupMenu menu = buildScriptSelectionMenu();
-            menu.show(dropdownButton, 0, dropdownButton.getHeight());
-        });
-
-        panel.add(mainButton);
-        panel.add(dropdownButton);
-
-        return panel;
-    }
-
-    private JPopupMenu buildScriptSelectionMenu() {
-        final JPopupMenu menu = new JPopupMenu();
-
         try {
-            final java.util.List<TextEditor> instances = TextEditor.instances;
+            final List<ContextItemSupplier> suppliers = contextItemSupplierService.getInstances();
 
-            if (instances == null || instances.isEmpty()) {
-                // No script editor open
-                final JMenuItem openEditorItem = new JMenuItem("Open Script Editor...");
-                openEditorItem.addActionListener(e ->
-                    commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true));
-                menu.add(openEditorItem);
-            } else {
-                // Add menu item for the active script
-                final JMenuItem activeItem = new JMenuItem("Active Script");
-                activeItem.addActionListener(e -> addActiveScriptContext());
-                menu.add(activeItem);
-
-                // Add menu items for all open scripts if there are multiple
-                if (instances.size() > 1 || hasMultipleTabs(TextEditorUtils.getMostRecentVisibleEditor())) {
-                    menu.addSeparator();
-
-                    for (final TextEditor textEditor : instances) {
-                        addScriptMenuItems(menu, textEditor);
-                    }
-                }
+            if (suppliers == null || suppliers.isEmpty()) {
+                // No suppliers available - show nothing (button bar will be empty)
+                return panel;
             }
+
+            for (final ContextItemSupplier supplier : suppliers) {
+                final String displayName = supplier.getDisplayName();
+
+                // Main button (uses first character of display name as a simple icon)
+                final String iconText = displayName.length() > 0 ? displayName.substring(0, 1) : "?";
+                final JButton contextItemButton = createIconButton(iconText, "Attach active " + displayName, 18f);
+
+                // Dropdown button
+                final JButton dropdownButton = new JButton("▼");
+                dropdownButton.setPreferredSize(new Dimension(30, 50));
+                dropdownButton.setToolTipText("Select " + displayName + " to attach as context");
+                dropdownButton.setFont(dropdownButton.getFont().deriveFont(10f));
+                dropdownButton.setFocusPainted(false);
+
+                // Main action: create active context item via supplier
+                contextItemButton.addActionListener(e -> {
+                    threadService.run(() -> {
+                        try {
+                            final ContextItem item = supplier.createActiveContextItem();
+                            if (item != null) {
+                                addContextItem(item);
+                            } else {
+                                appendToChat(Sender.ERROR, "No active " + displayName + " available");
+                            }
+                        } catch (Exception ex) {
+                            appendToChat(Sender.ERROR, "Failed to create active " + displayName + ": " + ex.getMessage());
+                        }
+                    });
+                });
+
+                // Dropdown: list available items from supplier
+                dropdownButton.addActionListener(e -> {
+                    final JPopupMenu menu = new JPopupMenu();
+                    try {
+                        final List<ContextItem> available = supplier.listAvailable();
+                        if (available == null || available.isEmpty()) {
+                            final JMenuItem none = new JMenuItem("(none)");
+                            none.setEnabled(false);
+                            menu.add(none);
+                        } else {
+                            for (final ContextItem it : available) {
+                                final JMenuItem mi = new JMenuItem(it.getLabel());
+                                mi.addActionListener(ae -> addContextItem(it));
+                                menu.add(mi);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        final JMenuItem err = new JMenuItem("(not available)");
+                        err.setEnabled(false);
+                        menu.add(err);
+                    }
+
+                    menu.show(dropdownButton, 0, dropdownButton.getHeight());
+                });
+
+                panel.add(contextItemButton);
+                panel.add(dropdownButton);
+            }
+
         } catch (Exception e) {
-            // Fallback menu
-            final JMenuItem errorItem = new JMenuItem("(Script editor not available)");
-            errorItem.setEnabled(false);
-            menu.add(errorItem);
+            // If the supplier service fails, show nothing
         }
 
-        return menu;
+        return panel;
     }
 
     private void sendMessage() {
@@ -488,207 +502,11 @@ public class FijiAssistantChat {
         commandService.run(Fiji_Chat.class, true);
     }
 
-    private void addActiveScriptContext() {
-        // Try to get the active script from the script editor
-        try {
-            // Access the static list of open TextEditor instances and pick
-            // the most-recent one that is visible. TextEditor.instances
-            // appends instances on creation, so the last element is the
-            // newest. If none are visible, open the ScriptEditor.
-            final TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
-            if (textEditor == null) {
-                // No visible editor instance found - open the Script Editor
-                commandService.run(org.scijava.ui.swing.script.ScriptEditor.class, true);
-                return;
-            }
-
-            // Try to obtain the currently selected tab. If a no-arg getTab() exists, use it; otherwise fall back
-            TextEditorTab tab = null;
-            try {
-                // Some versions expose a no-arg getTab() for the active tab
-                tab = textEditor.getTab();
-            } catch (Throwable t) {
-                // Fall back to the first tab if no no-arg getTab() is available
-                try {
-                    tab = textEditor.getTab(0);
-                } catch (Throwable t2) {
-                    // Give up if we can't access a tab
-                    throw new RuntimeException("Unable to access script tab", t2);
-                }
-            }
-
-            if (tab == null) {
-                appendToChat(Sender.ERROR, "No active script tab available");
-                return;
-            }
-
-            // Get the tab index
-            final int tabIndex = findTabIndex(textEditor, tab);
-            if (tabIndex < 0) {
-                appendToChat(Sender.ERROR, "Failed to locate tab index");
-                return;
-            }
-
-            // Build and add the script context
-            final ScriptContextItem scriptItem = buildScriptContextItem(textEditor, tab, tabIndex);
-            addContextItem(scriptItem);
-        } catch (Exception e) {
-            // If we can't access the script editor, show an error
-            appendToChat(Sender.ERROR, "Failed to access script editor: " + e.getMessage());
-        }
-    }
-
-    private String getErrorOutput(final TextEditor textEditor) {
-        try {
-            final javax.swing.JTextArea errorScreen = textEditor.getErrorScreen();
-            if (errorScreen != null) {
-                final String text = errorScreen.getText();
-                return text != null ? text.trim() : "";
-            }
-        } catch (Exception e) {
-            // If we can't access error output, just return empty string
-        }
-        return "";
-    }
-
-    private boolean hasMultipleTabs(final TextEditor textEditor) {
-        if (textEditor == null) {
-            return false;
-        }
-        try {
-            int count = 0;
-            while (true) {
-                try {
-                    TextEditorTab tab = textEditor.getTab(count);
-                    if (tab == null) break;
-                    count++;
-                    if (count > 1) return true;
-                } catch (Exception e) {
-                    break;
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private void addScriptMenuItems(final JPopupMenu menu, final TextEditor textEditor) {
-        try {
-            int i = 0;
-            while (true) {
-                TextEditorTab tab = textEditor.getTab(i);
-                if (tab == null) break;
-
-                final String title = tab.getTitle();
-                final int tabIndex = i;
-                final JMenuItem item = new JMenuItem(title);
-                item.addActionListener(e -> addScriptFromTab(textEditor, tabIndex));
-                menu.add(item);
-
-                i++;
-            }
-        } catch (Exception e) {
-            // Skip this editor if we can't access its tabs
-        }
-    }
-
-    private void addScriptFromTab(final TextEditor textEditor, final int tabIndex) {
-        try {
-            final TextEditorTab tab = textEditor.getTab(tabIndex);
-            if (tab == null) return;
-
-            // Build and add the script context
-            final ScriptContextItem scriptItem = buildScriptContextItem(textEditor, tab, tabIndex);
-            addContextItem(scriptItem);
-
-        } catch (Exception e) {
-            appendToChat(Sender.ERROR, "Failed to add script from tab: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Builds a ScriptContextItem from a TextEditor and tab.
-     * Extracts script content, error output, and selection information.
-     */
-    private ScriptContextItem buildScriptContextItem(final TextEditor textEditor, final TextEditorTab tab, final int tabIndex) {
-        // Get the title and strip leading asterisks (which indicate unsaved changes)
-        final String scriptName = stripLeadingAsterisks(tab.getTitle());
-
-        // Get the editor pane
-        final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-
-        // Get the text content with line numbers
-        final String scriptContent = TextEditorUtils.addLineNumbers(editorPane.getText());
-
-        // Get error output from TextEditor
-        final String errorOutput = getErrorOutput(textEditor);
-
-        // Get instance index
-        final int instanceIndex = TextEditor.instances.indexOf(textEditor);
-
-        // Get selection line numbers
-        final int[] selectionLines = getSelectionLineNumbers(editorPane);
-
-        return new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput, selectionLines[0], selectionLines[1]);
-    }
-
-    /**
-     * Strips leading asterisks from a script name (asterisks indicate unsaved changes).
-     */
-    private String stripLeadingAsterisks(final String scriptName) {
-        if (scriptName == null) {
-            return null;
-        }
-        return scriptName.replaceAll("^\\*+", "");
-    }
-
-    /**
-     * Finds the tab index of a given tab within a TextEditor.
-     * Returns -1 if the tab is not found.
-     */
-    private int findTabIndex(final TextEditor textEditor, final TextEditorTab targetTab) {
-        for (int i = 0; ; i++) {
-            try {
-                TextEditorTab currentTab = textEditor.getTab(i);
-                if (currentTab == null) break;
-                if (currentTab == targetTab) {
-                    return i;
-                }
-            } catch (Exception e) {
-                break;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Extracts selection start and end line numbers from an EditorPane.
-     * Returns an array [startLine, endLine]. Both default to NO_SELECTION if there is no actual highlighted text.
-     * A true selection is indicated by either different start/end lines, or same line with actual selected text.
-     */
-    private int[] getSelectionLineNumbers(final EditorPane editorPane) {
-        int selectionStartLine = ScriptContextItem.NO_SELECTION;
-        int selectionEndLine = ScriptContextItem.NO_SELECTION;
-
-        try {
-            final String selectedText = editorPane.getSelectedText();
-
-            // Only report selection if there's actual highlighted text
-            if (selectedText != null && !selectedText.isEmpty()) {
-                final int selectionStart = editorPane.getSelectionStart();
-                final int selectionEnd = editorPane.getSelectionEnd();
-                selectionStartLine = editorPane.getLineOfOffset(selectionStart) + 1; // Lines are 1-indexed
-                selectionEndLine = editorPane.getLineOfOffset(selectionEnd) + 1;
-            }
-        } catch (Exception e) {
-            // If we can't get selection info, just use NO_SELECTION
-        }
-
-        return new int[]{selectionStartLine, selectionEndLine};
-    }
-
     private void addContextItem(final ContextItem item) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> addContextItem(item));
+            return;
+        }
         // Check for duplicates using equals() - don't add the same item twice
         if (conversation.getContextItems().contains(item)) {
             // Flash the existing tag to indicate it's already added
@@ -702,35 +520,18 @@ public class FijiAssistantChat {
         // Add to conversation
         conversation.addContextItem(item);
 
-        // Truncate label to max length (not counting selection info)
-        final int maxLabelLength = 15;
+        // Truncate label to max length
+        final int maxLabelLength = 20;
         String displayLabel = item.getLabel();
         if (displayLabel.length() > maxLabelLength) {
             displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
         }
 
-        // Append selection info if this is a script context item with a selection
-        String selectionInfo = "";
-        if (item instanceof ScriptContextItem) {
-            final ScriptContextItem scriptItem = (ScriptContextItem) item;
-            if (scriptItem.hasSelection()) {
-                selectionInfo = " (" + scriptItem.getSelectionStartLine() + "-" + scriptItem.getSelectionEndLine() + ")";
-            }
-        }
+        // Create a removable tag button with truncated label and X
+        final JButton tagButton = new JButton(displayLabel + " ✕");
 
-        // Create a removable tag button with truncated label, selection info, and X
-        final JButton tagButton = new JButton(displayLabel + selectionInfo + " ✕");
-
-        // Build tooltip with script name and selection info
+        // Build tooltip
         String tooltipText = item.getLabel() + " - Click to remove";
-        if (item instanceof ScriptContextItem) {
-            final ScriptContextItem scriptItem = (ScriptContextItem) item;
-            tooltipText = scriptItem.getScriptName();
-            if (scriptItem.hasSelection()) {
-                tooltipText += " (lines " + scriptItem.getSelectionStartLine() + "-" + scriptItem.getSelectionEndLine() + ")";
-            }
-            tooltipText += " - Click to remove";
-        }
         tagButton.setToolTipText(tooltipText);
         tagButton.addActionListener(e -> removeContextItem(item, tagButton));
 
@@ -763,10 +564,9 @@ public class FijiAssistantChat {
         // Get the tags container from the scrollpane's viewport
         JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
         tagsContainer.add(tagButton);
-        
+
         // Enable the Clear All button now that we have context items
         clearAllButton.setEnabled(true);
-        
         contextTagsPanel.revalidate();
         contextTagsPanel.repaint();
     }

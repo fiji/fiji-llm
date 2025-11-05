@@ -1,11 +1,14 @@
-package sc.fiji.llm.context;
+package sc.fiji.llm.script;
 
 import java.util.Objects;
+
+import sc.fiji.llm.chat.AbstractContextItem;
+import sc.fiji.llm.chat.ContextItem;
 
 /**
  * Represents a script context item that can be added to the chat.
  */
-public class ScriptContextItem extends ContextItem {
+public class ScriptContextItem extends AbstractContextItem {
 	/** Constant indicating that the instance/tab index is not yet set (creating new script) */
 	public static final int NEW_INDEX = -1;
 	/** Constant indicating that selection line numbers are not set */

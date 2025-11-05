@@ -1,12 +1,13 @@
 package sc.fiji.llm.chat;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,8 +16,7 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import sc.fiji.llm.context.ContextItem;
-import sc.fiji.llm.context.ScriptContextItem;
+import sc.fiji.llm.script.ScriptContextItem;
 
 /**
  * Unit tests for the Conversation class.
@@ -155,7 +155,7 @@ public class ConversationTest {
     @Test
     public void testAddContextItem() {
         // Given: a conversation
-        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item = new TestContextItem("script", "test.py", "print('hello')");
 
         // When: we add a context item
         conversation.addContextItem(item);
@@ -169,8 +169,8 @@ public class ConversationTest {
     @Test
     public void testAddMultipleContextItems() {
         // Given: a conversation
-        ContextItem item1 = new ContextItem("script", "test1.py", "print('hello')");
-        ContextItem item2 = new ContextItem("script", "test2.py", "print('world')");
+        ContextItem item1 = new TestContextItem("script", "test1.py", "print('hello')");
+        ContextItem item2 = new TestContextItem("script", "test2.py", "print('world')");
 
         // When: we add multiple context items
         conversation.addContextItem(item1);
@@ -186,8 +186,8 @@ public class ConversationTest {
     @Test
     public void testRemoveContextItem() {
         // Given: a conversation with context items
-        ContextItem item1 = new ContextItem("script", "test1.py", "print('hello')");
-        ContextItem item2 = new ContextItem("script", "test2.py", "print('world')");
+        ContextItem item1 = new TestContextItem("script", "test1.py", "print('hello')");
+        ContextItem item2 = new TestContextItem("script", "test2.py", "print('world')");
         conversation.addContextItem(item1);
         conversation.addContextItem(item2);
 
@@ -203,7 +203,7 @@ public class ConversationTest {
     @Test
     public void testContextItemIncludedInUserMessage() {
         // Given: a conversation with a context item
-        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item = new TestContextItem("script", "test.py", "print('hello')");
         conversation.addContextItem(item);
 
         // When: we add a user message
@@ -224,7 +224,7 @@ public class ConversationTest {
     @Test
     public void testContextItemsClearedAfterAddingUserMessage() {
         // Given: a conversation with context items
-        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item = new TestContextItem("script", "test.py", "print('hello')");
         conversation.addContextItem(item);
         assertEquals(1, conversation.getContextItems().size());
 
@@ -239,8 +239,8 @@ public class ConversationTest {
     @Test
     public void testMultipleContextItemsIncludedInUserMessage() {
         // Given: a conversation with multiple context items
-        ContextItem item1 = new ContextItem("script", "test1.py", "content1");
-        ContextItem item2 = new ContextItem("script", "test2.py", "content2");
+        ContextItem item1 = new TestContextItem("script", "test1.py", "content1");
+        ContextItem item2 = new TestContextItem("script", "test2.py", "content2");
         conversation.addContextItem(item1);
         conversation.addContextItem(item2);
 
@@ -275,7 +275,7 @@ public class ConversationTest {
     @Test
     public void testContextItemToString() {
         // Given: a context item
-        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item = new TestContextItem("script", "test.py", "print('hello')");
 
         // When: we call toString
         String formatted = item.toString();
@@ -290,8 +290,8 @@ public class ConversationTest {
     @Test
     public void testContextItemEquality() {
         // Given: two context items with the same content
-        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
-        ContextItem item2 = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item1 = new TestContextItem("script", "test.py", "print('hello')");
+        ContextItem item2 = new TestContextItem("script", "test.py", "print('hello')");
 
         // When/Then: they should be equal
         assertEquals(item1, item2);
@@ -301,8 +301,8 @@ public class ConversationTest {
     @Test
     public void testContextItemInequality() {
         // Given: two context items with different content
-        ContextItem item1 = new ContextItem("script", "test1.py", "print('hello')");
-        ContextItem item2 = new ContextItem("script", "test2.py", "print('hello')");
+        ContextItem item1 = new TestContextItem("script", "test1.py", "print('hello')");
+        ContextItem item2 = new TestContextItem("script", "test2.py", "print('hello')");
 
         // When/Then: they should not be equal
         assertNotEquals(item1, item2);
@@ -311,8 +311,8 @@ public class ConversationTest {
     @Test
     public void testContextItemInequalityDifferentType() {
         // Given: two context items with different types
-        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
-        ContextItem item2 = new ContextItem("doc", "test.py", "print('hello')");
+        ContextItem item1 = new TestContextItem("script", "test.py", "print('hello')");
+        ContextItem item2 = new TestContextItem("doc", "test.py", "print('hello')");
 
         // When/Then: they should not be equal
         assertNotEquals(item1, item2);
@@ -321,8 +321,8 @@ public class ConversationTest {
     @Test
     public void testContextItemInequalityDifferentContent() {
         // Given: two context items with different content
-        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
-        ContextItem item2 = new ContextItem("script", "test.py", "print('world')");
+        ContextItem item1 = new TestContextItem("script", "test.py", "print('hello')");
+        ContextItem item2 = new TestContextItem("script", "test.py", "print('world')");
 
         // When/Then: they should not be equal
         assertNotEquals(item1, item2);
@@ -331,11 +331,11 @@ public class ConversationTest {
     @Test
     public void testContextItemContainsWithEquals() {
         // Given: a conversation with a context item
-        ContextItem item1 = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item1 = new TestContextItem("script", "test.py", "print('hello')");
         conversation.addContextItem(item1);
 
         // When: we check if the conversation contains an equal item
-        ContextItem item2 = new ContextItem("script", "test.py", "print('hello')");
+    ContextItem item2 = new TestContextItem("script", "test.py", "print('hello')");
         boolean contains = conversation.getContextItems().contains(item2);
 
         // Then: it should find it
@@ -345,7 +345,7 @@ public class ConversationTest {
     @Test
     public void testContextItemsNotClearedByAssistantMessage() {
         // Given: a conversation with context items
-        ContextItem item = new ContextItem("script", "test.py", "print('hello')");
+        ContextItem item = new TestContextItem("script", "test.py", "print('hello')");
         conversation.addContextItem(item);
         assertEquals(1, conversation.getContextItems().size());
 
@@ -360,7 +360,7 @@ public class ConversationTest {
     @Test
     public void testContextItemClearedOnlyOnUserMessage() {
         // Given: a conversation with context items and messages
-        ContextItem item1 = new ContextItem("script", "test1.py", "content1");
+        ContextItem item1 = new TestContextItem("script", "test1.py", "content1");
         conversation.addContextItem(item1);
 
         // When: we add a user message
@@ -370,7 +370,7 @@ public class ConversationTest {
         assertEquals(0, conversation.getContextItems().size());
 
         // When: we add new context items and an assistant message
-        ContextItem item2 = new ContextItem("script", "test2.py", "content2");
+    ContextItem item2 = new TestContextItem("script", "test2.py", "content2");
         conversation.addContextItem(item2);
         conversation.addAssistantMessage("Response");
 
@@ -477,7 +477,9 @@ public class ConversationTest {
         // Given: a conversation with both mergeable and non-mergeable items
         String scriptContent = "content";
         ScriptContextItem scriptItem = new ScriptContextItem("script.py", scriptContent, 0, 0);
-        ContextItem otherItem = new ContextItem("doc", "readme.md", "documentation");
+
+        // non-mergeable test item
+        ContextItem otherItem = new TestContextItem("doc", "readme.md", "documentation");
 
         conversation.addContextItem(scriptItem);
         conversation.addContextItem(otherItem);
@@ -503,6 +505,15 @@ public class ConversationTest {
             return true;
         } catch (UnsupportedOperationException e) {
             return false;
+        }
+    }
+
+    /**
+     * Simple test helper implementation of ContextItem for unit tests.
+     */
+    private static class TestContextItem extends AbstractContextItem {
+        public TestContextItem(String type, String label, String content) {
+            super(type, label, content);
         }
     }
 }
