@@ -8,11 +8,14 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.datatransfer.StringSelection;
 import java.net.URL;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextPane;
 import javax.swing.border.AbstractBorder;
 import javax.swing.text.SimpleAttributeSet;
@@ -252,7 +255,26 @@ public class ChatMessagePanel extends JPanel {
 		// Remove extra JTextPane margin
 		textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
 
+		// Add right-click context menu for copying text
+		addContextMenu(textPane);
+
 		return textPane;
+	}
+
+	private void addContextMenu(final JTextPane textPane) {
+		final JPopupMenu contextMenu = new JPopupMenu();
+		final JMenuItem copyItem = new JMenuItem("Copy");
+
+		copyItem.addActionListener(e -> {
+			final String selectedText = textPane.getSelectedText();
+			if (selectedText != null && !selectedText.isEmpty()) {
+				final StringSelection selection = new StringSelection(selectedText);
+				java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+			}
+		});
+
+		contextMenu.add(copyItem);
+		textPane.setComponentPopupMenu(contextMenu);
 	}
 
 	/**
