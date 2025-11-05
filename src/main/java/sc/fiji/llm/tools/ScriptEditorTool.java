@@ -37,7 +37,8 @@ public class ScriptEditorTool implements AiToolPlugin {
 			"Script names must have a file extension, which determines language automatically. " +
 			"Supported languages: Python (.py), ImageJ Macro (.ijm), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh)  " +
 			"Use createScript to make new scripts. " +
-			"Use updateScript to modify existing scripts.";
+			"Use updateScript to modify existing scripts. " +
+			"Use renameScript to rename or change the language of a script.";
 	}
 
 	@Tool(name = "createScript", value = {
@@ -97,10 +98,9 @@ public class ScriptEditorTool implements AiToolPlugin {
 		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
 		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
 		"	content - The new content for the indicated script.",
-		"	name - (Optional) New script name with extension (e.g., 'renamed.ijm') to change the script language or rename.",
 		"Returns: Success message with indices, or ERROR message if update failed."
 	})
-	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content, @P(value = "name", required = false) final String name) {
+	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
 		try {
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
@@ -130,11 +130,6 @@ public class ScriptEditorTool implements AiToolPlugin {
 					// Update the tab content
 					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 					editorPane.setText(cleanContent);
-					
-					// Update the filename if name is provided
-					if (name != null && !name.isEmpty()) {
-						editorPane.setFileName(new File(name));
-					}
 
 					// Switch to the updated tab
 					textEditor.switchTo(tabIndex);
@@ -147,6 +142,56 @@ public class ScriptEditorTool implements AiToolPlugin {
 			return result[0];
 		} catch (Exception e) {
 			return "ERROR: Failed to update script: " + e.getMessage();
+		}
+	}
+
+	@Tool(name = "renameScript", value = {
+		"Renames an existing open script. Changing its extension will change its script language.",
+		"Parameters:",
+		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
+		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
+		"	name - New script name with extension (e.g., 'renamed.ijm') to change the script language.",
+		"Returns: Success message with indices, or ERROR message if rename failed."
+	})
+	public String renameScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("name") final String name) {
+		try {
+			// Validate instance index
+			if (instanceIndex < 0 || instanceIndex >= TextEditor.instances.size()) {
+				return "ERROR: Invalid instance index " + instanceIndex;
+			}
+
+			final TextEditor textEditor = TextEditor.instances.get(instanceIndex);
+			if (textEditor == null) {
+				return "ERROR: No editor found at instance index " + instanceIndex;
+			}
+
+			// Perform UI operations on EDT
+			final String[] result = new String[1];
+			SwingUtilities.invokeAndWait(() -> {
+				try {
+					// Validate tab index
+					final TextEditorTab tab = textEditor.getTab(tabIndex);
+
+					if (tab == null) {
+						result[0] = "ERROR: No tab found at index " + tabIndex;
+						return;
+					}
+
+					// Update the filename
+					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+					editorPane.setFileName(new File(name));
+
+					// Switch to the tab
+					textEditor.switchTo(tabIndex);
+
+					result[0] = "Successfully renamed script at instance " + instanceIndex + ", tab " + tabIndex + " to " + name;
+				} catch (Exception e) {
+					result[0] = "ERROR: Failed to rename tab at index " + tabIndex + ": " + e.getMessage();
+				}
+			});
+			return result[0];
+		} catch (Exception e) {
+			return "ERROR: Failed to rename script: " + e.getMessage();
 		}
 	}
 
