@@ -93,9 +93,6 @@ public final class TextEditorUtils {
         for (final String line : lines) {
             if (line.isEmpty()) {
                 // Empty lines are okay - they should still have the line number prefix
-                if (line.length() > 0) {
-                    return content;
-                }
             } else {
                 // Check if line has the pipe at the expected position
                 if (line.length() < expectedPadding + 3) {
