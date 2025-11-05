@@ -100,7 +100,16 @@ public class FijiAssistantChat {
 
         // Top navigation bar with model selection
         final JPanel topNavBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
-        final JButton changeModelButton = new JButton("Change Model");
+        final JButton changeModelButton;
+        final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
+        if (gearIconUrl != null) {
+            changeModelButton = new JButton(new ImageIcon(gearIconUrl));
+            changeModelButton.setPreferredSize(new Dimension(36, 36));
+            changeModelButton.setToolTipText("Change Model");
+        } else {
+            changeModelButton = new JButton("Change Model");
+        }
+        changeModelButton.setFocusPainted(false);
         changeModelButton.addActionListener(e -> changeModel());
         topNavBar.add(changeModelButton);
 
