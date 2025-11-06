@@ -44,7 +44,7 @@ public class SwingChatbotService extends AbstractService implements ChatbotServi
 
     @Override
     public String messageFormatHint() {
-        return  "Your messages are displayed as plain text (no markdown support)";
+        return  "NOTE: avoid special markdown formatting like code blocks. It will render as plain text.";
     }
 
     @Override
