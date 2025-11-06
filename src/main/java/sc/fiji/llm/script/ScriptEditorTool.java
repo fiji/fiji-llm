@@ -36,7 +36,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 	public String getUsage() {
 		return "Create and update scripts in the Fiji script editor. " +
 			"Script names must have a file extension, which determines language automatically. " +
-			"Supported languages: Python (.py), ImageJ Macro (.ijm), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh)  " +
+			"Supported languages: Jython (.py), ImageJ Macro (.ijm), Groovy (.groovy), JavaScript (.js), BeanShell (.bsh)  " +
 			"Use createScript to make new scripts. " +
 			"Use updateScript to modify existing scripts. " +
 			"Use renameScript to rename or change the language of a script.";
