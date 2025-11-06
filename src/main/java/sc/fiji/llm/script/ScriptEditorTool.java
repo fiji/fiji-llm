@@ -45,8 +45,8 @@ public class ScriptEditorTool implements AiToolPlugin {
 	@Tool(name = "createScript", value = {
 		"Create a new script in the Fiji script editor",
 		"Parameters:",
-		"	scriptName - The name of the script file including extension (e.g., 'example.py', 'macro.ijm')",
-		"	content - The complete source code you wrote for the script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
+		"	scriptName (arg0) - The name of the script file including extension (e.g., 'example.py', 'macro.ijm')",
+		"	content (arg1) - The complete source code you wrote for the script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
 		"Returns - Success message with script name, or ERROR message if creation failed"
 	})
 	public String createScript(@P("scriptName") final String scriptName, @P("content") final String content) {
@@ -104,9 +104,9 @@ public class ScriptEditorTool implements AiToolPlugin {
 	@Tool(name = "updateScript", value = {
 		"Updates an existing open script with new content.",
 		"Parameters:",
-		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
-		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
-		"	content - The new content for the indicated script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
+		"	instanceIndex (arg0) - The script editor instance index, from ScriptContextItem.",
+		"	tabIndex (arg1) - The tab index within the editor instance, from ScriptContextItem.",
+		"	content (arg2) - The new content for the indicated script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
 		"Returns: Success message with indices, or ERROR message if update failed."
 	})
 	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
@@ -162,9 +162,9 @@ public class ScriptEditorTool implements AiToolPlugin {
 	@Tool(name = "renameScript", value = {
 		"Renames an existing open script. Changing its extension will change its script language.",
 		"Parameters:",
-		"	instanceIndex - The script editor instance index, from ScriptContextItem.",
-		"	tabIndex - The tab index within the editor instance, from ScriptContextItem.",
-		"	name - New script name with extension (e.g., 'renamed.ijm') to change the script language.",
+		"	instanceIndex (arg0) - The script editor instance index, from ScriptContextItem.",
+		"	tabIndex (arg1) - The tab index within the editor instance, from ScriptContextItem.",
+		"	name (arg2) - New script name with extension (e.g., 'renamed.ijm') to change the script language.",
 		"Returns: Success message with indices, or ERROR message if rename failed."
 	})
 	public String renameScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("name") final String name) {
