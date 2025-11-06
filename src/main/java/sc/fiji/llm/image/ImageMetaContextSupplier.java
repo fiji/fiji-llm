@@ -21,13 +21,13 @@ import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.ContextItemSupplier;
 
 /**
- * ContextItemSupplier implementation for image context items.
- * Provides available images/datasets from the Fiji application and creates ImageContextItem objects.
+ * ContextItemSupplier implementation for {@link ImageMetaContextItem}s.
+ * Provides available images/datasets from the Fiji application and creates context items.
  *
  * Uses ImageDisplayService which properly handles both ImageJ1 and ImageJ2 images.
  */
 @Plugin(type = ContextItemSupplier.class)
-public class ImageContextSupplier implements ContextItemSupplier {
+public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Parameter
 	private ImageDisplayService imageDisplayService;
@@ -79,7 +79,7 @@ public class ImageContextSupplier implements ContextItemSupplier {
 				} catch (Exception e) {
 					// Skip this display if we can't create a context item for it
 					if (statusService != null) {
-						statusService.warn("Could not create image context item: " + e.getMessage());
+						statusService.warn("Could not create image metadata context item: " + e.getMessage());
 					}
 				}
 			}
@@ -114,17 +114,17 @@ public class ImageContextSupplier implements ContextItemSupplier {
 			return createImageContextItem(dataset);
 		} catch (RuntimeException e) {
 			if (statusService != null) {
-				statusService.warn("Could not create active image context item: " + e.getMessage());
+				statusService.warn("Could not create context item from active image: " + e.getMessage());
 			}
 			return null;
 		}
 	}
 
 	/**
-	 * Creates an ImageContextItem from a Dataset.
+	 * Creates an {@link ImageMetaContextItem} from a Dataset.
 	 * Extracts metadata and creates a descriptive text for the LLM.
 	 */
-	private ImageContextItem createImageContextItem(final Dataset dataset) {
+	private ImageMetaContextItem createImageContextItem(final Dataset dataset) {
 		if (dataset == null) {
 			return null;
 		}
@@ -135,17 +135,17 @@ public class ImageContextSupplier implements ContextItemSupplier {
 		}
 
 		// Extract all dimensions with their types and lengths
-		final List<ImageContextItem.Dimension> dimensions = extractDimensions(dataset);
+		final List<ImageMetaContextItem.Dimension> dimensions = extractDimensions(dataset);
 		final String pixelType = dataset.getType().getClass().getSimpleName();
 
-		return new ImageContextItem(imageName, dimensions, pixelType);
+		return new ImageMetaContextItem(imageName, dimensions, pixelType);
 	}
 
 	/**
 	 * Extracts all dimensions from a dataset with their types and lengths.
 	 */
-	private List<ImageContextItem.Dimension> extractDimensions(final Dataset dataset) {
-		final List<ImageContextItem.Dimension> dimensions = new ArrayList<>();
+	private List<ImageMetaContextItem.Dimension> extractDimensions(final Dataset dataset) {
+		final List<ImageMetaContextItem.Dimension> dimensions = new ArrayList<>();
 
 		final int numDims = dataset.numDimensions();
 		for (int i = 0; i < numDims; i++) {
@@ -153,11 +153,11 @@ public class ImageContextSupplier implements ContextItemSupplier {
 				final AxisType axisType = dataset.axis(i).type();
 				final String type = axisType != null ? axisType.getLabel() : "Unknown";
 				final long length = dataset.dimension(i);
-				dimensions.add(new ImageContextItem.Dimension(type, length));
+				dimensions.add(new ImageMetaContextItem.Dimension(type, length));
 			} catch (Exception e) {
 				// If we can't get axis type, use a generic label
 				final long length = dataset.dimension(i);
-				dimensions.add(new ImageContextItem.Dimension("Dim" + i, length));
+				dimensions.add(new ImageMetaContextItem.Dimension("Dim" + i, length));
 			}
 		}
 

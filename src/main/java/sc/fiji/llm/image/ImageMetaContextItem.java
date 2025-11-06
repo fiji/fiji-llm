@@ -14,7 +14,7 @@ import sc.fiji.llm.chat.AbstractContextItem;
  * NB: we are not converting to dev.langchain4j.data.image.Image due to the
  * requirement of using vision-capable models
  */
-public class ImageContextItem extends AbstractContextItem {
+public class ImageMetaContextItem extends AbstractContextItem {
 
 	/**
 	 * Represents a single dimension of a dataset with its type and length.
@@ -68,7 +68,7 @@ public class ImageContextItem extends AbstractContextItem {
 	 *
 	 * @param imageName the name of the image/dataset
 	 */
-	public ImageContextItem(String imageName) {
+	public ImageMetaContextItem(String imageName) {
 		this(imageName, Collections.emptyList(), "");
 	}
 
@@ -79,7 +79,7 @@ public class ImageContextItem extends AbstractContextItem {
 	 * @param dimensions list of dimensions with their types, lengths, and ordering
 	 * @param pixelType the pixel type (e.g., "uint8", "uint16", "float32")
 	 */
-	public ImageContextItem(String imageName, List<Dimension> dimensions,
+	public ImageMetaContextItem(String imageName, List<Dimension> dimensions,
 			String pixelType) {
 		super("Image", imageName);
 		this.imageName = imageName;
@@ -107,7 +107,7 @@ public class ImageContextItem extends AbstractContextItem {
 		if (obj == null || getClass() != obj.getClass()) {
 			return false;
 		}
-		final ImageContextItem other = (ImageContextItem) obj;
+		final ImageMetaContextItem other = (ImageMetaContextItem) obj;
 		return Objects.equals(imageName, other.imageName) &&
 				Objects.equals(getType(), other.getType());
 	}
@@ -120,7 +120,7 @@ public class ImageContextItem extends AbstractContextItem {
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("Image: ").append(imageName).append("\n");
+		sb.append("Metadata for image: ").append(imageName).append("\n");
 
 		if (!dimensions.isEmpty()) {
 			sb.append("Dimensions: ");
