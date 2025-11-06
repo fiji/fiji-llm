@@ -874,14 +874,17 @@ public class FijiAssistantChat {
     }
 
     /**
-     * Builds the initial system message including tool descriptions.
+     * Builds the initial system message
      */
     private String buildSystemMessage() {
         final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
 
+        sb.append("\n\n## Message Rendering\n\n");
         sb.append(chatbotService.messageFormatHint());
 
-        // Add tool documentation to system message
+        sb.append("\n\n## Tool Usage\n\n");
+        sb.append(aiToolService.toolEnvironmentMessage());
+
         final List<AiToolPlugin> tools = aiToolService.getInstances();
         if (!tools.isEmpty()) {
             sb.append("\n\n## Available Tools\n\n");
