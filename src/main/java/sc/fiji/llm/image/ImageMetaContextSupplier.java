@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.swing.ImageIcon;
 
+import org.scijava.Priority;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -26,7 +27,7 @@ import sc.fiji.llm.chat.ContextItemSupplier;
  *
  * Uses ImageDisplayService which properly handles both ImageJ1 and ImageJ2 images.
  */
-@Plugin(type = ContextItemSupplier.class)
+@Plugin(type = ContextItemSupplier.class, priority = Priority.LOW)
 public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Parameter

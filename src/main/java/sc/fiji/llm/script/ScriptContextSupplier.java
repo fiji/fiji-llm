@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 
+import org.scijava.Priority;
 import org.scijava.command.CommandService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -24,7 +25,7 @@ import sc.fiji.llm.ui.TextEditorUtils;
  * ContextItemSupplier implementation for script context items.
  * Provides available scripts from open TextEditor instances and creates ScriptContextItem objects.
  */
-@Plugin(type = ContextItemSupplier.class)
+@Plugin(type = ContextItemSupplier.class, priority = Priority.EXTREMELY_HIGH)
 public class ScriptContextSupplier implements ContextItemSupplier {
 
 	@Parameter
