@@ -12,7 +12,6 @@ import org.scijava.service.Service;
 import org.scijava.thread.ThreadService;
 
 import sc.fiji.llm.assistant.AssistantService;
-import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItemService;
 import sc.fiji.llm.tools.AiToolService;
 
