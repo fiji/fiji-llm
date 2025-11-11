@@ -15,50 +15,6 @@ import sc.fiji.llm.chat.AbstractContextItem;
  * requirement of using vision-capable models
  */
 public class ImageMetaContextItem extends AbstractContextItem {
-
-	/**
-	 * Represents a single dimension of a dataset with its type and length.
-	 */
-	public static class Dimension {
-		private final String type;
-		private final long length;
-
-		public Dimension(String type, long length) {
-			this.type = type;
-			this.length = length;
-		}
-
-		public String getType() {
-			return type;
-		}
-
-		public long getLength() {
-			return length;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null || getClass() != obj.getClass()) {
-				return false;
-			}
-			final Dimension other = (Dimension) obj;
-			return Objects.equals(type, other.type) && length == other.length;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(type, length);
-		}
-
-		@Override
-		public String toString() {
-			return String.format("%s[%d]", type, length);
-		}
-	}
-
 	private final String imageName;
 	private final List<Dimension> dimensions;
 	private final String pixelType;
@@ -139,5 +95,48 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		}
 
 		return sb.toString();
+	}
+
+	/**
+	 * Represents a single dimension of a dataset with its type and length.
+	 */
+	public static class Dimension {
+		private final String type;
+		private final long length;
+
+		public Dimension(String type, long length) {
+			this.type = type;
+			this.length = length;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public long getLength() {
+			return length;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null || getClass() != obj.getClass()) {
+				return false;
+			}
+			final Dimension other = (Dimension) obj;
+			return Objects.equals(type, other.type) && length == other.length;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(type, length);
+		}
+
+		@Override
+		public String toString() {
+			return String.format("%s[%d]", type, length);
+		}
 	}
 }
