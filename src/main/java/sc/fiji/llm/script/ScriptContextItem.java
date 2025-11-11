@@ -3,6 +3,7 @@ package sc.fiji.llm.script;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import sc.fiji.llm.chat.AbstractContextItem;
 import sc.fiji.llm.chat.ContextItem;
@@ -60,6 +61,17 @@ public class ScriptContextItem extends AbstractContextItem {
 	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput,
 			int selectionStartLine, int selectionEndLine) {
 		this(scriptName, content, new ScriptAddress(editorIndex, tabIndex), errorOutput, selectionStartLine, selectionEndLine);
+	}
+
+	@Override
+	public String getLabel() {
+		StringBuilder sb = new StringBuilder();
+		if (hasSelection()) {
+			sb.append(formatRangesAsString(selectedRanges));
+			sb.append(" ");
+		}
+		sb.append(scriptName);
+		return sb.toString();
 	}
 
 	public String getScriptName() {
@@ -198,16 +210,19 @@ public class ScriptContextItem extends AbstractContextItem {
 	 * Formats a list of line ranges as JSON array with range notation.
 	 */
 	private static String formatRangesAsJson(final java.util.List<LineRange> ranges) {
-		final StringBuilder sb = new StringBuilder("[");
-		for (int i = 0; i < ranges.size(); i++) {
-			if (i > 0) {
-				sb.append(", ");
-			}
-			final LineRange r = ranges.get(i);
-			sb.append("\"").append(r.start).append("-").append(r.end).append("\"");
+		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
+		for (final LineRange r : ranges) {
+			joiner.add("\"" + r.start + "-" + r.end + "\"");
 		}
-		sb.append("]");
-		return sb.toString();
+		return joiner.toString();
+	}
+
+	private static String formatRangesAsString(final java.util.List<LineRange> ranges) {
+		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
+		for (final LineRange r : ranges) {
+			joiner.add(r.start + "-" + r.end);
+		}
+		return joiner.toString();
 	}
 
 	/**
