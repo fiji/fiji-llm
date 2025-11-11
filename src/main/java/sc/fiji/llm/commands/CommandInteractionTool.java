@@ -50,9 +50,9 @@ public class CommandInteractionTool implements AiToolPlugin {
 
 	@Override
 	public String getUsage() {
-		return "Tools for finding and running commands.\n" +
+		return "Commands are reusable functions that can vary by runtime (e.g. installed plugins). These tools support command discovery and use.\n" +
 			"To find available commands, use searchCommands. Always search for a command first to verify it exists before suggesting it to the user.\n" +
-			"To run a command, use: 1) searchCommands, 2) runCommand with the desired menuPath.\n" +
+			"To run a command, use: 1) searchCommands, then 2) runCommand with the desired menuPath.\n" +
 			"Using update can fix problems if the app is out-of-date, and can change installed plugins via update sites.\n" +
 			"Using configureMAT can help with OutOfMemoryErrors or performance issues.\n" +
 			"Using configureIJ2 to turn off SCIFIO (default: off) can help with some problems opening images.\n" +

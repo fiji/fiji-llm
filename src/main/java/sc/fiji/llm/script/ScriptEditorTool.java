@@ -34,7 +34,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 
 	@Override
 	public String getUsage() {
-		return "Tools for working with the script editor.\n" +
+		return "We use scripts to build reproducible workflows. These tools support script creation and editing.\n" +
 			"BEFORE using any other Script Editor tool, use scriptGuide if it's not in your context.\n" +
 			"To make a new script, use createScript.\n" +
 			"To modify an existing script, use updateScript.\n" +

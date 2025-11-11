@@ -29,7 +29,7 @@ public class ImageJMacroTool implements AiToolPlugin {
 
 	@Override
 	public String getUsage() {
-		return "Tools for working with ImageJ macros.\n" +
+		return "We use ImageJ Macros to build reproducible workflows. These tools support macro creation and editing.\n" +
 			"BEFORE using any other Macro Writing tool, use macroGuide if it's not in your context.\n" +
 			"To start recording a macro, use startRecorder.\n" +
 			"To find macro functions, use: 1) listMacroCategories(), 2) listMacroFunctionsByCategory(category).";
