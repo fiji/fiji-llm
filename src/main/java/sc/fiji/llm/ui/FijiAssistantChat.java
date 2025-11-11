@@ -7,6 +7,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -475,7 +476,7 @@ public class FijiAssistantChat {
                         try {
                             final ContextItem item = supplier.createActiveContextItem();
                             if (item != null) {
-                                addContextItem(item);
+                                addContextItem(item, supplier);
                             } else {
                                 appendToChat(Sender.ERROR, "No active " + displayName + " available");
                             }
@@ -497,7 +498,7 @@ public class FijiAssistantChat {
                         } else {
                             for (final ContextItem it : available) {
                                 final JMenuItem mi = new JMenuItem(it.getLabel());
-                                mi.addActionListener(ae -> addContextItem(it));
+                                mi.addActionListener(ae -> addContextItem(it, supplier));
                                 menu.add(mi);
                             }
                         }
@@ -770,9 +771,9 @@ public class FijiAssistantChat {
         }
     }
 
-    private void addContextItem(final ContextItem item) {
+    private void addContextItem(final ContextItem item, final ContextItemSupplier supplier) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> addContextItem(item));
+            SwingUtilities.invokeLater(() -> addContextItem(item, supplier));
             return;
         }
         // Check for duplicates using equals() - don't add the same item twice
@@ -794,10 +795,20 @@ public class FijiAssistantChat {
         if (displayLabel.length() > maxLabelLength) {
             displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
         }
-        displayLabel = "[" + item.getType() + "] " + displayLabel;
 
-        // Create a removable tag button with truncated label and X
-        final JButton tagButton = new JButton(displayLabel + " ✕");
+        // Create a removable tag button with icon (if available) or text, plus X
+        final JButton tagButton;
+        final ImageIcon supplierIcon = supplier.getIcon();
+        if (supplierIcon != null) {
+            // Scale icon down to 16x16 for tag display
+            final Image scaledImage = supplierIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+            final ImageIcon scaledIcon = new ImageIcon(scaledImage);
+            tagButton = new JButton(displayLabel + " ✕", scaledIcon);
+            tagButton.setHorizontalTextPosition(JButton.RIGHT);
+            tagButton.setVerticalTextPosition(JButton.CENTER);
+        } else {
+            tagButton = new JButton(displayLabel + " ✕");
+        }
 
         // Build tooltip
         String tooltipText = item.getLabel() + " - Click to remove";
