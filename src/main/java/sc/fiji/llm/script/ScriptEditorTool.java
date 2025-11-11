@@ -88,13 +88,8 @@ public class ScriptEditorTool implements AiToolPlugin {
 				}
 			}
 			
-			// Create new tab with the script content on EDT
-			final TextEditor editor = textEditor;
-			final String[] result = new String[1];
-			SwingUtilities.invokeAndWait(() -> {
-				result[0] = createNewTab(editor, scriptName, cleanContent);
-			});
-			return result[0];
+			// Create new tab with the script content
+			return createNewTab(textEditor, scriptName, cleanContent);
 		} catch (Exception e) {
 			return "ERROR: Failed to create script: " + e.getMessage();
 		}
@@ -211,12 +206,31 @@ public class ScriptEditorTool implements AiToolPlugin {
 	private String createNewTab(final TextEditor textEditor, final String scriptName, final String content) {
 		try {
 			// Extract extension from scriptName
-			String extension = "";
+			final String extension;
 			final int lastDot = scriptName.lastIndexOf('.');
 			if (lastDot > 0 && lastDot < scriptName.length() - 1) {
 				extension = scriptName.substring(lastDot + 1);
+			} else {
+				extension = "";
 			}
 
+			// Perform UI operations on EDT
+			final String[] result = new String[1];
+			if (SwingUtilities.isEventDispatchThread()) {
+				result[0] = performCreateNewTab(textEditor, scriptName, extension, content);
+			} else {
+				SwingUtilities.invokeAndWait(() -> {
+					result[0] = performCreateNewTab(textEditor, scriptName, extension, content);
+				});
+			}
+			return result[0];
+		} catch (Exception e) {
+			return "ERROR: Failed to create new tab: " + e.getMessage();
+		}
+	}
+
+	private String performCreateNewTab(final TextEditor textEditor, final String scriptName, final String extension, final String content) {
+		try {
 			// Create new tab - newTab() expects just the extension
 			final TextEditorTab tab = textEditor.newTab(content, extension);
 
