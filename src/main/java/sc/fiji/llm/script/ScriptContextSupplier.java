@@ -57,7 +57,7 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 			}
 			// Add individual scripts from all open editors
 			for (final TextEditor textEditor : instances) {
-				final int instanceIndex = TextEditor.instances.indexOf(textEditor);
+				final int editorIndex = TextEditor.instances.indexOf(textEditor);
 				int tabIndex = 0;
 
 				try {
@@ -67,7 +67,7 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 							break;
 						}
 
-						final ScriptContextItem item = buildScriptContextItem(textEditor, tab, instanceIndex, tabIndex);
+						final ScriptContextItem item = buildScriptContextItem(textEditor, tab, editorIndex, tabIndex);
 						if (item != null) {
 							items.add(item);
 						}
@@ -140,8 +140,8 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 				return null;
 			}
 
-			final int instanceIndex = TextEditor.instances.indexOf(textEditor);
-			return buildScriptContextItem(textEditor, tab, instanceIndex, tabIndex);
+			final int editorIndex = TextEditor.instances.indexOf(textEditor);
+			return buildScriptContextItem(textEditor, tab, editorIndex, tabIndex);
 		} catch (RuntimeException e) {
 			return null;
 		}
@@ -151,14 +151,14 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 	 * Builds a ScriptContextItem from a TextEditor and tab.
 	 */
 	private ScriptContextItem buildScriptContextItem(final TextEditor textEditor, final TextEditorTab tab,
-			final int instanceIndex, final int tabIndex) {
+			final int editorIndex, final int tabIndex) {
 		final String scriptName = stripLeadingAsterisks(tab.getTitle());
 		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 		final String scriptContent = TextEditorUtils.addLineNumbers(editorPane.getText());
 		final String errorOutput = getErrorOutput(textEditor);
 		final int[] selectionLines = getSelectionLineNumbers(editorPane);
 
-		return new ScriptContextItem(scriptName, scriptContent, instanceIndex, tabIndex, errorOutput,
+		return new ScriptContextItem(scriptName, scriptContent, editorIndex, tabIndex, errorOutput,
 			selectionLines[0], selectionLines[1]);
 	}
 

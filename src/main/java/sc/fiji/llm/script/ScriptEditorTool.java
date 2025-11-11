@@ -29,24 +29,21 @@ public class ScriptEditorTool implements AiToolPlugin {
 
 	@Override
 	public String getName() {
-		return "Script Editor Toolset";
+		return "Script Editor Tools";
 	}
 
 	@Override
 	public String getUsage() {
-		return "Tools for interacting with the Fiji script editor. " +
-			"BEFORE using any other script tool, IF scriptWritingGuide **is not** in your context, USE IT FIRST to load the guide. " +
-			"Use createScript to make a new script. " +
-			"Use updateScript to modify the content of an existing script. " +
-			"Use renameScript to change the language of (or rename) an existing script.";
+		return "Tools for working with the script editor.\n" +
+			"BEFORE using any other Script Editor tool, use scriptGuide if it's not in your context.\n" +
+			"To make a new script, use createScript.\n" +
+			"To modify an existing script, use updateScript.\n" +
+			"To change the language or name of an existing script, use renameScript.";
 	}
 
-	@Tool(name = "createScript", value = {
-		"Create a new script in the Fiji script editor",
-		"Args:",
-		"	scriptName (arg0) - The name of the script file including extension (e.g., 'example.py', 'macro.ijm')",
-		"	content (arg1) - The complete source code you wrote for the script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
-		"Returns - Success message with script name, or ERROR message if creation failed"
+	@Tool(value = {
+		"Create a new script in the script editor.",
+		"Args: scriptName - The name of the script with language extension (e.g., 'example.py', 'macro.ijm'); content - The source code for the script.",
 	})
 	public String createScript(@P("scriptName") final String scriptName, @P("content") final String content) {
 		try {
@@ -95,15 +92,11 @@ public class ScriptEditorTool implements AiToolPlugin {
 		}
 	}
 
-	@Tool(name = "updateScript", value = {
-		"Updates an existing open script with new content.",
-		"Args:",
-		"	instanceIndex (arg0) - The script editor instance index, from ScriptContextItem.",
-		"	tabIndex (arg1) - The tab index within the editor instance, from ScriptContextItem.",
-		"	content (arg2) - The new content for the indicated script. Do NOT wrap in markdown code fences (```). Provide raw source code only.",
-		"Returns: Success message with indices, or ERROR message if update failed."
+	@Tool(value = {
+		"Updates an existing script with new content.",
+		"Args: editorIndex - The target script's instance index; tabIndex - The target script's tab index; content - The new content for the script."
 	})
-	public String updateScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
+	public String updateScript(@P("editorIndex") final int editorIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
 		try {
 			// Validate content
 			if (content == null) {
@@ -114,13 +107,13 @@ public class ScriptEditorTool implements AiToolPlugin {
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
 
 			// Validate instance index
-			if (instanceIndex < 0 || instanceIndex >= TextEditor.instances.size()) {
-				return "ERROR: Invalid instance index " + instanceIndex;
+			if (editorIndex < 0 || editorIndex >= TextEditor.instances.size()) {
+				return "ERROR: Invalid instance index " + editorIndex;
 			}
 			
-			final TextEditor textEditor = TextEditor.instances.get(instanceIndex);
+			final TextEditor textEditor = TextEditor.instances.get(editorIndex);
 			if (textEditor == null) {
-				return "ERROR: No editor found at instance index " + instanceIndex;
+				return "ERROR: No editor found at instance index " + editorIndex;
 			}
 			
 			// Perform UI operations on EDT
@@ -142,7 +135,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 					// Switch to the updated tab
 					textEditor.switchTo(tabIndex);
 					
-					result[0] = "Successfully updated script at instance " + instanceIndex + ", tab " + tabIndex;
+					result[0] = "Successfully updated script at instance " + editorIndex + ", tab " + tabIndex;
 				} catch (Exception e) {
 					result[0] = "ERROR: Invalid tab index " + tabIndex + ": " + e.getMessage();
 				}
@@ -153,24 +146,20 @@ public class ScriptEditorTool implements AiToolPlugin {
 		}
 	}
 
-	@Tool(name = "renameScript", value = {
-		"Renames an existing open script. Changing its extension will change its script language.",
-		"Args:",
-		"	instanceIndex (arg0) - The script editor instance index, from ScriptContextItem.",
-		"	tabIndex (arg1) - The tab index within the editor instance, from ScriptContextItem.",
-		"	name (arg2) - New script name with extension (e.g., 'renamed.ijm') to change the script language.",
-		"Returns: Success message with indices, or ERROR message if rename failed."
+	@Tool(value = {
+		"Renames an existing script. Changing its extension will change its script language.",
+		"Args: editorIndex - The target script's instance index; tabIndex - The target script's tab index; name - New script name with language extension (e.g., 'example.py', 'macro.ijm').",
 	})
-	public String renameScript(@P("instanceIndex") final int instanceIndex, @P("tabIndex") final int tabIndex, @P("name") final String name) {
+	public String renameScript(@P("editorIndex") final int editorIndex, @P("tabIndex") final int tabIndex, @P("name") final String name) {
 		try {
 			// Validate instance index
-			if (instanceIndex < 0 || instanceIndex >= TextEditor.instances.size()) {
-				return "ERROR: Invalid instance index " + instanceIndex;
+			if (editorIndex < 0 || editorIndex >= TextEditor.instances.size()) {
+				return "ERROR: Invalid instance index " + editorIndex;
 			}
 
-			final TextEditor textEditor = TextEditor.instances.get(instanceIndex);
+			final TextEditor textEditor = TextEditor.instances.get(editorIndex);
 			if (textEditor == null) {
-				return "ERROR: No editor found at instance index " + instanceIndex;
+				return "ERROR: No editor found at instance index " + editorIndex;
 			}
 
 			// Perform UI operations on EDT
@@ -192,7 +181,7 @@ public class ScriptEditorTool implements AiToolPlugin {
 					// Switch to the tab
 					textEditor.switchTo(tabIndex);
 
-					result[0] = "Successfully renamed script at instance " + instanceIndex + ", tab " + tabIndex + " to " + name;
+					result[0] = "Successfully renamed script at instance " + editorIndex + ", tab " + tabIndex + " to " + name;
 				} catch (Exception e) {
 					result[0] = "ERROR: Failed to rename tab at index " + tabIndex + ": " + e.getMessage();
 				}
@@ -244,10 +233,10 @@ public class ScriptEditorTool implements AiToolPlugin {
 		}
 	}
 
-@Tool(value = {
+	@Tool(value = {
 		"Returns: A script syntax guide for YOU, the LLM."
 	})
-	public String scriptWritingGuide() {
+	public String scriptGuide() {
 		return """
 SciJava Scripting Guide
 =======================

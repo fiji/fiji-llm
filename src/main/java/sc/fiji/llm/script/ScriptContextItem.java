@@ -9,14 +9,14 @@ import sc.fiji.llm.chat.ContextItem;
  * Represents a script context item that can be added to the chat.
  */
 public class ScriptContextItem extends AbstractContextItem {
-	/** Constant indicating that the instance/tab index is not yet set (creating new script) */
+	/** Constant indicating that the editor/tab index is not yet set (creating new script) */
 	public static final int NEW_INDEX = -1;
 	/** Constant indicating that selection line numbers are not set */
 	public static final int NO_SELECTION = -1;
 
 	private final String scriptName;
 	private final String scriptBody;
-	private final int instanceIndex;
+	private final int editorIndex;
 	private final int tabIndex;
 	private final String errorOutput;
 	private final int selectionStartLine;
@@ -26,20 +26,20 @@ public class ScriptContextItem extends AbstractContextItem {
 		this(scriptName, content, NEW_INDEX, NEW_INDEX, "", NO_SELECTION, NO_SELECTION);
 	}
 
-	public ScriptContextItem(String scriptName, String content, int instanceIndex, int tabIndex) {
-		this(scriptName, content, instanceIndex, tabIndex, "", NO_SELECTION, NO_SELECTION);
+	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex) {
+		this(scriptName, content, editorIndex, tabIndex, "", NO_SELECTION, NO_SELECTION);
 	}
 
-	public ScriptContextItem(String scriptName, String content, int instanceIndex, int tabIndex, String errorOutput) {
-		this(scriptName, content, instanceIndex, tabIndex, errorOutput, NO_SELECTION, NO_SELECTION);
+	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput) {
+		this(scriptName, content, editorIndex, tabIndex, errorOutput, NO_SELECTION, NO_SELECTION);
 	}
 
-	public ScriptContextItem(String scriptName, String content, int instanceIndex, int tabIndex, String errorOutput,
+	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput,
 			int selectionStartLine, int selectionEndLine) {
 		super("Script", scriptName);
 		this.scriptName = scriptName;
 		this.scriptBody = content;
-		this.instanceIndex = instanceIndex;
+		this.editorIndex = editorIndex;
 		this.tabIndex = tabIndex;
 		this.errorOutput = errorOutput != null ? errorOutput : "";
 		this.selectionStartLine = selectionStartLine;
@@ -54,8 +54,8 @@ public class ScriptContextItem extends AbstractContextItem {
 		return scriptBody;
 	}
 
-	public int getInstanceIndex() {
-		return instanceIndex;
+	public int getEditorIndex() {
+		return editorIndex;
 	}
 
 	public int getTabIndex() {
@@ -82,7 +82,7 @@ public class ScriptContextItem extends AbstractContextItem {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("\n--- Script: ").append(scriptName).append(" ---\n");
-		sb.append("Editor index: ").append(instanceIndex).append(" | Tab index: ").append(tabIndex);
+		sb.append("Editor index: ").append(editorIndex).append(" | Tab index: ").append(tabIndex);
 		if (hasSelection()) {
 			sb.append(" | Selected lines: ").append(selectionStartLine).append("-").append(selectionEndLine);
 		}
@@ -101,7 +101,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		if (obj == null || getClass() != obj.getClass()) return false;
 		final ScriptContextItem other = (ScriptContextItem) obj;
 		return Objects.equals(scriptName, other.scriptName) &&
-				instanceIndex == other.instanceIndex &&
+				editorIndex == other.editorIndex &&
 				tabIndex == other.tabIndex &&
 				Objects.equals(getScriptBody(), other.getScriptBody()) &&
 				Objects.equals(errorOutput, other.errorOutput) &&
@@ -111,12 +111,12 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(scriptName, instanceIndex, tabIndex, getScriptBody(), errorOutput, selectionStartLine, selectionEndLine);
+		return Objects.hash(scriptName, editorIndex, tabIndex, getScriptBody(), errorOutput, selectionStartLine, selectionEndLine);
 	}
 
 	@Override
 	public String getMergeKey() {
-		return "script:" + instanceIndex + ":" + tabIndex;
+		return "script:" + editorIndex + ":" + tabIndex;
 	}
 
 	@Override
@@ -141,7 +141,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		final java.util.List<LineRange> mergedRanges = mergeRanges(ranges);
 
 		// Create a new merged item
-		return new MergedScriptContextItem(scriptName, getScriptBody(), instanceIndex, tabIndex, errorOutput, mergedRanges);
+		return new MergedScriptContextItem(scriptName, getScriptBody(), editorIndex, tabIndex, errorOutput, mergedRanges);
 	}
 
 	/**
@@ -207,9 +207,9 @@ public class ScriptContextItem extends AbstractContextItem {
 	private static class MergedScriptContextItem extends ScriptContextItem {
 		private final String mergedRangesLabel;
 
-		MergedScriptContextItem(final String scriptName, final String content, final int instanceIndex,
+		MergedScriptContextItem(final String scriptName, final String content, final int editorIndex,
 				final int tabIndex, final String errorOutput, final java.util.List<LineRange> lineRanges) {
-			super(scriptName, content, instanceIndex, tabIndex, errorOutput, NO_SELECTION, NO_SELECTION);
+			super(scriptName, content, editorIndex, tabIndex, errorOutput, NO_SELECTION, NO_SELECTION);
 			this.mergedRangesLabel = formatRanges(lineRanges);
 		}
 
@@ -217,7 +217,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		public String toString() {
 			final StringBuilder sb = new StringBuilder();
 			sb.append("\n--- Script: ").append(getScriptName()).append(" ---\n");
-			sb.append("Editor index: ").append(getInstanceIndex()).append(" | Tab index: ").append(getTabIndex());
+			sb.append("Editor index: ").append(getEditorIndex()).append(" | Tab index: ").append(getTabIndex());
 			sb.append(mergedRangesLabel).append("\n");
 			sb.append("\n").append(getScriptBody()).append("\n");
 			if (!getErrorOutput().isEmpty()) {
