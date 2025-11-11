@@ -37,13 +37,14 @@ public class ScriptEditorTool implements AiToolPlugin {
 		return "We use scripts to build reproducible workflows. These tools support script creation and editing.\n" +
 			"BEFORE using any other Script Editor tool, use scriptGuide if it's not in your context.\n" +
 			"To make a new script, use createScript.\n" +
-			"To modify an existing script, use updateScript.\n" +
-			"To change the language or name of an existing script, use renameScript.";
+			"To modify a script in your context, use editScriptContent.\n" +
+			"To change the language or name of a script in your context, use renameScript.";
 	}
 
 	@Tool(value = {
 		"Create a new script in the script editor.",
 		"Args: scriptName - The name of the script with language extension (e.g., 'example.py', 'macro.ijm'); content - The source code for the script.",
+		"Returns: JSON with script name and address for future editing"
 	})
 	public String createScript(@P("scriptName") final String scriptName, @P("content") final String content) {
 		try {
@@ -93,51 +94,60 @@ public class ScriptEditorTool implements AiToolPlugin {
 	}
 
 	@Tool(value = {
-		"Updates an existing script with new content.",
-		"Args: editorIndex - The target script's instance index; tabIndex - The target script's tab index; content - The new content for the script."
+		"Update an existing script with new content. REQUIRES: A \"Script\" entry in your context.",
+		"Args: address - The script's address from context (e.g., [0:1]); content - New content for the script."
 	})
-	public String updateScript(@P("editorIndex") final int editorIndex, @P("tabIndex") final int tabIndex, @P("content") final String content) {
+	public String editScriptContent(@P("address") final String address, @P("content") final String content) {
 		try {
-			// Validate content
+			// Validate inputs
+			if (address == null || address.trim().isEmpty()) {
+				return "ERROR: Script address cannot be null or empty";
+			}
 			if (content == null) {
 				return "ERROR: Script content cannot be null";
+			}
+
+			// Parse the address string
+			final ScriptAddress scriptAddress = parseAddress(address);
+			if (scriptAddress == null) {
+				return "ERROR: Invalid address format. Expected [editorIndex:tabIndex] (e.g., [0:1])";
 			}
 
 			// Strip line numbers from content if present
 			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
 
 			// Validate instance index
-			if (editorIndex < 0 || editorIndex >= TextEditor.instances.size()) {
-				return "ERROR: Invalid instance index " + editorIndex;
+			if (scriptAddress.editorIndex < 0 || scriptAddress.editorIndex >= TextEditor.instances.size()) {
+				return "ERROR: Invalid editor index " + scriptAddress.editorIndex;
 			}
-			
-			final TextEditor textEditor = TextEditor.instances.get(editorIndex);
+
+			final TextEditor textEditor = TextEditor.instances.get(scriptAddress.editorIndex);
 			if (textEditor == null) {
-				return "ERROR: No editor found at instance index " + editorIndex;
+				return "ERROR: No editor found at index " + scriptAddress.editorIndex;
 			}
-			
+
 			// Perform UI operations on EDT
 			final String[] result = new String[1];
 			SwingUtilities.invokeAndWait(() -> {
 				try {
 					// Validate tab index
-					final TextEditorTab tab = textEditor.getTab(tabIndex);
-					
+					final TextEditorTab tab = textEditor.getTab(scriptAddress.tabIndex);
+
 					if (tab == null) {
-						result[0] = "ERROR: No tab found at index " + tabIndex;
+						result[0] = "ERROR: No tab found at index " + scriptAddress.tabIndex;
 						return;
 					}
-					
+
 					// Update the tab content
 					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 					editorPane.setText(cleanContent);
 
 					// Switch to the updated tab
-					textEditor.switchTo(tabIndex);
-					
-					result[0] = "Successfully updated script at instance " + editorIndex + ", tab " + tabIndex;
+					textEditor.switchTo(scriptAddress.tabIndex);
+
+					result[0] = "Successfully updated script at " + scriptAddress;
 				} catch (Exception e) {
-					result[0] = "ERROR: Invalid tab index " + tabIndex + ": " + e.getMessage();
+					result[0] = "ERROR: Failed to update tab at index " + scriptAddress.tabIndex + ": " + e.getMessage();
 				}
 			});
 			return result[0];
@@ -147,45 +157,44 @@ public class ScriptEditorTool implements AiToolPlugin {
 	}
 
 	@Tool(value = {
-		"Renames an existing script. Changing its extension will change its script language.",
-		"Args: editorIndex - The target script's instance index; tabIndex - The target script's tab index; name - New script name with language extension (e.g., 'example.py', 'macro.ijm').",
+		"Rename an existing script. Changing its extension will change its script language. REQUIRES: A \"Script\" entry in context.",
+		"Args: address - The script's address from context (e.g., [0:1]); name - New script name with language extension (e.g., 'example.py', 'macro.ijm').",
 	})
-	public String renameScript(@P("editorIndex") final int editorIndex, @P("tabIndex") final int tabIndex, @P("name") final String name) {
+	public String renameScript(@P("address") final String address, @P("name") final String name) {
 		try {
-			// Validate instance index
-			if (editorIndex < 0 || editorIndex >= TextEditor.instances.size()) {
-				return "ERROR: Invalid instance index " + editorIndex;
+			// Validate inputs
+			if (address == null || address.trim().isEmpty()) {
+				return "ERROR: Script address cannot be null or empty";
+			}
+			if (name == null || name.trim().isEmpty()) {
+				return "ERROR: Script name cannot be null or empty";
 			}
 
-			final TextEditor textEditor = TextEditor.instances.get(editorIndex);
+			// Parse the address string
+			final ScriptAddress scriptAddress = parseAddress(address);
+			if (scriptAddress == null) {
+				return "ERROR: Invalid address format. Expected [editorIndex:tabIndex] (e.g., [0:1])";
+			}
+
+			// Validate instance index
+			if (scriptAddress.editorIndex < 0 || scriptAddress.editorIndex >= TextEditor.instances.size()) {
+				return "ERROR: Invalid editor index " + scriptAddress.editorIndex;
+			}
+
+			final TextEditor textEditor = TextEditor.instances.get(scriptAddress.editorIndex);
 			if (textEditor == null) {
-				return "ERROR: No editor found at instance index " + editorIndex;
+				return "ERROR: No editor found at index " + scriptAddress.editorIndex;
 			}
 
 			// Perform UI operations on EDT
 			final String[] result = new String[1];
-			SwingUtilities.invokeAndWait(() -> {
-				try {
-					// Validate tab index
-					final TextEditorTab tab = textEditor.getTab(tabIndex);
-
-					if (tab == null) {
-						result[0] = "ERROR: No tab found at index " + tabIndex;
-						return;
-					}
-
-					// Update the filename
-					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-					editorPane.setFileName(new File(name));
-
-					// Switch to the tab
-					textEditor.switchTo(tabIndex);
-
-					result[0] = "Successfully renamed script at instance " + editorIndex + ", tab " + tabIndex + " to " + name;
-				} catch (Exception e) {
-					result[0] = "ERROR: Failed to rename tab at index " + tabIndex + ": " + e.getMessage();
-				}
-			});
+			if (SwingUtilities.isEventDispatchThread()) {
+				performRenameScript(textEditor, scriptAddress, name, result);
+			} else {
+				SwingUtilities.invokeAndWait(() -> {
+					performRenameScript(textEditor, scriptAddress, name, result);
+				});
+			}
 			return result[0];
 		} catch (Exception e) {
 			return "ERROR: Failed to rename script: " + e.getMessage();
@@ -218,6 +227,29 @@ public class ScriptEditorTool implements AiToolPlugin {
 		}
 	}
 
+	private ScriptAddress parseAddress(final String addressString) {
+		if (addressString == null || addressString.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			// Expected format: "[editorIndex:tabIndex]"
+			final String trimmed = addressString.trim();
+			if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) {
+				return null;
+			}
+			final String inner = trimmed.substring(1, trimmed.length() - 1);
+			final String[] parts = inner.split(":");
+			if (parts.length != 2) {
+				return null;
+			}
+			final int editorIndex = Integer.parseInt(parts[0].trim());
+			final int tabIndex = Integer.parseInt(parts[1].trim());
+			return new ScriptAddress(editorIndex, tabIndex);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	private String performCreateNewTab(final TextEditor textEditor, final String scriptName, final String extension, final String content) {
 		try {
 			// Create new tab - newTab() expects just the extension
@@ -227,9 +259,60 @@ public class ScriptEditorTool implements AiToolPlugin {
 			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 			editorPane.setFileName(new File(scriptName));
 
-			return "Successfully created script: " + scriptName;
+			// Get the editor and tab indices
+			int editorIndex = TextEditor.instances.indexOf(textEditor);
+			int tabIndex = findTabIndex(textEditor, tab);
+
+			// Return formatted JSON response
+			final StringBuilder sb = new StringBuilder();
+			sb.append("{\n");
+			sb.append("  \"type\": \"Script\",\n");
+			sb.append("  \"name\": \"").append(scriptName).append("\",\n");
+			sb.append("  \"address\": \"[").append(editorIndex).append(":").append(tabIndex).append("]\"\n");
+			sb.append("}\n");
+			return sb.toString();
 		} catch (Exception e) {
 			return "ERROR: Failed to create new tab: " + e.getMessage();
+		}
+	}
+
+	private int findTabIndex(final TextEditor textEditor, final TextEditorTab targetTab) {
+		for (int i = 0; ; i++) {
+			try {
+				final TextEditorTab currentTab = textEditor.getTab(i);
+				if (currentTab == null) {
+					break;
+				}
+				if (currentTab == targetTab) {
+					return i;
+				}
+			} catch (Exception e) {
+				break;
+			}
+		}
+		return -1; // Not found
+	}
+
+	private void performRenameScript(final TextEditor textEditor, final ScriptAddress scriptAddress, final String name, final String[] result) {
+		try {
+			// Validate tab index
+			final TextEditorTab tab = textEditor.getTab(scriptAddress.tabIndex);
+
+			if (tab == null) {
+				result[0] = "ERROR: No tab found at index " + scriptAddress.tabIndex;
+				return;
+			}
+
+			// Update the filename
+			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+			editorPane.setFileName(new File(name));
+
+			// Switch to the tab
+			textEditor.switchTo(scriptAddress.tabIndex);
+
+			result[0] = "Successfully renamed script at " + scriptAddress + " to " + name;
+		} catch (Exception e) {
+			result[0] = "ERROR: Failed to rename tab at index " + scriptAddress.tabIndex + ": " + e.getMessage();
 		}
 	}
 

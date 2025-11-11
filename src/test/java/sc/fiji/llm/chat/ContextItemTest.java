@@ -1,12 +1,13 @@
 package sc.fiji.llm.chat;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.Objects;
 import sc.fiji.llm.script.ScriptContextItem;
 
 /**
@@ -79,7 +80,7 @@ public class ContextItemTest {
         String mergeKey = item.getMergeKey();
 
         // Then: it should be constructed from instance and tab indices
-        assertEquals("script:0:1", mergeKey);
+        assertEquals("script:[0:1]", mergeKey);
     }
 
     @Test
@@ -90,15 +91,15 @@ public class ContextItemTest {
         ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1, "", 4, 5);
 
         // When: we merge them
-        ContextItem merged = item1.mergeWith(java.util.Collections.singletonList(item2));
+        ContextItem merged = item1.mergeWith(Collections.singletonList(item2));
 
-        // Then: the result should have both ranges
+        // Then: the result should have both ranges in JSON format with range notation
         assertNotNull(merged);
         assertTrue(merged instanceof ScriptContextItem);
         String mergedStr = merged.toString();
-        assertTrue(mergedStr.contains("Selected lines:"));
-        assertTrue(mergedStr.contains("1-2"));
-        assertTrue(mergedStr.contains("4-5"));
+        assertTrue(mergedStr.contains("\"selectedLines\""));
+        assertTrue(mergedStr.contains("\"1-2\""));
+        assertTrue(mergedStr.contains("\"4-5\""));
     }
 
     @Test
@@ -109,15 +110,13 @@ public class ContextItemTest {
         ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1, "", 2, 4);
 
         // When: we merge them
-        ContextItem merged = item1.mergeWith(java.util.Collections.singletonList(item2));
+        ContextItem merged = item1.mergeWith(Collections.singletonList(item2));
 
         // Then: overlapping ranges should be combined into one
         assertNotNull(merged);
         String mergedStr = merged.toString();
-        assertTrue(mergedStr.contains("1-4"));
-        // Should not have separate ranges listed
-        assertFalse(mergedStr.contains("1-3"));
-        assertFalse(mergedStr.contains("2-4"));
+        // Should only have one range entry: 1-4
+        assertTrue(mergedStr.contains("\"selectedLines\": [\"1-4\"]"));
     }
 
     @Test
@@ -128,12 +127,13 @@ public class ContextItemTest {
         ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1, "", 3, 4);
 
         // When: we merge them
-        ContextItem merged = item1.mergeWith(java.util.Collections.singletonList(item2));
+        ContextItem merged = item1.mergeWith(Collections.singletonList(item2));
 
         // Then: adjacent ranges should be combined
         assertNotNull(merged);
         String mergedStr = merged.toString();
-        assertTrue(mergedStr.contains("1-4"));
+        // Should only have one range entry: 1-4
+        assertTrue(mergedStr.contains("\"selectedLines\": [\"1-4\"]"));
     }
 
     /**
@@ -164,14 +164,14 @@ public class ContextItemTest {
             if (this == obj) return true;
             if (obj == null || getClass() != obj.getClass()) return false;
             final TestContextItem other = (TestContextItem) obj;
-            return java.util.Objects.equals(getType(), other.getType()) &&
-                   java.util.Objects.equals(getLabel(), other.getLabel()) &&
-                   java.util.Objects.equals(content, other.content);
+            return Objects.equals(getType(), other.getType()) &&
+                   Objects.equals(getLabel(), other.getLabel()) &&
+                   Objects.equals(content, other.content);
         }
 
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(getType(), getLabel(), content);
+            return Objects.hash(getType(), getLabel(), content);
         }
     }
 }
