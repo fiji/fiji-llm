@@ -238,115 +238,55 @@ public class ScriptEditorTool implements AiToolPlugin {
 SciJava Scripting Guide
 =======================
 
-LANGUAGE DETECTION
-------------------
-Script language is detected based on file extension in the name.
-Ensure the script name includes the correct extension (e.g., 'myScript.py', 'analysis.ijm').
+LANGUAGES (by extension)
+-------------------------
+Recommended: .py (Python), .ijm (ImageJ Macro), .groovy (Groovy)
+Also: .js (JavaScript), .bsh (BeanShell), .java (Java)
 
-RECOMMENDED LANGUAGES
-----------------------
-• .py - Python
-• .ijm - ImageJ Macro Language
-• .groovy - Groovy
+NOTE: ImageJ Macros (.ijm) are typically created using the Macro Recorder.
+Use available ImageJ Macro Tools to start, then edit the resulting script as needed.
 
-ALSO SUPPORTED
+@PARAMETER SYNTAX
+-----------------
+• PREFERRED way to get user inputs and create parameterized commands
+• ALL PARAMETER LINES MUST APPEAR FIRST (even before imports!)
+• Written as language-specific comments (e.g., # in Python)
+
+Syntax: # @Type variableName (property=value, ...)
+Output: #@output Type outputName (MUST THEN DEFINE in script)
+
+PARAMETER TYPES
+---------------
+UI-enabled (automatic widgets):
+  • Dataset, ImagePlus, ImgPlus → Image selector (uses active image)
+  • Boolean → Checkbox
+  • Byte, Short, Long, Integer, Float, Double → Numeric input
+  • String → Text field
+  • Character → Single character
+  • File, File[] → File/folder chooser
+  • Date → Date picker
+  • ColorRGB → Color picker
+
+Injected (no UI): SciJavaServices (UIService, CommandService, etc.)
+
+KEY PROPERTIES
 --------------
-• .js - JavaScript (Nashorn)
-• .bsh - BeanShell
-• .java - Java
+• label="text" → UI display name
+• description="text" → Tooltip
+• value=X → Default value
+• required=true|false → Optional parameter
+• min=X, max=X, stepSize=X → Numeric constraints
+• style="slider|file|save|directory|files|directories" → Widget/mode
+• visibility=NORMAL|TRANSIENT|INVISIBLE|MESSAGE
 
-@Parameters
-============
-• Turn scripts into parameterized SciJava commands, enabling use in other environments (e.g., headlessly).
-• The best way to get input from users
-• No restrictions on number of parameters
-
-BASIC SYNTAX
-------------
-• ALL PARAMETER LINES MUST APPEAR FIRST IN THE FILE (even before imports!)
-• ALWAYS WRITTEN AS LANGUAGE-SPECIFIC COMMENT LINE
-
-In Python (# for comments):
-#@ Type variableName (propKey=propVal,...) → Declare input variable, available for use in the script. Properties are optional.
-#@output Type outputName → Declare output variable, which MUST BE DEFINED in the script. Type optional, default: Object.
-
-SUPPORTED TYPES
----------------
-• SCRIPT PARAMETERS ARE THE PREFERRED WAY TO GATHER INPUTS!
-• If you need a variable of one of these types, you usually should use an @Parameter
-
-Support automatic UI creation:
-  • Dataset, ImagePlus, ImgPlus → Automatically use the active image. Selector created if multiple images open.
-  • Boolean → Checkbox widget
-  • Byte, Short, Long, Integer, Float, Double → Numeric input 
-  • String → Text field or text area
-  • Character → Single character input
-  • File → File chooser widget (supports open/save/directory modes)
-  • File[] → Multiple files/folders selector
-  • Date → Date chooser widget
-  • ColorRGB → Color chooser widget
-
-Injected without UI:
-  • SciJavaService implementations → e.g. UIService, CommandService
-
-PARAMETER PROPERTIES (OPTIONAL)
--------------------------------
-Universal:
-•  label="Custom Label" → Alternative UI display name
-•  description="Help text" → UI tooltip
-•  value=defaultValue → Default value
-•  persist=true|false → Remember last value (default: true)
-•  required=true|false → Whether parameter must be satisfied (default: true)
-•  visibility=NORMAL|TRANSIENT|INVISIBLE|MESSAGE
-    • NORMAL: Included in history and macro recording
-    • TRANSIENT: Excluded from history, included in recording
-    • INVISIBLE: Excluded from both history and recording
-    • MESSAGE: Read-only documentation message (forces required=false)
-
-Numeric-specific:
-• min=value, max=value → Numeric range
-• stepSize=amount → Increment step (default: 1)
-• style="slider" → Widget style (slider, spinner, scroll bar)
-• style="format:#.##" → Decimal formatting
-
-File-specific:
-• style="file" → Single file open
-• style="save" → File save dialog
-• style="directory" → Directory selection
-• style="files" → Multiple files (for File[])
-• style="directories" → Multiple directories (for File[])
-• style="both" → Multiple files or directories (for File[])
-
-COMMON SERVICES
----------------
-  • UIService → User interface actions (e.g., ui.show())
-  • CommandService → Run SciJava commands/scripts (e.g., cs.run())
-  • LogService → Logging output (e.g., log.info(), log.warn(), log.error())
-  • StatusService → Update progress/status messages
-
-OUTPUT HANDLING
----------------
-The framework tries to display any outputs. Some have specific handlers:
-
-• Dataset, ImagePlus → Displayed as image
-• String → Printed as text
-• numerics → Displayed in table
-
-EXAMPLE SCRIPT: Invert_image.py
-===============================
+EXAMPLE
+-------
 #@ ImagePlus img
 #@output inverted
 
 inverted = img.duplicate()
-ip = inverted.getProcessor()
-
-ip.invert()
+inverted.getProcessor().invert()
 inverted.updateAndDraw()
-
-COMMON ERRORS
-=============
-• TypeError: 'org.scijava.plugin.PluginInfo' object is not callable → Runtime error during script execution
 	""";
 	}
-
 }
