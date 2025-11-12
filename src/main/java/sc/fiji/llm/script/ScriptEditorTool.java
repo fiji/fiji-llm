@@ -332,14 +332,17 @@ Also: .js (JavaScript), .bsh (BeanShell), .java (Java)
 NOTE: ImageJ Macros (.ijm) are typically created using the Macro Recorder.
 Use available ImageJ Macro Tools to start, then edit the resulting script as needed.
 
-@PARAMETER SYNTAX
------------------
-• PREFERRED way to get user inputs and create parameterized commands
+@ PARAMETERS
+------------
+• A special magic syntax for script inputs and outputs
 • ALL PARAMETER LINES MUST APPEAR FIRST (even before imports!)
-• Written as language-specific comments (e.g., # in Python)
+• WRITTEN AS COMMENTS (e.g., # in Python, // in Groovy)
+• Inputs Parameters are created automatically
+* Output Parameters must be defined in the script.
 
-Syntax: # @Type variableName (property=value, ...)
-Output: #@output Type outputName (MUST THEN DEFINE in script)
+
+Input: # @Type variableName (property=value, ...)
+Output: #@output Type outputName
 
 PARAMETER TYPES
 ---------------
@@ -355,8 +358,8 @@ UI-enabled (automatic widgets):
 
 Injected (no UI): SciJavaServices (UIService, CommandService, etc.)
 
-KEY PROPERTIES
---------------
+OPTIONAL PROPERTIES
+-------------------
 • label="text" → UI display name
 • description="text" → Tooltip
 • value=X → Default value
@@ -367,7 +370,7 @@ KEY PROPERTIES
 
 EXAMPLE
 -------
-#@ ImagePlus img
+# @ImagePlus img
 #@output inverted
 
 inverted = img.duplicate()
