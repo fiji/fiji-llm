@@ -18,7 +18,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 public interface LLMProvider extends SingletonPlugin, Initializable, Disposable {
 
 	/** Default timeout duration for API calls */
-	public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
+	public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
 
 	/** Default maximum number of retries for API calls */
 	public static int DEFAULT_MAX_RETRIES = 0;
