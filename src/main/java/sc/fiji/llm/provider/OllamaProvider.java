@@ -54,14 +54,17 @@ public class OllamaProvider implements LLMProvider {
 
 	@Override
 	public String getModelsDocumentationUrl() {
-		return "https://ollama.com/library";
+		return "https://ollama.com/download";
+	}
+
+	@Override
+	public boolean requiresApiKey() {
+		return false;
 	}
 
 	@Override
 	public String getApiKeyUrl() {
-		// Ollama doesn't require an API key for local usage
-		// Return the download page instead
-		return "https://ollama.com/download";
+		return "";
 	}
 
 	@Override

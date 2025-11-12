@@ -52,6 +52,13 @@ public interface LLMProvider extends SingletonPlugin, Initializable, Disposable 
 	String getModelsDocumentationUrl();
 
 	/**
+	 * @return True if this model requires an API key (i.e. cloud-based models)
+	 */
+	default boolean requiresApiKey() {
+		return true;
+	}
+
+	/**
 	 * Get the URL where users can obtain an API key for this provider.
 	 *
 	 * @return URL to the API key page
