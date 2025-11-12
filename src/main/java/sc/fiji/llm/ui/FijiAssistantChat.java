@@ -43,6 +43,7 @@ import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
@@ -109,8 +110,11 @@ public class FijiAssistantChat {
         final String systemMessage = buildSystemMessage();
         this.chatMemory.add(new SystemMessage(systemMessage));
 
+        // Create default request parameters
+        final ChatRequestParameters requestParameters = ChatRequestParameters.builder().temperature(0.1).build();
+
         // Recreate the assistant with the chat memory for proper tool tracking
-        this.assistant = assistantService.createAssistant(FijiAssistant.class, providerName, modelName, chatMemory);
+        this.assistant = assistantService.createAssistant(FijiAssistant.class, providerName, modelName, chatMemory, requestParameters);
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);

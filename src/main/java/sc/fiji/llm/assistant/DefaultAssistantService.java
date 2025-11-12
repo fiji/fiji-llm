@@ -6,6 +6,8 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.model.chat.request.ChatRequest.Builder;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
@@ -28,7 +30,7 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 	private AiToolService toolService;
 
 	@Override
-	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final ChatMemory chatMemory) {
+	public <T> T createAssistant(final Class<T> assistantInterface, final String providerName, final String modelName, final ChatMemory chatMemory, final ChatRequestParameters defaultChatParameters) {
 		final LLMProvider provider = providerService.getProvider(providerName);
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
@@ -44,6 +46,14 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 			.chatModel(provider.createChatModel(apiKey, modelName))
 			.tools(toolService.getInstances().toArray());
 
+		// Apply request parameters at AiServices level where they'll be used
+		if (defaultChatParameters != null) {
+			builder.chatRequestTransformer(chatRequest -> {
+				Builder chatTransformBuilder = chatRequest.toBuilder();
+				chatTransformBuilder.parameters(defaultChatParameters.overrideWith(chatRequest.parameters()));
+				return chatTransformBuilder.build();
+			});
+		}
 		if (chatMemory != null) {
 			builder.chatMemory(chatMemory);
 		}
