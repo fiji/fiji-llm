@@ -27,6 +27,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -87,13 +88,17 @@ public class FijiAssistantChat {
     private final JPanel chatPanel;
     private final JScrollPane chatScrollPane;
     private final JTextArea inputArea;
-    private final JButton sendButton;
+    private final JButton sendStopButton;
     private final JPanel contextTagsPanel;
     private final JScrollPane contextTagsScrollPane;
     private final JButton clearAllButton;
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final List<ContextItem> contextItems;
     private ChatMessagePanel currentStreamingPanel;
+    private boolean stopRequested = false;
+    private boolean isSendMode = true;
+    private ImageIcon sendIcon;
+    private ImageIcon stopIcon;
 
     public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, ProviderService providerService, String providerName, String modelName) {
         this.commandService = commandService;
@@ -330,17 +335,33 @@ public class FijiAssistantChat {
         // Send button - styled to look integrated
         final URL iconUrl = getClass().getResource("/icons/send-20.png");
         if (iconUrl != null) {
-            sendButton = new JButton(new ImageIcon(iconUrl));
-        } else {
-            sendButton = new JButton("Send");
+            sendIcon = new ImageIcon(iconUrl);
         }
-        sendButton.setFocusPainted(false);
-        sendButton.setToolTipText("Send message");
+        sendIcon = sendIcon != null ? sendIcon : null; // Ensure it's initialized
+
+        // Stop button - styled to look integrated, initially hidden
+        final URL stopIconUrl = getClass().getResource("/icons/stop-noun-20.png");
+        if (stopIconUrl != null) {
+            stopIcon = new ImageIcon(stopIconUrl);
+        }
+        stopIcon = stopIcon != null ? stopIcon : null; // Ensure it's initialized
+
+        // Single send/stop button that toggles based on mode
+        sendStopButton = new JButton();
+        sendStopButton.setFocusPainted(false);
+        setSendMode(); // Start in send mode
+        sendStopButton.addActionListener(e -> {
+            if (isSendMode) {
+                sendMessage();
+            } else {
+                requestStop();
+            }
+        });
 
         // Input panel with button bar and input area
         final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly", "[grow,fill][shrink]", "[grow,fill]"));
         inputPanel.add(inputScrollPane, "growx, growy, pushy");
-        inputPanel.add(sendButton, "aligny bottom, height 28!");
+        inputPanel.add(sendStopButton, "aligny bottom, height 28!");
 
         // Bottom panel combining context tags, button bar, and input
         final JPanel bottomPanel = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_PADDING + " " + INPUT_PANEL_PADDING + ", gapy " + INPUT_PANEL_PADDING, "[grow,fill]", "[][][grow,fill]"));
@@ -361,9 +382,6 @@ public class FijiAssistantChat {
         // Add components to frame
         frame.add(topNavBar, BorderLayout.NORTH);
         frame.add(splitPane, BorderLayout.CENTER);
-
-        // Set up event handlers
-        sendButton.addActionListener(e -> sendMessage());
 
         // Finalize frame
         frame.pack();
@@ -565,28 +583,26 @@ public class FijiAssistantChat {
         scrollPane.getViewport().setOpaque(false);
 
         return scrollPane;
-    }    private void sendMessage() {
+    }
+
+    private void sendMessage() {
         final String userMessage = inputArea.getText().trim();
         if (userMessage.isEmpty()) {
             return;
         }
 
-        inputArea.setText("");
-        inputArea.setEnabled(false);
-        sendButton.setEnabled(false);
-
         // Build user message with context items
         final String messageWithContext = buildUserMessageWithContext(userMessage);
 
-        // Display both user message and empty assistant panel in the same EDT call for proper ordering
-        SwingUtilities.invokeLater(() -> {
-            // Add user message panel (display original without context markers)
-            addMessagePanelToChat(ChatMessagePanel.MessageType.USER, userMessage);
-            clearAllContextButtons();
+        // Add user message panel (display original without context markers)
+        addMessagePanelToChat(ChatMessagePanel.MessageType.USER, userMessage);
+        clearAllContextButtons();
 
-            // Add empty assistant message panel for streaming
-            currentStreamingPanel = createEmptyAssistantMessagePanel();
-        });
+        // Add empty assistant message panel for streaming
+        currentStreamingPanel = createEmptyAssistantMessagePanel();
+
+        // Switch to stop mode
+        setStopMode();
 
         // Process in background thread (LLM calls happen OFF the EDT)
         threadService.run(() -> {
@@ -603,19 +619,29 @@ public class FijiAssistantChat {
 
                 // Use streaming API
                 assistant.chatStreaming(chatRequest)
-                    .onPartialResponse(token -> {
-                        responseBuilder.append(token);
+                    .onPartialResponseWithContext((partialResponse, context) -> {
+                        if (stopRequested) {
+                            context.streamingHandle().cancel();
+                            stopRequested = false;
+                        }
+                        responseBuilder.append(partialResponse.text());
                         if (currentStreamingPanel != null) {
-                            currentStreamingPanel.appendText(token);
+                            currentStreamingPanel.appendText(partialResponse.text());
                             // Scroll to bottom periodically (every 200ms) to avoid excessive updates
                             final long now = System.currentTimeMillis();
                             if (now - lastScrollTime[0] > 200) {
                                 lastScrollTime[0] = now;
                                 SwingUtilities.invokeLater(() -> {
-                                    final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+                                    final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
                                     vertical.setValue(vertical.getMaximum());
                                 });
                             }
+                        }
+                    })
+                    .onPartialThinkingWithContext((thinking, context) -> {
+                        if (stopRequested) {
+                            context.streamingHandle().cancel();
+                            stopRequested = false;
                         }
                     })
                     .onCompleteResponse(response -> {
@@ -626,11 +652,9 @@ public class FijiAssistantChat {
 
                         // Scroll to bottom one final time after streaming completes
                         SwingUtilities.invokeLater(() -> {
-                            final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+                            final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
                             vertical.setValue(vertical.getMaximum());
-                            inputArea.setEnabled(true);
-                            sendButton.setEnabled(true);
-                            inputArea.requestFocus();
+                            setSendMode();
                         });
                     })
                     .onError(error -> {
@@ -648,11 +672,9 @@ public class FijiAssistantChat {
                             }
                         }
 
-                        // Re-enable inputs
+                        // Re-enable inputs and switch back to send mode
                         SwingUtilities.invokeLater(() -> {
-                            inputArea.setEnabled(true);
-                            sendButton.setEnabled(true);
-                            inputArea.requestFocus();
+                            setSendMode();
                         });
                     })
                     .start();
@@ -668,12 +690,50 @@ public class FijiAssistantChat {
                 }
 
                 SwingUtilities.invokeLater(() -> {
-                    inputArea.setEnabled(true);
-                    sendButton.setEnabled(true);
-                    inputArea.requestFocus();
+                    setSendMode();
                 });
             }
         });
+    }
+
+    /**
+     * Requests the current generation to stop.
+     */
+    private void requestStop() {
+        stopRequested = true;
+        setSendMode();
+    }
+
+    /**
+     * Switches the send/stop button to send mode.
+     */
+    private void setSendMode() {
+        isSendMode = true;
+        if (sendIcon != null) {
+            sendStopButton.setIcon(sendIcon);
+        } else {
+            sendStopButton.setText("Send");
+        }
+        sendStopButton.setToolTipText("Send message");
+
+        inputArea.setEnabled(true);
+        inputArea.requestFocus();
+    }
+
+    /**
+     * Switches the send/stop button to stop mode.
+     */
+    private void setStopMode() {
+        isSendMode = false;
+        if (stopIcon != null) {
+            sendStopButton.setIcon(stopIcon);
+        } else {
+            sendStopButton.setText("Stop");
+        }
+        sendStopButton.setToolTipText("Interrupt the assistant");
+
+        inputArea.setText("");
+        inputArea.setEnabled(false);
     }
 
     /**
