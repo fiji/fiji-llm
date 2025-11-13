@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
@@ -51,6 +52,8 @@ import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.ContextItemService;
 import sc.fiji.llm.chat.ContextItemSupplier;
 import sc.fiji.llm.commands.Fiji_Chat;
+import sc.fiji.llm.commands.Manage_Keys;
+import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
@@ -75,6 +78,7 @@ public class FijiAssistantChat {
     private final ThreadService threadService;
     private final AiToolService aiToolService;
     private final ChatbotService chatbotService;
+    private final String providerName;
 
     // -- Non-Contextual fields --
     private FijiAssistant assistant;
@@ -91,7 +95,7 @@ public class FijiAssistantChat {
     private final List<ContextItem> contextItems;
     private ChatMessagePanel currentStreamingPanel;
 
-    public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, String providerName, String modelName) {
+    public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, ProviderService providerService, String providerName, String modelName) {
         this.commandService = commandService;
         this.prefService = prefService;
         this.platformService = platformService;
@@ -99,6 +103,7 @@ public class FijiAssistantChat {
         this.contextItemSupplierService = contextItemService;
         this.aiToolService = aiToolService;
         this.chatbotService = chatService;
+        this.providerName = providerName;
 
         this.contextItemButtons = new HashMap<>();
         this.contextItems = new ArrayList<>();
@@ -139,6 +144,19 @@ public class FijiAssistantChat {
         forumButton.setToolTipText("Get help on the Image.sc forum");
         forumButton.addActionListener(e -> openForumInBrowser());
 
+        // Change API Keys button
+        final JButton configureKeysButton;
+        final URL lockIconUrl = getClass().getResource("/icons/lock-noun-32.png");
+        if (lockIconUrl != null) {
+            configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
+            configureKeysButton.setPreferredSize(new Dimension(36, 36));
+            configureKeysButton.setToolTipText("Configure API Keys");
+        } else {
+            configureKeysButton = new JButton("Configure API Keys");
+        }
+        configureKeysButton.setFocusPainted(false);
+        configureKeysButton.addActionListener(e -> configureKeys());
+
         // Change Model button (right side of nav bar)
         final JButton configureChatButton;
         final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
@@ -153,6 +171,9 @@ public class FijiAssistantChat {
         configureChatButton.addActionListener(e -> configureChat());
 
         topNavBar.add(forumButton);
+		if (providerService.getProvider(providerName).requiresApiKey()) {
+            topNavBar.add(configureKeysButton);
+        }
         topNavBar.add(configureChatButton);
 
         // Chat display area - MigLayout for proper resizing with messages at bottom
@@ -753,6 +774,19 @@ public class FijiAssistantChat {
         chatPanel.repaint();
 
         return messagePanel;
+    }
+
+    private void configureKeys() {
+        prefService.remove(Fiji_Chat.class, Fiji_Chat.SKIP_INPUTS);
+
+        // Close this chat window
+        frame.dispose();
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("startChatbot", true);
+		params.put("provider", providerName);
+        // Re-invoke the Fiji_Chat command to show the selection dialog
+        commandService.run(Manage_Keys.class, true, params);
     }
 
     private void configureChat() {
