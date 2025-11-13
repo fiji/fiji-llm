@@ -156,8 +156,10 @@ public class Manage_Keys extends DynamicCommand {
 		// Determine which API key to use
 		String keyToUse = apiKey;
 		
-		// If the input is masked (********) or empty, use the stored key
-		if (keyToUse == null || keyToUse.isEmpty() || keyToUse.equals(MASK)) {
+		if (keyToUse == null || keyToUse.isEmpty()) {
+			apiKeyService.removeApiKey(provider);
+		}
+		else if ( keyToUse.matches("\\*+")) {
 			// No action if user didn't enter a new key
 		} else {
             // Store the new key
