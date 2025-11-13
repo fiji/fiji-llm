@@ -15,52 +15,48 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	private final String scriptName;
 	private final String scriptBody;
-	private final ScriptAddress address;
+	private final ScriptID id;
 	private final String errorOutput;
 	private final List<LineRange> selectedRanges;
 
-	public ScriptContextItem(String scriptName, String content) {
-		this(scriptName, content, new ScriptAddress(ScriptAddress.UNSET, ScriptAddress.UNSET), "", new ArrayList<>());
+	public ScriptContextItem(String scriptName, String content, ScriptID id) {
+		this(scriptName, content, id, "", new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptAddress address) {
-		this(scriptName, content, address, "", new ArrayList<>());
+	public ScriptContextItem(String scriptName, String content, ScriptID id, String errorOutput) {
+		this(scriptName, content, id, errorOutput, new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptAddress address, String errorOutput) {
-		this(scriptName, content, address, errorOutput, new ArrayList<>());
-	}
-
-	public ScriptContextItem(String scriptName, String content, ScriptAddress address, String errorOutput,
+	public ScriptContextItem(String scriptName, String content, ScriptID id, String errorOutput,
 			int selectionStartLine, int selectionEndLine) {
-		this(scriptName, content, address, errorOutput,
-				selectionStartLine != ScriptAddress.UNSET && selectionEndLine != ScriptAddress.UNSET
+		this(scriptName, content, id, errorOutput,
+				selectionStartLine != -1 && selectionEndLine != -1
 					? List.of(new LineRange(selectionStartLine, selectionEndLine))
 					: new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptAddress address, String errorOutput,
+	public ScriptContextItem(String scriptName, String content, ScriptID id, String errorOutput,
 			List<LineRange> selectedRanges) {
 		super("Script", scriptName);
 		this.scriptName = scriptName;
 		this.scriptBody = content;
-		this.address = Objects.requireNonNull(address, "address cannot be null");
+		this.id = Objects.requireNonNull(id, "id cannot be null");
 		this.errorOutput = errorOutput != null ? errorOutput : "";
 		this.selectedRanges = new ArrayList<>(selectedRanges);
 	}
 
 	// Backward compatibility constructors
 	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex) {
-		this(scriptName, content, new ScriptAddress(editorIndex, tabIndex), "", new ArrayList<>());
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), "", new ArrayList<>());
 	}
 
 	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput) {
-		this(scriptName, content, new ScriptAddress(editorIndex, tabIndex), errorOutput, new ArrayList<>());
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput, new ArrayList<>());
 	}
 
 	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput,
 			int selectionStartLine, int selectionEndLine) {
-		this(scriptName, content, new ScriptAddress(editorIndex, tabIndex), errorOutput, selectionStartLine, selectionEndLine);
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput, selectionStartLine, selectionEndLine);
 	}
 
 	@Override
@@ -82,16 +78,16 @@ public class ScriptContextItem extends AbstractContextItem {
 		return scriptBody;
 	}
 
-	public ScriptAddress getAddress() {
-		return address;
+	public ScriptID getId() {
+		return id;
 	}
 
 	public int getEditorIndex() {
-		return address.editorIndex;
+		return id.editorIndex;
 	}
 
 	public int getTabIndex() {
-		return address.tabIndex;
+		return id.tabIndex;
 	}
 
 	public String getErrorOutput() {
@@ -112,7 +108,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		sb.append("{\n");
 		sb.append("  \"type\": \"Script\",\n");
 		sb.append("  \"name\": \"").append(escapeJson(scriptName)).append("\",\n");
-		sb.append("  \"address\": \"").append(address).append("\",\n");
+		sb.append("  \"id\": \"").append(id).append("\",\n");
 		if (hasSelection()) {
 			sb.append("  \"selectedLines\": ").append(formatRangesAsJson(selectedRanges)).append(",\n");
 		}
@@ -131,7 +127,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		if (obj == null || getClass() != obj.getClass()) return false;
 		final ScriptContextItem other = (ScriptContextItem) obj;
 		return Objects.equals(scriptName, other.scriptName) &&
-				Objects.equals(address, other.address) &&
+				Objects.equals(id, other.id) &&
 				Objects.equals(getScriptBody(), other.getScriptBody()) &&
 				Objects.equals(errorOutput, other.errorOutput) &&
 				Objects.equals(selectedRanges, other.selectedRanges);
@@ -139,12 +135,12 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(scriptName, address, getScriptBody(), errorOutput, selectedRanges);
+		return Objects.hash(scriptName, id, getScriptBody(), errorOutput, selectedRanges);
 	}
 
 	@Override
 	public String getMergeKey() {
-		return "script:" + address;
+		return "script:" + id;
 	}
 
 	@Override
@@ -159,39 +155,12 @@ public class ScriptContextItem extends AbstractContextItem {
 		}
 
 		// Sort and merge overlapping ranges
-		ranges.sort((a, b) -> Integer.compare(a.start, b.start));
-		final List<LineRange> mergedRanges = mergeRanges(ranges);
+		ranges.sort((a, b) -> Integer.compare(a.getStart(), b.getStart()));
+		final List<LineRange> mergedRanges = LineRange.mergeRanges(ranges);
 
 		// Create a new merged item with merged ranges
-		return new ScriptContextItem(scriptName, getScriptBody(), address, errorOutput, mergedRanges);
+		return new ScriptContextItem(scriptName, getScriptBody(), id, errorOutput, mergedRanges);
 	}
-
-	/**
-	 * Merges overlapping or adjacent line ranges.
-	 */
-	private static java.util.List<LineRange> mergeRanges(final java.util.List<LineRange> ranges) {
-		if (ranges.isEmpty()) {
-			return ranges;
-		}
-
-		final java.util.List<LineRange> merged = new java.util.ArrayList<>();
-		LineRange current = ranges.get(0);
-
-		for (int i = 1; i < ranges.size(); i++) {
-			final LineRange next = ranges.get(i);
-			if (current.end >= next.start - 1) {
-				// Overlapping or adjacent - merge them
-				current = new LineRange(current.start, Math.max(current.end, next.end));
-			} else {
-				// Gap - save current and start new
-				merged.add(current);
-				current = next;
-			}
-		}
-		merged.add(current);
-		return merged;
-	}
-
 	/**
 	 * Escapes special characters for JSON strings.
 	 */
@@ -212,7 +181,7 @@ public class ScriptContextItem extends AbstractContextItem {
 	private static String formatRangesAsJson(final java.util.List<LineRange> ranges) {
 		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
 		for (final LineRange r : ranges) {
-			joiner.add("\"" + r.start + "-" + r.end + "\"");
+			joiner.add("\"" + r.getStart() + "-" + r.getEnd() + "\"");
 		}
 		return joiner.toString();
 	}
@@ -220,39 +189,8 @@ public class ScriptContextItem extends AbstractContextItem {
 	private static String formatRangesAsString(final java.util.List<LineRange> ranges) {
 		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
 		for (final LineRange r : ranges) {
-			joiner.add(r.start + "-" + r.end);
+			joiner.add(r.getStart() + "-" + r.getEnd());
 		}
 		return joiner.toString();
-	}
-
-	/**
-	 * Represents a range of lines.
-	 */
-	public static class LineRange {
-		public final int start;
-		public final int end;
-
-		public LineRange(final int start, final int end) {
-			this.start = start;
-			this.end = end;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) return true;
-			if (obj == null || getClass() != obj.getClass()) return false;
-			final LineRange other = (LineRange) obj;
-			return start == other.start && end == other.end;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(start, end);
-		}
-
-		@Override
-		public String toString() {
-			return start + "-" + end;
-		}
 	}
 }

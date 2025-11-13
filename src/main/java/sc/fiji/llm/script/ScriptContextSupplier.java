@@ -212,8 +212,8 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 	 * Extracts selection start and end line numbers from an EditorPane.
 	 */
 	private int[] getSelectionLineNumbers(final EditorPane editorPane) {
-		int selectionStartLine = ScriptAddress.UNSET;
-		int selectionEndLine = ScriptAddress.UNSET;
+		int selectionStartLine = LineRange.UNSET;
+		int selectionEndLine = LineRange.UNSET;
 
 		try {
 			final String selectedText = editorPane.getSelectedText();
