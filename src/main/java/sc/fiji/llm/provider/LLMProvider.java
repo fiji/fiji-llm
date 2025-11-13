@@ -23,6 +23,8 @@ public interface LLMProvider extends SingletonPlugin, Initializable, Disposable 
 	/** Default maximum number of retries for API calls */
 	public static int DEFAULT_MAX_RETRIES = 0;
 
+	public static final String VALIDATION_FAILED = "sc.fiji.llm.provider.validation_failed";
+
 	/**
 	 * Get the name of this provider.
 	 *
@@ -64,6 +66,18 @@ public interface LLMProvider extends SingletonPlugin, Initializable, Disposable 
 	 * @return URL to the API key page
 	 */
 	String getApiKeyUrl();
+
+	/**
+	 * Hook for when a model requires additional actions.
+	 * This is a transformative action, allowing for descriptive identifiers attached
+	 * to model names that require validation. (e.g. when downloading a remote model)
+	 * 
+	 * @param modelToValidate Name of the model for validation
+	 * @return The validated model name, or {@link #VALIDATION_FAILED} if validation wasunsuccessful.
+	 */
+	default String validateModel(String modelToValidate) {
+		return modelToValidate;
+	}
 
 	/**
 	 * Create a chat language model with the specified API key and model name.

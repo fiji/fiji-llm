@@ -87,6 +87,7 @@
         <!-- Pinned version properties -->
         <langchain4j.version>1.8.0</langchain4j.version>
 	<ollama4j.version>1.1.4</ollama4j.version>
+	<jsoup.version>1.21.2</jsoup.version>
     </properties>
 
     <repositories>
@@ -167,6 +168,13 @@
             <groupId>io.github.ollama4j</groupId>
             <artifactId>ollama4j</artifactId>
             <version>${ollama4j.version}</version>
+        </dependency>
+
+        <!-- Jsoup for reading html -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
         </dependency>
 
         <!-- Test dependencies -->

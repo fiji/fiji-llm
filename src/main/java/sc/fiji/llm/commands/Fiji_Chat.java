@@ -13,6 +13,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
+import org.scijava.ui.UIService;
 
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
@@ -46,6 +47,9 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter
 	private ChatbotService chatbotService;
+
+	@Parameter
+	private UIService uiService;
 
 	@Parameter(label = "",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
@@ -161,9 +165,15 @@ public class Fiji_Chat extends DynamicCommand {
 	@Override
 	public void run() {
 		prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
-		prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
 
 		final LLMProvider selectedProvider = providerService.getProvider(provider);
+		String validatedModel = selectedProvider.validateModel(model);
+		if (LLMProvider.VALIDATION_FAILED.equals(validatedModel)) {
+			cancel("Model validation failed");
+			return;
+		}
+
+		prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, validatedModel);
 		if (selectedProvider.requiresApiKey()) {
 			Map<String, Object> params = new HashMap<>();
 			params.put("startChatbot", true);
@@ -175,7 +185,7 @@ public class Fiji_Chat extends DynamicCommand {
 			try {
 				prefService.put(Fiji_Chat.class, SKIP_INPUTS, "true");
 				// Launch the chat window with provider and model info so it can recreate the assistant with memory
-				chatbotService.launchChat(provider + " - " + model, provider, model);
+				chatbotService.launchChat(provider + " - " + validatedModel, provider, validatedModel);
 			} catch (Exception e) {
 				cancel("Failed to create chat model: " + e.getMessage());
 			}
