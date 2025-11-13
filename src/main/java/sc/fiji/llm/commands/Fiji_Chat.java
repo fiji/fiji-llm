@@ -24,12 +24,11 @@ import sc.fiji.llm.ui.ChatbotService;
  * scripting, and general Fiji/ImageJ questions.
  */
 	@Plugin(type = Command.class,
-		label = "Fiji Chat",
 		description = "Chat with an AI assistant to get help with your image analysis needs",
 		menu = {
-			@Menu(label = "Plugins"),
+			@Menu(label = "Help"),
 			@Menu(label = "Assistants"),
-			@Menu(label = "Fiji Chat", accelerator = "CTRL 0")
+			@Menu(label = "Fiji Chat...", accelerator = "CTRL 0")
 		})
 public class Fiji_Chat extends DynamicCommand {
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";

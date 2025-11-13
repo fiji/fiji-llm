@@ -21,12 +21,11 @@ import sc.fiji.llm.ui.ChatbotService;
  * Provides a user interface to add, update, remove, and validate API keys.
  */
 @Plugin(type = Command.class,
-	label = "Manage API Keys",
 	description = "Manage API keys for AI providers",
 	menu = {
-		@Menu(label = "Plugins"),
+		@Menu(label = "Help"),
 		@Menu(label = "Assistants"),
-		@Menu(label = "Manage API Keys")
+		@Menu(label = "Manage API Keys...")
 	})
 public class Manage_Keys extends DynamicCommand {
     private static final String MASK = "********";
