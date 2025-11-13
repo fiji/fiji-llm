@@ -39,8 +39,10 @@ public class ChatMessagePanel extends JPanel {
 	private static final int RESERVED_WIDTH_BUFFER = (2 * ICON_SIZE) + BUBBLE_PADDING + BUBBLE_HORIZONTAL_PADDING;
 	private static final int MIN_AVAILABLE_WIDTH = 200;
 	private static final int DEFAULT_AVAILABLE_WIDTH = 600;
+	private static final int THINKING_STAGES = 4;
 	private final float textFontSize;
 	private JTextPane textPane;
+	private int thinkingStage = -1;
 
 	public enum MessageType {
 		USER,
@@ -277,6 +279,18 @@ public class ChatMessagePanel extends JPanel {
 		textPane.setComponentPopupMenu(contextMenu);
 	}
 
+	public void updateThinking() {
+		thinkingStage++;
+		if (thinkingStage == THINKING_STAGES) {
+			thinkingStage = 0;
+		}
+		StringBuilder sb = new StringBuilder("Thinking");
+		for (int i=0; i<thinkingStage; i++) {
+			sb.append(".");
+		}
+		textPane.setText(sb.toString());
+	}
+
 	/**
 	 * Appends text to this message panel (for streaming updates).
 	 * This method is thread-safe and can be called from any thread.
@@ -294,6 +308,10 @@ public class ChatMessagePanel extends JPanel {
 		}
 
 		if (textPane != null) {
+			if (thinkingStage >= 0) {
+				thinkingStage = -1;
+				textPane.setText("");
+			}
 			try {
 				final StyledDocument doc = textPane.getStyledDocument();
 				doc.insertString(doc.getLength(), text, null);

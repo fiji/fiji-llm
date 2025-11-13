@@ -603,10 +603,23 @@ public class FijiAssistantChat {
 
         // Switch to stop mode
         setStopMode();
+        final boolean[] messageReady = {false};
+        final int updateDelay = 200;
+        threadService.run(() -> {
+            while (!messageReady[0]) {
+                if (currentStreamingPanel != null) {
+                    SwingUtilities.invokeLater(() -> currentStreamingPanel.updateThinking()); 
+                }
+                try {
+                    Thread.sleep(updateDelay);
+                } catch (InterruptedException e) {
+                    // no-op
+                }
+            }
+        });
 
         // Process in background thread (LLM calls happen OFF the EDT)
         threadService.run(() -> {
-            final StringBuilder responseBuilder = new StringBuilder();
             final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
                 // Add user message to chat memory (with context)
@@ -619,29 +632,32 @@ public class FijiAssistantChat {
 
                 // Use streaming API
                 assistant.chatStreaming(chatRequest)
-                    .onPartialResponseWithContext((partialResponse, context) -> {
+                    .onPartialThinkingWithContext((thinking, context) -> {
                         if (stopRequested) {
                             context.streamingHandle().cancel();
                             stopRequested = false;
                         }
-                        responseBuilder.append(partialResponse.text());
+                    })
+                    .onPartialResponseWithContext((partialResponse, context) -> {
+                        if (!messageReady[0]) {
+                            messageReady[0] = true;
+                            SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
+                        }
+                        if (stopRequested) {
+                            context.streamingHandle().cancel();
+                            stopRequested = false;
+                        }
                         if (currentStreamingPanel != null) {
                             currentStreamingPanel.appendText(partialResponse.text());
                             // Scroll to bottom periodically (every 200ms) to avoid excessive updates
                             final long now = System.currentTimeMillis();
-                            if (now - lastScrollTime[0] > 200) {
+                            if (now - lastScrollTime[0] > updateDelay) {
                                 lastScrollTime[0] = now;
                                 SwingUtilities.invokeLater(() -> {
                                     final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
                                     vertical.setValue(vertical.getMaximum());
                                 });
                             }
-                        }
-                    })
-                    .onPartialThinkingWithContext((thinking, context) -> {
-                        if (stopRequested) {
-                            context.streamingHandle().cancel();
-                            stopRequested = false;
                         }
                     })
                     .onCompleteResponse(response -> {
@@ -716,6 +732,7 @@ public class FijiAssistantChat {
         }
         sendStopButton.setToolTipText("Send message");
 
+        sendStopButton.setEnabled(true);
         inputArea.setEnabled(true);
         inputArea.requestFocus();
     }
@@ -732,6 +749,7 @@ public class FijiAssistantChat {
         }
         sendStopButton.setToolTipText("Interrupt the assistant");
 
+        sendStopButton.setEnabled(false);
         inputArea.setText("");
         inputArea.setEnabled(false);
     }
