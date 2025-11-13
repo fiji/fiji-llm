@@ -140,20 +140,20 @@ public class FijiAssistantChat {
         forumButton.addActionListener(e -> openForumInBrowser());
 
         // Change Model button (right side of nav bar)
-        final JButton changeModelButton;
+        final JButton configureChatButton;
         final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
         if (gearIconUrl != null) {
-            changeModelButton = new JButton(new ImageIcon(gearIconUrl));
-            changeModelButton.setPreferredSize(new Dimension(36, 36));
-            changeModelButton.setToolTipText("Change Model");
+            configureChatButton = new JButton(new ImageIcon(gearIconUrl));
+            configureChatButton.setPreferredSize(new Dimension(36, 36));
+            configureChatButton.setToolTipText("Change Model");
         } else {
-            changeModelButton = new JButton("Change Model");
+            configureChatButton = new JButton("Change Model");
         }
-        changeModelButton.setFocusPainted(false);
-        changeModelButton.addActionListener(e -> changeModel());
+        configureChatButton.setFocusPainted(false);
+        configureChatButton.addActionListener(e -> configureChat());
 
         topNavBar.add(forumButton);
-        topNavBar.add(changeModelButton);
+        topNavBar.add(configureChatButton);
 
         // Chat display area - MigLayout for proper resizing with messages at bottom
         chatPanel = new JPanel(new MigLayout(
@@ -755,9 +755,8 @@ public class FijiAssistantChat {
         return messagePanel;
     }
 
-    private void changeModel() {
-        // Clear the last chat model preference to force model selection dialog
-        prefService.remove(Fiji_Chat.class, Fiji_Chat.LAST_CHAT_MODEL);
+    private void configureChat() {
+        prefService.remove(Fiji_Chat.class, Fiji_Chat.SKIP_INPUTS);
 
         // Close this chat window
         frame.dispose();
