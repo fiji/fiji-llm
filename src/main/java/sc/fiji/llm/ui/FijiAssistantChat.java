@@ -1005,9 +1005,6 @@ public class FijiAssistantChat {
     private String buildSystemMessage() {
         final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
 
-        sb.append("\n\n## Message Rendering\n\n");
-        sb.append(chatbotService.messageFormatHint());
-
         sb.append("\n\n## Tool Usage\n\n");
         sb.append(aiToolService.toolEnvironmentMessage());
 

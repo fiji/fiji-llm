@@ -47,11 +47,6 @@ public class SwingChatbotService extends AbstractService implements ChatbotServi
     private ProviderService providerService;
 
     @Override
-    public String messageFormatHint() {
-        return  "NOTE: avoid special markdown formatting like code blocks. It will render as plain text.";
-    }
-
-    @Override
     public void launchChat(String title, String providerName, String modelName) {
         SwingUtilities.invokeLater(() -> {
             FijiAssistantChat chatWindow = new FijiAssistantChat(title, commandService, prefService, platformService, aiToolService, contextItemService, threadService, this, assistantService, providerService, providerName, modelName);

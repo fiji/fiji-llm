@@ -6,7 +6,6 @@ import org.scijava.service.SciJavaService;
  * Service interface for launching chatbot UIs.
  */
 public interface ChatbotService extends SciJavaService {
-    String messageFormatHint();
 
     /**
      * Launch a chat window with the given assistant.

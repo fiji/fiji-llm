@@ -3,24 +3,48 @@ package sc.fiji.llm.ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.datatransfer.StringSelection;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 
 import javax.swing.ImageIcon;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextPane;
 import javax.swing.border.AbstractBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
+
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+
+import com.vladsch.flexmark.ast.FencedCodeBlock;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.emoji.EmojiExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
+import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension;
+import com.vladsch.flexmark.ext.tables.TablesExtension;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.parser.core.FencedCodeBlockParser;
+import com.vladsch.flexmark.util.data.MutableDataSet;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -43,6 +67,24 @@ public class ChatMessagePanel extends JPanel {
 	private final float textFontSize;
 	private JTextPane textPane;
 	private int thinkingStage = -1;
+	private final StringBuilder rawMarkdown;
+
+	// Flexmark parser/renderer configured for common GFM extensions used by LLMs
+	private static final Parser MARKDOWN_PARSER;
+	private static final HtmlRenderer MARKDOWN_RENDERER;
+
+	static {
+		final MutableDataSet options = new MutableDataSet();
+		options.set(Parser.EXTENSIONS, Arrays.asList(
+			EmojiExtension.create(),
+			TablesExtension.create(),
+			StrikethroughExtension.create(),
+			TaskListExtension.create(),
+			AutolinkExtension.create()
+		));
+		MARKDOWN_PARSER = Parser.builder(options).build();
+		MARKDOWN_RENDERER = HtmlRenderer.builder(options).build();
+	}
 
 	public enum MessageType {
 		USER,
@@ -57,10 +99,11 @@ public class ChatMessagePanel extends JPanel {
 
 	public ChatMessagePanel(final MessageType type, final String message, final float fontSize) {
 		this.textFontSize = fontSize;
+		this.rawMarkdown = new StringBuilder(message == null ? "" : message);
 		setLayout(new MigLayout("insets 0 0 0 0, fillx", "", "[]"));
 		setOpaque(false);
 
-		final JPanel bubble = createMessageBubble(type, message);
+		final JPanel bubble = createMessageBubble(type);
 		final JLabel iconLabel = createIcon(type);
 
 		layoutComponents(type, bubble, iconLabel);
@@ -154,7 +197,7 @@ public class ChatMessagePanel extends JPanel {
 		label.setMaximumSize(size);
 	}
 
-	   private JPanel createMessageBubble(final MessageType type, final String message) {
+	private JPanel createMessageBubble(final MessageType type) {
 		   final JPanel bubble = new JPanel(new MigLayout(
 			   "insets " + BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING + " " +
 			   BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING, "", "")) {
@@ -199,7 +242,7 @@ public class ChatMessagePanel extends JPanel {
 
 		   applyBubbleStyle(bubble, type);
 
-		   createTextPane(type, message);
+		   createTextPane(type);
 
 		   bubble.add(textPane);
 
@@ -232,30 +275,77 @@ public class ChatMessagePanel extends JPanel {
 		};
 	}
 
-	private JTextPane createTextPane(final MessageType type, final String message) {
+	private JTextPane createTextPane(final MessageType type) {
+		// create the pane and configure basic properties
 		textPane = new JTextPane();
-		textPane.setText(message);
 		textPane.setEditable(false);
 		textPane.setFocusable(true); // Allow highlighting and copying
 		textPane.setOpaque(false);
 		textPane.setFont(textPane.getFont().deriveFont(textFontSize));
 
+		// Use an HTMLEditorKit with a programmatic StyleSheet for predictable styling
+		final HTMLEditorKit kit = new HTMLEditorKit();
+		final StyleSheet ss = kit.getStyleSheet();
+		ss.addRule("body { font-family: Dialog, Arial, sans-serif; font-size: " + (int) textFontSize + "px; color: #222; }");
+		ss.addRule("pre { font-family: monospace; background: #f6f8fa; border: 1px solid #ddd; padding: 6px; }");
+		ss.addRule("code { font-family: monospace; background: #eee; padding: 2px 4px; border-radius: 3px; }");
+		ss.addRule("blockquote { color: #666; margin-left: 8px; padding-left: 8px; border-left: 3px solid #ddd; }");
+		ss.addRule("a { color: #1a73e8; text-decoration: none; }");
+		ss.addRule("img { max-width: 100%; }");
+		ss.addRule("body { margin: 1px; }");
+		ss.addRule("div { margin: 1px; }");
+		ss.addRule("p { margin-top: 1px; margin-bottom: 1px; }");
+
+		textPane.setEditorKit(kit);
+		textPane.setContentType("text/html");
+
+		// Convert Markdown => HTML and sanitize from the tracked raw markdown
+		String safeHtml = renderMarkdownToSafeHtml(rawMarkdown.toString());
+
+		// align system/error messages to center by wrapping in a div when needed
+		if (type == MessageType.SYSTEM || type == MessageType.ERROR) {
+			safeHtml = "<div style=\"text-align:center\">" + safeHtml + "</div>";
+		}
+
+		textPane.setText(safeHtml);
+
+		// Remove extra JTextPane margin
+		textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
+
+		// Add hyperlink handling (open in system browser)
+		if (textPane instanceof JEditorPane) {
+			((JEditorPane) textPane).addHyperlinkListener(new HyperlinkListener() {
+				@Override
+				public void hyperlinkUpdate(final HyperlinkEvent e) {
+					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+						try {
+							if (Desktop.isDesktopSupported()) {
+								Desktop.getDesktop().browse(e.getURL().toURI());
+							}
+						} catch (IOException | URISyntaxException ex) {
+							// ignore
+						}
+					}
+				}
+			});
+		}
+
+		// Try to set paragraph alignment for non-HTML fallback editors. With HTML content
+		// alignment is handled above by wrapping or CSS rules.
 		final StyledDocument doc = textPane.getStyledDocument();
 		final SimpleAttributeSet attrs = new SimpleAttributeSet();
-
 		final int alignment = switch (type) {
 			case USER, ASSISTANT -> StyleConstants.ALIGN_LEFT;
 			case SYSTEM, ERROR -> StyleConstants.ALIGN_CENTER;
 		};
-
 		StyleConstants.setAlignment(attrs, alignment);
 		// Remove extra paragraph indents
 		StyleConstants.setLeftIndent(attrs, 0f);
 		StyleConstants.setRightIndent(attrs, 0f);
-		doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
-
-		// Remove extra JTextPane margin
-		textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
+		try {
+			doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+		} catch (Exception ignored) {
+		}
 
 		// Add right-click context menu for copying text
 		addContextMenu(textPane);
@@ -284,12 +374,13 @@ public class ChatMessagePanel extends JPanel {
 		if (thinkingStage == THINKING_STAGES) {
 			thinkingStage = 0;
 		}
-		StringBuilder sb = new StringBuilder("Thinking");
+		StringBuilder sb = new StringBuilder("*Thinking");
 		for (int i=0; i<thinkingStage; i++) {
 			sb.append(".");
 		}
-		textPane.setText(sb.toString());
-	}
+		sb.append("*");
+ 		textPane.setText(renderMarkdownToSafeHtml(sb.toString()));
+	 }
 
 	/**
 	 * Appends text to this message panel (for streaming updates).
@@ -308,17 +399,51 @@ public class ChatMessagePanel extends JPanel {
 		}
 
 		if (textPane != null) {
+			// If we were showing a transient "thinking" indicator, stop it.
 			if (thinkingStage >= 0) {
 				thinkingStage = -1;
-				textPane.setText("");
 			}
+
+			// Append incoming streaming tokens to the tracked raw markdown,
+			// then re-render the sanitized HTML and replace the pane contents.
+			rawMarkdown.append(text);
+
 			try {
-				final StyledDocument doc = textPane.getStyledDocument();
-				doc.insertString(doc.getLength(), text, null);
-			} catch (Exception e) {
-				// Ignore insertion errors
+				final String safeHtml = renderMarkdownToSafeHtml(rawMarkdown.toString());
+				textPane.setText(safeHtml);
+				// Try to move caret to end so view scrolls with content
+				try {
+					textPane.setCaretPosition(textPane.getDocument().getLength());
+				} catch (Exception ignore) {
+				}
+			} catch (Exception ex) {
+				// If rendering fails for any reason, fall back to inserting plain text
+				try {
+					final StyledDocument doc = textPane.getStyledDocument();
+					doc.insertString(doc.getLength(), text, null);
+				} catch (BadLocationException e) {
+					// Ignore insertion errors
+				}
 			}
 		}
+	}
+
+	/**
+	 * Render markdown to HTML and sanitize the output with jsoup.
+	 */
+	private static String renderMarkdownToSafeHtml(final String markdown) {
+		String md = markdown == null ? "" : markdown;
+		// Guard against code fences that are on line ends instead of their own lines
+	    md = md.replaceAll("([^\n])```", "$1\n```");
+
+		final String html = MARKDOWN_RENDERER.render(MARKDOWN_PARSER.parse(md));
+
+		final Safelist safelist = Safelist.relaxed()
+			.addTags("pre", "code")
+			.addAttributes("img", "src", "alt", "width", "height");
+
+		final String clean = Jsoup.clean(html, safelist);
+		return "<html><body>" + clean + "</body></html>";
 	}
 
 	/**
