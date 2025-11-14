@@ -140,7 +140,7 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	@Override
 	public String getMergeKey() {
-		return "script:" + id;
+		return "script:[" + id + "]";
 	}
 
 	@Override
