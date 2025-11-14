@@ -29,6 +29,7 @@ import sc.fiji.llm.ui.ChatbotService;
 		@Menu(label = "Manage API Keys...")
 	})
 public class Manage_Keys extends DynamicCommand {
+	private static final String WIDTH = "260";
     private static final String MASK = "********";
 
 	@Parameter
@@ -47,35 +48,43 @@ public class Manage_Keys extends DynamicCommand {
 			visibility = ItemVisibility.MESSAGE,
 			persist = false,
 			required = false)
-	private String welcomeMessage = "<html><body style='width: 425px'>" +
-			"<h2 style='text-align: center'>Manage API Keys</h2>" +
-			"<p>Add, update, or remove API keys for your AI service providers.</p>" +
-			"<p><b>Instructions:</b></p>" +
-			"<ol>" +
-			"<li><b>Select a provider</b> - Choose an AI service</li>" +
-			"<li><b>Enter the key</b> - Paste your API key in the field below</li>" +
-			"</ol>" +
-			"</body></html>";
+	private String welcomeMessage = "";
 
 	@Parameter(label = "",
 		visibility = ItemVisibility.MESSAGE,
 		persist = false,
 		required = false)
-	private String welcomeSeparator = "<html><div style='width: 500px; margin: 15px 0;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
+	private String welcomeSeparator = "<html><div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
 
-	@Parameter(label = "AI Service",
+	@Parameter(label = "",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String providerMessage = "<html><body style='width: " + WIDTH + "px'>" +
+			"<p>First, select an <b>AI Service</b>.<br />" +
+			"This is the <i>general</i> service provider you want to edit the key for.</p>" +
+			"</body></html>";
+
+	@Parameter(label = "AI Service →",
 			callback = "providerChanged",
 			persist = false)
 	private String provider;
 
-	@Parameter(label = "Get Authentication Key →",
+	@Parameter(label = "",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String apiKeyMessage = "";
+
+	@Parameter(label = "Get API Key →",
 			visibility = ItemVisibility.MESSAGE,
+			description = "Where to get an API key for this provider",
 			persist = false,
 			required = false)
 	private String apiKeyLink = "";
 
-	@Parameter(label = "Authentication Key",
-			description = "API key for the selected provider",
+	@Parameter(label = "Enter API Key →",
+			description = "New API key for this provider",
 			persist = false)
 	private String apiKey = "";
 
@@ -90,6 +99,32 @@ public class Manage_Keys extends DynamicCommand {
             // This is never a required input - just a flag
             resolveInput("startChatbot");
         }
+		final boolean singleProvider = !(provider == null || provider.isEmpty());
+
+		StringBuilder welcomeMsg = new StringBuilder();
+		welcomeMsg.append("<html><body style='width: " + WIDTH + "px'>");
+		welcomeMsg.append("<h2 style='text-align: center'>Manage ");
+		welcomeMsg.append(singleProvider ? provider + " " : "");
+		welcomeMsg.append("API Key");
+		welcomeMsg.append(singleProvider ? "" : "s");
+		welcomeMsg.append("</h2>");
+		welcomeMsg.append("<p><b>API keys</b> are how applications (like Fiji) access cloud-based AI services.<br />");
+		welcomeMsg.append("They also serve as <i>authentication for you</i>, as most services charge for this functionality.");
+		welcomeMsg.append("Here, you can add, update, or remove the API key for ");
+		welcomeMsg.append(singleProvider ? provider : "a selected AI service provider");
+		welcomeMsg.append(".</p></body></html>");
+		welcomeMessage = welcomeMsg.toString();
+
+		StringBuilder apiKeyMsg = new StringBuilder();
+		apiKeyMsg.append("<html><body style='width: " + WIDTH + "px'><p>");
+		apiKeyMsg.append(singleProvider ? "Please" : "Next,");
+		apiKeyMsg.append(" enter your API Key.<br />");
+		apiKeyMsg.append("If you're not sure where to get one, click the <b>Get API Key</b> link.</p></body></html>");
+		apiKeyMessage = apiKeyMsg.toString();
+
+		if (singleProvider) {
+			resolveInput(providerMessage);
+		}
 
 		final MutableModuleItem<String> providerItem = getInfo().getMutableInput("provider", String.class);
 
