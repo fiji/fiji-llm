@@ -37,7 +37,7 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 		}
 
 		final String apiKey = apiKeyService.getApiKey(providerName);
-		if (apiKey == null) {
+		if (provider.requiresApiKey() && apiKey == null) {
 			throw new IllegalStateException("No API key configured for provider: " + providerName);
 		}
 
