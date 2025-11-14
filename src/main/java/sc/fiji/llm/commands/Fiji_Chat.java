@@ -34,6 +34,7 @@ public class Fiji_Chat extends DynamicCommand {
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
 	public static final String SKIP_INPUTS = "sc.fiji.chat.skipInputs";
+	public static final String NO_MODELS_AVAILABLE = "<No Models Available For This Service>";
 
 	@Parameter
 	private ProviderService providerService;
@@ -138,15 +139,18 @@ public class Fiji_Chat extends DynamicCommand {
 		// Update model choices
 		final List<String> models = selectedProvider.getAvailableModels();
 		final MutableModuleItem<String> modelItem = getInfo().getMutableInput("model", String.class);
-		modelItem.setChoices(models);
 		
 		// Set default model
 		if (!models.isEmpty()) {
+			modelItem.setChoices(models);
 			String defaultModel = prefService.get(Fiji_Chat.class, LAST_CHAT_MODEL, "");
 			if (!modelItem.getChoices().contains(defaultModel)) {
 				defaultModel = models.get(0);
 			}
 			modelItem.setValue(this, defaultModel);
+		} else {
+			modelItem.setChoices(List.of(NO_MODELS_AVAILABLE));
+			modelItem.setValue(this, NO_MODELS_AVAILABLE);
 		}
 	}
 
@@ -160,6 +164,11 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Override
 	public void run() {
+		if (NO_MODELS_AVAILABLE.equals(model)) {
+			uiService.showDialog("No models available for service: " + provider + "\nPlease select a different service.");
+			commandService.run(Fiji_Chat.class, true);
+			return;
+		}
 		prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
 
 		final LLMProvider selectedProvider = providerService.getProvider(provider);
