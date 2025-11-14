@@ -2,6 +2,7 @@ package sc.fiji.llm.provider;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,9 @@ public class OllamaProvider implements LLMProvider {
 
 	@Override
 	public List<String> getAvailableModels() {
+		if (!isOllamaServerRunning()) {
+			return Collections.emptyList();
+		}
 		// Get basic available remote models
 		Set<String> remoteTags = fetchRemoteTags();
 		// Get actual list of installed models from Ollama
