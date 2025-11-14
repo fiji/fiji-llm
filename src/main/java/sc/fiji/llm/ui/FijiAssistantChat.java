@@ -119,7 +119,7 @@ public class FijiAssistantChat {
         this.chatMemory.add(new SystemMessage(systemMessage));
 
         // Create default request parameters
-        final ChatRequestParameters requestParameters = ChatRequestParameters.builder().temperature(0.1).build();
+        final ChatRequestParameters requestParameters = ChatRequestParameters.builder().frequencyPenalty(0.0).presencePenalty(0.0).temperature(0.1).build();
 
         // Recreate the assistant with the chat memory for proper tool tracking
         this.assistant = assistantService.createAssistant(FijiAssistant.class, providerName, modelName, chatMemory, requestParameters);
