@@ -22,6 +22,7 @@ import sc.fiji.llm.ui.ChatbotService;
  */
 @Plugin(type = Command.class,
 	description = "Manage API keys for AI providers",
+	iconPath = "/icons/robot-icon-32.png",
 	menu = {
 		@Menu(label = "Help"),
 		@Menu(label = "Assistants"),

@@ -23,13 +23,14 @@ import sc.fiji.llm.ui.ChatbotService;
  * Provides a conversational interface to get help with image analysis,
  * scripting, and general Fiji/ImageJ questions.
  */
-	@Plugin(type = Command.class,
-		description = "Chat with an AI assistant to get help with your image analysis needs",
-		menu = {
-			@Menu(label = "Help"),
-			@Menu(label = "Assistants"),
-			@Menu(label = "Fiji Chat...", accelerator = "CTRL 0")
-		})
+@Plugin(type = Command.class,
+	description = "Chat with an AI assistant to get help with your image analysis needs",
+	iconPath = "/icons/robot-icon-32.png",
+	menu = {
+		@Menu(label = "Help"),
+		@Menu(label = "Assistants"),
+		@Menu(label = "Fiji Chat...", accelerator = "CTRL 0")
+	})
 public class Fiji_Chat extends DynamicCommand {
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
