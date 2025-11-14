@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
 import org.scijava.command.CommandService;
 import org.scijava.command.DynamicCommand;
@@ -75,9 +74,6 @@ public class Fiji_Chat extends DynamicCommand {
 			callback = "providerChanged",
 			persist = false)
 	private String provider;
-
-    @Parameter( label = " ", style = "separator", persist = false, required = false, visibility = ItemVisibility.MESSAGE )
-	private String modelSpacer = "";
 
 	@Parameter(label = "View Model Info →",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
