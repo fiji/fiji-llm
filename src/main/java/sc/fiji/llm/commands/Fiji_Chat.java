@@ -36,6 +36,7 @@ public class Fiji_Chat extends DynamicCommand {
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
 	public static final String SKIP_INPUTS = "sc.fiji.chat.skipInputs";
 	public static final String NO_MODELS_AVAILABLE = "<No Models Available For This Service>";
+	private static final String WIDTH = "400";
 
 	@Parameter
 	private ProviderService providerService;
@@ -56,38 +57,70 @@ public class Fiji_Chat extends DynamicCommand {
 			visibility = org.scijava.ItemVisibility.MESSAGE,
 			persist = false,
 			required = false)
-	private String welcomeMessage = "<html><body style='width: 425px'>" +
+	private String welcomeMessage = "<html><body style='width: " + WIDTH + "px'>" +
 			"<h2 style='text-align: center'>Welcome to Fiji Chat!</h2>" +
-			"<p>Chat with an AI assistant to get help with your image analysis needs.</p>" +
-			"<p><b>Setup:</b></p>" +
-			"<ol>" +
-			"<li><b>Choose an AI service</b> - Select from available providers (OpenAI, Anthropic, Google, etc.)</li>" +
-			"<li><b>Select a chat model</b> - Different models have varying capabilities and costs (see documentation)</li>" +
-			"</ol>" +
+			"<p>Chat with an AI assistant for help, including:</p>" +
+			"<ul>" +
+			"<li>Writing and debugging macros and scripts</li>" +
+			"<li>Recommended commands for image analysis tasks</li>" +
+			"<li>General Fiji support</li>" +
+			"</ul>" +
+			"<p><b>Important:</b> This feature connects to external AI services with their own terms and conditions.<br />" +
+			"Your queries may not be private/confidential.<br />" +
+			"For detailed documentation, see <a href=\"https://github.com/fiji/fiji-llm\">the README</a>.</p>" +
+			"<p><b>NOTE:</b> This feature is in active development. <br />"+
+			"The AI may provide incorrect information and make mistakes - always verify generative content.<br />" +
+			"Help out by <a href=\"https://forum.image.sc/tag/llm\">contacting us on the forum</a> with issues or feature requests.<br />" +
 			"</body></html>";
 
 	@Parameter(label = "",
         visibility = org.scijava.ItemVisibility.MESSAGE,
         persist = false,
         required = false)
-	private String welcomeSeparator = "<html><div style='width: 500px; margin: 15px 0;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
+	private String welcomeSeparator = "<html><div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
 
-	@Parameter(label = "AI Service",
+	@Parameter(label = "",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String providerMessage = "<html><body style='width: " + WIDTH + "px'>" +
+			"<p>First, select an <b>AI Service</b>.<br />" +
+			"This is the <i>general</i> service provider you want to use (e.g. if you subscribe to ChatGPT or Claude).</p>" +
+			"</body></html>";
+
+	@Parameter(label = "AI Service →",
 			callback = "providerChanged",
 			persist = false)
 	private String provider;
 
-	@Parameter(label = "View Model Info →",
+	@Parameter(label = "",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String modelMessage = "<html><body style='width: " + WIDTH + "px'>" +
+			"<p>Next, choose a <b>Chat Model</b>. This is the <i>specific</i> model that you will chat with.<br />" +
+			"The <b>Service Info</b> page can help you decide, as usage rates and capabilities can vary.</p>" +
+			"</body></html>";
+
+	@Parameter(label = "Service Info →",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
 			persist = false,
 			required = false)
 	private String modelDocLink = "";
 
-	@Parameter(label = "Chat Model",
+	@Parameter(label = "Chat Model →",
 			choices = {},
 			callback = "modelChanged",
 			persist = false)
 	private String model;
+
+	@Parameter(label = "",
+			visibility = org.scijava.ItemVisibility.MESSAGE,
+			persist = false,
+			required = false)
+	private String nextStepsMessage = "<html><body style='width: " + WIDTH + "px'>" +
+			"<p>Click <b>OK</b> when you're ready to proceed. If needed, you can set an <b>API key</b> next.</p>" +
+			"</body></html>";
 
 	@Override
 	public void initialize() {
