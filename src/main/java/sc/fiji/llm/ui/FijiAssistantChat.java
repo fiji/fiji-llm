@@ -78,7 +78,6 @@ public class FijiAssistantChat {
     private final ContextItemService contextItemSupplierService;
     private final ThreadService threadService;
     private final AiToolService aiToolService;
-    private final ChatbotService chatbotService;
     private final String providerName;
 
     // -- Non-Contextual fields --
@@ -107,7 +106,6 @@ public class FijiAssistantChat {
         this.threadService = threadService;
         this.contextItemSupplierService = contextItemService;
         this.aiToolService = aiToolService;
-        this.chatbotService = chatService;
         this.providerName = providerName;
 
         this.contextItemButtons = new HashMap<>();
