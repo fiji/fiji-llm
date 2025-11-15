@@ -6,17 +6,19 @@ import java.util.stream.Stream;
 
 import org.scijava.plugin.Plugin;
 
+import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 
 /**
  * LLM provider plugin for OpenAI (ChatGPT).
  */
 @Plugin(type = LLMProvider.class, name = "ChatGPT")
-public class OpenAIProvider implements LLMProvider {
+public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public String getName() {
@@ -62,9 +64,15 @@ public class OpenAIProvider implements LLMProvider {
 	}
 
 	@Override
-	public ChatModel createChatModel(final String apiKey, final String modelName) {
+	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
+		return TokenWindowChatMemory.withMaxTokens(8000,
+			new OpenAiTokenCountEstimator(modelName));
+	}
+
+	@Override
+	public ChatModel createChatModel(final String modelName) {
 		return OpenAiChatModel.builder()
-			.apiKey(apiKey)
+			.apiKey(apiKey())
 			.modelName(modelName)
 			.maxRetries(DEFAULT_MAX_RETRIES)
 			.timeout(DEFAULT_TIMEOUT)
@@ -72,9 +80,9 @@ public class OpenAIProvider implements LLMProvider {
 	}
 
 	@Override
-	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OpenAiStreamingChatModel.builder()
-			.apiKey(apiKey)
+			.apiKey(apiKey())
 			.modelName(modelName)
 			.timeout(DEFAULT_TIMEOUT)
 			.build();

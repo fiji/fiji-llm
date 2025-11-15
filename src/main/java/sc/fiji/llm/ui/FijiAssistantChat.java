@@ -54,6 +54,7 @@ import sc.fiji.llm.chat.ContextItemService;
 import sc.fiji.llm.chat.ContextItemSupplier;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
+import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
@@ -82,7 +83,7 @@ public class FijiAssistantChat {
 
     // -- Non-Contextual fields --
     private FijiAssistant assistant;
-    private final ChatMemory chatMemory;
+    private ChatMemory chatMemory;
     private final JFrame frame;
     private final JPanel chatPanel;
     private final JScrollPane chatScrollPane;
@@ -111,9 +112,14 @@ public class FijiAssistantChat {
 
         this.contextItemButtons = new HashMap<>();
         this.contextItems = new ArrayList<>();
+        LLMProvider llmProvider = providerService.getProvider(providerName);
 
-        // Create chat memory with a window of 20 messages (includes tool calls/results)
-        this.chatMemory = MessageWindowChatMemory.withMaxMessages(20);
+        try {
+            chatMemory = llmProvider.createTokenChatMemory(modelName);
+        } catch (Exception e) {
+            // Fall back to a 20-message window
+            chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
+        }
 
         // Populate initial system message
         final String systemMessage = buildSystemMessage();
@@ -161,7 +167,7 @@ public class FijiAssistantChat {
         configureKeysButton.addActionListener(e -> configureKeys());
         topNavBar.add(configureKeysButton);
 
-        if (providerService.getProvider(providerName).requiresApiKey()) {
+        if (llmProvider.requiresApiKey()) {
             configureKeysButton.setEnabled(false);
         }
 

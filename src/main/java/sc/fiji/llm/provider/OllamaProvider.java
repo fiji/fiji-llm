@@ -22,6 +22,16 @@ import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.DialogPrompt.Result;
 import org.scijava.ui.UIService;
 
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.chat.TokenWindowChatMemory;
+import dev.langchain4j.model.TokenCountEstimator;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
@@ -129,7 +139,13 @@ public class OllamaProvider implements LLMProvider {
 	}
 
 	@Override
-	public ChatModel createChatModel(final String apiKey, final String modelName) {
+	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
+  		return TokenWindowChatMemory.withMaxTokens(12000,
+			new OllamaTokenCountEstimator());
+	}
+
+	@Override
+	public ChatModel createChatModel(final String modelName) {
 		return OllamaChatModel.builder()
 			.baseUrl(LOCAL_SERVER_URL)
 			.modelName(modelName)
@@ -138,7 +154,7 @@ public class OllamaProvider implements LLMProvider {
 	}
 
 	@Override
-	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OllamaStreamingChatModel.builder()
 			.baseUrl(LOCAL_SERVER_URL)
 			.modelName(modelName)
@@ -327,5 +343,106 @@ public class OllamaProvider implements LLMProvider {
 		}
 		cachedRemoteTags = remoteTags;
 		return remoteTags;
+	}
+
+	/**
+	 * Simplified copy/paste from OpenAiTokenCountEstimator, without consideration for model name.
+	 */
+	private static class OllamaTokenCountEstimator implements TokenCountEstimator {
+
+		@Override
+		public int estimateTokenCountInText(String text) {
+			return text.length() / 4;
+		}
+
+		@Override
+		public int estimateTokenCountInMessage(ChatMessage message) {
+			int tokenCount = 1; // 1 token for role
+			tokenCount += 3; // extra tokens per each message
+
+			if (message instanceof SystemMessage) {
+				tokenCount += estimateTokenCountIn((SystemMessage) message);
+			} else if (message instanceof UserMessage) {
+				tokenCount += estimateTokenCountIn((UserMessage) message);
+			} else if (message instanceof AiMessage) {
+				tokenCount += estimateTokenCountIn((AiMessage) message);
+			} else if (message instanceof ToolExecutionResultMessage) {
+				tokenCount += estimateTokenCountIn((ToolExecutionResultMessage) message);
+			} else {
+				throw new IllegalArgumentException("Unknown message type: " + message);
+			}
+
+			return tokenCount;
+		}
+
+		private int estimateTokenCountIn(SystemMessage systemMessage) {
+			return estimateTokenCountInText(systemMessage.text());
+		}
+
+		private int estimateTokenCountIn(UserMessage userMessage) {
+			int tokenCount = 0;
+
+			for (Content content : userMessage.contents()) {
+				if (content instanceof TextContent) {
+					tokenCount += estimateTokenCountInText(((TextContent) content).text());
+				} else {
+					throw new IllegalArgumentException("Unknown content type: " + content);
+				}
+			}
+
+			if (userMessage.name() != null) {
+				tokenCount += 1; // extra tokens per name
+				tokenCount += estimateTokenCountInText(userMessage.name());
+			}
+
+			return tokenCount;
+		}
+
+		@Override
+		public int estimateTokenCountInMessages(Iterable<ChatMessage> messages) {
+			// see https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+
+			int tokenCount = 3; // every reply is primed with <|start|>assistant<|message|>
+			for (ChatMessage message : messages) {
+				tokenCount += estimateTokenCountInMessage(message);
+			}
+			return tokenCount;
+		}
+
+		private int estimateTokenCountIn(AiMessage aiMessage) {
+			int tokenCount = 0;
+
+			if (aiMessage.text() != null) {
+				tokenCount += estimateTokenCountInText(aiMessage.text());
+			}
+
+			if (aiMessage.hasToolExecutionRequests()) {
+				tokenCount += 6;
+				if (aiMessage.toolExecutionRequests().size() == 1) {
+					tokenCount -= 1;
+					ToolExecutionRequest toolExecutionRequest = aiMessage.toolExecutionRequests().get(0);
+					tokenCount += estimateTokenCountInText(toolExecutionRequest.name()) * 2;
+					tokenCount += estimateTokenCountInText(toolExecutionRequest.arguments());
+				} else {
+					tokenCount += 15;
+					for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
+						tokenCount += 7;
+						tokenCount += estimateTokenCountInText(toolExecutionRequest.name());
+
+						String arguments = toolExecutionRequest.arguments();
+						if (arguments == null || arguments.isEmpty()){
+							continue;
+						}
+						tokenCount += estimateTokenCountInText(arguments);
+					}
+				}
+			}
+
+			return tokenCount;
+		}
+
+		private int estimateTokenCountIn(ToolExecutionResultMessage toolExecutionResultMessage) {
+			return estimateTokenCountInText(toolExecutionResultMessage.text());
+		}
 	}
 }

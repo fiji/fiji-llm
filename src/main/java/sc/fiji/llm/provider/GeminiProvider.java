@@ -5,16 +5,18 @@ import java.util.List;
 
 import org.scijava.plugin.Plugin;
 
+import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
 
 /**
  * LLM provider plugin for Google AI (Gemini).
  */
 @Plugin(type = LLMProvider.class, name = "Gemini")
-public class GeminiProvider implements LLMProvider {
+public class GeminiProvider extends AbstractLLMProvider {
 
 	@Override
 	public String getName() {
@@ -50,9 +52,15 @@ public class GeminiProvider implements LLMProvider {
 	}
 
 	@Override
-	public ChatModel createChatModel(final String apiKey, final String modelName) {
+	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
+  		return TokenWindowChatMemory.withMaxTokens(8000,
+			GoogleAiGeminiTokenCountEstimator.builder().apiKey(apiKey()).modelName(modelName).build());
+	}
+
+	@Override
+	public ChatModel createChatModel(final String modelName) {
 		return GoogleAiGeminiChatModel.builder()
-			.apiKey(apiKey)
+			.apiKey(apiKey())
 			.modelName(modelName)
 			.timeout(DEFAULT_TIMEOUT)
 			.maxRetries(DEFAULT_MAX_RETRIES)
@@ -60,9 +68,9 @@ public class GeminiProvider implements LLMProvider {
 	}
 
 	@Override
-	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return GoogleAiGeminiStreamingChatModel.builder()
-			.apiKey(apiKey)
+			.apiKey(apiKey())
 			.modelName(modelName)
 			.timeout(DEFAULT_TIMEOUT)
 			.build();

@@ -7,6 +7,7 @@ import org.scijava.Disposable;
 import org.scijava.Initializable;
 import org.scijava.plugin.SingletonPlugin;
 
+import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 
@@ -68,6 +69,12 @@ public interface LLMProvider extends SingletonPlugin, Initializable, Disposable 
 	String getApiKeyUrl();
 
 	/**
+	 * @param apiKey the API key for authentication
+	 * @return A {@link TokenWindowChatMemory} appropriate for the specified model
+	 */
+	TokenWindowChatMemory createTokenChatMemory(String modelName);
+
+	/**
 	 * Hook for when a model requires additional actions.
 	 * This is a transformative action, allowing for descriptive identifiers attached
 	 * to model names that require validation. (e.g. when downloading a remote model)
@@ -86,7 +93,7 @@ public interface LLMProvider extends SingletonPlugin, Initializable, Disposable 
 	 * @param modelName the name of the model to use
 	 * @return a configured chat language model
 	 */
-	ChatModel createChatModel(String apiKey, String modelName);
+	ChatModel createChatModel(String modelName);
 
 	/**
 	 * Create a streaming chat language model with the specified API key and model name.
@@ -95,5 +102,5 @@ public interface LLMProvider extends SingletonPlugin, Initializable, Disposable 
 	 * @param modelName the name of the model to use
 	 * @return a configured streaming chat language model
 	 */
-	StreamingChatModel createStreamingChatModel(String apiKey, String modelName);
+	StreamingChatModel createStreamingChatModel(String modelName);
 }

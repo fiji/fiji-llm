@@ -42,16 +42,11 @@ public class DefaultAssistantService extends AbstractService implements Assistan
 			throw new IllegalArgumentException("Provider not found: " + providerName);
 		}
 
-		final String apiKey = apiKeyService.getApiKey(providerName);
-		if (provider.requiresApiKey() && apiKey == null) {
-			throw new IllegalStateException("No API key configured for provider: " + providerName);
-		}
-
 		final var builder = AiServices.builder(assistantInterface)
-			.streamingChatModel(provider.createStreamingChatModel(apiKey, modelName))
+			.streamingChatModel(provider.createStreamingChatModel(modelName))
 			.toolExecutionErrorHandler(this::handleExecutionError)
 			.toolArgumentsErrorHandler(this::handleArgumentError)
-			.chatModel(provider.createChatModel(apiKey, modelName))
+			.chatModel(provider.createChatModel(modelName))
 			.tools(toolService.getInstances().toArray());
 
 		// Apply request parameters at AiServices level where they'll be used

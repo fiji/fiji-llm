@@ -6,9 +6,11 @@ import java.util.stream.Stream;
 
 import org.scijava.plugin.Plugin;
 
+import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicChatModelName;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
+import dev.langchain4j.model.anthropic.AnthropicTokenCountEstimator;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 
@@ -16,7 +18,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
  * LLM provider plugin for Anthropic (Claude).
  */
 @Plugin(type = LLMProvider.class, name = "Claude")
-public class AnthropicProvider implements LLMProvider {
+public class AnthropicProvider extends AbstractLLMProvider {
 	@Override
 	public String getName() {
 		return "Claude";
@@ -47,9 +49,15 @@ public class AnthropicProvider implements LLMProvider {
 	}
 
 	@Override
-	public ChatModel createChatModel(final String apiKey, final String modelName) {
+	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
+		return TokenWindowChatMemory.withMaxTokens(8000,
+			AnthropicTokenCountEstimator.builder().apiKey(apiKey()).modelName(modelName).build());
+	}
+
+	@Override
+	public ChatModel createChatModel(final String modelName) {
 		return AnthropicChatModel.builder()
-			.apiKey(apiKey)
+			.apiKey(apiKey())
 			.modelName(modelName)
 			.maxRetries(DEFAULT_MAX_RETRIES)
 			.timeout(DEFAULT_TIMEOUT)
@@ -57,9 +65,9 @@ public class AnthropicProvider implements LLMProvider {
 	}
 
 	@Override
-	public StreamingChatModel createStreamingChatModel(final String apiKey, final String modelName) {
+	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return AnthropicStreamingChatModel.builder()
-			.apiKey(apiKey)
+			.apiKey(apiKey())
 			.modelName(modelName)
 			.timeout(DEFAULT_TIMEOUT)
 			.build();
