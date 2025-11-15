@@ -98,6 +98,7 @@ public class FijiAssistantChat {
     private boolean isSendMode = true;
     private ImageIcon sendIcon;
     private ImageIcon stopIcon;
+    private InteractiveGuide guide;
 
     public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, ProviderService providerService, String providerName, String modelName) {
         this.commandService = commandService;
@@ -132,20 +133,19 @@ public class FijiAssistantChat {
         // Top navigation bar with model selection
         final JPanel topNavBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
 
-        // ImageSC Forum button (left side of nav bar)
+        // ImageSC Forum button
         final JButton forumButton;
         final URL forumIconUrl = getClass().getResource("/icons/imagesc-icon-32.png");
         if (forumIconUrl != null) {
             forumButton = new JButton(new ImageIcon(forumIconUrl));
             forumButton.setPreferredSize(new Dimension(36, 36));
-            forumButton.setToolTipText("Open ImageSC Forum");
         } else {
             forumButton = new JButton("Forum");
-            forumButton.setPreferredSize(new Dimension(36, 36));
         }
         forumButton.setFocusPainted(false);
         forumButton.setToolTipText("Get help on the Image.sc forum");
         forumButton.addActionListener(e -> openForumInBrowser());
+        topNavBar.add(forumButton);
 
         // Change API Keys button
         final JButton configureKeysButton;
@@ -159,8 +159,13 @@ public class FijiAssistantChat {
         }
         configureKeysButton.setFocusPainted(false);
         configureKeysButton.addActionListener(e -> configureKeys());
+        topNavBar.add(configureKeysButton);
 
-        // Change Model button (right side of nav bar)
+        if (providerService.getProvider(providerName).requiresApiKey()) {
+            configureKeysButton.setEnabled(false);
+        }
+
+        // Change Model button
         final JButton configureChatButton;
         final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
         if (gearIconUrl != null) {
@@ -172,12 +177,21 @@ public class FijiAssistantChat {
         }
         configureChatButton.setFocusPainted(false);
         configureChatButton.addActionListener(e -> configureChat());
-
-        topNavBar.add(forumButton);
-		if (providerService.getProvider(providerName).requiresApiKey()) {
-            topNavBar.add(configureKeysButton);
-        }
         topNavBar.add(configureChatButton);
+
+        // Launch guide button
+        final JButton guideButton;
+        final URL questionIconUrl = getClass().getResource("/icons/question-icon-32.png");
+        if (questionIconUrl != null) {
+            guideButton = new JButton(new ImageIcon(questionIconUrl));
+            guideButton.setPreferredSize(new Dimension(36, 36));
+        } else {
+            guideButton = new JButton("Show Guide");
+        }
+        guideButton.setToolTipText("Explain chat componenets");
+        guideButton.setFocusPainted(false);
+        guideButton.addActionListener(e -> launchGuide());
+        topNavBar.add(guideButton);
 
         // Chat display area - MigLayout for proper resizing with messages at bottom
         chatPanel = new JPanel(new MigLayout(
@@ -384,6 +398,17 @@ public class FijiAssistantChat {
         // Finalize frame
         frame.pack();
         frame.setLocationRelativeTo(null);
+
+        // Build the interactive guide (items will be displayed in order)
+        this.guide = new InteractiveGuide(frame);
+        guide.addElement(inputArea, "Chat Input", "Type your message here and press 'enter' to chat with the AI assistant.");
+        guide.addElement(sendStopButton, "Send / Stop Button", "Click to send your message, or to interrupt the assistant while it's responding.");
+        guide.addElement(suppliersScrollPane, "Context Buttons", "Attach active item as chat context, or click the dropdown to choose from available items.");
+        guide.addElement(contextTagsScrollPane, "Context Items", "Currently attached context items are shown here. Click on an item to remove it.");
+        guide.addElement(clearAllButton, "Clear Context", "Remove all currently attached context items.");
+        guide.addElement(forumButton, "Forum Button", "Get help and support on the Image.sc forum.");
+        guide.addElement(configureKeysButton, "API Key Button", "Configure API credentials for the active AI service.");
+        guide.addElement(configureChatButton, "Configure Chat Button", "Select a different AI service or model.");
     }
 
     public void show() {
@@ -850,6 +875,10 @@ public class FijiAssistantChat {
         chatPanel.repaint();
 
         return messagePanel;
+    }
+
+    private void launchGuide() {
+        guide.start();
     }
 
     private void configureKeys() {
