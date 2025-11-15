@@ -153,9 +153,9 @@ public class FijiAssistantChat {
         if (lockIconUrl != null) {
             configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
             configureKeysButton.setPreferredSize(new Dimension(36, 36));
-            configureKeysButton.setToolTipText("Configure API Keys");
+            configureKeysButton.setToolTipText("Configure API Key");
         } else {
-            configureKeysButton = new JButton("Configure API Keys");
+            configureKeysButton = new JButton("Configure API Key");
         }
         configureKeysButton.setFocusPainted(false);
         configureKeysButton.addActionListener(e -> configureKeys());
@@ -171,7 +171,7 @@ public class FijiAssistantChat {
         if (gearIconUrl != null) {
             configureChatButton = new JButton(new ImageIcon(gearIconUrl));
             configureChatButton.setPreferredSize(new Dimension(36, 36));
-            configureChatButton.setToolTipText("Change Model");
+            configureChatButton.setToolTipText("Configure AI service");
         } else {
             configureChatButton = new JButton("Change Model");
         }
