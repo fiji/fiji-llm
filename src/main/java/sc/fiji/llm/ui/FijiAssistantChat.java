@@ -614,11 +614,23 @@ public class FijiAssistantChat {
             return;
         }
 
-        // Build user message with context items
-        final String messageWithContext = buildUserMessageWithContext(userMessage);
+        StringBuilder displayMessage = new StringBuilder(userMessage);
+        StringBuilder userMessageWithContext = new StringBuilder(userMessage);
+        List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
+
+        if (!mergedContextItems.isEmpty()) {
+            displayMessage.append("\n").append("```").append("\n");
+            userMessageWithContext.append("\n\n===Start of Context Items===\n");
+            for (final ContextItem item : mergedContextItems) {
+                displayMessage.append(item.getLabel()).append("\n");
+                userMessageWithContext.append(item);
+            }
+            displayMessage.append("```");
+            userMessageWithContext.append("===End of Context Items===\n");
+        }
 
         // Add user message panel (display original without context markers)
-        addMessagePanelToChat(ChatMessagePanel.MessageType.USER, userMessage);
+        addMessagePanelToChat(ChatMessagePanel.MessageType.USER, displayMessage.toString());
         clearAllContextButtons();
 
         // Add empty assistant message panel for streaming
@@ -646,7 +658,7 @@ public class FijiAssistantChat {
             final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
                 // Add user message to chat memory (with context)
-                chatMemory.add(new UserMessage(messageWithContext));
+                chatMemory.add(new UserMessage(userMessageWithContext.toString()));
 
                 // Create ChatRequest from chat memory - it now includes history automatically
                 final ChatRequest chatRequest = ChatRequest.builder()
@@ -703,7 +715,7 @@ public class FijiAssistantChat {
                         if (error instanceof RateLimitException) {
                             appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
                         } else {
-                            final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
+                            final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
                             if (msg.length() > 300) {
                                 appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
                             } else {
@@ -721,7 +733,7 @@ public class FijiAssistantChat {
                 currentStreamingPanel = null;
 
                 // Handle immediate errors (before streaming starts)
-                final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\\n", " ").replaceAll("\\s+", " ") : "(no message)";
+                final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
                 if (msg.length() > 300) {
                     appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
                 } else {
@@ -733,6 +745,34 @@ public class FijiAssistantChat {
                 });
             }
         });
+    }
+
+    private List<ContextItem> mergeContextItems( List<ContextItem> contextItems )
+    {
+        final List<ContextItem> result = new ArrayList<>();
+        final Map<String, List<ContextItem>> bins = new HashMap<>();
+
+        // Bin items by their merge key
+        for (final ContextItem item : contextItems) {
+            final String mergeKey = item.getMergeKey();
+            if (mergeKey != null) {
+                bins.computeIfAbsent(mergeKey, k -> new ArrayList<>()).add(item);
+            } else {
+                // Items without a merge key are added as-is
+                result.add(item);
+            }
+        }
+
+        // Merge items in each bin and add to result
+        for (final List<ContextItem> bin : bins.values()) {
+            if (bin.size() > 1) {
+                final ContextItem merged = bin.get(0).mergeWith(bin.subList(1, bin.size()));
+                result.add(merged);
+            } else {
+                result.add(bin.get(0));
+            }
+        }
+        return result;
     }
 
     /**
@@ -775,23 +815,6 @@ public class FijiAssistantChat {
         sendStopButton.setEnabled(false);
         inputArea.setText("");
         inputArea.setEnabled(false);
-    }
-
-    /**
-     * Builds a user message including context items formatted for the LLM.
-     */
-    private String buildUserMessageWithContext(final String userMessage) {
-        final StringBuilder fullMessage = new StringBuilder(userMessage);
-
-        if (!contextItems.isEmpty()) {
-            fullMessage.append("\n\n===Start of Context Items===\n");
-            for (final ContextItem item : contextItems) {
-                fullMessage.append(item);
-            }
-            fullMessage.append("===End of Context Items===\n");
-        }
-
-        return fullMessage.toString();
     }
 
     private void appendToChat(final Sender sender, final String message) {
