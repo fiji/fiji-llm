@@ -36,6 +36,8 @@ public class InteractiveGuide {
     private JDialog currentDialog;
     private Timer flashTimer;
     private boolean isActive = false;
+    private JComponent currentFlashingComponent;
+    private Border currentOriginalBorder;
 
     public InteractiveGuide(JFrame parentFrame) {
         this.parentFrame = parentFrame;
@@ -220,7 +222,8 @@ public class InteractiveGuide {
         }
 
         final JComponent jComponent = (JComponent) component;
-        final Border originalBorder = jComponent.getBorder();
+        currentFlashingComponent = jComponent;
+        currentOriginalBorder = jComponent.getBorder();
         final Color highlightColor = new Color(255, 165, 0, 200); // Semi-transparent orange
 
         if (flashTimer != null && flashTimer.isRunning()) {
@@ -232,13 +235,13 @@ public class InteractiveGuide {
             if (flashCount[0] % 2 == 0) {
                 jComponent.setBorder(new LineBorder(highlightColor, 3));
             } else {
-                jComponent.setBorder(originalBorder);
+                jComponent.setBorder(currentOriginalBorder);
             }
             flashCount[0]++;
 
             if (flashCount[0] >= 6) {
                 ((Timer) e.getSource()).stop();
-                jComponent.setBorder(originalBorder);
+                jComponent.setBorder(currentOriginalBorder);
             }
         });
 
@@ -301,13 +304,10 @@ public class InteractiveGuide {
      * Reset the border of the current component being highlighted.
      */
     private void resetCurrentComponentBorder() {
-        if (currentIndex < elements.size()) {
-            final GuideElement element = elements.get(currentIndex);
-            final Component component = element.getComponent();
-            if (component instanceof JComponent) {
-                final JComponent jComponent = (JComponent) component;
-                jComponent.setBorder(null);
-            }
+        if (currentFlashingComponent != null) {
+            currentFlashingComponent.setBorder(currentOriginalBorder);
+            currentFlashingComponent = null;
+            currentOriginalBorder = null;
         }
     }
 
