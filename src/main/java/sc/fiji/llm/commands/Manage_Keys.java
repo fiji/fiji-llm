@@ -1,6 +1,7 @@
 package sc.fiji.llm.commands;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
@@ -29,6 +30,7 @@ import sc.fiji.llm.ui.ChatbotService;
 		@Menu(label = "Manage API Keys...")
 	})
 public class Manage_Keys extends DynamicCommand {
+	public static final String AUTO_RUN = "sc.fiji.chat.autoRunKeys";
 	private static final String WIDTH = "260";
     private static final String MASK = "********";
 
@@ -51,19 +53,10 @@ public class Manage_Keys extends DynamicCommand {
 	private String welcomeMessage = "";
 
 	@Parameter(label = "",
-		visibility = ItemVisibility.MESSAGE,
-		persist = false,
-		required = false)
-	private String welcomeSeparator = "<html><div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
-
-	@Parameter(label = "",
-			visibility = org.scijava.ItemVisibility.MESSAGE,
+			visibility = ItemVisibility.MESSAGE,
 			persist = false,
 			required = false)
-	private String providerMessage = "<html><body style='width: " + WIDTH + "px'>" +
-			"<p>First, select an <b>AI Service</b>.<br />" +
-			"This is the <i>general</i> service provider you want to edit the key for.</p>" +
-			"</body></html>";
+	private String providerMessage = "";
 
 	@Parameter(label = "AI Service →",
 			callback = "providerChanged",
@@ -95,59 +88,79 @@ public class Manage_Keys extends DynamicCommand {
 
 	@Override
 	public void initialize() {
+		// Get available providers
+		final List<LLMProvider> providers = providerService.getInstances();
+		final List<String> providerNames = providers.stream()
+                .filter(LLMProvider::requiresApiKey)
+				.map(LLMProvider::getName)
+				.collect(Collectors.toList());
+
+		boolean singleProvider = false;
+
+		// If we're given a provider, make sure it actually requires keys
+		if (provider != null && !provider.isEmpty()) {
+			if (!providerNames.contains(provider)) {
+				provider = null;
+			} else {
+				singleProvider = true;
+			}
+		}
+
         if (!startChatbot) {
             // This is never a required input - just a flag
             resolveInput("startChatbot");
         }
-		final boolean singleProvider = !(provider == null || provider.isEmpty());
 
 		StringBuilder welcomeMsg = new StringBuilder();
-		welcomeMsg.append("<html><body style='width: " + WIDTH + "px'>");
+		welcomeMsg.append("<body style='width: " + WIDTH + "px'>");
 		welcomeMsg.append("<h2 style='text-align: center'>Manage ");
 		welcomeMsg.append(singleProvider ? provider + " " : "");
 		welcomeMsg.append("API Key");
 		welcomeMsg.append(singleProvider ? "" : "s");
 		welcomeMsg.append("</h2>");
-		welcomeMsg.append("<p><b>API keys</b> are how applications (like Fiji) access cloud-based AI services.<br />");
+		welcomeMsg.append("<p><b>API keys</b> allow applications (like Fiji) to access cloud-based AI services.<br />");
 		welcomeMsg.append("They also serve as <i>authentication for you</i>, as most services charge for this functionality.");
 		welcomeMsg.append("Here, you can add, update, or remove the API key for ");
 		welcomeMsg.append(singleProvider ? provider : "a selected AI service provider");
-		welcomeMsg.append(".</p></body></html>");
+		welcomeMsg.append(".</p></body>");
 		welcomeMessage = welcomeMsg.toString();
 
-		StringBuilder apiKeyMsg = new StringBuilder();
-		apiKeyMsg.append("<html><body style='width: " + WIDTH + "px'><p>");
-		apiKeyMsg.append(singleProvider ? "Please" : "Next,");
-		apiKeyMsg.append(" enter your API Key.<br />");
-		apiKeyMsg.append("If you're not sure where to get one, click the <b>Get API Key</b> link.</p></body></html>");
-		apiKeyMessage = apiKeyMsg.toString();
-
-		if (singleProvider) {
-			resolveInput(providerMessage);
+		if (!singleProvider) {
+			StringBuilder providerMsg = new StringBuilder();
+			providerMsg.append("<div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>");
+			providerMsg.append("<body style='width: " + WIDTH + "px'>");
+			providerMsg.append("<p>First, select an <b>AI Service</b>.<br />");
+			providerMsg.append("This is the <i>general</i> service provider you want to edit the key for.</p></body>");
+			providerMessage = providerMsg.toString();
+		} else {
+			providerMessage = null;
+			resolveInput("provider");
+			resolveInput("providerMessage");
 		}
+
+		StringBuilder apiKeyMsg = new StringBuilder();
+		apiKeyMsg.append(singleProvider ? "<div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" : "");
+		apiKeyMsg.append("<body style='width: " + WIDTH + "px'><p>");
+		apiKeyMsg.append(singleProvider ? "Please" : "Next,");
+		apiKeyMsg.append(" enter your API Key for this AI service.<br />");
+		apiKeyMsg.append("If you're not sure where to get one, click the <b>Get API Key</b> link.</p></body>");
+		apiKeyMessage = apiKeyMsg.toString();
 
 		final MutableModuleItem<String> providerItem = getInfo().getMutableInput("provider", String.class);
 
-		// Get available providers and populate the provider choices
-		final List<LLMProvider> providers = providerService.getInstances();
-		final String[] providerNames = providers.stream()
-                .filter(LLMProvider::requiresApiKey)
-				.map(LLMProvider::getName)
-				.toArray(String[]::new);
-
-		providerItem.setChoices(List.of(providerNames));
+		providerItem.setChoices(providerNames);
 		
 		// Set default provider if available
-		if (providerNames.length > 0) {
+		if (!providerNames.isEmpty()) {
 			String defaultProvider = prefService.get(Fiji_Chat.class, Fiji_Chat.LAST_CHAT_PROVIDER, "");
 			if (!providerItem.getChoices().contains(defaultProvider)) {
-				defaultProvider = providerNames[0];
+				defaultProvider = providerNames.get(0);
 			}
 			providerItem.setValue(this, defaultProvider);
 		    providerChanged();
 		}
 
-		if (startChatbot && prefService.getBoolean(Fiji_Chat.class, Fiji_Chat.SKIP_INPUTS, false)) {
+		if (singleProvider && prefService.getBoolean(Manage_Keys.class, autoRunKey(provider), false)) {
 			// Just re-start the chat without gathering input
 			for (final var input : getInfo().inputs()) {
 				resolveInput(input.getName());
@@ -172,7 +185,7 @@ public class Manage_Keys extends DynamicCommand {
 		// Update API key link
 		final String apiKeyUrl = selectedProvider.getApiKeyUrl();
 		final MutableModuleItem<String> apiKeyLinkItem = getInfo().getMutableInput("apiKeyLink", String.class);
-		apiKeyLinkItem.setValue(this, "<html><a href=\"" + apiKeyUrl + "\">" + apiKeyUrl + "</a></html>");
+		apiKeyLinkItem.setValue(this, "<a href=\"" + apiKeyUrl + "\">" + apiKeyUrl + "</a>");
 
 		// Check if we have a stored API key for this provider
 		final String storedKey = apiKeyService.getApiKey(provider);
@@ -202,16 +215,27 @@ public class Manage_Keys extends DynamicCommand {
             apiKeyService.setApiKey(provider, keyToUse);
         }
 
-        if (startChatbot && apiKeyService.hasApiKey(provider)) {
-            // Create the assistant
-        	String model = prefService.get(Fiji_Chat.class, Fiji_Chat.LAST_CHAT_MODEL);
-            try {
-				prefService.put(Fiji_Chat.class, Fiji_Chat.SKIP_INPUTS, "true");
-                // Launch the chat window with provider and model info so it can recreate the assistant with memory
-                chatbotService.launchChat(provider + " - " + model, provider, model);
-            } catch (Exception e) {
-                cancel("Failed to create chat model: " + e.getMessage());
-            }
+        if (apiKeyService.hasApiKey(provider)) {
+			prefService.put(Manage_Keys.class, autoRunKey(provider), true);
+			if (startChatbot) {
+				// Create the assistant
+				String model = prefService.get(Fiji_Chat.class, Fiji_Chat.LAST_CHAT_MODEL);
+				try {
+					// Launch the chat window with provider and model info so it can recreate the assistant with memory
+					chatbotService.launchChat(provider + " - " + model, provider, model);
+					prefService.put(Fiji_Chat.class, Fiji_Chat.AUTO_RUN, true);
+				} catch (Exception e) {
+					cancel("Failed to create chat model: " + e.getMessage());
+				}
+			}
         }
+	}
+
+	/**
+	 * @param provider
+	 * @return A key to use with the {@link PrefService} for this particular provider
+	 */
+	public static String autoRunKey(String provider) {
+		return AUTO_RUN + ":" + provider;
 	}
 }

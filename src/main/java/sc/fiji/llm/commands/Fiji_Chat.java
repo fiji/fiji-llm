@@ -34,8 +34,8 @@ import sc.fiji.llm.ui.ChatbotService;
 public class Fiji_Chat extends DynamicCommand {
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
-	public static final String SKIP_INPUTS = "sc.fiji.chat.skipInputs";
 	public static final String NO_MODELS_AVAILABLE = "<No Models Available For This Service>";
+	public static final String AUTO_RUN = "sc.fiji.chat.autoRunChat";
 	private static final String WIDTH = "400";
 
 	@Parameter
@@ -74,16 +74,11 @@ public class Fiji_Chat extends DynamicCommand {
 			"</body></html>";
 
 	@Parameter(label = "",
-        visibility = org.scijava.ItemVisibility.MESSAGE,
-        persist = false,
-        required = false)
-	private String welcomeSeparator = "<html><div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div></html>";
-
-	@Parameter(label = "",
 			visibility = org.scijava.ItemVisibility.MESSAGE,
 			persist = false,
 			required = false)
-	private String providerMessage = "<html><body style='width: " + WIDTH + "px'>" +
+	private String providerMessage = "<html><div style='width: " + WIDTH + "px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" +
+			"<body style='width: " + WIDTH + "px'>" +
 			"<p>First, select an <b>AI Service</b>.<br />" +
 			"This is the <i>general</i> service provider you want to use (e.g. if you subscribe to ChatGPT or Claude).</p>" +
 			"</body></html>";
@@ -143,8 +138,7 @@ public class Fiji_Chat extends DynamicCommand {
 			providerChanged();
 		}
 
-		if (prefService.getBoolean(Fiji_Chat.class, SKIP_INPUTS, false)) {
-			// Just re-start the chat without gathering input
+		if (prefService.getBoolean(Fiji_Chat.class, AUTO_RUN, false)) {
 			for (final var input : getInfo().inputs()) {
 				resolveInput(input.getName());
 			}
@@ -222,9 +216,9 @@ public class Fiji_Chat extends DynamicCommand {
 		} else {
 			// Create the assistant
 			try {
-				prefService.put(Fiji_Chat.class, SKIP_INPUTS, "true");
 				// Launch the chat window with provider and model info so it can recreate the assistant with memory
 				chatbotService.launchChat(provider + " - " + validatedModel, provider, validatedModel);
+				prefService.put(Fiji_Chat.class, Fiji_Chat.AUTO_RUN, true);
 			} catch (Exception e) {
 				cancel("Failed to create chat model: " + e.getMessage());
 			}

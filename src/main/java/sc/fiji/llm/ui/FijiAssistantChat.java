@@ -853,10 +853,10 @@ public class FijiAssistantChat {
     }
 
     private void configureKeys() {
-        prefService.remove(Fiji_Chat.class, Fiji_Chat.SKIP_INPUTS);
-
         // Close this chat window
         frame.dispose();
+        prefService.remove(Manage_Keys.class, Manage_Keys.autoRunKey(providerName));
+        prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
 		Map<String, Object> params = new HashMap<>();
 		params.put("startChatbot", true);
@@ -866,10 +866,9 @@ public class FijiAssistantChat {
     }
 
     private void configureChat() {
-        prefService.remove(Fiji_Chat.class, Fiji_Chat.SKIP_INPUTS);
-
         // Close this chat window
         frame.dispose();
+        prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
         // Re-invoke the Fiji_Chat command to show the selection dialog
         commandService.run(Fiji_Chat.class, true);
