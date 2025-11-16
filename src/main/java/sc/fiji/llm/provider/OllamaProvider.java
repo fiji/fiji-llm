@@ -282,7 +282,7 @@ public class OllamaProvider implements LLMProvider {
 	 */
 	private Ollama ollamaClient() {
 		if (cachedOllamaClient == null) {
-			cachedOllamaClient = new Ollama(LOCAL_SERVER_URL);
+			cachedOllamaClient = new Ollama();
 		}
 		return cachedOllamaClient;
 	}
