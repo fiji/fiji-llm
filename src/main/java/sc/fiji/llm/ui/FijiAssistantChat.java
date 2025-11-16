@@ -167,9 +167,7 @@ public class FijiAssistantChat {
         configureKeysButton.addActionListener(e -> configureKeys());
         topNavBar.add(configureKeysButton);
 
-        if (llmProvider.requiresApiKey()) {
-            configureKeysButton.setEnabled(false);
-        }
+        configureKeysButton.setEnabled(llmProvider.requiresApiKey());
 
         // Change Model button
         final JButton configureChatButton;
