@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.commands;
 
 import java.util.ArrayList;
@@ -53,7 +54,8 @@ import sc.fiji.llm.tools.AiToolPlugin;
  */
 @Plugin(type = AiToolPlugin.class)
 public class CommandInteractionTool implements AiToolPlugin {
-    private static final int MAX_RESULTS = 10;
+
+	private static final int MAX_RESULTS = 10;
 
 	@Parameter
 	private SearchService searchService;
@@ -82,8 +84,7 @@ public class CommandInteractionTool implements AiToolPlugin {
 
 	@Tool(value = {
 		"Run a command that requires user input (contains \"...\") or is in the \"Open Samples\" menu",
-		"Args: menuPath - formatted menu path (e.g., \"File > Open Samples > Blobs\")",
-	})
+		"Args: menuPath - formatted menu path (e.g., \"File > Open Samples > Blobs\")", })
 	public String runCommand(@P("menuPath") String menuPath) {
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
@@ -99,9 +100,7 @@ public class CommandInteractionTool implements AiToolPlugin {
 			ModuleInfo moduleInfo = moduleService.getModules().stream()
 				// NB: MenuPath uses object equality
 				.filter(info -> menuString.equals(info.getMenuPath().getMenuString()))
-				.findFirst()
-				.orElse(null);
-
+				.findFirst().orElse(null);
 
 			if (moduleInfo == null) {
 				return "ERROR: Command not found at path: " + menuPath;
@@ -114,10 +113,11 @@ public class CommandInteractionTool implements AiToolPlugin {
 			// Check for interactive commands (with "..." in the name)
 			boolean permittedCommand = false;
 
-	        String leafName = path.getLeaf().getName();
+			String leafName = path.getLeaf().getName();
 			permittedCommand = permittedCommand || leafName.contains("...");
 
-			permittedCommand = permittedCommand || menuString.contains("Open Samples") && !leafName.equals("Open Samples");
+			permittedCommand = permittedCommand || menuString.contains(
+				"Open Samples") && !leafName.equals("Open Samples");
 
 			if (!permittedCommand) {
 				return "ERROR: this command is not allowed for agentic use. Instruct user to run it.";
@@ -127,16 +127,15 @@ public class CommandInteractionTool implements AiToolPlugin {
 			// and includes automatic recorder integration
 			moduleService.run(moduleInfo, true);
 			return "Command executed: " + moduleInfo.getName();
-		} catch (RuntimeException e) {
+		}
+		catch (RuntimeException e) {
 			return "ERROR: " + e.getMessage();
 		}
 	}
 
-	@Tool(value = {
-		"Search for available commands",
+	@Tool(value = { "Search for available commands",
 		"Args: commandName - command to search for (name only, no menu info, e.g., 'Blur', 'Threshold', 'Open')",
-		"Returns: info for top commands, most relevant first"
-	})
+		"Returns: info for top commands, most relevant first" })
 	public String searchCommands(@P("commandName") String commandName) {
 		try {
 			if (commandName == null || commandName.trim().isEmpty()) {
@@ -144,7 +143,8 @@ public class CommandInteractionTool implements AiToolPlugin {
 			}
 
 			// Collect results with a timeout
-			List<SearchResult> results = Collections.synchronizedList(new ArrayList<>());
+			List<SearchResult> results = Collections.synchronizedList(
+				new ArrayList<>());
 			CountDownLatch searchComplete = new CountDownLatch(1);
 
 			SearchListener listener = event -> {
@@ -159,7 +159,8 @@ public class CommandInteractionTool implements AiToolPlugin {
 
 			// Save state of all searchers by class
 			Map<Searcher, Boolean> originalState = new HashMap<>();
-			List<Searcher> allSearchers = pluginService.createInstancesOfType(Searcher.class);
+			List<Searcher> allSearchers = pluginService.createInstancesOfType(
+				Searcher.class);
 			for (Searcher searcher : allSearchers) {
 				originalState.put(searcher, searchService.enabled(searcher));
 			}
@@ -167,9 +168,10 @@ public class CommandInteractionTool implements AiToolPlugin {
 			try {
 				// Disable all except ModuleSearcher
 				for (Searcher searcher : allSearchers) {
-					searchService.setEnabled(searcher, searcher instanceof ModuleSearcher);
+					searchService.setEnabled(searcher,
+						searcher instanceof ModuleSearcher);
 				}
-				
+
 				// Start the search operation
 				SearchOperation operation = searchService.search(listener);
 				operation.search(commandName);
@@ -177,8 +179,9 @@ public class CommandInteractionTool implements AiToolPlugin {
 				// Wait for results with timeout (2 seconds should be plenty)
 				searchComplete.await(2, TimeUnit.SECONDS);
 				operation.terminate();
-				
-			} finally {
+
+			}
+			finally {
 				// Restore original state
 				for (Map.Entry<Searcher, Boolean> entry : originalState.entrySet()) {
 					searchService.setEnabled(entry.getKey(), entry.getValue());
@@ -198,18 +201,20 @@ public class CommandInteractionTool implements AiToolPlugin {
 				// Ignore non-module results
 			}
 			return sb.toString();
-		} catch (InterruptedException e) {
+		}
+		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return "ERROR: Search interrupted: " + e.getMessage();
-		} catch (RuntimeException e) {
+		}
+		catch (RuntimeException e) {
 			return "ERROR: Search failed: " + e.getMessage();
 		}
 	}
 
 	/**
 	 * Formats a simplified single module search result as a JSON object string.
-     * Includes: name, menu path, shortcut.
-     * Not included: identifier, description, label, additional properties
+	 * Includes: name, menu path, shortcut. Not included: identifier, description,
+	 * label, additional properties
 	 */
 	private String formatModuleResult(ModuleSearchResult msr) {
 		StringJoiner props = new StringJoiner(", ", "{", "}");
@@ -220,13 +225,16 @@ public class CommandInteractionTool implements AiToolPlugin {
 
 		// Include menu path if available
 		if (info.getMenuPath() != null && !info.getMenuPath().isEmpty()) {
-			props.add("\"menuPath\": \"" + escapeJson(info.getMenuPath().getMenuString(true)) + "\"");
+			props.add("\"menuPath\": \"" + escapeJson(info.getMenuPath()
+				.getMenuString(true)) + "\"");
 		}
 
 		// Include shortcut if available
 		if (info.getMenuPath() != null && info.getMenuPath().getLeaf() != null &&
-			info.getMenuPath().getLeaf().getAccelerator() != null) {
-			props.add("\"shortcut\": \"" + escapeJson(info.getMenuPath().getLeaf().getAccelerator().toString()) + "\"");
+			info.getMenuPath().getLeaf().getAccelerator() != null)
+		{
+			props.add("\"shortcut\": \"" + escapeJson(info.getMenuPath().getLeaf()
+				.getAccelerator().toString()) + "\"");
 		}
 
 		return "  " + props;
@@ -237,42 +245,30 @@ public class CommandInteractionTool implements AiToolPlugin {
 	 */
 	private String escapeJson(String value) {
 		if (value == null) return "";
-		return value
-			.replace("\\", "\\\\")
-			.replace("\"", "\\\"")
-			.replace("\n", "\\n")
-			.replace("\r", "\\r")
-			.replace("\t", "\\t");
+		return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n",
+			"\\n").replace("\r", "\\r").replace("\t", "\\t");
 	}
 
-	@Tool(value = {
-		"Configure the search bar",
-		"Runs \"Edit > Options > Search Bar...\""
-	})
+	@Tool(value = { "Configure the search bar",
+		"Runs \"Edit > Options > Search Bar...\"" })
 	public String configureSearch() {
 		return runCommand("Edit > Options > Search Bar...");
 	}
 
-	@Tool(value = {
-		"Configure available memory and threads",
-		"Runs \"Edit > Options > Memory & Threads...\"",
-	})
+	@Tool(value = { "Configure available memory and threads",
+		"Runs \"Edit > Options > Memory & Threads...\"", })
 	public String configureMAT() {
 		return runCommand("Edit > Options > Memory & Threads...");
 	}
 
-	@Tool(value = {
-		"Configure ImageJ2-specific options",
-		"Runs \"Edit > Options > ImageJ2...\"",
-	})
+	@Tool(value = { "Configure ImageJ2-specific options",
+		"Runs \"Edit > Options > ImageJ2...\"", })
 	public String configureIJ2() {
 		return runCommand("Edit > Options > ImageJ2...");
 	}
 
-	@Tool(value = {
-		"Check for updates and control installed plugins",
-		"Runs \"Help > Update...\""
-	})
+	@Tool(value = { "Check for updates and control installed plugins",
+		"Runs \"Help > Update...\"" })
 	public String update() {
 		return runCommand("Help > Update...");
 	}

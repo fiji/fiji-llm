@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.provider;
 
 import java.util.Arrays;
@@ -53,13 +54,8 @@ public class GeminiProvider extends AbstractLLMProvider {
 	public List<String> getAvailableModels() {
 		// Google AI doesn't provide a public API endpoint to list models
 		// Fall back to hard-coded list
-		return Arrays.asList(
-			"gemini-2.5-pro",
-			"gemini-2.5-flash",
-			"gemini-2.5-flash-lite",
-			"gemini-2.0-flash",
-			"gemini-2.0-flash-lite"
-		);
+		return Arrays.asList("gemini-2.5-pro", "gemini-2.5-flash",
+			"gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-2.0-flash-lite");
 	}
 
 	@Override
@@ -74,26 +70,21 @@ public class GeminiProvider extends AbstractLLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-  		return TokenWindowChatMemory.withMaxTokens(8000,
-			GoogleAiGeminiTokenCountEstimator.builder().apiKey(apiKey()).modelName(modelName).build());
+		return TokenWindowChatMemory.withMaxTokens(8000,
+			GoogleAiGeminiTokenCountEstimator.builder().apiKey(apiKey()).modelName(
+				modelName).build());
 	}
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return GoogleAiGeminiChatModel.builder()
-			.apiKey(apiKey())
-			.modelName(modelName)
-			.timeout(DEFAULT_TIMEOUT)
-			.maxRetries(DEFAULT_MAX_RETRIES)
+		return GoogleAiGeminiChatModel.builder().apiKey(apiKey()).modelName(
+			modelName).timeout(DEFAULT_TIMEOUT).maxRetries(DEFAULT_MAX_RETRIES)
 			.build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
-		return GoogleAiGeminiStreamingChatModel.builder()
-			.apiKey(apiKey())
-			.modelName(modelName)
-			.timeout(DEFAULT_TIMEOUT)
-			.build();
+		return GoogleAiGeminiStreamingChatModel.builder().apiKey(apiKey())
+			.modelName(modelName).timeout(DEFAULT_TIMEOUT).build();
 	}
 }

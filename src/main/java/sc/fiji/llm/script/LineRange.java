@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.script;
 
 import java.util.ArrayList;
@@ -29,43 +30,42 @@ import java.util.Objects;
  * Represents a range of lines.
  */
 public class LineRange {
-    public static final int UNSET = -1;
 
-    private final int start;
-    private final int end;
+	public static final int UNSET = -1;
 
-    public LineRange(final int start, final int end) {
-        this.start = start;
-        this.end = end;
-    }
+	private final int start;
+	private final int end;
 
-    public int getStart()
-    {
-        return start;
-    }
+	public LineRange(final int start, final int end) {
+		this.start = start;
+		this.end = end;
+	}
 
-    public int getEnd()
-    {
-        return end;
-    }
+	public int getStart() {
+		return start;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        final LineRange other = (LineRange) obj;
-        return start == other.start && end == other.end;
-    }
+	public int getEnd() {
+		return end;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(start, end);
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null || getClass() != obj.getClass()) return false;
+		final LineRange other = (LineRange) obj;
+		return start == other.start && end == other.end;
+	}
 
-    @Override
-    public String toString() {
-        return start + "-" + end;
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(start, end);
+	}
+
+	@Override
+	public String toString() {
+		return start + "-" + end;
+	}
 
 	/**
 	 * Merges overlapping or adjacent line ranges.
@@ -82,8 +82,10 @@ public class LineRange {
 			final LineRange next = ranges.get(i);
 			if (current.getEnd() >= next.getStart() - 1) {
 				// Overlapping or adjacent - merge them
-				current = new LineRange(current.getStart(), Math.max(current.getEnd(), next.getEnd()));
-			} else {
+				current = new LineRange(current.getStart(), Math.max(current.getEnd(),
+					next.getEnd()));
+			}
+			else {
 				// Gap - save current and start new
 				merged.add(current);
 				current = next;
@@ -92,6 +94,5 @@ public class LineRange {
 		merged.add(current);
 		return merged;
 	}
-
 
 }

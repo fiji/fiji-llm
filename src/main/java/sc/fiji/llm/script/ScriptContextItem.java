@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.script;
 
 import java.util.ArrayList;
@@ -44,20 +45,23 @@ public class ScriptContextItem extends AbstractContextItem {
 		this(scriptName, content, id, "", new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptID id, String errorOutput) {
+	public ScriptContextItem(String scriptName, String content, ScriptID id,
+		String errorOutput)
+	{
 		this(scriptName, content, id, errorOutput, new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptID id, String errorOutput,
-			int selectionStartLine, int selectionEndLine) {
-		this(scriptName, content, id, errorOutput,
-				selectionStartLine != -1 && selectionEndLine != -1
-					? List.of(new LineRange(selectionStartLine, selectionEndLine))
-					: new ArrayList<>());
+	public ScriptContextItem(String scriptName, String content, ScriptID id,
+		String errorOutput, int selectionStartLine, int selectionEndLine)
+	{
+		this(scriptName, content, id, errorOutput, selectionStartLine != -1 &&
+			selectionEndLine != -1 ? List.of(new LineRange(selectionStartLine,
+				selectionEndLine)) : new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptID id, String errorOutput,
-			List<LineRange> selectedRanges) {
+	public ScriptContextItem(String scriptName, String content, ScriptID id,
+		String errorOutput, List<LineRange> selectedRanges)
+	{
 		super("Script", scriptName);
 		this.scriptName = scriptName;
 		this.scriptBody = content;
@@ -67,17 +71,26 @@ public class ScriptContextItem extends AbstractContextItem {
 	}
 
 	// Backward compatibility constructors
-	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex) {
-		this(scriptName, content, new ScriptID(editorIndex, tabIndex), "", new ArrayList<>());
+	public ScriptContextItem(String scriptName, String content, int editorIndex,
+		int tabIndex)
+	{
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), "",
+			new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput) {
-		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput, new ArrayList<>());
+	public ScriptContextItem(String scriptName, String content, int editorIndex,
+		int tabIndex, String errorOutput)
+	{
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput,
+			new ArrayList<>());
 	}
 
-	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex, String errorOutput,
-			int selectionStartLine, int selectionEndLine) {
-		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput, selectionStartLine, selectionEndLine);
+	public ScriptContextItem(String scriptName, String content, int editorIndex,
+		int tabIndex, String errorOutput, int selectionStartLine,
+		int selectionEndLine)
+	{
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput,
+			selectionStartLine, selectionEndLine);
 	}
 
 	@Override
@@ -131,12 +144,14 @@ public class ScriptContextItem extends AbstractContextItem {
 		sb.append("  \"name\": \"").append(escapeJson(scriptName)).append("\",\n");
 		sb.append("  \"id\": \"").append(id).append("\",\n");
 		if (hasSelection()) {
-			sb.append("  \"selectedLines\": ").append(formatRangesAsJson(selectedRanges)).append(",\n");
+			sb.append("  \"selectedLines\": ").append(formatRangesAsJson(
+				selectedRanges)).append(",\n");
 		}
 		sb.append("  \"content\": \"").append(escapeJson(scriptBody)).append("\"");
 		if (!errorOutput.isEmpty()) {
 			sb.append(",\n");
-			sb.append("  \"errors\": \"").append(escapeJson(errorOutput)).append("\"");
+			sb.append("  \"errors\": \"").append(escapeJson(errorOutput)).append(
+				"\"");
 		}
 		sb.append("\n}\n");
 		return sb.toString();
@@ -147,16 +162,16 @@ public class ScriptContextItem extends AbstractContextItem {
 		if (this == obj) return true;
 		if (obj == null || getClass() != obj.getClass()) return false;
 		final ScriptContextItem other = (ScriptContextItem) obj;
-		return Objects.equals(scriptName, other.scriptName) &&
-				Objects.equals(id, other.id) &&
-				Objects.equals(getScriptBody(), other.getScriptBody()) &&
-				Objects.equals(errorOutput, other.errorOutput) &&
-				Objects.equals(selectedRanges, other.selectedRanges);
+		return Objects.equals(scriptName, other.scriptName) && Objects.equals(id,
+			other.id) && Objects.equals(getScriptBody(), other.getScriptBody()) &&
+			Objects.equals(errorOutput, other.errorOutput) && Objects.equals(
+				selectedRanges, other.selectedRanges);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(scriptName, id, getScriptBody(), errorOutput, selectedRanges);
+		return Objects.hash(scriptName, id, getScriptBody(), errorOutput,
+			selectedRanges);
 	}
 
 	@Override
@@ -180,8 +195,10 @@ public class ScriptContextItem extends AbstractContextItem {
 		final List<LineRange> mergedRanges = LineRange.mergeRanges(ranges);
 
 		// Create a new merged item with merged ranges
-		return new ScriptContextItem(scriptName, getScriptBody(), id, errorOutput, mergedRanges);
+		return new ScriptContextItem(scriptName, getScriptBody(), id, errorOutput,
+			mergedRanges);
 	}
+
 	/**
 	 * Escapes special characters for JSON strings.
 	 */
@@ -189,17 +206,16 @@ public class ScriptContextItem extends AbstractContextItem {
 		if (str == null) {
 			return "";
 		}
-		return str.replace("\\", "\\\\")
-				.replace("\"", "\\\"")
-				.replace("\n", "\\n")
-				.replace("\r", "\\r")
-				.replace("\t", "\\t");
+		return str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+			.replace("\r", "\\r").replace("\t", "\\t");
 	}
 
 	/**
 	 * Formats a list of line ranges as JSON array with range notation.
 	 */
-	private static String formatRangesAsJson(final java.util.List<LineRange> ranges) {
+	private static String formatRangesAsJson(
+		final java.util.List<LineRange> ranges)
+	{
 		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
 		for (final LineRange r : ranges) {
 			joiner.add("\"" + r.getStart() + "-" + r.getEnd() + "\"");
@@ -207,7 +223,9 @@ public class ScriptContextItem extends AbstractContextItem {
 		return joiner.toString();
 	}
 
-	private static String formatRangesAsString(final java.util.List<LineRange> ranges) {
+	private static String formatRangesAsString(
+		final java.util.List<LineRange> ranges)
+	{
 		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
 		for (final LineRange r : ranges) {
 			joiner.add(r.getStart() + "-" + r.getEnd());

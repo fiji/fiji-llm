@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.ui;
 
 import javax.swing.SwingUtilities;
@@ -42,40 +43,45 @@ import sc.fiji.llm.tools.AiToolService;
  * Swing implementation of ChatbotService that launches a SimpleChatWindow.
  */
 @Plugin(type = Service.class)
-public class SwingChatbotService extends AbstractService implements ChatbotService {
+public class SwingChatbotService extends AbstractService implements
+	ChatbotService
+{
 
-    @Parameter
-    private CommandService commandService;
+	@Parameter
+	private CommandService commandService;
 
-    @Parameter
-    private PrefService prefService;
+	@Parameter
+	private PrefService prefService;
 
-    @Parameter
-    private PlatformService platformService;
+	@Parameter
+	private PlatformService platformService;
 
-    @Parameter
+	@Parameter
 	private AiToolService aiToolService;
 
-    @Parameter
-    private ContextItemService contextItemService;
+	@Parameter
+	private ContextItemService contextItemService;
 
-    @Parameter
-    private ThreadService threadService;
+	@Parameter
+	private ThreadService threadService;
 
-    @Parameter
-    private AssistantService assistantService;
+	@Parameter
+	private AssistantService assistantService;
 
-    @Parameter
-    private ProviderService providerService;
+	@Parameter
+	private ProviderService providerService;
 
-    @Parameter
-    private ConversationService conversationService;
+	@Parameter
+	private ConversationService conversationService;
 
-    @Override
-    public void launchChat(String title, String providerName, String modelName) {
-        SwingUtilities.invokeLater(() -> {
-            FijiAssistantChat chatWindow = new FijiAssistantChat(title, commandService, prefService, platformService, aiToolService, contextItemService, threadService, this, assistantService, providerService, conversationService, providerName, modelName);
-            chatWindow.show();
-        });
-    }
+	@Override
+	public void launchChat(String title, String providerName, String modelName) {
+		SwingUtilities.invokeLater(() -> {
+			FijiAssistantChat chatWindow = new FijiAssistantChat(title,
+				commandService, prefService, platformService, aiToolService,
+				contextItemService, threadService, this, assistantService,
+				providerService, conversationService, providerName, modelName);
+			chatWindow.show();
+		});
+	}
 }

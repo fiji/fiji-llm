@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.image;
 
 import java.net.URL;
@@ -44,9 +45,9 @@ import sc.fiji.llm.chat.ContextItemSupplier;
 
 /**
  * ContextItemSupplier implementation for {@link ImageMetaContextItem}s.
- * Provides available images/datasets from the Fiji application and creates context items.
- *
- * Uses ImageDisplayService which properly handles both ImageJ1 and ImageJ2 images.
+ * Provides available images/datasets from the Fiji application and creates
+ * context items. Uses ImageDisplayService which properly handles both ImageJ1
+ * and ImageJ2 images.
  */
 @Plugin(type = ContextItemSupplier.class, priority = Priority.LOW)
 public class ImageMetaContextSupplier implements ContextItemSupplier {
@@ -55,7 +56,9 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	private ImageDisplayService imageDisplayService;
 
 	@Parameter(required = false)
-	private StatusService statusService;	@Override
+	private StatusService statusService;
+
+	@Override
 	public String getDisplayName() {
 		return "Image";
 	}
@@ -79,7 +82,8 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			}
 
 			// Get all image displays (handles both ImageJ1 and ImageJ2)
-			final List<ImageDisplay> imageDisplays = imageDisplayService.getImageDisplays();
+			final List<ImageDisplay> imageDisplays = imageDisplayService
+				.getImageDisplays();
 
 			if (imageDisplays == null || imageDisplays.isEmpty()) {
 				return items;
@@ -88,7 +92,8 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			for (final ImageDisplay imageDisplay : imageDisplays) {
 				try {
 					// Get the active DatasetView from the ImageDisplay
-					final DatasetView datasetView = imageDisplayService.getActiveDatasetView(imageDisplay);
+					final DatasetView datasetView = imageDisplayService
+						.getActiveDatasetView(imageDisplay);
 					if (datasetView != null) {
 						final Dataset dataset = datasetView.getData();
 						if (dataset != null) {
@@ -98,17 +103,22 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 							}
 						}
 					}
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					// Skip this display if we can't create a context item for it
 					if (statusService != null) {
-						statusService.warn("Could not create image metadata context item: " + e.getMessage());
+						statusService.warn(
+							"Could not create image metadata context item: " + e
+								.getMessage());
 					}
 				}
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// If we can't access images, return empty list
 			if (statusService != null) {
-				statusService.warn("Could not list available images: " + e.getMessage());
+				statusService.warn("Could not list available images: " + e
+					.getMessage());
 			}
 		}
 
@@ -122,8 +132,10 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 				return null;
 			}
 
-			// Get the active dataset view (automatically handles ImageJ1 to ImageJ2 conversion)
-			final DatasetView datasetView = imageDisplayService.getActiveDatasetView();
+			// Get the active dataset view (automatically handles ImageJ1 to ImageJ2
+			// conversion)
+			final DatasetView datasetView = imageDisplayService
+				.getActiveDatasetView();
 			if (datasetView == null) {
 				return null;
 			}
@@ -134,17 +146,19 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			}
 
 			return createImageContextItem(dataset);
-		} catch (RuntimeException e) {
+		}
+		catch (RuntimeException e) {
 			if (statusService != null) {
-				statusService.warn("Could not create context item from active image: " + e.getMessage());
+				statusService.warn("Could not create context item from active image: " +
+					e.getMessage());
 			}
 			return null;
 		}
 	}
 
 	/**
-	 * Creates an {@link ImageMetaContextItem} from a Dataset.
-	 * Extracts metadata and creates a descriptive text for the LLM.
+	 * Creates an {@link ImageMetaContextItem} from a Dataset. Extracts metadata
+	 * and creates a descriptive text for the LLM.
 	 */
 	private ImageMetaContextItem createImageContextItem(final Dataset dataset) {
 		if (dataset == null) {
@@ -157,7 +171,8 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 		}
 
 		// Extract all dimensions with their types and lengths
-		final List<ImageMetaContextItem.Dimension> dimensions = extractDimensions(dataset);
+		final List<ImageMetaContextItem.Dimension> dimensions = extractDimensions(
+			dataset);
 		final String pixelType = dataset.getType().getClass().getSimpleName();
 
 		return new ImageMetaContextItem(imageName, dimensions, pixelType);
@@ -166,7 +181,9 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	/**
 	 * Extracts all dimensions from a dataset with their types and lengths.
 	 */
-	private List<ImageMetaContextItem.Dimension> extractDimensions(final Dataset dataset) {
+	private List<ImageMetaContextItem.Dimension> extractDimensions(
+		final Dataset dataset)
+	{
 		final List<ImageMetaContextItem.Dimension> dimensions = new ArrayList<>();
 
 		final int numDims = dataset.numDimensions();
@@ -176,7 +193,8 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 				final String type = axisType != null ? axisType.getLabel() : "Unknown";
 				final long length = dataset.dimension(i);
 				dimensions.add(new ImageMetaContextItem.Dimension(type, length));
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				// If we can't get axis type, use a generic label
 				final long length = dataset.dimension(i);
 				dimensions.add(new ImageMetaContextItem.Dimension("Dim" + i, length));

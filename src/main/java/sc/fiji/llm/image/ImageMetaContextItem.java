@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.image;
 
 import java.util.ArrayList;
@@ -29,13 +30,13 @@ import java.util.Objects;
 import sc.fiji.llm.chat.AbstractContextItem;
 
 /**
- * Represents an image context item that can be added to the chat.
- * Contains metadata about an image/dataset along with a description for the LLM.
- *
- * NB: we are not converting to dev.langchain4j.data.image.Image due to the
- * requirement of using vision-capable models
+ * Represents an image context item that can be added to the chat. Contains
+ * metadata about an image/dataset along with a description for the LLM. NB: we
+ * are not converting to dev.langchain4j.data.image.Image due to the requirement
+ * of using vision-capable models
  */
 public class ImageMetaContextItem extends AbstractContextItem {
+
 	private final String imageName;
 	private final List<Dimension> dimensions;
 	private final String pixelType;
@@ -53,14 +54,17 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	 * Creates an image context item with detailed metadata.
 	 *
 	 * @param imageName the name of the image/dataset
-	 * @param dimensions list of dimensions with their types, lengths, and ordering
+	 * @param dimensions list of dimensions with their types, lengths, and
+	 *          ordering
 	 * @param pixelType the pixel type (e.g., "uint8", "uint16", "float32")
 	 */
 	public ImageMetaContextItem(String imageName, List<Dimension> dimensions,
-			String pixelType) {
+		String pixelType)
+	{
 		super("Image", imageName);
 		this.imageName = imageName;
-		this.dimensions = dimensions != null ? new ArrayList<>(dimensions) : new ArrayList<>();
+		this.dimensions = dimensions != null ? new ArrayList<>(dimensions)
+			: new ArrayList<>();
 		this.pixelType = pixelType != null ? pixelType : "";
 	}
 
@@ -85,8 +89,8 @@ public class ImageMetaContextItem extends AbstractContextItem {
 			return false;
 		}
 		final ImageMetaContextItem other = (ImageMetaContextItem) obj;
-		return Objects.equals(imageName, other.imageName) &&
-				Objects.equals(getType(), other.getType());
+		return Objects.equals(imageName, other.imageName) && Objects.equals(
+			getType(), other.getType());
 	}
 
 	@Override
@@ -106,7 +110,8 @@ public class ImageMetaContextItem extends AbstractContextItem {
 					sb.append(" × ");
 				}
 				final Dimension dim = dimensions.get(i);
-				sb.append(dim.getLength()).append(" (").append(dim.getType()).append(")");
+				sb.append(dim.getLength()).append(" (").append(dim.getType()).append(
+					")");
 			}
 			sb.append("\n");
 		}
@@ -122,6 +127,7 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	 * Represents a single dimension of a dataset with its type and length.
 	 */
 	public static class Dimension {
+
 		private final String type;
 		private final long length;
 

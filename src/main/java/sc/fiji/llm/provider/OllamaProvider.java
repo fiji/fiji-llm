@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.provider;
 
 import java.io.File;
@@ -66,7 +67,8 @@ import io.github.ollama4j.exceptions.OllamaException;
 @Plugin(type = LLMProvider.class, name = "Ollama")
 public class OllamaProvider implements LLMProvider {
 
-	private static final String MODEL_URL = "https://ollama.com/search?c=tools&c=thinking";
+	private static final String MODEL_URL =
+		"https://ollama.com/search?c=tools&c=thinking";
 	private static final String TAG_BASE_URL = "https://ollama.com/library/";
 	private static final String LOCAL_SERVER_URL = "http://localhost:11434";
 	private static final String REMOTE_STRING = "* (remote)";
@@ -104,10 +106,10 @@ public class OllamaProvider implements LLMProvider {
 		// Get actual list of installed models from Ollama
 		List<String> models;
 		try {
-			 models = ollamaClient().listModels().stream()
-				.map(model -> model.getName())
-				.collect(Collectors.toList());
-		} catch (OllamaException e) {
+			models = ollamaClient().listModels().stream().map(model -> model
+				.getName()).collect(Collectors.toList());
+		}
+		catch (OllamaException e) {
 			return List.copyOf(remoteTags);
 		}
 		remoteTags.removeAll(models);
@@ -119,13 +121,20 @@ public class OllamaProvider implements LLMProvider {
 	@Override
 	public String validateModel(String modelToValidate) {
 		if (modelToValidate.endsWith(REMOTE_STRING)) {
-			if (uIService.showDialog("The selected LLM model will be downloaded. This could take some time.\nProceed?", MessageType.WARNING_MESSAGE, OptionType.OK_CANCEL_OPTION).equals(Result.OK_OPTION)) {
+			if (uIService.showDialog(
+				"The selected LLM model will be downloaded. This could take some time.\nProceed?",
+				MessageType.WARNING_MESSAGE, OptionType.OK_CANCEL_OPTION).equals(
+					Result.OK_OPTION))
+			{
 
-				String modelName = modelToValidate.substring(0, modelToValidate.length() - REMOTE_STRING.length());
-				statusService.showStatus(-1, -1, "Downloading Ollama model: " + modelName);
+				String modelName = modelToValidate.substring(0, modelToValidate
+					.length() - REMOTE_STRING.length());
+				statusService.showStatus(-1, -1, "Downloading Ollama model: " +
+					modelName);
 				try {
 					ollamaClient().pullModel(modelName);
-				} catch (OllamaException e) {
+				}
+				catch (OllamaException e) {
 					statusService.clearStatus();
 					statusService.showStatus("Download failed: " + modelName);
 					// e.printStackTrace();
@@ -136,7 +145,8 @@ public class OllamaProvider implements LLMProvider {
 				statusService.showStatus("Download complete: " + modelName);
 				// Pull successful
 				return modelName;
-			} else {
+			}
+			else {
 				return LLMProvider.VALIDATION_FAILED;
 			}
 		}
@@ -161,26 +171,20 @@ public class OllamaProvider implements LLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-  		return TokenWindowChatMemory.withMaxTokens(12000,
+		return TokenWindowChatMemory.withMaxTokens(12000,
 			new OllamaTokenCountEstimator());
 	}
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return OllamaChatModel.builder()
-			.baseUrl(LOCAL_SERVER_URL)
-			.modelName(modelName)
-			.timeout(DEFAULT_TIMEOUT)
-			.build();
+		return OllamaChatModel.builder().baseUrl(LOCAL_SERVER_URL).modelName(
+			modelName).timeout(DEFAULT_TIMEOUT).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
-		return OllamaStreamingChatModel.builder()
-			.baseUrl(LOCAL_SERVER_URL)
-			.modelName(modelName)
-			.timeout(DEFAULT_TIMEOUT)
-			.build();
+		return OllamaStreamingChatModel.builder().baseUrl(LOCAL_SERVER_URL)
+			.modelName(modelName).timeout(DEFAULT_TIMEOUT).build();
 	}
 
 	@Override
@@ -201,10 +205,13 @@ public class OllamaProvider implements LLMProvider {
 			try {
 				if (System.getProperty("os.name").toLowerCase().contains("win")) {
 					// Windows: use taskkill by PID
-					new ProcessBuilder("taskkill", "/PID", String.valueOf(ollamaProcess.pid()), "/T", "/F").start();
-				} else {
+					new ProcessBuilder("taskkill", "/PID", String.valueOf(ollamaProcess
+						.pid()), "/T", "/F").start();
+				}
+				else {
 					// macOS/Linux: send SIGINT instead of SIGTERM
-					new ProcessBuilder("kill", "-2", String.valueOf(ollamaProcess.pid())).start();
+					new ProcessBuilder("kill", "-2", String.valueOf(ollamaProcess.pid()))
+						.start();
 				}
 
 				// Wait up to 5s for exit
@@ -214,7 +221,8 @@ public class OllamaProvider implements LLMProvider {
 					}
 					Thread.sleep(500);
 				}
-		    } catch (Exception e) {
+			}
+			catch (Exception e) {
 
 			}
 		}
@@ -239,7 +247,8 @@ public class OllamaProvider implements LLMProvider {
 			String os = System.getProperty("os.name").toLowerCase();
 			if (os.contains("win")) {
 				devNull = new File("NUL");
-			} else {
+			}
+			else {
 				devNull = new File("/dev/null");
 			}
 			// Ignore output from the server
@@ -259,7 +268,8 @@ public class OllamaProvider implements LLMProvider {
 				}
 				Thread.sleep(pollIntervalMs);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Ollama may not be installed and that's OK
 		}
 		logService.error("Unnable to connect to local ollama server");
@@ -279,8 +289,8 @@ public class OllamaProvider implements LLMProvider {
 	}
 
 	/**
-	 * Checks if the Ollama server is running by attempting to ping it.
-	 * If successful, caches the client. If unsuccessful, clears any cached client.
+	 * Checks if the Ollama server is running by attempting to ping it. If
+	 * successful, caches the client. If unsuccessful, clears any cached client.
 	 *
 	 * @return true if the server is running and reachable, false otherwise
 	 */
@@ -290,7 +300,8 @@ public class OllamaProvider implements LLMProvider {
 			if (client.ping()) {
 				return true;
 			}
-		} catch (OllamaException e) {
+		}
+		catch (OllamaException e) {
 			// This isn't necessarily a problem
 		}
 		cachedOllamaClient = null;
@@ -304,11 +315,10 @@ public class OllamaProvider implements LLMProvider {
 		if (cachedRemoteTags != null) return cachedRemoteTags;
 
 		Set<String> remoteTags = new LinkedHashSet<>();
-        // Fetch and parse the page
+		// Fetch and parse the page
 		try {
-			Document doc = Jsoup.connect(MODEL_URL)
-					.userAgent("Mozilla/5.0 (compatible; Java Jsoup)")
-					.get();
+			Document doc = Jsoup.connect(MODEL_URL).userAgent(
+				"Mozilla/5.0 (compatible; Java Jsoup)").get();
 
 			// Step 1: get tool names
 			Elements models = doc.select("span[x-test-search-response-title]");
@@ -317,9 +327,8 @@ public class OllamaProvider implements LLMProvider {
 
 				// Step 2: fetch tags for this tool
 				String tagsUrl = TAG_BASE_URL + modelName;
-				Document tagsDoc = Jsoup.connect(tagsUrl)
-						.userAgent("Mozilla/5.0 (compatible; Java Jsoup)")
-						.get();
+				Document tagsDoc = Jsoup.connect(tagsUrl).userAgent(
+					"Mozilla/5.0 (compatible; Java Jsoup)").get();
 
 				// Select <a> elements that contain the tags. Prefer extracting the
 				// canonical tag from the href (e.g. /library/qwen3:8b -> qwen3:8b).
@@ -327,7 +336,8 @@ public class OllamaProvider implements LLMProvider {
 				// "latest" span) so using .text() yields e.g. "qwen3:8b latest"
 				// which previously caused us to filter out valid tags. Use the
 				// href attribute and the hidden input.command value as fallback.
-				Elements tagLinks = tagsDoc.select("a[href^='/library/" + modelName + "']");
+				Elements tagLinks = tagsDoc.select("a[href^='/library/" + modelName +
+					"']");
 				for (Element tagLink : tagLinks) {
 					String href = tagLink.attr("href"); // e.g. /library/qwen3:8b
 					String tag = null;
@@ -340,8 +350,9 @@ public class OllamaProvider implements LLMProvider {
 						if (tag.endsWith("/")) tag = tag.substring(0, tag.length() - 1);
 					}
 
-					// fallback: some desktop rows include an <input class="command" value="qwen3:8b" />
-					if ((tag == null || tag.isEmpty()) ) {
+					// fallback: some desktop rows include an <input class="command"
+					// value="qwen3:8b" />
+					if ((tag == null || tag.isEmpty())) {
 						Element input = tagLink.selectFirst("input.command[value]");
 						if (input != null) {
 							tag = input.attr("value");
@@ -352,14 +363,17 @@ public class OllamaProvider implements LLMProvider {
 
 					String lower = tag.toLowerCase();
 					// Skip aliases like `qwen3:latest` (we prefer explicit version tags)
-					if (!lower.contains(":") || lower.endsWith(":latest") || lower.equals("latest") || lower.contains("cloud")) {
+					if (!lower.contains(":") || lower.endsWith(":latest") || lower.equals(
+						"latest") || lower.contains("cloud"))
+					{
 						continue;
 					}
 
 					remoteTags.add(tag);
 				}
 			}
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			// Remote tags not available
 		}
 		cachedRemoteTags = remoteTags;
@@ -367,9 +381,12 @@ public class OllamaProvider implements LLMProvider {
 	}
 
 	/**
-	 * Simplified copy/paste from OpenAiTokenCountEstimator, without consideration for model name.
+	 * Simplified copy/paste from OpenAiTokenCountEstimator, without consideration
+	 * for model name.
 	 */
-	private static class OllamaTokenCountEstimator implements TokenCountEstimator {
+	private static class OllamaTokenCountEstimator implements
+		TokenCountEstimator
+	{
 
 		@Override
 		public int estimateTokenCountInText(String text) {
@@ -383,13 +400,18 @@ public class OllamaProvider implements LLMProvider {
 
 			if (message instanceof SystemMessage) {
 				tokenCount += estimateTokenCountIn((SystemMessage) message);
-			} else if (message instanceof UserMessage) {
+			}
+			else if (message instanceof UserMessage) {
 				tokenCount += estimateTokenCountIn((UserMessage) message);
-			} else if (message instanceof AiMessage) {
+			}
+			else if (message instanceof AiMessage) {
 				tokenCount += estimateTokenCountIn((AiMessage) message);
-			} else if (message instanceof ToolExecutionResultMessage) {
-				tokenCount += estimateTokenCountIn((ToolExecutionResultMessage) message);
-			} else {
+			}
+			else if (message instanceof ToolExecutionResultMessage) {
+				tokenCount += estimateTokenCountIn(
+					(ToolExecutionResultMessage) message);
+			}
+			else {
 				throw new IllegalArgumentException("Unknown message type: " + message);
 			}
 
@@ -405,9 +427,12 @@ public class OllamaProvider implements LLMProvider {
 
 			for (Content content : userMessage.contents()) {
 				if (content instanceof TextContent) {
-					tokenCount += estimateTokenCountInText(((TextContent) content).text());
-				} else {
-					throw new IllegalArgumentException("Unknown content type: " + content);
+					tokenCount += estimateTokenCountInText(((TextContent) content)
+						.text());
+				}
+				else {
+					throw new IllegalArgumentException("Unknown content type: " +
+						content);
 				}
 			}
 
@@ -421,9 +446,11 @@ public class OllamaProvider implements LLMProvider {
 
 		@Override
 		public int estimateTokenCountInMessages(Iterable<ChatMessage> messages) {
-			// see https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+			// see
+			// https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 
-			int tokenCount = 3; // every reply is primed with <|start|>assistant<|message|>
+			int tokenCount = 3; // every reply is primed with
+													// <|start|>assistant<|message|>
 			for (ChatMessage message : messages) {
 				tokenCount += estimateTokenCountInMessage(message);
 			}
@@ -441,17 +468,23 @@ public class OllamaProvider implements LLMProvider {
 				tokenCount += 6;
 				if (aiMessage.toolExecutionRequests().size() == 1) {
 					tokenCount -= 1;
-					ToolExecutionRequest toolExecutionRequest = aiMessage.toolExecutionRequests().get(0);
-					tokenCount += estimateTokenCountInText(toolExecutionRequest.name()) * 2;
-					tokenCount += estimateTokenCountInText(toolExecutionRequest.arguments());
-				} else {
+					ToolExecutionRequest toolExecutionRequest = aiMessage
+						.toolExecutionRequests().get(0);
+					tokenCount += estimateTokenCountInText(toolExecutionRequest.name()) *
+						2;
+					tokenCount += estimateTokenCountInText(toolExecutionRequest
+						.arguments());
+				}
+				else {
 					tokenCount += 15;
-					for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
+					for (ToolExecutionRequest toolExecutionRequest : aiMessage
+						.toolExecutionRequests())
+					{
 						tokenCount += 7;
 						tokenCount += estimateTokenCountInText(toolExecutionRequest.name());
 
 						String arguments = toolExecutionRequest.arguments();
-						if (arguments == null || arguments.isEmpty()){
+						if (arguments == null || arguments.isEmpty()) {
 							continue;
 						}
 						tokenCount += estimateTokenCountInText(arguments);
@@ -462,7 +495,9 @@ public class OllamaProvider implements LLMProvider {
 			return tokenCount;
 		}
 
-		private int estimateTokenCountIn(ToolExecutionResultMessage toolExecutionResultMessage) {
+		private int estimateTokenCountIn(
+			ToolExecutionResultMessage toolExecutionResultMessage)
+		{
 			return estimateTokenCountInText(toolExecutionResultMessage.text());
 		}
 	}

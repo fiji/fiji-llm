@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.chat;
 
 import java.util.ArrayList;
@@ -29,91 +30,90 @@ import java.util.Objects;
  * Serializable container for a Conversation, used for JSON persistence.
  */
 public class SerializedConversation {
-    private String name;
-    private String systemMessage;
-    private List<SerializedConversationMessage> messages = new ArrayList<>();
 
-    // No-arg constructor for GSON
-    public SerializedConversation() {
-    }
+	private String name;
+	private String systemMessage;
+	private List<SerializedConversationMessage> messages = new ArrayList<>();
 
-    public String getName() {
-        return name;
-    }
+	// No-arg constructor for GSON
+	public SerializedConversation() {}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public String getSystemMessage() {
-        return systemMessage;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setSystemMessage(String systemMessage) {
-        this.systemMessage = systemMessage;
-    }
+	public String getSystemMessage() {
+		return systemMessage;
+	}
 
-    public List<SerializedConversationMessage> getMessages() {
-        return messages;
-    }
+	public void setSystemMessage(String systemMessage) {
+		this.systemMessage = systemMessage;
+	}
 
-    public void setMessages(List<SerializedConversationMessage> messages) {
-        this.messages = messages;
-    }
+	public List<SerializedConversationMessage> getMessages() {
+		return messages;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SerializedConversation that = (SerializedConversation) o;
-        return Objects.equals(name, that.name) &&
-               Objects.equals(systemMessage, that.systemMessage) &&
-               Objects.equals(messages, that.messages);
-    }
+	public void setMessages(List<SerializedConversationMessage> messages) {
+		this.messages = messages;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, systemMessage, messages);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		SerializedConversation that = (SerializedConversation) o;
+		return Objects.equals(name, that.name) && Objects.equals(systemMessage,
+			that.systemMessage) && Objects.equals(messages, that.messages);
+	}
 
-    /**
-     * Represents a single message in a serialized conversation.
-     */
-    public static class SerializedConversationMessage {
-        private String displayMessage;
-        private SerializedMessage memoryMessage;
+	@Override
+	public int hashCode() {
+		return Objects.hash(name, systemMessage, messages);
+	}
 
-        public SerializedConversationMessage() {
-        }
+	/**
+	 * Represents a single message in a serialized conversation.
+	 */
+	public static class SerializedConversationMessage {
 
-        public String getDisplayMessage() {
-            return displayMessage;
-        }
+		private String displayMessage;
+		private SerializedMessage memoryMessage;
 
-        public void setDisplayMessage(String displayMessage) {
-            this.displayMessage = displayMessage;
-        }
+		public SerializedConversationMessage() {}
 
-        public SerializedMessage getMemoryMessage() {
-            return memoryMessage;
-        }
+		public String getDisplayMessage() {
+			return displayMessage;
+		}
 
-        public void setMemoryMessage(SerializedMessage memoryMessage) {
-            this.memoryMessage = memoryMessage;
-        }
+		public void setDisplayMessage(String displayMessage) {
+			this.displayMessage = displayMessage;
+		}
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            SerializedConversationMessage that = (SerializedConversationMessage) o;
-            return Objects.equals(displayMessage, that.displayMessage) &&
-                   Objects.equals(memoryMessage, that.memoryMessage);
-        }
+		public SerializedMessage getMemoryMessage() {
+			return memoryMessage;
+		}
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(displayMessage, memoryMessage);
-        }
-    }
+		public void setMemoryMessage(SerializedMessage memoryMessage) {
+			this.memoryMessage = memoryMessage;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			SerializedConversationMessage that = (SerializedConversationMessage) o;
+			return Objects.equals(displayMessage, that.displayMessage) && Objects
+				.equals(memoryMessage, that.memoryMessage);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(displayMessage, memoryMessage);
+		}
+	}
 }

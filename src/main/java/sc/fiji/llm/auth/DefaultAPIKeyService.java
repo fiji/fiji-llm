@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.auth;
 
 import java.nio.charset.StandardCharsets;
@@ -38,14 +39,14 @@ import org.scijava.service.Service;
 
 /**
  * Default implementation of APIKeyService using encrypted preferences storage.
- * 
- * Note: This is a basic implementation. For production use, consider:
- * - Platform-specific credential storage (Keychain on macOS, Credential Manager on Windows)
- * - Master password protection
- * - More robust encryption
+ * Note: This is a basic implementation. For production use, consider: -
+ * Platform-specific credential storage (Keychain on macOS, Credential Manager
+ * on Windows) - Master password protection - More robust encryption
  */
 @Plugin(type = Service.class)
-public class DefaultAPIKeyService extends AbstractService implements APIKeyService {
+public class DefaultAPIKeyService extends AbstractService implements
+	APIKeyService
+{
 
 	private static final String PREF_KEY_PREFIX = "fiji.llm.apikey.";
 	private static final String ENCRYPTION_KEY_PREF = "fiji.llm.encryption.key";
@@ -65,7 +66,8 @@ public class DefaultAPIKeyService extends AbstractService implements APIKeyServi
 
 	@Override
 	public String getApiKey(final String providerName) {
-		final String encrypted = prefService.get(getClass(), PREF_KEY_PREFIX + providerName);
+		final String encrypted = prefService.get(getClass(), PREF_KEY_PREFIX +
+			providerName);
 		if (encrypted == null) {
 			return null;
 		}
@@ -89,7 +91,9 @@ public class DefaultAPIKeyService extends AbstractService implements APIKeyServi
 	}
 
 	@Override
-	public boolean validateApiKey(final String providerName, final String apiKey) {
+	public boolean validateApiKey(final String providerName,
+		final String apiKey)
+	{
 		// TODO: Implement actual validation by making a test API call
 		// For now, just check if the key is not empty
 		return apiKey != null && !apiKey.trim().isEmpty();
@@ -110,7 +114,8 @@ public class DefaultAPIKeyService extends AbstractService implements APIKeyServi
 				keyGen.init(256);
 				final SecretKey key = keyGen.generateKey();
 				// Store it
-				final String encoded = Base64.getEncoder().encodeToString(key.getEncoded());
+				final String encoded = Base64.getEncoder().encodeToString(key
+					.getEncoded());
 				prefService.put(getClass(), ENCRYPTION_KEY_PREF, encoded);
 				return key;
 			}
@@ -124,7 +129,8 @@ public class DefaultAPIKeyService extends AbstractService implements APIKeyServi
 		try {
 			final Cipher cipher = Cipher.getInstance(ALGORITHM);
 			cipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
-			final byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
+			final byte[] encrypted = cipher.doFinal(plainText.getBytes(
+				StandardCharsets.UTF_8));
 			return Base64.getEncoder().encodeToString(encrypted);
 		}
 		catch (Exception e) {

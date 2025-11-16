@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.ui;
 
 import java.awt.Color;
@@ -68,7 +69,8 @@ import com.vladsch.flexmark.util.data.MutableDataSet;
 import net.miginfocom.swing.MigLayout;
 
 /**
- * A custom panel for displaying a single chat message with icon and styled bubble.
+ * A custom panel for displaying a single chat message with icon and styled
+ * bubble.
  */
 public class ChatMessagePanel extends JPanel {
 
@@ -79,7 +81,8 @@ public class ChatMessagePanel extends JPanel {
 	private static final int BUBBLE_HORIZONTAL_PADDING = 12;
 	private static final int BUBBLE_BORDER_RADIUS = 12;
 	private static final int BORDER_WIDTH = 2;
-	private static final int RESERVED_WIDTH_BUFFER = (2 * ICON_SIZE) + BUBBLE_PADDING + BUBBLE_HORIZONTAL_PADDING;
+	private static final int RESERVED_WIDTH_BUFFER = (2 * ICON_SIZE) +
+		BUBBLE_PADDING + BUBBLE_HORIZONTAL_PADDING;
 	private static final int MIN_AVAILABLE_WIDTH = 200;
 	private static final int DEFAULT_AVAILABLE_WIDTH = 600;
 	private static final int THINKING_STAGES = 4;
@@ -94,29 +97,24 @@ public class ChatMessagePanel extends JPanel {
 
 	static {
 		final MutableDataSet options = new MutableDataSet();
-		options.set(Parser.EXTENSIONS, Arrays.asList(
-			EmojiExtension.create(),
-			TablesExtension.create(),
-			StrikethroughExtension.create(),
-			TaskListExtension.create(),
-			AutolinkExtension.create()
-		));
+		options.set(Parser.EXTENSIONS, Arrays.asList(EmojiExtension.create(),
+			TablesExtension.create(), StrikethroughExtension.create(),
+			TaskListExtension.create(), AutolinkExtension.create()));
 		MARKDOWN_PARSER = Parser.builder(options).build();
 		MARKDOWN_RENDERER = HtmlRenderer.builder(options).build();
 	}
 
 	public enum MessageType {
-		USER,
-		ASSISTANT,
-		SYSTEM,
-		ERROR
+			USER, ASSISTANT, SYSTEM, ERROR
 	}
 
 	public ChatMessagePanel(final MessageType type, final String message) {
 		this(type, message, 13f);
 	}
 
-	public ChatMessagePanel(final MessageType type, final String message, final float fontSize) {
+	public ChatMessagePanel(final MessageType type, final String message,
+		final float fontSize)
+	{
 		this.textFontSize = fontSize;
 		this.rawMarkdown = new StringBuilder(message == null ? "" : message);
 		setLayout(new MigLayout("insets 0 0 0 0, fillx", "", "[]"));
@@ -140,12 +138,16 @@ public class ChatMessagePanel extends JPanel {
 		final JPanel pusher = createInvisibleSpacer();
 		add(pusher, "pushx");
 		add(bubble, "aligny bottom");
-		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN + ", gapbottom " + ICON_GAP);
+		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN +
+			", gapbottom " + ICON_GAP);
 	}
 
-	private void layoutAssistantMessage(final JPanel bubble, final JLabel iconLabel) {
+	private void layoutAssistantMessage(final JPanel bubble,
+		final JLabel iconLabel)
+	{
 		final JPanel pusher = createInvisibleSpacer();
-		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN + ", gapbottom " + ICON_GAP);
+		add(iconLabel, "aligny bottom, gapleft " + MARGIN + ", gapright " + MARGIN +
+			", gapbottom " + ICON_GAP);
 		add(bubble, "aligny bottom");
 		add(pusher, "pushx");
 	}
@@ -166,7 +168,8 @@ public class ChatMessagePanel extends JPanel {
 					final ImageIcon icon = new ImageIcon(iconURL);
 					return createIconLabel(icon);
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				// Fall through to return empty label
 			}
 		}
@@ -184,9 +187,8 @@ public class ChatMessagePanel extends JPanel {
 	}
 
 	private JLabel createIconLabel(final ImageIcon icon) {
-		final ImageIcon scaledIcon = (icon.getIconWidth() != ICON_SIZE || icon.getIconHeight() != ICON_SIZE)
-			? scaleIcon(icon)
-			: icon;
+		final ImageIcon scaledIcon = (icon.getIconWidth() != ICON_SIZE || icon
+			.getIconHeight() != ICON_SIZE) ? scaleIcon(icon) : icon;
 
 		return createLabelWithFixedSize(scaledIcon);
 	}
@@ -209,7 +211,9 @@ public class ChatMessagePanel extends JPanel {
 		return label;
 	}
 
-	private void setFixedSize(final JLabel label, final int width, final int height) {
+	private void setFixedSize(final JLabel label, final int width,
+		final int height)
+	{
 		final Dimension size = new Dimension(width, height);
 		label.setPreferredSize(size);
 		label.setMinimumSize(size);
@@ -217,56 +221,59 @@ public class ChatMessagePanel extends JPanel {
 	}
 
 	private JPanel createMessageBubble(final MessageType type) {
-		   final JPanel bubble = new JPanel(new MigLayout(
-			   "insets " + BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING + " " +
-			   BUBBLE_PADDING + " " + BUBBLE_HORIZONTAL_PADDING, "", "")) {
+		final JPanel bubble = new JPanel(new MigLayout("insets " + BUBBLE_PADDING +
+			" " + BUBBLE_HORIZONTAL_PADDING + " " + BUBBLE_PADDING + " " +
+			BUBBLE_HORIZONTAL_PADDING, "", ""))
+		{
 
-			   private final int RESERVED_WIDTH = (2 * MARGIN) + ICON_SIZE + (2 * MARGIN) + RESERVED_WIDTH_BUFFER;
+			private final int RESERVED_WIDTH = (2 * MARGIN) + ICON_SIZE + (2 *
+				MARGIN) + RESERVED_WIDTH_BUFFER;
 
-			   @Override
-			   public Dimension getPreferredSize() {
-				   final int availableWidth = calculateAvailableWidth();
-				   final Dimension pref = super.getPreferredSize();
-				   final int largestChildWidth = findLargestChildWidth();
+			@Override
+			public Dimension getPreferredSize() {
+				final int availableWidth = calculateAvailableWidth();
+				final Dimension pref = super.getPreferredSize();
+				final int largestChildWidth = findLargestChildWidth();
 
-				   pref.width = Math.min(largestChildWidth, availableWidth);
-				   return pref;
-			   }
+				pref.width = Math.min(largestChildWidth, availableWidth);
+				return pref;
+			}
 
-			   private int calculateAvailableWidth() {
-				   int availableWidth = DEFAULT_AVAILABLE_WIDTH;
-				   Container parent = getParent();
-				   while (parent != null) {
-					   final int parentWidth = parent.getWidth();
-					   if (parentWidth > 0) {
-						   availableWidth = parentWidth;
-						   break;
-					   }
-					   parent = parent.getParent();
-				   }
-				   return Math.max(MIN_AVAILABLE_WIDTH, availableWidth - RESERVED_WIDTH);
-			   }
+			private int calculateAvailableWidth() {
+				int availableWidth = DEFAULT_AVAILABLE_WIDTH;
+				Container parent = getParent();
+				while (parent != null) {
+					final int parentWidth = parent.getWidth();
+					if (parentWidth > 0) {
+						availableWidth = parentWidth;
+						break;
+					}
+					parent = parent.getParent();
+				}
+				return Math.max(MIN_AVAILABLE_WIDTH, availableWidth - RESERVED_WIDTH);
+			}
 
-			   private int findLargestChildWidth() {
-				   int largestChildWidth = 0;
-				   for (final Component child : getComponents()) {
-					   final Dimension childPref = child.getPreferredSize();
-					   if (childPref.width > largestChildWidth) {
-						   largestChildWidth = childPref.width;
-					   }
-				   }
-				   return largestChildWidth + (2 * BUBBLE_HORIZONTAL_PADDING) + (2 * BORDER_WIDTH);
-			   }
-		   };
+			private int findLargestChildWidth() {
+				int largestChildWidth = 0;
+				for (final Component child : getComponents()) {
+					final Dimension childPref = child.getPreferredSize();
+					if (childPref.width > largestChildWidth) {
+						largestChildWidth = childPref.width;
+					}
+				}
+				return largestChildWidth + (2 * BUBBLE_HORIZONTAL_PADDING) + (2 *
+					BORDER_WIDTH);
+			}
+		};
 
-		   applyBubbleStyle(bubble, type);
+		applyBubbleStyle(bubble, type);
 
-		   createTextPane(type);
+		createTextPane(type);
 
-		   bubble.add(textPane);
+		bubble.add(textPane);
 
-		   return bubble;
-	   }
+		return bubble;
+	}
 
 	private void applyBubbleStyle(final JPanel bubble, final MessageType type) {
 		final Color bgColor = getBackgroundColor(type);
@@ -380,7 +387,8 @@ public class ChatMessagePanel extends JPanel {
 			final String selectedText = textPane.getSelectedText();
 			if (selectedText != null && !selectedText.isEmpty()) {
 				final StringSelection selection = new StringSelection(selectedText);
-				java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+				java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+					selection, null);
 			}
 		});
 
@@ -394,16 +402,16 @@ public class ChatMessagePanel extends JPanel {
 			thinkingStage = 0;
 		}
 		StringBuilder sb = new StringBuilder("*Thinking");
-		for (int i=0; i<thinkingStage; i++) {
+		for (int i = 0; i < thinkingStage; i++) {
 			sb.append(".");
 		}
 		sb.append("*");
- 		textPane.setText(renderMarkdownToSafeHtml(sb.toString()));
-	 }
+		textPane.setText(renderMarkdownToSafeHtml(sb.toString()));
+	}
 
 	/**
-	 * Appends text to this message panel (for streaming updates).
-	 * This method is thread-safe and can be called from any thread.
+	 * Appends text to this message panel (for streaming updates). This method is
+	 * thread-safe and can be called from any thread.
 	 *
 	 * @param text the text to append
 	 */
@@ -428,19 +436,22 @@ public class ChatMessagePanel extends JPanel {
 			rawMarkdown.append(text);
 
 			try {
-				final String safeHtml = renderMarkdownToSafeHtml(rawMarkdown.toString());
+				final String safeHtml = renderMarkdownToSafeHtml(rawMarkdown
+					.toString());
 				textPane.setText(safeHtml);
 				// Try to move caret to end so view scrolls with content
 				try {
 					textPane.setCaretPosition(textPane.getDocument().getLength());
-				} catch (Exception ignore) {
 				}
-			} catch (Exception ex) {
+				catch (Exception ignore) {}
+			}
+			catch (Exception ex) {
 				// If rendering fails for any reason, fall back to inserting plain text
 				try {
 					final StyledDocument doc = textPane.getStyledDocument();
 					doc.insertString(doc.getLength(), text, null);
-				} catch (BadLocationException e) {
+				}
+				catch (BadLocationException e) {
 					// Ignore insertion errors
 				}
 			}
@@ -461,13 +472,13 @@ public class ChatMessagePanel extends JPanel {
 	 */
 	private static String renderMarkdownToSafeHtml(final String markdown) {
 		String md = markdown == null ? "" : markdown;
-		// Guard against code fences that are on line ends instead of their own lines
-	    md = md.replaceAll("([^\n])```", "$1\n```");
+		// Guard against code fences that are on line ends instead of their own
+		// lines
+		md = md.replaceAll("([^\n])```", "$1\n```");
 
 		final String html = MARKDOWN_RENDERER.render(MARKDOWN_PARSER.parse(md));
 
-		final Safelist safelist = Safelist.relaxed()
-			.addTags("pre", "code")
+		final Safelist safelist = Safelist.relaxed().addTags("pre", "code")
 			.addAttributes("img", "src", "alt", "width", "height");
 
 		final String clean = Jsoup.clean(html, safelist);
@@ -478,6 +489,7 @@ public class ChatMessagePanel extends JPanel {
 	 * Custom border for rounded corners on message bubbles.
 	 */
 	private static class RoundedBorder extends AbstractBorder {
+
 		private final Color color;
 		private final int radius;
 
@@ -487,11 +499,12 @@ public class ChatMessagePanel extends JPanel {
 		}
 
 		@Override
-		public void paintBorder(final Component c, final Graphics g, final int x, final int y,
-			final int width, final int height)
+		public void paintBorder(final Component c, final Graphics g, final int x,
+			final int y, final int width, final int height)
 		{
 			final Graphics2D g2d = (Graphics2D) g.create();
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
 			g2d.setColor(color);
 			g2d.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
 			g2d.dispose();

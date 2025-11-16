@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.ui;
 
 import java.awt.BorderLayout;
@@ -90,597 +91,676 @@ import sc.fiji.llm.tools.AiToolService;
  * Swing-based chat window for chatting with LLMs in Fiji.
  */
 public class FijiAssistantChat {
-    public static final float CHAT_FONT_SIZE = 16f;
-    private static final int INPUT_PANEL_PADDING = 8;
-    private static final String PLACEHOLDER_TEXT = "Type your message here...";
-    private static enum Sender {USER, ASSISTANT, SYSTEM, ERROR};
-
-    private static final String SYSTEM_PROMPT = "You are a chatbot running in the Fiji (ImageJ) application for scientific image analysis. " +
-        "Your role is to help users develop reproducible workflows (e.g. via scripts or macros) and direct them to tools based on their needs. " +
-        "You are concise, humble, validating, patient, and understanding. Expect to make mistakes: troubleshoot and iterate.";
-
-    // -- Contextual fields --
-    private final CommandService commandService;
-    private final PrefService prefService;
-    private final PlatformService platformService;
-    private final ContextItemService contextItemSupplierService;
-    private final ThreadService threadService;
-    private final AiToolService aiToolService;
-    private final ConversationService conversationService;
-    private final AssistantService assistantService;
-
-    // -- Non-Contextual fields --
-    private FijiAssistant assistant;
-    private final JFrame frame;
-    private final JPanel chatPanel;
-    private final JScrollPane chatScrollPane;
-    private final JTextArea inputArea;
-    private final JButton sendStopButton;
-    private final JPanel contextTagsPanel;
-    private final JScrollPane contextTagsScrollPane;
-    private final JButton clearAllButton;
-    private final java.util.Map<ContextItem, JButton> contextItemButtons;
-    private final List<ContextItem> contextItems;
-    private ChatMessagePanel currentStreamingPanel;
-    private JComboBox<String> conversationComboBox;
-    private JButton newConversationButton;
-    private JButton deleteConversationButton;
-    private boolean stopRequested = false;
-    private boolean isSendMode = true;
-    private ImageIcon sendIcon;
-    private ImageIcon stopIcon;
-    private InteractiveGuide guide;
-    private LLMProvider llmProvider;
-    private final String modelName;
-    private Conversation currentConversation;
-    private final ChatRequestParameters requestParameters;
-
-    public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, ProviderService providerService, ConversationService conversationService, String providerName, String modelName) {
-        this.commandService = commandService;
-        this.prefService = prefService;
-        this.platformService = platformService;
-        this.threadService = threadService;
-        this.contextItemSupplierService = contextItemService;
-        this.aiToolService = aiToolService;
-        this.conversationService = conversationService;
-        this.assistantService = assistantService;
-
-        this.contextItemButtons = new HashMap<>();
-        this.contextItems = new ArrayList<>();
-        this.llmProvider = providerService.getProvider(providerName);
-        this.modelName = modelName;
-
-        // Create default request parameters
-        requestParameters = ChatRequestParameters.builder().frequencyPenalty(0.0).presencePenalty(0.0).temperature(0.1).build();
-
-        // Create the frame
-        frame = new JFrame("Fiji Chat - " + title);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-
-        // Top navigation bar with model selection
-        final JPanel topNavBar = new JPanel(new BorderLayout());
-
-        // Conversation selector panel (added first so it appears on the left)
-        final JPanel conversationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 12));
-        conversationPanel.setOpaque(false);
-
-        // For difference in hgaps
-        final JPanel spacer = new JPanel();
-        spacer.setOpaque(false);
-        spacer.setPreferredSize(new Dimension(2, 1));
-        conversationPanel.add(spacer);
-
-        conversationComboBox = new JComboBox<>();
-        int prefHeight = conversationComboBox.getPreferredSize().height;
-        conversationComboBox.setPreferredSize(new Dimension(280, prefHeight));
-
-        conversationComboBox.setToolTipText("Load a previous conversation");
-        conversationService.getConversationNames().stream().forEach(conversationComboBox::addItem);
-        conversationComboBox.setSelectedIndex(-1);
-        conversationComboBox.addActionListener(e -> onConversationSelected());
-        conversationPanel.add(conversationComboBox);
-
-        newConversationButton = new JButton("+");
-        newConversationButton.setPreferredSize(new Dimension(prefHeight, prefHeight));
-        newConversationButton.setFocusPainted(false);
-        newConversationButton.setToolTipText("Start a new conversation");
-        newConversationButton.setEnabled(false);
-        newConversationButton.addActionListener(e -> startNewConversation());
-        conversationPanel.add(newConversationButton);
-
-        deleteConversationButton = new JButton("-");
-        deleteConversationButton.setPreferredSize(new Dimension(prefHeight, prefHeight));
-        deleteConversationButton.setFocusPainted(false);
-        deleteConversationButton.setToolTipText("Delete the current conversation permanently");
-        deleteConversationButton.setEnabled(false);
-        deleteConversationButton.setForeground(java.awt.Color.RED);
-        deleteConversationButton.addActionListener(e -> deleteCurrentConversation());
-        conversationPanel.add(deleteConversationButton);
-
-        topNavBar.add(conversationPanel, BorderLayout.WEST);
-
-        final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
-        buttonPanel.setOpaque(false);
-        // ImageSC Forum button
-        final JButton forumButton;
-        final URL forumIconUrl = getClass().getResource("/icons/imagesc-icon-32.png");
-        if (forumIconUrl != null) {
-            forumButton = new JButton(new ImageIcon(forumIconUrl));
-            forumButton.setPreferredSize(new Dimension(36, 36));
-        } else {
-            forumButton = new JButton("Forum");
-        }
-        forumButton.setFocusPainted(false);
-        forumButton.setToolTipText("Get help on the Image.sc forum");
-        forumButton.addActionListener(e -> openForumInBrowser());
-        buttonPanel.add(forumButton);
-
-        // Change API Keys button
-        final JButton configureKeysButton;
-        final URL lockIconUrl = getClass().getResource("/icons/lock-noun-32.png");
-        if (lockIconUrl != null) {
-            configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
-            configureKeysButton.setPreferredSize(new Dimension(36, 36));
-            configureKeysButton.setToolTipText("Configure API Key");
-        } else {
-            configureKeysButton = new JButton("Configure API Key");
-        }
-        configureKeysButton.setFocusPainted(false);
-        configureKeysButton.addActionListener(e -> configureKeys());
-        buttonPanel.add(configureKeysButton);
-
-        configureKeysButton.setEnabled(llmProvider.requiresApiKey());
-
-        // Change Model button
-        final JButton configureChatButton;
-        final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
-        if (gearIconUrl != null) {
-            configureChatButton = new JButton(new ImageIcon(gearIconUrl));
-            configureChatButton.setPreferredSize(new Dimension(36, 36));
-            configureChatButton.setToolTipText("Configure AI service");
-        } else {
-            configureChatButton = new JButton("Change Model");
-        }
-        configureChatButton.setFocusPainted(false);
-        configureChatButton.addActionListener(e -> configureChat());
-        buttonPanel.add(configureChatButton);
-
-        // Launch guide button
-        final JButton guideButton;
-        final URL questionIconUrl = getClass().getResource("/icons/question-icon-32.png");
-        if (questionIconUrl != null) {
-            guideButton = new JButton(new ImageIcon(questionIconUrl));
-            guideButton.setPreferredSize(new Dimension(36, 36));
-        } else {
-            guideButton = new JButton("Show Guide");
-        }
-        guideButton.setToolTipText("Explain chat componenets");
-        guideButton.setFocusPainted(false);
-        guideButton.addActionListener(e -> launchGuide());
-        buttonPanel.add(guideButton);
-
-        topNavBar.add(buttonPanel, BorderLayout.EAST);
-
-        // Chat display area - MigLayout for proper resizing with messages at bottom
-        chatPanel = new JPanel(new MigLayout(
-            "fillx, wrap, insets 0",  // Fill horizontally, wrap each component to new row
-            "[grow,fill]",             // Column grows and fills
-            "[grow][][]"               // First row grows (pushes content down), then message rows
-        ));
-        chatPanel.setBackground(Color.WHITE);
-
-        // Add a glue panel that will push messages to bottom
-        final JPanel glue = new JPanel();
-        glue.setOpaque(false);
-        chatPanel.add(glue, "pushy, growy"); // This row grows vertically, pushing messages down
-
-        // Add a bottom spacer for 8px padding at the end of messages
-        final JPanel bottomSpacer = new JPanel();
-        bottomSpacer.setOpaque(false);
-        bottomSpacer.setPreferredSize(new Dimension(1, 8));
-        bottomSpacer.setMinimumSize(new Dimension(1, 8));
-        bottomSpacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
-        chatPanel.add(bottomSpacer, "growx, height 8!");
-
-        chatScrollPane = new JScrollPane(chatPanel);
-        chatScrollPane.setPreferredSize(new Dimension(600, 400));
-        chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-        // Button bar with context buttons - wrapped in outer panel with space reserved on right (matching contextTagsPanel structure)
-        final JScrollPane suppliersScrollPane = createContextSelectorPanel();
-        final JPanel buttonBar = new JPanel(new MigLayout("insets 0, fillx", "[grow,fill][shrink]", "[grow,fill]"));
-        buttonBar.setOpaque(false);
-        buttonBar.add(suppliersScrollPane, "growx, growy, pushy");
-
-        // Add spacer on the right to match the width of the Clear All button (28px)
-        final JPanel spacerPanel = new JPanel();
-        spacerPanel.setOpaque(false);
-        spacerPanel.setPreferredSize(new Dimension(28, 1));
-        buttonBar.add(spacerPanel, "width 28!, aligny center");
-
-        // Context tags panel (shows active context items as removable tags)
-        // Create inner panel for tags that will wrap
-        final JPanel tagsContainer = new JPanel() {
-            @Override
-            public Dimension getPreferredSize() {
-                if (getParent() instanceof javax.swing.JViewport) {
-                    int w = ((javax.swing.JViewport) getParent()).getWidth();
-                    
-                    // Calculate wrapped height manually
-                    FlowLayout layout = (FlowLayout) getLayout();
-                    int hgap = layout.getHgap();
-                    int vgap = layout.getVgap();
-                    
-                    int maxWidth = w - (hgap * 2); // Account for horizontal gaps
-                    int currentWidth = hgap;
-                    int currentHeight = vgap;
-                    int rowHeight = 0;
-                    
-                    for (java.awt.Component comp : getComponents()) {
-                        Dimension d = comp.getPreferredSize();
-                        
-                        if (currentWidth + d.width > maxWidth && currentWidth > hgap) {
-                            // Wrap to new row
-                            currentHeight += rowHeight + vgap;
-                            currentWidth = hgap;
-                            rowHeight = 0;
-                        }
-                        
-                        currentWidth += d.width + hgap;
-                        rowHeight = Math.max(rowHeight, d.height);
-                    }
-                    
-                    currentHeight += rowHeight + vgap; // Add final row height
-                    
-                    return new Dimension(w, currentHeight);
-                }
-                return super.getPreferredSize();
-            }
-        };
-        tagsContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
-        tagsContainer.setOpaque(false);
-        tagsContainer.setToolTipText("Attached items will be included as context with your message");
-
-        // Create scrollable container for tags
-        contextTagsScrollPane = new JScrollPane(tagsContainer);
-        contextTagsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        contextTagsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        contextTagsScrollPane.setPreferredSize(new Dimension(600, 36));
-        contextTagsScrollPane.setMinimumSize(new Dimension(36, 36));
-        contextTagsScrollPane.getVerticalScrollBar().setUnitIncrement(5);
-        
-        // Apply light blue background to the scrollpane itself
-        contextTagsScrollPane.setBackground(new java.awt.Color(240, 248, 255)); // Light blue background
-        contextTagsScrollPane.getViewport().setBackground(new java.awt.Color(240, 248, 255));
-        contextTagsScrollPane.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new java.awt.Color(200, 220, 240), 1),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0) // No internal padding
-        ));
-
-        // Create the outer panel that always shows
-        contextTagsPanel = new JPanel(new MigLayout("insets 0, fillx", "[grow,fill][shrink]", "[grow,fill]"));
-        contextTagsPanel.setOpaque(false);
-
-        // Add scrollable tags area in the center
-        contextTagsPanel.add(contextTagsScrollPane, "growx, growy, pushy");
-
-        // Add "Clear All" button on the right (icon button, 28x28 to match send button)
-        final URL closeIconUrl = getClass().getResource("/icons/close-20.png");
-        if (closeIconUrl != null) {
-            clearAllButton = new JButton(new ImageIcon(closeIconUrl));
-        } else {
-            clearAllButton = new JButton("✕");
-        }
-
-        clearAllButton.setToolTipText("Clear all context items");
-        clearAllButton.setFocusPainted(false);
-        clearAllButton.setEnabled(false); // Disabled until context items are added
-        clearAllButton.setForeground(java.awt.Color.RED);
-        clearAllButton.setFont(clearAllButton.getFont().deriveFont(14f));
-        clearAllButton.addActionListener(e -> clearAllContext());
-        contextTagsPanel.add(clearAllButton, "aligny center, height 28!");
-
-        // Input area - scrollable and resizable
-        inputArea = new JTextArea() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                if (getText().isEmpty()) {
-                    ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    g.setColor(Color.GRAY);
-                    g.setFont(new Font("Dialog", Font.PLAIN, 14));
-                    g.drawString(PLACEHOLDER_TEXT, 5, 20);
-                }
-            }
-        };
-
-        inputArea.setLineWrap(true);
-        inputArea.setWrapStyleWord(true);
-        inputArea.setFont(inputArea.getFont().deriveFont(CHAT_FONT_SIZE));
-        final JScrollPane inputScrollPane = new JScrollPane(inputArea);
-        inputScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        inputScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        // Add KeyListener to handle Enter key (Shift+Enter for newline)
-        inputArea.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
-                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER && !e.isShiftDown()) {
-                    e.consume();
-                    sendMessage();
-                }
-            }
-        });
-
-        // Send button - styled to look integrated
-        final URL iconUrl = getClass().getResource("/icons/send-20.png");
-        if (iconUrl != null) {
-            sendIcon = new ImageIcon(iconUrl);
-        }
-        sendIcon = sendIcon != null ? sendIcon : null; // Ensure it's initialized
-
-        // Stop button - styled to look integrated, initially hidden
-        final URL stopIconUrl = getClass().getResource("/icons/stop-noun-20.png");
-        if (stopIconUrl != null) {
-            stopIcon = new ImageIcon(stopIconUrl);
-        }
-        stopIcon = stopIcon != null ? stopIcon : null; // Ensure it's initialized
-
-        // Single send/stop button that toggles based on mode
-        sendStopButton = new JButton();
-        sendStopButton.setFocusPainted(false);
-        setSendMode(); // Start in send mode
-        sendStopButton.addActionListener(e -> {
-            if (isSendMode) {
-                sendMessage();
-            } else {
-                requestStop();
-            }
-        });
-
-        // Input panel with button bar and input area
-        final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly", "[grow,fill][shrink]", "[grow,fill]"));
-        inputPanel.add(inputScrollPane, "growx, growy, pushy");
-        inputPanel.add(sendStopButton, "aligny bottom, height 28!");
-
-        // Bottom panel combining context tags, button bar, and input
-        final JPanel bottomPanel = new JPanel(new MigLayout("fillx, wrap, insets 0 0 " + INPUT_PANEL_PADDING + " " + INPUT_PANEL_PADDING + ", gapy " + INPUT_PANEL_PADDING, "[grow,fill]", "[][][grow,fill]"));
-        bottomPanel.add(buttonBar, "growx, wrap");
-        bottomPanel.add(contextTagsPanel, "growx, wrap");
-        bottomPanel.add(inputPanel, "growx, growy, pushy, grow");
-
-        // Create a split pane with vertical divider between chat and input
-        final JSplitPane splitPane = new JSplitPane(
-            JSplitPane.VERTICAL_SPLIT,
-            chatScrollPane,
-            bottomPanel
-        );
-        splitPane.setDividerLocation(0.7); // 70% for chat, 30% for input initially
-        splitPane.setResizeWeight(1.0); // Extra space goes to the top (chat area)
-        splitPane.setContinuousLayout(true); // Smooth resizing
-
-        // Add components to frame
-        frame.add(topNavBar, BorderLayout.NORTH);
-        frame.add(splitPane, BorderLayout.CENTER);
-
-        // Finalize frame
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-
-        // Build the interactive guide (items will be displayed in order)
-        this.guide = new InteractiveGuide(frame);
-        guide.addElement(inputArea, "Chat Input", "Type your message here and press 'enter' to chat with the AI assistant.");
-        guide.addElement(sendStopButton, "Send / Stop Button", "Click to send your message, or to interrupt the assistant while it's responding.");
-        guide.addElement(suppliersScrollPane, "Context Buttons", "Attach active item as chat context, or click the dropdown to choose from available items.");
-        guide.addElement(contextTagsScrollPane, "Context Items", "Currently attached context items are shown here. Click on an item to remove it.");
-        guide.addElement(clearAllButton, "Clear Context", "Remove all currently attached context items.");
-        guide.addElement(conversationComboBox, "Select Conversation", "Re-load a previous conversation.");
-        guide.addElement(newConversationButton, "New Conversation", "Start a new conversation with the current chat model.");
-        guide.addElement(deleteConversationButton, "Delete Conversation", "Permanently delete the current conversation.");
-        guide.addElement(forumButton, "Forum Button", "Get help and support on the Image.sc forum.");
-        guide.addElement(configureKeysButton, "API Key Button", "Configure API credentials for the active AI service.");
-        guide.addElement(configureChatButton, "Configure Chat Button", "Select a different AI service or model.");
-    }
-
-    public void show() {
-        frame.setVisible(true);
-        inputArea.requestFocus();
-    }
-
-    /**
-     * Generic selector panel that builds a button + dropdown for each
-     * registered ContextItemSupplier. Creates a wrappable, scrollable
-     * panel similar to the context tags panel.
-     */
-    private JScrollPane createContextSelectorPanel() {
-        // Create wrapping container similar to context tags
-        final JPanel container = new JPanel() {
-            @Override
-            public Dimension getPreferredSize() {
-                if (getParent() instanceof javax.swing.JViewport) {
-                    int w = ((javax.swing.JViewport) getParent()).getWidth();
-                    
-                    // Calculate wrapped height manually
-                    FlowLayout layout = (FlowLayout) getLayout();
-                    int hgap = layout.getHgap();
-                    int vgap = layout.getVgap();
-                    
-                    int maxWidth = w - (hgap * 2);
-                    int currentWidth = hgap;
-                    int currentHeight = vgap;
-                    int rowHeight = 0;
-                    
-                    for (java.awt.Component comp : getComponents()) {
-                        Dimension d = comp.getPreferredSize();
-                        
-                        if (currentWidth + d.width > maxWidth && currentWidth > hgap) {
-                            // Wrap to new row
-                            currentHeight += rowHeight + vgap;
-                            currentWidth = hgap;
-                            rowHeight = 0;
-                        }
-                        
-                        currentWidth += d.width + hgap;
-                        rowHeight = Math.max(rowHeight, d.height);
-                    }
-                    
-                    currentHeight += rowHeight + vgap;
-                    
-                    return new Dimension(w, currentHeight);
-                }
-                return super.getPreferredSize();
-            }
-        };
-        container.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
-        container.setOpaque(false);
-
-        try {
-            final List<ContextItemSupplier> suppliers = contextItemSupplierService.getInstances();
-
-            if (suppliers == null || suppliers.isEmpty()) {
-                // No suppliers available - return empty scrollpane
-                final JScrollPane scrollPane = new JScrollPane(container);
-                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-                scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-                scrollPane.setPreferredSize(new Dimension(600, 45));
-                scrollPane.setMinimumSize(new Dimension(45, 45));
-                scrollPane.getVerticalScrollBar().setUnitIncrement(5);
-                scrollPane.setBorder(null);
-                scrollPane.setOpaque(false);
-                scrollPane.getViewport().setOpaque(false);
-
-                return scrollPane;
-            }
-
-            for (final ContextItemSupplier supplier : suppliers) {
-                final String displayName = supplier.getDisplayName();
-
-                // Create a unit panel for this supplier (button + dropdown + label)
-                final JPanel unitPanel = new JPanel(new BorderLayout(0, 1));
-                unitPanel.setOpaque(false);
-
-                // Top part: buttons (main + dropdown)
-                final JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-                buttonsPanel.setOpaque(false);
-
-                // Main button (36x36 with icon or text)
-                final JButton contextItemButton;
-                final ImageIcon supplierIcon = supplier.getIcon();
-                if (supplierIcon != null) {
-                    contextItemButton = new JButton(supplierIcon);
-                    contextItemButton.setPreferredSize(new Dimension(36, 36));
-                    contextItemButton.setToolTipText("Attach active " + displayName);
-                    contextItemButton.setFocusPainted(false);
-                } else {
-                    final String iconText = displayName.length() > 0 ? displayName.substring(0, 1) : "?";
-                    contextItemButton = new JButton(iconText);
-                    contextItemButton.setPreferredSize(new Dimension(36, 36));
-                    contextItemButton.setToolTipText("Attach active " + displayName);
-                    contextItemButton.setFont(contextItemButton.getFont().deriveFont(14f));
-                    contextItemButton.setFocusPainted(false);
-                }
-                
-                // Add darker outer border and lighter right divider
-                final Color darkBorder = Color.GRAY;
-                final Color lightDivider = new Color(200, 200, 200);
-                contextItemButton.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(1, 1, 1, 1, darkBorder),
-                    BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 0, 0, 1, lightDivider),
-                        BorderFactory.createEmptyBorder(2, 2, 2, 1)
-                    )
-                ));
-
-                // Dropdown button (smaller, 20x36 to match height)
-                final JButton dropdownButton = new JButton("▼");
-                dropdownButton.setPreferredSize(new Dimension(20, 36));
-                dropdownButton.setToolTipText("Select " + displayName + " to attach as context");
-                dropdownButton.setFont(dropdownButton.getFont().deriveFont(12f));
-                dropdownButton.setFocusPainted(false);
-                
-                // Add darker outer border and lighter left divider
-                dropdownButton.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(1, 0, 1, 1, darkBorder),
-                    BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 1, 0, 0, lightDivider),
-                        BorderFactory.createEmptyBorder(2, 1, 2, 2)
-                    )
-                ));
-
-                // Main action: create active context item via supplier
-                contextItemButton.addActionListener(e -> {
-                    threadService.run(() -> {
-                        try {
-                            final ContextItem item = supplier.createActiveContextItem();
-                            if (item != null) {
-                                addContextItem(item, supplier);
-                            } else {
-                                appendToChat(Sender.ERROR, "No active " + displayName + " available");
-                            }
-                        } catch (Exception ex) {
-                            appendToChat(Sender.ERROR, "Failed to create active " + displayName + ": " + ex.getMessage());
-                        }
-                    });
-                });
-
-                // Dropdown: list available items from supplier
-                dropdownButton.addActionListener(e -> {
-                    final JPopupMenu menu = new JPopupMenu();
-                    try {
-                        final Set<ContextItem> available = supplier.listAvailable();
-                        if (available == null || available.isEmpty()) {
-                            final JMenuItem none = new JMenuItem("(none)");
-                            none.setEnabled(false);
-                            menu.add(none);
-                        } else {
-                            for (final ContextItem it : available) {
-                                final JMenuItem mi = new JMenuItem(it.getLabel());
-                                mi.addActionListener(ae -> addContextItem(it, supplier));
-                                menu.add(mi);
-                            }
-                        }
-                    } catch (Exception ex) {
-                        final JMenuItem err = new JMenuItem("(not available)");
-                        err.setEnabled(false);
-                        menu.add(err);
-                    }
-
-                    menu.show(dropdownButton, 0, dropdownButton.getHeight());
-                });
-
-                buttonsPanel.add(contextItemButton);
-                buttonsPanel.add(dropdownButton);
-
-                // Bottom part: label
-                final JLabel label = new JLabel(displayName + "s", SwingConstants.CENTER);
-                label.setFont(label.getFont().deriveFont(11f));
-
-                unitPanel.add(buttonsPanel, BorderLayout.NORTH);
-                unitPanel.add(label, BorderLayout.SOUTH);
-
-                container.add(unitPanel);
-            }
-
-        } catch (Exception e) {
-            // If the supplier service fails, show nothing
-        }
-
-        // Wrap in scrollpane
-        final JScrollPane scrollPane = new JScrollPane(container);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setPreferredSize(new Dimension(600, 60)); // Taller to accommodate buttons + labels
-        scrollPane.setMinimumSize(new Dimension(60, 60)); // Taller to accommodate buttons + labels
-        scrollPane.getVerticalScrollBar().setUnitIncrement(5);
-        scrollPane.setBorder(null);
-        scrollPane.setOpaque(false);
-        scrollPane.getViewport().setOpaque(false);
-
-        return scrollPane;
-    }
-
-    private void sendMessage() {
+
+	public static final float CHAT_FONT_SIZE = 16f;
+	private static final int INPUT_PANEL_PADDING = 8;
+	private static final String PLACEHOLDER_TEXT = "Type your message here...";
+
+	private static enum Sender {
+			USER, ASSISTANT, SYSTEM, ERROR
+	};
+
+	private static final String SYSTEM_PROMPT =
+		"You are a chatbot running in the Fiji (ImageJ) application for scientific image analysis. " +
+			"Your role is to help users develop reproducible workflows (e.g. via scripts or macros) and direct them to tools based on their needs. " +
+			"You are concise, humble, validating, patient, and understanding. Expect to make mistakes: troubleshoot and iterate.";
+
+	// -- Contextual fields --
+	private final CommandService commandService;
+	private final PrefService prefService;
+	private final PlatformService platformService;
+	private final ContextItemService contextItemSupplierService;
+	private final ThreadService threadService;
+	private final AiToolService aiToolService;
+	private final ConversationService conversationService;
+	private final AssistantService assistantService;
+
+	// -- Non-Contextual fields --
+	private FijiAssistant assistant;
+	private final JFrame frame;
+	private final JPanel chatPanel;
+	private final JScrollPane chatScrollPane;
+	private final JTextArea inputArea;
+	private final JButton sendStopButton;
+	private final JPanel contextTagsPanel;
+	private final JScrollPane contextTagsScrollPane;
+	private final JButton clearAllButton;
+	private final java.util.Map<ContextItem, JButton> contextItemButtons;
+	private final List<ContextItem> contextItems;
+	private ChatMessagePanel currentStreamingPanel;
+	private JComboBox<String> conversationComboBox;
+	private JButton newConversationButton;
+	private JButton deleteConversationButton;
+	private boolean stopRequested = false;
+	private boolean isSendMode = true;
+	private ImageIcon sendIcon;
+	private ImageIcon stopIcon;
+	private InteractiveGuide guide;
+	private LLMProvider llmProvider;
+	private final String modelName;
+	private Conversation currentConversation;
+	private final ChatRequestParameters requestParameters;
+
+	public FijiAssistantChat(final String title, CommandService commandService,
+		PrefService prefService, PlatformService platformService,
+		AiToolService aiToolService, ContextItemService contextItemService,
+		ThreadService threadService, ChatbotService chatService,
+		AssistantService assistantService, ProviderService providerService,
+		ConversationService conversationService, String providerName,
+		String modelName)
+	{
+		this.commandService = commandService;
+		this.prefService = prefService;
+		this.platformService = platformService;
+		this.threadService = threadService;
+		this.contextItemSupplierService = contextItemService;
+		this.aiToolService = aiToolService;
+		this.conversationService = conversationService;
+		this.assistantService = assistantService;
+
+		this.contextItemButtons = new HashMap<>();
+		this.contextItems = new ArrayList<>();
+		this.llmProvider = providerService.getProvider(providerName);
+		this.modelName = modelName;
+
+		// Create default request parameters
+		requestParameters = ChatRequestParameters.builder().frequencyPenalty(0.0)
+			.presencePenalty(0.0).temperature(0.1).build();
+
+		// Create the frame
+		frame = new JFrame("Fiji Chat - " + title);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setLayout(new BorderLayout());
+
+		// Top navigation bar with model selection
+		final JPanel topNavBar = new JPanel(new BorderLayout());
+
+		// Conversation selector panel (added first so it appears on the left)
+		final JPanel conversationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
+			3, 12));
+		conversationPanel.setOpaque(false);
+
+		// For difference in hgaps
+		final JPanel spacer = new JPanel();
+		spacer.setOpaque(false);
+		spacer.setPreferredSize(new Dimension(2, 1));
+		conversationPanel.add(spacer);
+
+		conversationComboBox = new JComboBox<>();
+		int prefHeight = conversationComboBox.getPreferredSize().height;
+		conversationComboBox.setPreferredSize(new Dimension(280, prefHeight));
+
+		conversationComboBox.setToolTipText("Load a previous conversation");
+		conversationService.getConversationNames().stream().forEach(
+			conversationComboBox::addItem);
+		conversationComboBox.setSelectedIndex(-1);
+		conversationComboBox.addActionListener(e -> onConversationSelected());
+		conversationPanel.add(conversationComboBox);
+
+		newConversationButton = new JButton("+");
+		newConversationButton.setPreferredSize(new Dimension(prefHeight,
+			prefHeight));
+		newConversationButton.setFocusPainted(false);
+		newConversationButton.setToolTipText("Start a new conversation");
+		newConversationButton.setEnabled(false);
+		newConversationButton.addActionListener(e -> startNewConversation());
+		conversationPanel.add(newConversationButton);
+
+		deleteConversationButton = new JButton("-");
+		deleteConversationButton.setPreferredSize(new Dimension(prefHeight,
+			prefHeight));
+		deleteConversationButton.setFocusPainted(false);
+		deleteConversationButton.setToolTipText(
+			"Delete the current conversation permanently");
+		deleteConversationButton.setEnabled(false);
+		deleteConversationButton.setForeground(java.awt.Color.RED);
+		deleteConversationButton.addActionListener(
+			e -> deleteCurrentConversation());
+		conversationPanel.add(deleteConversationButton);
+
+		topNavBar.add(conversationPanel, BorderLayout.WEST);
+
+		final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5,
+			5));
+		buttonPanel.setOpaque(false);
+		// ImageSC Forum button
+		final JButton forumButton;
+		final URL forumIconUrl = getClass().getResource(
+			"/icons/imagesc-icon-32.png");
+		if (forumIconUrl != null) {
+			forumButton = new JButton(new ImageIcon(forumIconUrl));
+			forumButton.setPreferredSize(new Dimension(36, 36));
+		}
+		else {
+			forumButton = new JButton("Forum");
+		}
+		forumButton.setFocusPainted(false);
+		forumButton.setToolTipText("Get help on the Image.sc forum");
+		forumButton.addActionListener(e -> openForumInBrowser());
+		buttonPanel.add(forumButton);
+
+		// Change API Keys button
+		final JButton configureKeysButton;
+		final URL lockIconUrl = getClass().getResource("/icons/lock-noun-32.png");
+		if (lockIconUrl != null) {
+			configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
+			configureKeysButton.setPreferredSize(new Dimension(36, 36));
+			configureKeysButton.setToolTipText("Configure API Key");
+		}
+		else {
+			configureKeysButton = new JButton("Configure API Key");
+		}
+		configureKeysButton.setFocusPainted(false);
+		configureKeysButton.addActionListener(e -> configureKeys());
+		buttonPanel.add(configureKeysButton);
+
+		configureKeysButton.setEnabled(llmProvider.requiresApiKey());
+
+		// Change Model button
+		final JButton configureChatButton;
+		final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
+		if (gearIconUrl != null) {
+			configureChatButton = new JButton(new ImageIcon(gearIconUrl));
+			configureChatButton.setPreferredSize(new Dimension(36, 36));
+			configureChatButton.setToolTipText("Configure AI service");
+		}
+		else {
+			configureChatButton = new JButton("Change Model");
+		}
+		configureChatButton.setFocusPainted(false);
+		configureChatButton.addActionListener(e -> configureChat());
+		buttonPanel.add(configureChatButton);
+
+		// Launch guide button
+		final JButton guideButton;
+		final URL questionIconUrl = getClass().getResource(
+			"/icons/question-icon-32.png");
+		if (questionIconUrl != null) {
+			guideButton = new JButton(new ImageIcon(questionIconUrl));
+			guideButton.setPreferredSize(new Dimension(36, 36));
+		}
+		else {
+			guideButton = new JButton("Show Guide");
+		}
+		guideButton.setToolTipText("Explain chat componenets");
+		guideButton.setFocusPainted(false);
+		guideButton.addActionListener(e -> launchGuide());
+		buttonPanel.add(guideButton);
+
+		topNavBar.add(buttonPanel, BorderLayout.EAST);
+
+		// Chat display area - MigLayout for proper resizing with messages at bottom
+		chatPanel = new JPanel(new MigLayout("fillx, wrap, insets 0", // Fill
+																																	// horizontally,
+																																	// wrap each
+																																	// component
+																																	// to new row
+			"[grow,fill]", // Column grows and fills
+			"[grow][][]" // First row grows (pushes content down), then message rows
+		));
+		chatPanel.setBackground(Color.WHITE);
+
+		// Add a glue panel that will push messages to bottom
+		final JPanel glue = new JPanel();
+		glue.setOpaque(false);
+		chatPanel.add(glue, "pushy, growy"); // This row grows vertically, pushing
+																					// messages down
+
+		// Add a bottom spacer for 8px padding at the end of messages
+		final JPanel bottomSpacer = new JPanel();
+		bottomSpacer.setOpaque(false);
+		bottomSpacer.setPreferredSize(new Dimension(1, 8));
+		bottomSpacer.setMinimumSize(new Dimension(1, 8));
+		bottomSpacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
+		chatPanel.add(bottomSpacer, "growx, height 8!");
+
+		chatScrollPane = new JScrollPane(chatPanel);
+		chatScrollPane.setPreferredSize(new Dimension(600, 400));
+		chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+		// Button bar with context buttons - wrapped in outer panel with space
+		// reserved on right (matching contextTagsPanel structure)
+		final JScrollPane suppliersScrollPane = createContextSelectorPanel();
+		final JPanel buttonBar = new JPanel(new MigLayout("insets 0, fillx",
+			"[grow,fill][shrink]", "[grow,fill]"));
+		buttonBar.setOpaque(false);
+		buttonBar.add(suppliersScrollPane, "growx, growy, pushy");
+
+		// Add spacer on the right to match the width of the Clear All button (28px)
+		final JPanel spacerPanel = new JPanel();
+		spacerPanel.setOpaque(false);
+		spacerPanel.setPreferredSize(new Dimension(28, 1));
+		buttonBar.add(spacerPanel, "width 28!, aligny center");
+
+		// Context tags panel (shows active context items as removable tags)
+		// Create inner panel for tags that will wrap
+		final JPanel tagsContainer = new JPanel() {
+
+			@Override
+			public Dimension getPreferredSize() {
+				if (getParent() instanceof javax.swing.JViewport) {
+					int w = ((javax.swing.JViewport) getParent()).getWidth();
+
+					// Calculate wrapped height manually
+					FlowLayout layout = (FlowLayout) getLayout();
+					int hgap = layout.getHgap();
+					int vgap = layout.getVgap();
+
+					int maxWidth = w - (hgap * 2); // Account for horizontal gaps
+					int currentWidth = hgap;
+					int currentHeight = vgap;
+					int rowHeight = 0;
+
+					for (java.awt.Component comp : getComponents()) {
+						Dimension d = comp.getPreferredSize();
+
+						if (currentWidth + d.width > maxWidth && currentWidth > hgap) {
+							// Wrap to new row
+							currentHeight += rowHeight + vgap;
+							currentWidth = hgap;
+							rowHeight = 0;
+						}
+
+						currentWidth += d.width + hgap;
+						rowHeight = Math.max(rowHeight, d.height);
+					}
+
+					currentHeight += rowHeight + vgap; // Add final row height
+
+					return new Dimension(w, currentHeight);
+				}
+				return super.getPreferredSize();
+			}
+		};
+		tagsContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
+		tagsContainer.setOpaque(false);
+		tagsContainer.setToolTipText(
+			"Attached items will be included as context with your message");
+
+		// Create scrollable container for tags
+		contextTagsScrollPane = new JScrollPane(tagsContainer);
+		contextTagsScrollPane.setVerticalScrollBarPolicy(
+			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		contextTagsScrollPane.setHorizontalScrollBarPolicy(
+			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		contextTagsScrollPane.setPreferredSize(new Dimension(600, 36));
+		contextTagsScrollPane.setMinimumSize(new Dimension(36, 36));
+		contextTagsScrollPane.getVerticalScrollBar().setUnitIncrement(5);
+
+		// Apply light blue background to the scrollpane itself
+		contextTagsScrollPane.setBackground(new java.awt.Color(240, 248, 255)); // Light
+																																						// blue
+																																						// background
+		contextTagsScrollPane.getViewport().setBackground(new java.awt.Color(240,
+			248, 255));
+		contextTagsScrollPane.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(new java.awt.Color(200, 220, 240), 1),
+			BorderFactory.createEmptyBorder(0, 0, 0, 0) // No internal padding
+		));
+
+		// Create the outer panel that always shows
+		contextTagsPanel = new JPanel(new MigLayout("insets 0, fillx",
+			"[grow,fill][shrink]", "[grow,fill]"));
+		contextTagsPanel.setOpaque(false);
+
+		// Add scrollable tags area in the center
+		contextTagsPanel.add(contextTagsScrollPane, "growx, growy, pushy");
+
+		// Add "Clear All" button on the right (icon button, 28x28 to match send
+		// button)
+		final URL closeIconUrl = getClass().getResource("/icons/close-20.png");
+		if (closeIconUrl != null) {
+			clearAllButton = new JButton(new ImageIcon(closeIconUrl));
+		}
+		else {
+			clearAllButton = new JButton("✕");
+		}
+
+		clearAllButton.setToolTipText("Clear all context items");
+		clearAllButton.setFocusPainted(false);
+		clearAllButton.setEnabled(false); // Disabled until context items are added
+		clearAllButton.setForeground(java.awt.Color.RED);
+		clearAllButton.setFont(clearAllButton.getFont().deriveFont(14f));
+		clearAllButton.addActionListener(e -> clearAllContext());
+		contextTagsPanel.add(clearAllButton, "aligny center, height 28!");
+
+		// Input area - scrollable and resizable
+		inputArea = new JTextArea() {
+
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				if (getText().isEmpty()) {
+					((Graphics2D) g).setRenderingHint(
+						RenderingHints.KEY_TEXT_ANTIALIASING,
+						RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+					g.setColor(Color.GRAY);
+					g.setFont(new Font("Dialog", Font.PLAIN, 14));
+					g.drawString(PLACEHOLDER_TEXT, 5, 20);
+				}
+			}
+		};
+
+		inputArea.setLineWrap(true);
+		inputArea.setWrapStyleWord(true);
+		inputArea.setFont(inputArea.getFont().deriveFont(CHAT_FONT_SIZE));
+		final JScrollPane inputScrollPane = new JScrollPane(inputArea);
+		inputScrollPane.setVerticalScrollBarPolicy(
+			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		inputScrollPane.setHorizontalScrollBarPolicy(
+			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+		// Add KeyListener to handle Enter key (Shift+Enter for newline)
+		inputArea.addKeyListener(new java.awt.event.KeyAdapter() {
+
+			@Override
+			public void keyPressed(java.awt.event.KeyEvent e) {
+				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER && !e
+					.isShiftDown())
+				{
+					e.consume();
+					sendMessage();
+				}
+			}
+		});
+
+		// Send button - styled to look integrated
+		final URL iconUrl = getClass().getResource("/icons/send-20.png");
+		if (iconUrl != null) {
+			sendIcon = new ImageIcon(iconUrl);
+		}
+		sendIcon = sendIcon != null ? sendIcon : null; // Ensure it's initialized
+
+		// Stop button - styled to look integrated, initially hidden
+		final URL stopIconUrl = getClass().getResource("/icons/stop-noun-20.png");
+		if (stopIconUrl != null) {
+			stopIcon = new ImageIcon(stopIconUrl);
+		}
+		stopIcon = stopIcon != null ? stopIcon : null; // Ensure it's initialized
+
+		// Single send/stop button that toggles based on mode
+		sendStopButton = new JButton();
+		sendStopButton.setFocusPainted(false);
+		setSendMode(); // Start in send mode
+		sendStopButton.addActionListener(e -> {
+			if (isSendMode) {
+				sendMessage();
+			}
+			else {
+				requestStop();
+			}
+		});
+
+		// Input panel with button bar and input area
+		final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly",
+			"[grow,fill][shrink]", "[grow,fill]"));
+		inputPanel.add(inputScrollPane, "growx, growy, pushy");
+		inputPanel.add(sendStopButton, "aligny bottom, height 28!");
+
+		// Bottom panel combining context tags, button bar, and input
+		final JPanel bottomPanel = new JPanel(new MigLayout(
+			"fillx, wrap, insets 0 0 " + INPUT_PANEL_PADDING + " " +
+				INPUT_PANEL_PADDING + ", gapy " + INPUT_PANEL_PADDING, "[grow,fill]",
+			"[][][grow,fill]"));
+		bottomPanel.add(buttonBar, "growx, wrap");
+		bottomPanel.add(contextTagsPanel, "growx, wrap");
+		bottomPanel.add(inputPanel, "growx, growy, pushy, grow");
+
+		// Create a split pane with vertical divider between chat and input
+		final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+			chatScrollPane, bottomPanel);
+		splitPane.setDividerLocation(0.7); // 70% for chat, 30% for input initially
+		splitPane.setResizeWeight(1.0); // Extra space goes to the top (chat area)
+		splitPane.setContinuousLayout(true); // Smooth resizing
+
+		// Add components to frame
+		frame.add(topNavBar, BorderLayout.NORTH);
+		frame.add(splitPane, BorderLayout.CENTER);
+
+		// Finalize frame
+		frame.pack();
+		frame.setLocationRelativeTo(null);
+
+		// Build the interactive guide (items will be displayed in order)
+		this.guide = new InteractiveGuide(frame);
+		guide.addElement(inputArea, "Chat Input",
+			"Type your message here and press 'enter' to chat with the AI assistant.");
+		guide.addElement(sendStopButton, "Send / Stop Button",
+			"Click to send your message, or to interrupt the assistant while it's responding.");
+		guide.addElement(suppliersScrollPane, "Context Buttons",
+			"Attach active item as chat context, or click the dropdown to choose from available items.");
+		guide.addElement(contextTagsScrollPane, "Context Items",
+			"Currently attached context items are shown here. Click on an item to remove it.");
+		guide.addElement(clearAllButton, "Clear Context",
+			"Remove all currently attached context items.");
+		guide.addElement(conversationComboBox, "Select Conversation",
+			"Re-load a previous conversation.");
+		guide.addElement(newConversationButton, "New Conversation",
+			"Start a new conversation with the current chat model.");
+		guide.addElement(deleteConversationButton, "Delete Conversation",
+			"Permanently delete the current conversation.");
+		guide.addElement(forumButton, "Forum Button",
+			"Get help and support on the Image.sc forum.");
+		guide.addElement(configureKeysButton, "API Key Button",
+			"Configure API credentials for the active AI service.");
+		guide.addElement(configureChatButton, "Configure Chat Button",
+			"Select a different AI service or model.");
+	}
+
+	public void show() {
+		frame.setVisible(true);
+		inputArea.requestFocus();
+	}
+
+	/**
+	 * Generic selector panel that builds a button + dropdown for each registered
+	 * ContextItemSupplier. Creates a wrappable, scrollable panel similar to the
+	 * context tags panel.
+	 */
+	private JScrollPane createContextSelectorPanel() {
+		// Create wrapping container similar to context tags
+		final JPanel container = new JPanel() {
+
+			@Override
+			public Dimension getPreferredSize() {
+				if (getParent() instanceof javax.swing.JViewport) {
+					int w = ((javax.swing.JViewport) getParent()).getWidth();
+
+					// Calculate wrapped height manually
+					FlowLayout layout = (FlowLayout) getLayout();
+					int hgap = layout.getHgap();
+					int vgap = layout.getVgap();
+
+					int maxWidth = w - (hgap * 2);
+					int currentWidth = hgap;
+					int currentHeight = vgap;
+					int rowHeight = 0;
+
+					for (java.awt.Component comp : getComponents()) {
+						Dimension d = comp.getPreferredSize();
+
+						if (currentWidth + d.width > maxWidth && currentWidth > hgap) {
+							// Wrap to new row
+							currentHeight += rowHeight + vgap;
+							currentWidth = hgap;
+							rowHeight = 0;
+						}
+
+						currentWidth += d.width + hgap;
+						rowHeight = Math.max(rowHeight, d.height);
+					}
+
+					currentHeight += rowHeight + vgap;
+
+					return new Dimension(w, currentHeight);
+				}
+				return super.getPreferredSize();
+			}
+		};
+		container.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
+		container.setOpaque(false);
+
+		try {
+			final List<ContextItemSupplier> suppliers = contextItemSupplierService
+				.getInstances();
+
+			if (suppliers == null || suppliers.isEmpty()) {
+				// No suppliers available - return empty scrollpane
+				final JScrollPane scrollPane = new JScrollPane(container);
+				scrollPane.setVerticalScrollBarPolicy(
+					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+				scrollPane.setHorizontalScrollBarPolicy(
+					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+				scrollPane.setPreferredSize(new Dimension(600, 45));
+				scrollPane.setMinimumSize(new Dimension(45, 45));
+				scrollPane.getVerticalScrollBar().setUnitIncrement(5);
+				scrollPane.setBorder(null);
+				scrollPane.setOpaque(false);
+				scrollPane.getViewport().setOpaque(false);
+
+				return scrollPane;
+			}
+
+			for (final ContextItemSupplier supplier : suppliers) {
+				final String displayName = supplier.getDisplayName();
+
+				// Create a unit panel for this supplier (button + dropdown + label)
+				final JPanel unitPanel = new JPanel(new BorderLayout(0, 1));
+				unitPanel.setOpaque(false);
+
+				// Top part: buttons (main + dropdown)
+				final JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
+					0, 0));
+				buttonsPanel.setOpaque(false);
+
+				// Main button (36x36 with icon or text)
+				final JButton contextItemButton;
+				final ImageIcon supplierIcon = supplier.getIcon();
+				if (supplierIcon != null) {
+					contextItemButton = new JButton(supplierIcon);
+					contextItemButton.setPreferredSize(new Dimension(36, 36));
+					contextItemButton.setToolTipText("Attach active " + displayName);
+					contextItemButton.setFocusPainted(false);
+				}
+				else {
+					final String iconText = displayName.length() > 0 ? displayName
+						.substring(0, 1) : "?";
+					contextItemButton = new JButton(iconText);
+					contextItemButton.setPreferredSize(new Dimension(36, 36));
+					contextItemButton.setToolTipText("Attach active " + displayName);
+					contextItemButton.setFont(contextItemButton.getFont().deriveFont(
+						14f));
+					contextItemButton.setFocusPainted(false);
+				}
+
+				// Add darker outer border and lighter right divider
+				final Color darkBorder = Color.GRAY;
+				final Color lightDivider = new Color(200, 200, 200);
+				contextItemButton.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(1, 1, 1, 1, darkBorder), BorderFactory
+						.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 0, 1,
+							lightDivider), BorderFactory.createEmptyBorder(2, 2, 2, 1))));
+
+				// Dropdown button (smaller, 20x36 to match height)
+				final JButton dropdownButton = new JButton("▼");
+				dropdownButton.setPreferredSize(new Dimension(20, 36));
+				dropdownButton.setToolTipText("Select " + displayName +
+					" to attach as context");
+				dropdownButton.setFont(dropdownButton.getFont().deriveFont(12f));
+				dropdownButton.setFocusPainted(false);
+
+				// Add darker outer border and lighter left divider
+				dropdownButton.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(1, 0, 1, 1, darkBorder), BorderFactory
+						.createCompoundBorder(BorderFactory.createMatteBorder(0, 1, 0, 0,
+							lightDivider), BorderFactory.createEmptyBorder(2, 1, 2, 2))));
+
+				// Main action: create active context item via supplier
+				contextItemButton.addActionListener(e -> {
+					threadService.run(() -> {
+						try {
+							final ContextItem item = supplier.createActiveContextItem();
+							if (item != null) {
+								addContextItem(item, supplier);
+							}
+							else {
+								appendToChat(Sender.ERROR, "No active " + displayName +
+									" available");
+							}
+						}
+						catch (Exception ex) {
+							appendToChat(Sender.ERROR, "Failed to create active " +
+								displayName + ": " + ex.getMessage());
+						}
+					});
+				});
+
+				// Dropdown: list available items from supplier
+				dropdownButton.addActionListener(e -> {
+					final JPopupMenu menu = new JPopupMenu();
+					try {
+						final Set<ContextItem> available = supplier.listAvailable();
+						if (available == null || available.isEmpty()) {
+							final JMenuItem none = new JMenuItem("(none)");
+							none.setEnabled(false);
+							menu.add(none);
+						}
+						else {
+							for (final ContextItem it : available) {
+								final JMenuItem mi = new JMenuItem(it.getLabel());
+								mi.addActionListener(ae -> addContextItem(it, supplier));
+								menu.add(mi);
+							}
+						}
+					}
+					catch (Exception ex) {
+						final JMenuItem err = new JMenuItem("(not available)");
+						err.setEnabled(false);
+						menu.add(err);
+					}
+
+					menu.show(dropdownButton, 0, dropdownButton.getHeight());
+				});
+
+				buttonsPanel.add(contextItemButton);
+				buttonsPanel.add(dropdownButton);
+
+				// Bottom part: label
+				final JLabel label = new JLabel(displayName + "s",
+					SwingConstants.CENTER);
+				label.setFont(label.getFont().deriveFont(11f));
+
+				unitPanel.add(buttonsPanel, BorderLayout.NORTH);
+				unitPanel.add(label, BorderLayout.SOUTH);
+
+				container.add(unitPanel);
+			}
+
+		}
+		catch (Exception e) {
+			// If the supplier service fails, show nothing
+		}
+
+		// Wrap in scrollpane
+		final JScrollPane scrollPane = new JScrollPane(container);
+		scrollPane.setVerticalScrollBarPolicy(
+			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setHorizontalScrollBarPolicy(
+			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setPreferredSize(new Dimension(600, 60)); // Taller to
+																													// accommodate buttons
+																													// + labels
+		scrollPane.setMinimumSize(new Dimension(60, 60)); // Taller to accommodate
+																											// buttons + labels
+		scrollPane.getVerticalScrollBar().setUnitIncrement(5);
+		scrollPane.setBorder(null);
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+
+		return scrollPane;
+	}
+
+	private void sendMessage() {
         final String userMessage = inputArea.getText().trim();
         if (userMessage.isEmpty()) {
             return;
@@ -839,77 +919,81 @@ public class FijiAssistantChat {
         });
     }
 
-    private List<ContextItem> mergeContextItems( List<ContextItem> contextItems )
-    {
-        final List<ContextItem> result = new ArrayList<>();
-        final Map<String, List<ContextItem>> bins = new HashMap<>();
+	private List<ContextItem> mergeContextItems(List<ContextItem> contextItems) {
+		final List<ContextItem> result = new ArrayList<>();
+		final Map<String, List<ContextItem>> bins = new HashMap<>();
 
-        // Bin items by their merge key
-        for (final ContextItem item : contextItems) {
-            final String mergeKey = item.getMergeKey();
-            if (mergeKey != null) {
-                bins.computeIfAbsent(mergeKey, k -> new ArrayList<>()).add(item);
-            } else {
-                // Items without a merge key are added as-is
-                result.add(item);
-            }
-        }
+		// Bin items by their merge key
+		for (final ContextItem item : contextItems) {
+			final String mergeKey = item.getMergeKey();
+			if (mergeKey != null) {
+				bins.computeIfAbsent(mergeKey, k -> new ArrayList<>()).add(item);
+			}
+			else {
+				// Items without a merge key are added as-is
+				result.add(item);
+			}
+		}
 
-        // Merge items in each bin and add to result
-        for (final List<ContextItem> bin : bins.values()) {
-            if (bin.size() > 1) {
-                final ContextItem merged = bin.get(0).mergeWith(bin.subList(1, bin.size()));
-                result.add(merged);
-            } else {
-                result.add(bin.get(0));
-            }
-        }
-        return result;
-    }
+		// Merge items in each bin and add to result
+		for (final List<ContextItem> bin : bins.values()) {
+			if (bin.size() > 1) {
+				final ContextItem merged = bin.get(0).mergeWith(bin.subList(1, bin
+					.size()));
+				result.add(merged);
+			}
+			else {
+				result.add(bin.get(0));
+			}
+		}
+		return result;
+	}
 
-    /**
-     * Requests the current generation to stop.
-     */
-    private void requestStop() {
-        stopRequested = true;
-        setSendMode();
-    }
+	/**
+	 * Requests the current generation to stop.
+	 */
+	private void requestStop() {
+		stopRequested = true;
+		setSendMode();
+	}
 
-    /**
-     * Switches the send/stop button to send mode.
-     */
-    private void setSendMode() {
-        isSendMode = true;
-        if (sendIcon != null) {
-            sendStopButton.setIcon(sendIcon);
-        } else {
-            sendStopButton.setText("Send");
-        }
-        sendStopButton.setToolTipText("Send message");
+	/**
+	 * Switches the send/stop button to send mode.
+	 */
+	private void setSendMode() {
+		isSendMode = true;
+		if (sendIcon != null) {
+			sendStopButton.setIcon(sendIcon);
+		}
+		else {
+			sendStopButton.setText("Send");
+		}
+		sendStopButton.setToolTipText("Send message");
 
-        sendStopButton.setEnabled(true);
-        inputArea.setEnabled(true);
-        inputArea.requestFocus();
-    }
+		sendStopButton.setEnabled(true);
+		inputArea.setEnabled(true);
+		inputArea.requestFocus();
+	}
 
-    /**
-     * Switches the send/stop button to stop mode.
-     */
-    private void setStopMode() {
-        isSendMode = false;
-        if (stopIcon != null) {
-            sendStopButton.setIcon(stopIcon);
-        } else {
-            sendStopButton.setText("Stop");
-        }
-        sendStopButton.setToolTipText("Interrupt the assistant");
+	/**
+	 * Switches the send/stop button to stop mode.
+	 */
+	private void setStopMode() {
+		isSendMode = false;
+		if (stopIcon != null) {
+			sendStopButton.setIcon(stopIcon);
+		}
+		else {
+			sendStopButton.setText("Stop");
+		}
+		sendStopButton.setToolTipText("Interrupt the assistant");
 
-        sendStopButton.setEnabled(false);
-        inputArea.setText("");
-        inputArea.setEnabled(false);
-    }
+		sendStopButton.setEnabled(false);
+		inputArea.setText("");
+		inputArea.setEnabled(false);
+	}
 
-    private void appendToChat(final Sender sender, final String message) {
+	private void appendToChat(final Sender sender, final String message) {
         if (message == null) return;
 
         // Always use invokeLater since this can be called from both EDT and background threads
@@ -929,451 +1013,485 @@ public class FijiAssistantChat {
         });
     }
 
-    /**
-     * Adds a message panel to the chat (must be called on EDT).
-     */
-    private void addMessagePanelToChat(final ChatMessagePanel.MessageType messageType, final String message) {
-        final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType, message, CHAT_FONT_SIZE);
+	/**
+	 * Adds a message panel to the chat (must be called on EDT).
+	 */
+	private void addMessagePanelToChat(
+		final ChatMessagePanel.MessageType messageType, final String message)
+	{
+		final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType,
+			message, CHAT_FONT_SIZE);
 
-        // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
-        final int componentCount = chatPanel.getComponentCount();
-        if (componentCount >= 2) {
-            final java.awt.Component glue = chatPanel.getComponent(0);
-            final java.awt.Component bottomSpacer = chatPanel.getComponent(componentCount - 1);
-            chatPanel.remove(0); // Remove glue
-            chatPanel.remove(componentCount - 2); // Remove bottom spacer (index shifts after first removal)
-            chatPanel.add(messagePanel, "growx"); // Grow horizontally only
-            chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
-            chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer at end
-        } else {
-            chatPanel.add(messagePanel, "growx");
-        }
+		// Remove the glue and bottom spacer, add message, re-add glue and spacer to
+		// keep messages at bottom
+		final int componentCount = chatPanel.getComponentCount();
+		if (componentCount >= 2) {
+			final java.awt.Component glue = chatPanel.getComponent(0);
+			final java.awt.Component bottomSpacer = chatPanel.getComponent(
+				componentCount - 1);
+			chatPanel.remove(0); // Remove glue
+			chatPanel.remove(componentCount - 2); // Remove bottom spacer (index
+																						// shifts after first removal)
+			chatPanel.add(messagePanel, "growx"); // Grow horizontally only
+			chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
+			chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer
+																												// at end
+		}
+		else {
+			chatPanel.add(messagePanel, "growx");
+		}
 
-        chatPanel.revalidate();
-        chatPanel.repaint();
+		chatPanel.revalidate();
+		chatPanel.repaint();
 
-        // Scroll to bottom
-        SwingUtilities.invokeLater(() -> {
-            final javax.swing.JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-            vertical.setValue(vertical.getMaximum());
-        });
-    }
+		// Scroll to bottom
+		SwingUtilities.invokeLater(() -> {
+			final javax.swing.JScrollBar vertical = chatScrollPane
+				.getVerticalScrollBar();
+			vertical.setValue(vertical.getMaximum());
+		});
+	}
 
-    /**
-     * Creates an empty assistant message panel for streaming.
-     * Must be called on the EDT.
-     */
-    private ChatMessagePanel createEmptyAssistantMessagePanel() {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            throw new IllegalStateException("Must be called on EDT");
-        }
+	/**
+	 * Creates an empty assistant message panel for streaming. Must be called on
+	 * the EDT.
+	 */
+	private ChatMessagePanel createEmptyAssistantMessagePanel() {
+		if (!SwingUtilities.isEventDispatchThread()) {
+			throw new IllegalStateException("Must be called on EDT");
+		}
 
-        // Create an empty assistant message panel
-        final ChatMessagePanel messagePanel = new ChatMessagePanel(
-            ChatMessagePanel.MessageType.ASSISTANT, "", CHAT_FONT_SIZE);
+		// Create an empty assistant message panel
+		final ChatMessagePanel messagePanel = new ChatMessagePanel(
+			ChatMessagePanel.MessageType.ASSISTANT, "", CHAT_FONT_SIZE);
 
-        // Remove the glue and bottom spacer, add message, re-add glue and spacer to keep messages at bottom
-        final int componentCount = chatPanel.getComponentCount();
-        if (componentCount >= 2) {
-            final java.awt.Component glue = chatPanel.getComponent(0);
-            final java.awt.Component bottomSpacer = chatPanel.getComponent(componentCount - 1);
-            chatPanel.remove(0); // Remove glue
-            chatPanel.remove(componentCount - 2); // Remove bottom spacer (index shifts after first removal)
-            chatPanel.add(messagePanel, "growx"); // Grow horizontally only
-            chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
-            chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer at end
-        } else {
-            chatPanel.add(messagePanel, "growx");
-        }
+		// Remove the glue and bottom spacer, add message, re-add glue and spacer to
+		// keep messages at bottom
+		final int componentCount = chatPanel.getComponentCount();
+		if (componentCount >= 2) {
+			final java.awt.Component glue = chatPanel.getComponent(0);
+			final java.awt.Component bottomSpacer = chatPanel.getComponent(
+				componentCount - 1);
+			chatPanel.remove(0); // Remove glue
+			chatPanel.remove(componentCount - 2); // Remove bottom spacer (index
+																						// shifts after first removal)
+			chatPanel.add(messagePanel, "growx"); // Grow horizontally only
+			chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
+			chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer
+																												// at end
+		}
+		else {
+			chatPanel.add(messagePanel, "growx");
+		}
 
-        chatPanel.revalidate();
-        chatPanel.repaint();
+		chatPanel.revalidate();
+		chatPanel.repaint();
 
-        return messagePanel;
-    }
+		return messagePanel;
+	}
 
-    private void launchGuide() {
-        guide.start();
-    }
+	private void launchGuide() {
+		guide.start();
+	}
 
-    private void configureKeys() {
-        // Close this chat window
-        frame.dispose();
-        prefService.remove(Manage_Keys.class, Manage_Keys.autoRunKey(llmProvider.getName()));
-        prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
+	private void configureKeys() {
+		// Close this chat window
+		frame.dispose();
+		prefService.remove(Manage_Keys.class, Manage_Keys.autoRunKey(llmProvider
+			.getName()));
+		prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
 		Map<String, Object> params = new HashMap<>();
 		params.put("startChatbot", true);
 		params.put("provider", llmProvider.getName());
-        // Re-invoke the Fiji_Chat command to show the selection dialog
-        commandService.run(Manage_Keys.class, true, params);
-    }
+		// Re-invoke the Fiji_Chat command to show the selection dialog
+		commandService.run(Manage_Keys.class, true, params);
+	}
 
-    private void configureChat() {
-        // Close this chat window
-        frame.dispose();
-        prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
+	private void configureChat() {
+		// Close this chat window
+		frame.dispose();
+		prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
-        // Re-invoke the Fiji_Chat command to show the selection dialog
-        commandService.run(Fiji_Chat.class, true);
-    }
+		// Re-invoke the Fiji_Chat command to show the selection dialog
+		commandService.run(Fiji_Chat.class, true);
+	}
 
-    private void openForumInBrowser() {
-        try {
-            final URI uri = new URI("https://forum.image.sc/tag/llm");
-            platformService.open(uri.toURL());
-        } catch (Exception e) {
-            appendToChat(Sender.ERROR, "Failed to open forum: " + e.getMessage());
-        }
-    }
+	private void openForumInBrowser() {
+		try {
+			final URI uri = new URI("https://forum.image.sc/tag/llm");
+			platformService.open(uri.toURL());
+		}
+		catch (Exception e) {
+			appendToChat(Sender.ERROR, "Failed to open forum: " + e.getMessage());
+		}
+	}
 
-    private void addContextItem(final ContextItem item, final ContextItemSupplier supplier) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> addContextItem(item, supplier));
-            return;
-        }
-        // Check for duplicates using equals() - don't add the same item twice
-        if (contextItems.contains(item)) {
-            // Flash the existing tag to indicate it's already added
-            final JButton existingButton = contextItemButtons.get(item);
-            if (existingButton != null) {
-                flashButton(existingButton);
-            }
-            return;
-        }
+	private void addContextItem(final ContextItem item,
+		final ContextItemSupplier supplier)
+	{
+		if (!SwingUtilities.isEventDispatchThread()) {
+			SwingUtilities.invokeLater(() -> addContextItem(item, supplier));
+			return;
+		}
+		// Check for duplicates using equals() - don't add the same item twice
+		if (contextItems.contains(item)) {
+			// Flash the existing tag to indicate it's already added
+			final JButton existingButton = contextItemButtons.get(item);
+			if (existingButton != null) {
+				flashButton(existingButton);
+			}
+			return;
+		}
 
-        // Add to context items list
-        contextItems.add(item);
+		// Add to context items list
+		contextItems.add(item);
 
-        // Truncate label to max length
-        final int maxLabelLength = 20;
-        String displayLabel = item.getLabel();
-        if (displayLabel.length() > maxLabelLength) {
-            displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
-        }
+		// Truncate label to max length
+		final int maxLabelLength = 20;
+		String displayLabel = item.getLabel();
+		if (displayLabel.length() > maxLabelLength) {
+			displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
+		}
 
-        // Create a removable tag button with icon (if available) or text, plus X
-        final JButton tagButton;
-        final ImageIcon supplierIcon = supplier.getIcon();
-        if (supplierIcon != null) {
-            // Scale icon down to 16x16 for tag display
-            final Image scaledImage = supplierIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
-            final ImageIcon scaledIcon = new ImageIcon(scaledImage);
-            tagButton = new JButton(displayLabel + " ✕", scaledIcon);
-            tagButton.setHorizontalTextPosition(JButton.RIGHT);
-            tagButton.setVerticalTextPosition(JButton.CENTER);
-        } else {
-            tagButton = new JButton(displayLabel + " ✕");
-        }
+		// Create a removable tag button with icon (if available) or text, plus X
+		final JButton tagButton;
+		final ImageIcon supplierIcon = supplier.getIcon();
+		if (supplierIcon != null) {
+			// Scale icon down to 16x16 for tag display
+			final Image scaledImage = supplierIcon.getImage().getScaledInstance(16,
+				16, Image.SCALE_SMOOTH);
+			final ImageIcon scaledIcon = new ImageIcon(scaledImage);
+			tagButton = new JButton(displayLabel + " ✕", scaledIcon);
+			tagButton.setHorizontalTextPosition(JButton.RIGHT);
+			tagButton.setVerticalTextPosition(JButton.CENTER);
+		}
+		else {
+			tagButton = new JButton(displayLabel + " ✕");
+		}
 
-        // Build tooltip
-        String tooltipText = item.getLabel() + " - Click to remove";
-        tagButton.setToolTipText(tooltipText);
-        tagButton.addActionListener(e -> removeContextItem(item, tagButton));
+		// Build tooltip
+		String tooltipText = item.getLabel() + " - Click to remove";
+		tagButton.setToolTipText(tooltipText);
+		tagButton.addActionListener(e -> removeContextItem(item, tagButton));
 
-        // Store the button reference (item -> button)
-        contextItemButtons.put(item, tagButton);
+		// Store the button reference (item -> button)
+		contextItemButtons.put(item, tagButton);
 
-        // Style the button to look like a flat tag
-        tagButton.setFocusPainted(false);
-        tagButton.setContentAreaFilled(false);
-        tagButton.setOpaque(true);
-        tagButton.setBackground(java.awt.Color.WHITE);
-        tagButton.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEtchedBorder(),
-            BorderFactory.createEmptyBorder(3, 6, 3, 6)
-        ));
+		// Style the button to look like a flat tag
+		tagButton.setFocusPainted(false);
+		tagButton.setContentAreaFilled(false);
+		tagButton.setOpaque(true);
+		tagButton.setBackground(java.awt.Color.WHITE);
+		tagButton.setBorder(BorderFactory.createCompoundBorder(BorderFactory
+			.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 6, 3, 6)));
 
-        // Add hover effect
-        tagButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                tagButton.setBackground(new java.awt.Color(230, 240, 250));
-            }
+		// Add hover effect
+		tagButton.addMouseListener(new MouseAdapter() {
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                tagButton.setBackground(java.awt.Color.WHITE);
-            }
-        });
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				tagButton.setBackground(new java.awt.Color(230, 240, 250));
+			}
 
-        // Get the tags container from the scrollpane's viewport
-        JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
-        tagsContainer.add(tagButton);
+			@Override
+			public void mouseExited(MouseEvent e) {
+				tagButton.setBackground(java.awt.Color.WHITE);
+			}
+		});
 
-        // Enable the Clear All button now that we have context items
-        clearAllButton.setEnabled(true);
-        contextTagsPanel.revalidate();
-        contextTagsPanel.repaint();
-    }
+		// Get the tags container from the scrollpane's viewport
+		JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
+			.getView();
+		tagsContainer.add(tagButton);
 
-    private void removeContextItem(final ContextItem item, final JButton tagButton) {
-        contextItems.remove(item);
-        contextItemButtons.remove(item);
-        final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
-        tagsContainer.remove(tagButton);
+		// Enable the Clear All button now that we have context items
+		clearAllButton.setEnabled(true);
+		contextTagsPanel.revalidate();
+		contextTagsPanel.repaint();
+	}
 
-        // Disable the Clear All button if no more context items
-        if (contextItems.isEmpty()) {
-            clearAllButton.setEnabled(false);
-        }
+	private void removeContextItem(final ContextItem item,
+		final JButton tagButton)
+	{
+		contextItems.remove(item);
+		contextItemButtons.remove(item);
+		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
+			.getView();
+		tagsContainer.remove(tagButton);
 
-        contextTagsPanel.revalidate();
-        contextTagsPanel.repaint();
-    }
+		// Disable the Clear All button if no more context items
+		if (contextItems.isEmpty()) {
+			clearAllButton.setEnabled(false);
+		}
 
-    private void clearAllContextButtons() {
-        // Remove all context items from the list
-        for (final ContextItem item : new ArrayList<>(contextItems)) {
-            contextItems.remove(item);
-        }
+		contextTagsPanel.revalidate();
+		contextTagsPanel.repaint();
+	}
 
-        contextItemButtons.clear();
-        final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport().getView();
-        tagsContainer.removeAll();
-        clearAllButton.setEnabled(false);
-        contextTagsPanel.revalidate();
-        contextTagsPanel.repaint();
-    }
+	private void clearAllContextButtons() {
+		// Remove all context items from the list
+		for (final ContextItem item : new ArrayList<>(contextItems)) {
+			contextItems.remove(item);
+		}
 
-    private void clearAllContext() {
-        clearAllContextButtons();
-    }
+		contextItemButtons.clear();
+		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
+			.getView();
+		tagsContainer.removeAll();
+		clearAllButton.setEnabled(false);
+		contextTagsPanel.revalidate();
+		contextTagsPanel.repaint();
+	}
 
-    /**
-     * Builds the initial system message
-     */
-    private String buildSystemMessage() {
-        final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
+	private void clearAllContext() {
+		clearAllContextButtons();
+	}
 
-        sb.append("\n\n## Tool Usage\n\n");
-        sb.append(aiToolService.toolEnvironmentMessage());
+	/**
+	 * Builds the initial system message
+	 */
+	private String buildSystemMessage() {
+		final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
 
-        final List<AiToolPlugin> tools = aiToolService.getInstances();
-        if (!tools.isEmpty()) {
-            sb.append("\n\n## Available Tools\n\n");
-            for (final AiToolPlugin tool : tools) {
-                sb.append("- **").append(tool.getName()).append("**: ");
-                final String description = tool.getUsage();
-                if (description != null && !description.isEmpty()) {
-                    sb.append(description);
-                }
-                sb.append("\n");
-            }
-        }
+		sb.append("\n\n## Tool Usage\n\n");
+		sb.append(aiToolService.toolEnvironmentMessage());
 
-        return sb.toString();
-    }
+		final List<AiToolPlugin> tools = aiToolService.getInstances();
+		if (!tools.isEmpty()) {
+			sb.append("\n\n## Available Tools\n\n");
+			for (final AiToolPlugin tool : tools) {
+				sb.append("- **").append(tool.getName()).append("**: ");
+				final String description = tool.getUsage();
+				if (description != null && !description.isEmpty()) {
+					sb.append(description);
+				}
+				sb.append("\n");
+			}
+		}
 
-    private void flashButton(final JButton button) {
-        // Flash the button orange to indicate duplicate
-        final java.awt.Color originalBg = button.getBackground();
-        final java.awt.Color flashColor = new java.awt.Color(255, 165, 0); // Orange
+		return sb.toString();
+	}
 
-        // Create a timer to flash 3 times
-        final javax.swing.Timer timer = new javax.swing.Timer(150, null);
-        final int[] flashCount = {0};
+	private void flashButton(final JButton button) {
+		// Flash the button orange to indicate duplicate
+		final java.awt.Color originalBg = button.getBackground();
+		final java.awt.Color flashColor = new java.awt.Color(255, 165, 0); // Orange
 
-        timer.addActionListener(e -> {
-            if (flashCount[0] % 2 == 0) {
-                button.setBackground(flashColor);
-            } else {
-                button.setBackground(originalBg);
-            }
-            flashCount[0]++;
+		// Create a timer to flash 3 times
+		final javax.swing.Timer timer = new javax.swing.Timer(150, null);
+		final int[] flashCount = { 0 };
 
-            if (flashCount[0] >= 6) { // 3 flashes (on-off-on-off-on-off)
-                timer.stop();
-                button.setBackground(originalBg);
-            }
-        });
+		timer.addActionListener(e -> {
+			if (flashCount[0] % 2 == 0) {
+				button.setBackground(flashColor);
+			}
+			else {
+				button.setBackground(originalBg);
+			}
+			flashCount[0]++;
 
-        timer.start();
-    }
+			if (flashCount[0] >= 6) { // 3 flashes (on-off-on-off-on-off)
+				timer.stop();
+				button.setBackground(originalBg);
+			}
+		});
 
-    /**
-     * Called when a conversation is selected from the combo box.
-     */
-    private void onConversationSelected() {
-        Object selected = conversationComboBox.getSelectedItem();
-        if (selected != null && !selected.toString().isEmpty()) {
-            String selectedName = selected.toString();
-            if (currentConversation == null || !(currentConversation.name().equals(selectedName))){
-                // Already active
-                loadConversation(selected.toString());
-            }
-            deleteConversationButton.setEnabled(true);
-            newConversationButton.setEnabled(true);
-        } else {
-            deleteConversationButton.setEnabled(false);
-            newConversationButton.setEnabled(false);
-        }
-    }
+		timer.start();
+	}
 
-    /**
-     * Start a new conversation.
-     * Clears chat history and waits for first message to auto-name the conversation.
-     * Does nothing if the current conversation is empty (no messages sent yet).
-     */
-    private void startNewConversation() {
-        // Don't allow starting a new conversation if the current one is empty (hasn't been named yet)
-        if (currentConversation == null) {
-            return;
-        }
+	/**
+	 * Called when a conversation is selected from the combo box.
+	 */
+	private void onConversationSelected() {
+		Object selected = conversationComboBox.getSelectedItem();
+		if (selected != null && !selected.toString().isEmpty()) {
+			String selectedName = selected.toString();
+			if (currentConversation == null || !(currentConversation.name().equals(
+				selectedName)))
+			{
+				// Already active
+				loadConversation(selected.toString());
+			}
+			deleteConversationButton.setEnabled(true);
+			newConversationButton.setEnabled(true);
+		}
+		else {
+			deleteConversationButton.setEnabled(false);
+			newConversationButton.setEnabled(false);
+		}
+	}
 
-        currentConversation = null;
-        clearChatPanel();
-        conversationComboBox.setSelectedIndex(-1);
-        deleteConversationButton.setEnabled(false);
-        newConversationButton.setEnabled(false);
-        inputArea.requestFocus();
-    }
+	/**
+	 * Start a new conversation. Clears chat history and waits for first message
+	 * to auto-name the conversation. Does nothing if the current conversation is
+	 * empty (no messages sent yet).
+	 */
+	private void startNewConversation() {
+		// Don't allow starting a new conversation if the current one is empty
+		// (hasn't been named yet)
+		if (currentConversation == null) {
+			return;
+		}
 
-    /**
-     * Load a previously saved conversation.
-     */
-    private void loadConversation(String conversationName) {
-        Conversation conversation = conversationService.getConversation(conversationName);
-        if (conversation == null) {
-            return;
-        }
+		currentConversation = null;
+		clearChatPanel();
+		conversationComboBox.setSelectedIndex(-1);
+		deleteConversationButton.setEnabled(false);
+		newConversationButton.setEnabled(false);
+		inputArea.requestFocus();
+	}
 
-        currentConversation = conversation;
-        clearChatPanel();
+	/**
+	 * Load a previously saved conversation.
+	 */
+	private void loadConversation(String conversationName) {
+		Conversation conversation = conversationService.getConversation(
+			conversationName);
+		if (conversation == null) {
+			return;
+		}
 
-        // Reload chat memory with conversation messages
-        ChatMemory chatMemory = buildAssistant(conversation.systemMessage());
+		currentConversation = conversation;
+		clearChatPanel();
 
-        for (Conversation.Message msg : conversation.messages()) {
-            chatMemory.add(msg.memory());
-            addMessagePanelToChat(
-                msg.memory() instanceof dev.langchain4j.data.message.UserMessage
-                    ? ChatMessagePanel.MessageType.USER
-                    : ChatMessagePanel.MessageType.ASSISTANT,
-                msg.display()
-            );
-        }
+		// Reload chat memory with conversation messages
+		ChatMemory chatMemory = buildAssistant(conversation.systemMessage());
 
-        inputArea.requestFocus();
-    }
+		for (Conversation.Message msg : conversation.messages()) {
+			chatMemory.add(msg.memory());
+			addMessagePanelToChat(msg
+				.memory() instanceof dev.langchain4j.data.message.UserMessage
+					? ChatMessagePanel.MessageType.USER
+					: ChatMessagePanel.MessageType.ASSISTANT, msg.display());
+		}
 
-    private ChatMemory buildAssistant(SystemMessage systemMessage) {
-        ChatMemory chatMemory;
-        try {
-            chatMemory = llmProvider.createTokenChatMemory(modelName);
-        } catch (Exception e) {
-            // Fall back to a 20-message window
-            chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
-        }
-        chatMemory.add(systemMessage);
+		inputArea.requestFocus();
+	}
 
-        // Recreate the assistant with the chat memory for proper tool tracking
-        assistant = assistantService.createAssistant(FijiAssistant.class, llmProvider.getName(), modelName, chatMemory, requestParameters);
-        return chatMemory;
-    }
+	private ChatMemory buildAssistant(SystemMessage systemMessage) {
+		ChatMemory chatMemory;
+		try {
+			chatMemory = llmProvider.createTokenChatMemory(modelName);
+		}
+		catch (Exception e) {
+			// Fall back to a 20-message window
+			chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
+		}
+		chatMemory.add(systemMessage);
 
-    private FijiAssistant buildTemporaryAssistant() {
-        ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(2);
-        chatMemory.add(new SystemMessage("Your response text cannot contain: more than 5 words, special formatting, or punctuation."));
-        return assistantService.createAssistant(FijiAssistant.class, llmProvider.getName(), modelName, chatMemory, requestParameters);
-    }
+		// Recreate the assistant with the chat memory for proper tool tracking
+		assistant = assistantService.createAssistant(FijiAssistant.class,
+			llmProvider.getName(), modelName, chatMemory, requestParameters);
+		return chatMemory;
+	}
 
-    /**
-     * Clear the chat panel (removes all message panels).
-     */
-    private void clearChatPanel() {
-        // Get the chat panel and remove all message components (keep glue panel)
-        synchronized (chatPanel.getTreeLock()) {
-            java.awt.Component[] components = chatPanel.getComponents();
-            for (java.awt.Component component : components) {
-                if (component instanceof ChatMessagePanel) {
-                    chatPanel.remove(component);
-                }
-            }
-        }
-        chatPanel.revalidate();
-        chatPanel.repaint();
-    }
+	private FijiAssistant buildTemporaryAssistant() {
+		ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(2);
+		chatMemory.add(new SystemMessage(
+			"Your response text cannot contain: more than 5 words, special formatting, or punctuation."));
+		return assistantService.createAssistant(FijiAssistant.class, llmProvider
+			.getName(), modelName, chatMemory, requestParameters);
+	}
 
-    /**
-     * Create a new the conversation based on the user's first message.
-     * Sends a separate request to the LLM to summarize the message.
-     */
-    private void createNewConversation(String userMessage) {
-        SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
-        buildAssistant(systemMessage);
-        String textToTruncate = userMessage;
-        String conversationName;
-        try {
-            // Create a simple request to summarize the user's message into a brief name
-            final String namingPrompt = "Respond with ONLY a 3-5 word summary of the following text: \"" + userMessage + "\"";
-            final ChatRequest nameRequest = ChatRequest.builder()
-                .messages(new dev.langchain4j.data.message.UserMessage(namingPrompt))
-                .build();
+	/**
+	 * Clear the chat panel (removes all message panels).
+	 */
+	private void clearChatPanel() {
+		// Get the chat panel and remove all message components (keep glue panel)
+		synchronized (chatPanel.getTreeLock()) {
+			java.awt.Component[] components = chatPanel.getComponents();
+			for (java.awt.Component component : components) {
+				if (component instanceof ChatMessagePanel) {
+					chatPanel.remove(component);
+				}
+			}
+		}
+		chatPanel.revalidate();
+		chatPanel.repaint();
+	}
 
-            final dev.langchain4j.data.message.AiMessage response = buildTemporaryAssistant().chat(nameRequest);
-            textToTruncate = response.text();
-        } catch (Exception e) {
-            // No-op - user message is used as a fallback
-        }
-        // If naming fails, try using the first few words
-        textToTruncate = textToTruncate.trim();
-        String[] words = textToTruncate.split("\\s+");
-        if (words.length <= 5) {
-            conversationName = textToTruncate;
-        } else {
-            conversationName = String.join(" ", Arrays.copyOf(words, 5)) + "...";
-        }
-        // Truncate conversation name to 30 characters max
-        final int maxNameLength = 30;
-        if (conversationName.length() > maxNameLength) {
-            conversationName = conversationName.substring(0, maxNameLength - 1) + "...";
-        }
+	/**
+	 * Create a new the conversation based on the user's first message. Sends a
+	 * separate request to the LLM to summarize the message.
+	 */
+	private void createNewConversation(String userMessage) {
+		SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
+		buildAssistant(systemMessage);
+		String textToTruncate = userMessage;
+		String conversationName;
+		try {
+			// Create a simple request to summarize the user's message into a brief
+			// name
+			final String namingPrompt =
+				"Respond with ONLY a 3-5 word summary of the following text: \"" +
+					userMessage + "\"";
+			final ChatRequest nameRequest = ChatRequest.builder().messages(
+				new dev.langchain4j.data.message.UserMessage(namingPrompt)).build();
 
-        final String timestampedName = conversationName + new SimpleDateFormat(" [dd.MMM.yyyy]").format(new Date());
-        // Create the conversation with the auto-generated name
-        currentConversation = conversationService.createConversation(
-            timestampedName,
-            systemMessage
-        );
+			final dev.langchain4j.data.message.AiMessage response =
+				buildTemporaryAssistant().chat(nameRequest);
+			textToTruncate = response.text();
+		}
+		catch (Exception e) {
+			// No-op - user message is used as a fallback
+		}
+		// If naming fails, try using the first few words
+		textToTruncate = textToTruncate.trim();
+		String[] words = textToTruncate.split("\\s+");
+		if (words.length <= 5) {
+			conversationName = textToTruncate;
+		}
+		else {
+			conversationName = String.join(" ", Arrays.copyOf(words, 5)) + "...";
+		}
+		// Truncate conversation name to 30 characters max
+		final int maxNameLength = 30;
+		if (conversationName.length() > maxNameLength) {
+			conversationName = conversationName.substring(0, maxNameLength - 1) +
+				"...";
+		}
 
-        SwingUtilities.invokeLater(() -> {
-            conversationComboBox.insertItemAt(timestampedName, 0);
-            conversationComboBox.setSelectedItem(timestampedName);
-            deleteConversationButton.setEnabled(true);
-            newConversationButton.setEnabled(true);
-        });
-    }
+		final String timestampedName = conversationName + new SimpleDateFormat(
+			" [dd.MMM.yyyy]").format(new Date());
+		// Create the conversation with the auto-generated name
+		currentConversation = conversationService.createConversation(
+			timestampedName, systemMessage);
 
-    /**
-     * Delete the currently selected conversation permanently.
-     */
-    private void deleteCurrentConversation() {
-        if (currentConversation == null) {
-            return;
-        }
+		SwingUtilities.invokeLater(() -> {
+			conversationComboBox.insertItemAt(timestampedName, 0);
+			conversationComboBox.setSelectedItem(timestampedName);
+			deleteConversationButton.setEnabled(true);
+			newConversationButton.setEnabled(true);
+		});
+	}
 
-        final String conversationName = currentConversation.name();
+	/**
+	 * Delete the currently selected conversation permanently.
+	 */
+	private void deleteCurrentConversation() {
+		if (currentConversation == null) {
+			return;
+		}
 
-        // Confirm deletion with user
-        final int response = javax.swing.JOptionPane.showConfirmDialog(
-            frame,
-            "Are you sure you want to permanently delete this conversation?\n\n" + conversationName,
-            "Delete Conversation",
-            javax.swing.JOptionPane.YES_NO_OPTION,
-            javax.swing.JOptionPane.WARNING_MESSAGE
-        );
+		final String conversationName = currentConversation.name();
 
-        if (response == javax.swing.JOptionPane.YES_OPTION) {
-            conversationService.deleteConversation(conversationName);
-            currentConversation = null;
-            clearChatPanel();
-            conversationComboBox.setSelectedIndex(-1);
-            deleteConversationButton.setEnabled(false);
-            newConversationButton.setEnabled(false);
-            conversationComboBox.removeItem(conversationName);
-            inputArea.requestFocus();
-        }
-    }
+		// Confirm deletion with user
+		final int response = javax.swing.JOptionPane.showConfirmDialog(frame,
+			"Are you sure you want to permanently delete this conversation?\n\n" +
+				conversationName, "Delete Conversation",
+			javax.swing.JOptionPane.YES_NO_OPTION,
+			javax.swing.JOptionPane.WARNING_MESSAGE);
+
+		if (response == javax.swing.JOptionPane.YES_OPTION) {
+			conversationService.deleteConversation(conversationName);
+			currentConversation = null;
+			clearChatPanel();
+			conversationComboBox.setSelectedIndex(-1);
+			deleteConversationButton.setEnabled(false);
+			newConversationButton.setEnabled(false);
+			conversationComboBox.removeItem(conversationName);
+			inputArea.requestFocus();
+		}
+	}
 }
-

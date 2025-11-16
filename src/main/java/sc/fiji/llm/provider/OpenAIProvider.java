@@ -8,17 +8,18 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 package sc.fiji.llm.provider;
 
 import java.util.List;
@@ -55,10 +56,9 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	public List<String> getAvailableModels() {
 		// Use the models from langchain4j's OpenAiChatModelName enum
 		// Filter to show only the main/latest models to avoid overwhelming users
-		return Stream.of(OpenAiChatModelName.values())
-			.map(OpenAiChatModelName::toString)
-			.filter(this::isMainChatModel)
-			.collect(Collectors.toList());
+		return Stream.of(OpenAiChatModelName.values()).map(
+			OpenAiChatModelName::toString).filter(this::isMainChatModel).collect(
+				Collectors.toList());
 	}
 
 	@Override
@@ -67,8 +67,8 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	}
 
 	/**
-	 * Check if a model ID represents a main chat model we want to show.
-	 * Filters out preview models and dated versions, keeping only the main model names.
+	 * Check if a model ID represents a main chat model we want to show. Filters
+	 * out preview models and dated versions, keeping only the main model names.
 	 */
 	private boolean isMainChatModel(final String modelId) {
 		// Exclude preview models
@@ -92,20 +92,13 @@ public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return OpenAiChatModel.builder()
-			.apiKey(apiKey())
-			.modelName(modelName)
-			.maxRetries(DEFAULT_MAX_RETRIES)
-			.timeout(DEFAULT_TIMEOUT)
-			.build();
+		return OpenAiChatModel.builder().apiKey(apiKey()).modelName(modelName)
+			.maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
-		return OpenAiStreamingChatModel.builder()
-			.apiKey(apiKey())
-			.modelName(modelName)
-			.timeout(DEFAULT_TIMEOUT)
-			.build();
+		return OpenAiStreamingChatModel.builder().apiKey(apiKey()).modelName(
+			modelName).timeout(DEFAULT_TIMEOUT).build();
 	}
 }
