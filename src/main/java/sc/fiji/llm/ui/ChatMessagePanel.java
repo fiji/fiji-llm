@@ -35,7 +35,6 @@ import javax.swing.text.html.StyleSheet;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 
-import com.vladsch.flexmark.ast.FencedCodeBlock;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.emoji.EmojiExtension;
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
@@ -43,7 +42,6 @@ import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
-import com.vladsch.flexmark.parser.core.FencedCodeBlockParser;
 import com.vladsch.flexmark.util.data.MutableDataSet;
 
 import net.miginfocom.swing.MigLayout;
@@ -426,6 +424,15 @@ public class ChatMessagePanel extends JPanel {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Gets the raw text content of this message.
+	 *
+	 * @return the text content as a string
+	 */
+	public String getText() {
+		return rawMarkdown.toString();
 	}
 
 	/**

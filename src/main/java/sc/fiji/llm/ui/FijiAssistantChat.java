@@ -13,7 +13,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +25,7 @@ import java.util.Set;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -52,6 +56,8 @@ import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ContextItem;
 import sc.fiji.llm.chat.ContextItemService;
 import sc.fiji.llm.chat.ContextItemSupplier;
+import sc.fiji.llm.chat.Conversation;
+import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.provider.LLMProvider;
@@ -79,11 +85,11 @@ public class FijiAssistantChat {
     private final ContextItemService contextItemSupplierService;
     private final ThreadService threadService;
     private final AiToolService aiToolService;
-    private final String providerName;
+    private final ConversationService conversationService;
+    private final AssistantService assistantService;
 
     // -- Non-Contextual fields --
     private FijiAssistant assistant;
-    private ChatMemory chatMemory;
     private final JFrame frame;
     private final JPanel chatPanel;
     private final JScrollPane chatScrollPane;
@@ -95,41 +101,36 @@ public class FijiAssistantChat {
     private final java.util.Map<ContextItem, JButton> contextItemButtons;
     private final List<ContextItem> contextItems;
     private ChatMessagePanel currentStreamingPanel;
+    private JComboBox<String> conversationComboBox;
+    private JButton newConversationButton;
+    private JButton deleteConversationButton;
     private boolean stopRequested = false;
     private boolean isSendMode = true;
     private ImageIcon sendIcon;
     private ImageIcon stopIcon;
     private InteractiveGuide guide;
+    private LLMProvider llmProvider;
+    private final String modelName;
+    private Conversation currentConversation;
+    private final ChatRequestParameters requestParameters;
 
-    public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, ProviderService providerService, String providerName, String modelName) {
+    public FijiAssistantChat(final String title, CommandService commandService, PrefService prefService, PlatformService platformService, AiToolService aiToolService, ContextItemService contextItemService, ThreadService threadService, ChatbotService chatService, AssistantService assistantService, ProviderService providerService, ConversationService conversationService, String providerName, String modelName) {
         this.commandService = commandService;
         this.prefService = prefService;
         this.platformService = platformService;
         this.threadService = threadService;
         this.contextItemSupplierService = contextItemService;
         this.aiToolService = aiToolService;
-        this.providerName = providerName;
+        this.conversationService = conversationService;
+        this.assistantService = assistantService;
 
         this.contextItemButtons = new HashMap<>();
         this.contextItems = new ArrayList<>();
-        LLMProvider llmProvider = providerService.getProvider(providerName);
-
-        try {
-            chatMemory = llmProvider.createTokenChatMemory(modelName);
-        } catch (Exception e) {
-            // Fall back to a 20-message window
-            chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
-        }
-
-        // Populate initial system message
-        final String systemMessage = buildSystemMessage();
-        this.chatMemory.add(new SystemMessage(systemMessage));
+        this.llmProvider = providerService.getProvider(providerName);
+        this.modelName = modelName;
 
         // Create default request parameters
-        final ChatRequestParameters requestParameters = ChatRequestParameters.builder().frequencyPenalty(0.0).presencePenalty(0.0).temperature(0.1).build();
-
-        // Recreate the assistant with the chat memory for proper tool tracking
-        this.assistant = assistantService.createAssistant(FijiAssistant.class, providerName, modelName, chatMemory, requestParameters);
+        requestParameters = ChatRequestParameters.builder().frequencyPenalty(0.0).presencePenalty(0.0).temperature(0.1).build();
 
         // Create the frame
         frame = new JFrame("Fiji Chat - " + title);
@@ -137,8 +138,49 @@ public class FijiAssistantChat {
         frame.setLayout(new BorderLayout());
 
         // Top navigation bar with model selection
-        final JPanel topNavBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        final JPanel topNavBar = new JPanel(new BorderLayout());
 
+        // Conversation selector panel (added first so it appears on the left)
+        final JPanel conversationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 12));
+        conversationPanel.setOpaque(false);
+
+        // For difference in hgaps
+        final JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        spacer.setPreferredSize(new Dimension(2, 1));
+        conversationPanel.add(spacer);
+
+        conversationComboBox = new JComboBox<>();
+        int prefHeight = conversationComboBox.getPreferredSize().height;
+        conversationComboBox.setPreferredSize(new Dimension(280, prefHeight));
+
+        conversationComboBox.setToolTipText("Load a previous conversation");
+        conversationService.getConversationNames().stream().forEach(conversationComboBox::addItem);
+        conversationComboBox.setSelectedIndex(-1);
+        conversationComboBox.addActionListener(e -> onConversationSelected());
+        conversationPanel.add(conversationComboBox);
+
+        newConversationButton = new JButton("+");
+        newConversationButton.setPreferredSize(new Dimension(prefHeight, prefHeight));
+        newConversationButton.setFocusPainted(false);
+        newConversationButton.setToolTipText("Start a new conversation");
+        newConversationButton.setEnabled(false);
+        newConversationButton.addActionListener(e -> startNewConversation());
+        conversationPanel.add(newConversationButton);
+
+        deleteConversationButton = new JButton("-");
+        deleteConversationButton.setPreferredSize(new Dimension(prefHeight, prefHeight));
+        deleteConversationButton.setFocusPainted(false);
+        deleteConversationButton.setToolTipText("Delete the current conversation permanently");
+        deleteConversationButton.setEnabled(false);
+        deleteConversationButton.setForeground(java.awt.Color.RED);
+        deleteConversationButton.addActionListener(e -> deleteCurrentConversation());
+        conversationPanel.add(deleteConversationButton);
+
+        topNavBar.add(conversationPanel, BorderLayout.WEST);
+
+        final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        buttonPanel.setOpaque(false);
         // ImageSC Forum button
         final JButton forumButton;
         final URL forumIconUrl = getClass().getResource("/icons/imagesc-icon-32.png");
@@ -151,7 +193,7 @@ public class FijiAssistantChat {
         forumButton.setFocusPainted(false);
         forumButton.setToolTipText("Get help on the Image.sc forum");
         forumButton.addActionListener(e -> openForumInBrowser());
-        topNavBar.add(forumButton);
+        buttonPanel.add(forumButton);
 
         // Change API Keys button
         final JButton configureKeysButton;
@@ -165,7 +207,7 @@ public class FijiAssistantChat {
         }
         configureKeysButton.setFocusPainted(false);
         configureKeysButton.addActionListener(e -> configureKeys());
-        topNavBar.add(configureKeysButton);
+        buttonPanel.add(configureKeysButton);
 
         configureKeysButton.setEnabled(llmProvider.requiresApiKey());
 
@@ -181,7 +223,7 @@ public class FijiAssistantChat {
         }
         configureChatButton.setFocusPainted(false);
         configureChatButton.addActionListener(e -> configureChat());
-        topNavBar.add(configureChatButton);
+        buttonPanel.add(configureChatButton);
 
         // Launch guide button
         final JButton guideButton;
@@ -195,7 +237,9 @@ public class FijiAssistantChat {
         guideButton.setToolTipText("Explain chat componenets");
         guideButton.setFocusPainted(false);
         guideButton.addActionListener(e -> launchGuide());
-        topNavBar.add(guideButton);
+        buttonPanel.add(guideButton);
+
+        topNavBar.add(buttonPanel, BorderLayout.EAST);
 
         // Chat display area - MigLayout for proper resizing with messages at bottom
         chatPanel = new JPanel(new MigLayout(
@@ -410,6 +454,9 @@ public class FijiAssistantChat {
         guide.addElement(suppliersScrollPane, "Context Buttons", "Attach active item as chat context, or click the dropdown to choose from available items.");
         guide.addElement(contextTagsScrollPane, "Context Items", "Currently attached context items are shown here. Click on an item to remove it.");
         guide.addElement(clearAllButton, "Clear Context", "Remove all currently attached context items.");
+        guide.addElement(conversationComboBox, "Select Conversation", "Re-load a previous conversation.");
+        guide.addElement(newConversationButton, "New Conversation", "Start a new conversation with the current chat model.");
+        guide.addElement(deleteConversationButton, "Delete Conversation", "Permanently delete the current conversation.");
         guide.addElement(forumButton, "Forum Button", "Get help and support on the Image.sc forum.");
         guide.addElement(configureKeysButton, "API Key Button", "Configure API credentials for the active AI service.");
         guide.addElement(configureChatButton, "Configure Chat Button", "Select a different AI service or model.");
@@ -618,6 +665,8 @@ public class FijiAssistantChat {
             return;
         }
 
+        inputArea.setText(""); // Clear input immediately
+
         StringBuilder displayMessage = new StringBuilder(userMessage);
         StringBuilder userMessageWithContext = new StringBuilder(userMessage);
         List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
@@ -646,9 +695,11 @@ public class FijiAssistantChat {
         final int updateDelay = 200;
         threadService.run(() -> {
             while (!messageReady[0]) {
-                if (currentStreamingPanel != null) {
-                    SwingUtilities.invokeLater(() -> currentStreamingPanel.updateThinking()); 
-                }
+                SwingUtilities.invokeLater(() -> {
+                    if (currentStreamingPanel != null) {
+                        currentStreamingPanel.updateThinking();
+                    }
+                });
                 try {
                     Thread.sleep(updateDelay);
                 } catch (InterruptedException e) {
@@ -659,14 +710,21 @@ public class FijiAssistantChat {
 
         // Process in background thread (LLM calls happen OFF the EDT)
         threadService.run(() -> {
+            // If this is the first message in a new conversation, auto-name it
+            if (currentConversation == null) {
+                createNewConversation(userMessage);
+            }
+
             final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
                 // Add user message to chat memory (with context)
-                chatMemory.add(new UserMessage(userMessageWithContext.toString()));
+                final UserMessage userMsg = new UserMessage(userMessageWithContext.toString());
 
-                // Create ChatRequest from chat memory - it now includes history automatically
+                // Save user message to conversation
+                currentConversation.addMessage(displayMessage.toString(), userMsg);
+
                 final ChatRequest chatRequest = ChatRequest.builder()
-                    .messages(chatMemory.messages())
+                    .messages(userMsg)
                     .build();
 
                 // Use streaming API
@@ -687,7 +745,7 @@ public class FijiAssistantChat {
                             stopRequested = false;
                         }
                         if (currentStreamingPanel != null) {
-                            currentStreamingPanel.appendText(partialResponse.text());
+                            SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
                             // Scroll to bottom periodically (every 200ms) to avoid excessive updates
                             final long now = System.currentTimeMillis();
                             if (now - lastScrollTime[0] > updateDelay) {
@@ -700,9 +758,18 @@ public class FijiAssistantChat {
                         }
                     })
                     .onCompleteResponse(response -> {
-                        // Add complete response to chat memory
-                        // LangChain4j automatically adds ToolExecutionRequest/Result messages
-                        chatMemory.add(response.aiMessage());
+                        if (!messageReady[0]) {
+                            messageReady[0] = true;
+                            SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
+                        }
+                        // Save assistant response to conversation
+                        if (currentConversation != null && currentStreamingPanel != null) {
+                            currentConversation.addMessage(
+                                currentStreamingPanel.getText(),
+                                response.aiMessage()
+                            );
+                        }
+
                         currentStreamingPanel = null;
 
                         // Scroll to bottom one final time after streaming completes
@@ -911,12 +978,12 @@ public class FijiAssistantChat {
     private void configureKeys() {
         // Close this chat window
         frame.dispose();
-        prefService.remove(Manage_Keys.class, Manage_Keys.autoRunKey(providerName));
+        prefService.remove(Manage_Keys.class, Manage_Keys.autoRunKey(llmProvider.getName()));
         prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
 		Map<String, Object> params = new HashMap<>();
 		params.put("startChatbot", true);
-		params.put("provider", providerName);
+		params.put("provider", llmProvider.getName());
         // Re-invoke the Fiji_Chat command to show the selection dialog
         commandService.run(Manage_Keys.class, true, params);
     }
@@ -1102,4 +1169,190 @@ public class FijiAssistantChat {
 
         timer.start();
     }
+
+    /**
+     * Called when a conversation is selected from the combo box.
+     */
+    private void onConversationSelected() {
+        Object selected = conversationComboBox.getSelectedItem();
+        if (selected != null && !selected.toString().isEmpty()) {
+            String selectedName = selected.toString();
+            if (currentConversation == null || !(currentConversation.name().equals(selectedName))){
+                // Already active
+                loadConversation(selected.toString());
+            }
+            deleteConversationButton.setEnabled(true);
+            newConversationButton.setEnabled(true);
+        } else {
+            deleteConversationButton.setEnabled(false);
+            newConversationButton.setEnabled(false);
+        }
+    }
+
+    /**
+     * Start a new conversation.
+     * Clears chat history and waits for first message to auto-name the conversation.
+     * Does nothing if the current conversation is empty (no messages sent yet).
+     */
+    private void startNewConversation() {
+        // Don't allow starting a new conversation if the current one is empty (hasn't been named yet)
+        if (currentConversation == null) {
+            return;
+        }
+
+        currentConversation = null;
+        clearChatPanel();
+        conversationComboBox.setSelectedIndex(-1);
+        deleteConversationButton.setEnabled(false);
+        newConversationButton.setEnabled(false);
+        inputArea.requestFocus();
+    }
+
+    /**
+     * Load a previously saved conversation.
+     */
+    private void loadConversation(String conversationName) {
+        Conversation conversation = conversationService.getConversation(conversationName);
+        if (conversation == null) {
+            return;
+        }
+
+        currentConversation = conversation;
+        clearChatPanel();
+
+        // Reload chat memory with conversation messages
+        ChatMemory chatMemory = buildAssistant(conversation.systemMessage());
+
+        for (Conversation.Message msg : conversation.messages()) {
+            chatMemory.add(msg.memory());
+            addMessagePanelToChat(
+                msg.memory() instanceof dev.langchain4j.data.message.UserMessage
+                    ? ChatMessagePanel.MessageType.USER
+                    : ChatMessagePanel.MessageType.ASSISTANT,
+                msg.display()
+            );
+        }
+
+        inputArea.requestFocus();
+    }
+
+    private ChatMemory buildAssistant(SystemMessage systemMessage) {
+        ChatMemory chatMemory;
+        try {
+            chatMemory = llmProvider.createTokenChatMemory(modelName);
+        } catch (Exception e) {
+            // Fall back to a 20-message window
+            chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
+        }
+        chatMemory.add(systemMessage);
+
+        // Recreate the assistant with the chat memory for proper tool tracking
+        assistant = assistantService.createAssistant(FijiAssistant.class, llmProvider.getName(), modelName, chatMemory, requestParameters);
+        return chatMemory;
+    }
+
+    private FijiAssistant buildTemporaryAssistant() {
+        ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(2);
+        chatMemory.add(new SystemMessage("Your response text cannot contain: more than 5 words, special formatting, or punctuation."));
+        return assistantService.createAssistant(FijiAssistant.class, llmProvider.getName(), modelName, chatMemory, requestParameters);
+    }
+
+    /**
+     * Clear the chat panel (removes all message panels).
+     */
+    private void clearChatPanel() {
+        // Get the chat panel and remove all message components (keep glue panel)
+        synchronized (chatPanel.getTreeLock()) {
+            java.awt.Component[] components = chatPanel.getComponents();
+            for (java.awt.Component component : components) {
+                if (component instanceof ChatMessagePanel) {
+                    chatPanel.remove(component);
+                }
+            }
+        }
+        chatPanel.revalidate();
+        chatPanel.repaint();
+    }
+
+    /**
+     * Create a new the conversation based on the user's first message.
+     * Sends a separate request to the LLM to summarize the message.
+     */
+    private void createNewConversation(String userMessage) {
+        SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
+        buildAssistant(systemMessage);
+        String textToTruncate = userMessage;
+        String conversationName;
+        try {
+            // Create a simple request to summarize the user's message into a brief name
+            final String namingPrompt = "Respond with ONLY a 3-5 word summary of the following text: \"" + userMessage + "\"";
+            final ChatRequest nameRequest = ChatRequest.builder()
+                .messages(new dev.langchain4j.data.message.UserMessage(namingPrompt))
+                .build();
+
+            final dev.langchain4j.data.message.AiMessage response = buildTemporaryAssistant().chat(nameRequest);
+            textToTruncate = response.text();
+        } catch (Exception e) {
+            // No-op - user message is used as a fallback
+        }
+        // If naming fails, try using the first few words
+        textToTruncate = textToTruncate.trim();
+        String[] words = textToTruncate.split("\\s+");
+        if (words.length <= 5) {
+            conversationName = textToTruncate;
+        } else {
+            conversationName = String.join(" ", Arrays.copyOf(words, 5)) + "...";
+        }
+        // Truncate conversation name to 30 characters max
+        final int maxNameLength = 30;
+        if (conversationName.length() > maxNameLength) {
+            conversationName = conversationName.substring(0, maxNameLength - 1) + "...";
+        }
+
+        final String timestampedName = conversationName + new SimpleDateFormat(" [dd.MMM.yyyy]").format(new Date());
+        // Create the conversation with the auto-generated name
+        currentConversation = conversationService.createConversation(
+            timestampedName,
+            systemMessage
+        );
+
+        SwingUtilities.invokeLater(() -> {
+            conversationComboBox.insertItemAt(timestampedName, 0);
+            conversationComboBox.setSelectedItem(timestampedName);
+            deleteConversationButton.setEnabled(true);
+            newConversationButton.setEnabled(true);
+        });
+    }
+
+    /**
+     * Delete the currently selected conversation permanently.
+     */
+    private void deleteCurrentConversation() {
+        if (currentConversation == null) {
+            return;
+        }
+
+        final String conversationName = currentConversation.name();
+
+        // Confirm deletion with user
+        final int response = javax.swing.JOptionPane.showConfirmDialog(
+            frame,
+            "Are you sure you want to permanently delete this conversation?\n\n" + conversationName,
+            "Delete Conversation",
+            javax.swing.JOptionPane.YES_NO_OPTION,
+            javax.swing.JOptionPane.WARNING_MESSAGE
+        );
+
+        if (response == javax.swing.JOptionPane.YES_OPTION) {
+            conversationService.deleteConversation(conversationName);
+            currentConversation = null;
+            clearChatPanel();
+            conversationComboBox.setSelectedIndex(-1);
+            deleteConversationButton.setEnabled(false);
+            newConversationButton.setEnabled(false);
+            conversationComboBox.removeItem(conversationName);
+            inputArea.requestFocus();
+        }
+    }
 }
+

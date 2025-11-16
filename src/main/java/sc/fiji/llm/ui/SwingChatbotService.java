@@ -13,6 +13,7 @@ import org.scijava.thread.ThreadService;
 
 import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.chat.ContextItemService;
+import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
 
@@ -46,10 +47,13 @@ public class SwingChatbotService extends AbstractService implements ChatbotServi
     @Parameter
     private ProviderService providerService;
 
+    @Parameter
+    private ConversationService conversationService;
+
     @Override
     public void launchChat(String title, String providerName, String modelName) {
         SwingUtilities.invokeLater(() -> {
-            FijiAssistantChat chatWindow = new FijiAssistantChat(title, commandService, prefService, platformService, aiToolService, contextItemService, threadService, this, assistantService, providerService, providerName, modelName);
+            FijiAssistantChat chatWindow = new FijiAssistantChat(title, commandService, prefService, platformService, aiToolService, contextItemService, threadService, this, assistantService, providerService, conversationService, providerName, modelName);
             chatWindow.show();
         });
     }
