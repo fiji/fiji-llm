@@ -272,7 +272,6 @@ public class OllamaProvider implements LLMProvider {
 		catch (Exception e) {
 			// Ollama may not be installed and that's OK
 		}
-		logService.error("Unnable to connect to local ollama server");
 		return false;
 	}
 
