@@ -56,6 +56,7 @@ import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import io.github.ollama4j.Ollama;
@@ -94,6 +95,11 @@ public class OllamaProvider implements LLMProvider {
 	@Override
 	public String getDescription() {
 		return "Local Ollama models";
+	}
+
+	@Override
+	public ChatRequestParameters defaultChatRequestParameters() {
+		return ChatRequestParameters.builder().temperature(0.1).build();
 	}
 
 	@Override

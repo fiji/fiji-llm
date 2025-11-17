@@ -32,6 +32,7 @@ import org.scijava.plugin.SingletonPlugin;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 
 /**
  * Plugin interface for LLM providers. Each provider (OpenAI, Anthropic, Google,
@@ -49,6 +50,34 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 
 	public static final String VALIDATION_FAILED =
 		"sc.fiji.llm.provider.validation_failed";
+
+	/**
+	 * @return True if this model requires an API key (i.e. cloud-based models)
+	 */
+	default boolean requiresApiKey() {
+		return true;
+	}
+
+	/**
+	 * Hook for when a model requires additional actions. This is a transformative
+	 * action, allowing for descriptive identifiers attached to model names that
+	 * require validation. (e.g. when downloading a remote model)
+	 *
+	 * @param modelToValidate Name of the model for validation
+	 * @return The validated model name, or {@link #VALIDATION_FAILED} if
+	 *         validation wasunsuccessful.
+	 */
+	default String validateModel(String modelToValidate) {
+		return modelToValidate;
+	}
+
+	/**
+	 * @return The base {@link ChatRequestParameters} recommended for this provider
+	 */
+	default ChatRequestParameters defaultChatRequestParameters() {
+		return ChatRequestParameters.builder().frequencyPenalty(0.0)
+			.presencePenalty(0.0).temperature(0.1).build();
+	}
 
 	/**
 	 * Get the name of this provider.
@@ -79,13 +108,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	String getModelsDocumentationUrl();
 
 	/**
-	 * @return True if this model requires an API key (i.e. cloud-based models)
-	 */
-	default boolean requiresApiKey() {
-		return true;
-	}
-
-	/**
 	 * Get the URL where users can obtain an API key for this provider.
 	 *
 	 * @return URL to the API key page
@@ -97,19 +119,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * @return A {@link TokenWindowChatMemory} appropriate for the specified model
 	 */
 	TokenWindowChatMemory createTokenChatMemory(String modelName);
-
-	/**
-	 * Hook for when a model requires additional actions. This is a transformative
-	 * action, allowing for descriptive identifiers attached to model names that
-	 * require validation. (e.g. when downloading a remote model)
-	 *
-	 * @param modelToValidate Name of the model for validation
-	 * @return The validated model name, or {@link #VALIDATION_FAILED} if
-	 *         validation wasunsuccessful.
-	 */
-	default String validateModel(String modelToValidate) {
-		return modelToValidate;
-	}
 
 	/**
 	 * Create a chat language model with the specified API key and model name.

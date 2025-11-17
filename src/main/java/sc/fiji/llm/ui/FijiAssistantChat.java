@@ -164,8 +164,7 @@ public class FijiAssistantChat {
 		this.modelName = modelName;
 
 		// Create default request parameters
-		requestParameters = ChatRequestParameters.builder().frequencyPenalty(0.0)
-			.presencePenalty(0.0).temperature(0.1).build();
+		requestParameters = llmProvider.defaultChatRequestParameters();
 
 		// Create the frame
 		frame = new JFrame("Fiji Chat - " + title);
