@@ -1,6 +1,22 @@
 # Fiji Large Language Model (LLM) Integration
 
-Chat with AI assistants directly in Fiji to get help with image analysis, scripting, and general questions.
+Chat with AI assistants directly in Fiji to get help with image analysis, scripting, macros, and general questions.
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [User Guide](#user-guide)
+  - [Basic Concepts](#basic-concepts)
+  - [Supported AI Providers](#supported-ai-providers)
+  - [General Work Flow](#general-work-flow)
+  - [Using Tools](#using-tools)
+  - [Tips for Better Results](#tips-for-better-results)
+  - [Getting Help](#getting-help)
+- [Developers: Adding Functionality](#developers-adding-functionality)
+  - [LLMProvider](#llmprovider)
+  - [ContextItemSupplier](#contextitemsupplier)
+  - [AiToolPlugin](#aitoolplugin)
+  - [ChatbotService](#chatbotservice)
 
 ## Quick Start
 
