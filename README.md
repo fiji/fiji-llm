@@ -4,12 +4,12 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 
 ## Quick Start
 
-1. **Install Fiji**: Download the "Latest" version from [imagej.net/software/fiji](https://imagej.net/software/fiji/)
+1. **Install Fiji**: Download the `Latest` version from [imagej.net/software/fiji](https://imagej.net/software/fiji/)
 
 2. **Add the Fiji-chat Update Site**:
 
    - See [instructions on adding update sites](https://imagej.net/update-sites/following#adding-unlisted-sites).
-   - Add the Fiji-chat site: `https://sites.imagej.net/Fiji-chat/`
+   - Add the (*currently unlisted*) `Fiji-chat` site: `https://sites.imagej.net/Fiji-chat/`
    - Restart Fiji afterwards
 
 3. **Start chatting**: Use `Help > Assistants > Fiji Chat...` (shortcut: `ctrl + 0`)
