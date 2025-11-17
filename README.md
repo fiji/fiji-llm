@@ -32,11 +32,23 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 
 ### Supported AI Providers
 
-#### OpenAI (ChatGPT)
+#### Google (Gemini)
+- **Note:** Gemini is currently the only supported provider that provides API Keys at no charge.
+- Using a "free" API Key is subject to Google's rate limits and availability. It is suitable for testing and assessment, but not regular use.
 - **Getting an API Key**:
-  1. Create an account at [platform.openai.com](https://platform.openai.com)
-  2. Go to **Account settings > API keys** (or [click here](https://platform.openai.com/api-keys))
-  3. Click **Create new secret key** and copy it
+  1. Visit [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+  2. Click **Create API key** and copy it
+
+#### Ollama (Local Models Only)
+- **Note:** Ollama is a general gateway to pretrained models. Using local models bypasses the need for API keys or token considerations. *However*, running a local LLM can require significant resources (RAM, GPU, hard drive, power).
+- Models typically come in varieants (`7b`, `20b`, etc...), indicating the number of model parameters (in billions). More parameters means a better ability to conceptualize solutions, but also more resource use.-
+- Fiji-chat is intended for use with models that support [Tool Use](https://ollama.com/search?c=tools).
+- **Installation**:
+  1. Download and install Ollama from [ollama.ai](https://ollama.com/download)
+  2. (Optionally) Use the ollama UI or command line tool to download a model of interest.
+  3. When you can start a new chat you can choose from compatible models, which will be downloaded as needed.
+- **Recommended model(s)**:
+  * `gpt-oss:20b`
 
 #### Anthropic (Claude)
 - **Getting an API Key**:
@@ -44,19 +56,11 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
   2. Go to **Account settings > API keys** (or [click here](https://console.anthropic.com/settings/keys))
   3. Click **Create Key** and copy it
 
-#### Google (Gemini)
+#### OpenAI (ChatGPT)
 - **Getting an API Key**:
-  1. Visit [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-  2. Click **Create API key** and copy it
-
-#### Ollama (Local Models Only)
-- **Note:** Fiji-chat should only be used with models that support Tool Use. Local models can require significant resources (RAM, GPU and hard drive space).
-- **Installation**:
-  1. Download and install Ollama from [ollama.ai](https://ollama.com/download)
-  2. (Optionally) Use the ollama UI or command line tool to download models.
-  3. Compatible models will be displayed automatically when starting a chat, and will be downloaded as needed.
-- **Recommended model(s)**:
-  * `gpt-oss:20b`
+  1. Create an account at [platform.openai.com](https://platform.openai.com)
+  2. Go to **Account settings > API keys** (or [click here](https://platform.openai.com/api-keys))
+  3. Click **Create new secret key** and copy it
 
 ### General Work Flow
 
