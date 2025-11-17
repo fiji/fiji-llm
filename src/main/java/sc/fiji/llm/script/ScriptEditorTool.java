@@ -22,9 +22,8 @@
 
 package sc.fiji.llm.script;
 
-import java.io.File;
-
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
 
 import org.scijava.command.CommandService;
 import org.scijava.plugin.Parameter;
@@ -347,12 +346,9 @@ public class ScriptEditorTool implements AiToolPlugin {
 				return;
 			}
 
-			// Update the filename
-			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-			editorPane.setFileName(new File(name));
-
-			// Switch to the tab
 			textEditor.switchTo(scriptID.tabIndex);
+			textEditor.setEditorPaneFileName(name);
+			textEditor.stateChanged(new ChangeEvent(tab));
 
 			result[0] = "Successfully renamed script at " + scriptID + " to " + name;
 		}
