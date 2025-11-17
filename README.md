@@ -14,7 +14,7 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 
 3. **Start chatting**: Use `Help > Assistants > Fiji Chat...` (shortcut: `ctrl + 0`)
 
-## Users Guide
+## User Guide
 
 ### Basic Concepts
 
@@ -112,6 +112,6 @@ Provide a mapping from the Fiji application environment to [`ContextItems`](src/
 
 These plugins contain methods annotated with `langchain4j`'s [`@Tool`](https://github.com/langchain4j/langchain4j/blob/main/langchain4j-core/src/main/java/dev/langchain4j/agent/tool/Tool.java) annotation. New tools enable code to be run by the AI assistants.
 
-### Chatbot Service
+### [ChatbotService](src/main/java/sc/fiji/llm/ui/ChatbotService.java)
 
 For developing chatbots in particular UI environments.
