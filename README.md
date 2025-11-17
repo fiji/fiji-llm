@@ -22,7 +22,7 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 
 **Models** - Specific language models offered by a provider (e.g., GPT-4o, Claude 3.5 Sonnet). Different models have different capabilities and costs.
 
-**Tokens** - The unit of exchange with a LLM: messages are sent and received as a series of "tokens".
+**Tokens** - The unit of operation within an LLM: messages to and from the chatbot are encoded as a series of "tokens". Longer messages require more tokens. Importantly, any *actions taken* by the LLM in response to your message will use tokens. (such as editing a script or running a command)
 
 **API Keys** - Credentials that authenticate you with an AI service provider. Often require per-token pay-as-you-go or a subscription plan.
 
