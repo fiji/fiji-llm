@@ -94,23 +94,23 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 
 A help button `( ? )` in the chat window provides in-app explanations of the UI and how to use each feature.
 
-For questions, bug reports, and feature requests, visit the [Image.sc Forum LLM tag](https://forum.image.sc/tag/llm). The Fiji community is active there and happy to help!
+For questions, bug reports, and feature requests, visit the [Image.sc Forum](https://forum.image.sc/tag/llm). The Fiji community is active there and happy to help!
 
 ## Developers: Adding Functionality
 
-Fiji LLM is built on SciJava's plugin architecture and has several key points of extension:
+This project brings provides [langchain4j](https://docs.langchain4j.dev/) integration to the SciJava's plugin framework. There are several key points of extension:
 
-### LLMProvider
+### [LLMProvider](src/main/java/sc/fiji/llm/provider/LLMProvider.java)
 
-These plugins determine which AI Services are available in chat.
+Determine which AI Services are available in chat.
 
-### ContextItemSupplier
+### [ContextItemSupplier](src/main/java/sc/fiji/llm/chat/ContextItemSupplier.java)
 
-`ContextItems` allow representation of the application environment to the LLM. Supplier plugins serve as a map from Fiji to a new context item.
+Provide a mapping from the Fiji application environment to [`ContextItems`](src/main/java/sc/fiji/llm/chat/ContextItem.java), facilitating deeper understanding by the LLM.
 
-### AiToolPlugin
+### [AiToolPlugin](src/main/java/sc/fiji/llm/tools/AiToolPlugin.java)
 
-These classes contain methods annotated with `langchain4j`'s `@Tool` annotation. New tools enable new functionality by the assistants.
+These plugins contain methods annotated with `langchain4j`'s [`@Tool`](https://github.com/langchain4j/langchain4j/blob/main/langchain4j-core/src/main/java/dev/langchain4j/agent/tool/Tool.java) annotation. New tools enable code to be run by the AI assistants.
 
 ### Chatbot Service
 
