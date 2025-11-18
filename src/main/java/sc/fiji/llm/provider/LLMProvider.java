@@ -116,7 +116,8 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 
 	/**
 	 * @param apiKey the API key for authentication
-	 * @return A {@link TokenWindowChatMemory} appropriate for the specified model
+	 * @return A {@link TokenWindowChatMemory} appropriate for the specified
+	 *         model, or {@code null} if not supported.
 	 */
 	TokenWindowChatMemory createTokenChatMemory(String modelName);
 
