@@ -35,7 +35,6 @@ import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicChatModelName;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
-import dev.langchain4j.model.anthropic.AnthropicTokenCountEstimator;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
@@ -114,9 +113,7 @@ public class AnthropicProvider extends AbstractLLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-		return TokenWindowChatMemory.withMaxTokens(8000,
-			AnthropicTokenCountEstimator.builder().apiKey(apiKey()).modelName(
-				getModel(modelName)).build());
+		return null;
 	}
 
 	@Override
