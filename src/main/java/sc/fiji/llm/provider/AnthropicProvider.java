@@ -38,6 +38,7 @@ import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.anthropic.AnthropicTokenCountEstimator;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 
 /**
  * LLM provider plugin for Anthropic (Claude).
@@ -56,6 +57,11 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	@Override
 	public String getDescription() {
 		return "Claude models by Anthropic";
+	}
+
+	@Override
+	public ChatRequestParameters defaultChatRequestParameters() {
+		return ChatRequestParameters.builder().temperature(0.1).build();
 	}
 
 	@Override
