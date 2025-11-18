@@ -1373,7 +1373,7 @@ public class FijiAssistantChat {
 		try {
 			chatMemory = llmProvider.createTokenChatMemory(modelName);
 		}
-		catch (Exception e) { }
+		catch (Exception e) {}
 		if (chatMemory == null) {
 			// Fall back to a 20-message window
 			chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
