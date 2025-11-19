@@ -296,11 +296,8 @@ public class FijiAssistantChat {
 		topNavBar.add(buttonPanel, BorderLayout.EAST);
 
 		// Chat display area - MigLayout for proper resizing with messages at bottom
-		chatPanel = new JPanel(new MigLayout("fillx, wrap, insets 0", // Fill
-																																	// horizontally,
-																																	// wrap each
-																																	// component
-																																	// to new row
+		// Fill horizontally, wrap each component to new row
+		chatPanel = new JPanel(new MigLayout("fillx, wrap, insets 0",
 			"[grow,fill]", // Column grows and fills
 			"[grow][][]" // First row grows (pushes content down), then message rows
 		));
@@ -309,8 +306,8 @@ public class FijiAssistantChat {
 		// Add a glue panel that will push messages to bottom
 		final JPanel glue = new JPanel();
 		glue.setOpaque(false);
-		chatPanel.add(glue, "pushy, growy"); // This row grows vertically, pushing
-																					// messages down
+		// This row grows vertically, pushing messages down
+		chatPanel.add(glue, "pushy, growy");
 
 		// Add a bottom spacer for 8px padding at the end of messages
 		final JPanel bottomSpacer = new JPanel();
