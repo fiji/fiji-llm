@@ -147,7 +147,6 @@ public class FijiAssistantChat {
 	private final JButton clearAllButton;
 	private final java.util.Map<ContextItem, JButton> contextItemButtons;
 	private final List<ContextItem> contextItems;
-	private ChatMessagePanel currentStreamingPanel;
 	private JComboBox<String> conversationComboBox;
 	private JButton newConversationButton;
 	private JButton deleteConversationButton;
@@ -790,7 +789,7 @@ public class FijiAssistantChat {
         clearAllContextButtons();
 
         // Add empty assistant message panel for streaming
-        currentStreamingPanel = createEmptyAssistantMessagePanel();
+        final ChatMessagePanel currentStreamingPanel = createEmptyAssistantMessagePanel();
 
         // Switch to stop mode
         setStopMode();
@@ -799,9 +798,7 @@ public class FijiAssistantChat {
         threadService.run(() -> {
             while (!messageReady[0]) {
                 SwingUtilities.invokeLater(() -> {
-                    if (currentStreamingPanel != null) {
-                        currentStreamingPanel.updateThinking();
-                    }
+					currentStreamingPanel.updateThinking();
                 });
                 try {
                     Thread.sleep(updateDelay);
@@ -848,18 +845,16 @@ public class FijiAssistantChat {
                             context.streamingHandle().cancel();
                             stopRequested = false;
                         }
-                        if (currentStreamingPanel != null) {
-                            SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
-                            // Scroll to bottom periodically (every 200ms) to avoid excessive updates
-                            final long now = System.currentTimeMillis();
-                            if (now - lastScrollTime[0] > updateDelay) {
-                                lastScrollTime[0] = now;
-                                SwingUtilities.invokeLater(() -> {
-                                    final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-                                    vertical.setValue(vertical.getMaximum());
-                                });
-                            }
-                        }
+						SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
+						// Scroll to bottom periodically (every 200ms) to avoid excessive updates
+						final long now = System.currentTimeMillis();
+						if (now - lastScrollTime[0] > updateDelay) {
+							lastScrollTime[0] = now;
+							SwingUtilities.invokeLater(() -> {
+								final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+								vertical.setValue(vertical.getMaximum());
+							});
+						}
                     })
                     .onCompleteResponse(response -> {
                         if (!messageReady[0]) {
@@ -867,14 +862,12 @@ public class FijiAssistantChat {
                             SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
                         }
                         // Save assistant response to conversation
-                        if (currentConversation != null && currentStreamingPanel != null) {
+                        if (currentConversation != null) {
                             currentConversation.addMessage(
                                 currentStreamingPanel.getText(),
                                 response.aiMessage()
                             );
                         }
-
-                        currentStreamingPanel = null;
 
                         // Scroll to bottom one final time after streaming completes
                         SwingUtilities.invokeLater(() -> {
@@ -884,8 +877,6 @@ public class FijiAssistantChat {
                         });
                     })
                     .onError(error -> {
-                        currentStreamingPanel = null;
-
                         // Handle errors
                         if (error instanceof RateLimitException) {
                             appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
@@ -905,8 +896,6 @@ public class FijiAssistantChat {
                     })
                     .start();
             } catch (Exception e) {
-                currentStreamingPanel = null;
-
                 // Handle immediate errors (before streaming starts)
                 final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
                 if (msg.length() > 300) {
