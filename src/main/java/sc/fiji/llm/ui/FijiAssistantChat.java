@@ -60,8 +60,10 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import org.scijava.Context;
 import org.scijava.command.CommandService;
 import org.scijava.platform.PlatformService;
+import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
@@ -107,15 +109,32 @@ public class FijiAssistantChat {
 			"You are concise, humble, validating, patient, and understanding. Expect to make mistakes: troubleshoot and iterate.";
 
 	// -- Contextual fields --
-	private final CommandService commandService;
-	private final PrefService prefService;
-	private final PlatformService platformService;
-	private final ContextItemService contextItemSupplierService;
-	private final ThreadService threadService;
-	private final AiToolService aiToolService;
-	private final ConversationService conversationService;
-	private final AssistantService assistantService;
+	@Parameter
+	private CommandService commandService;
 
+	@Parameter
+	private PrefService prefService;
+
+	@Parameter
+	private PlatformService platformService;
+
+	@Parameter
+	private AiToolService aiToolService;
+
+	@Parameter
+	private ContextItemService contextItemService;
+
+	@Parameter
+	private ThreadService threadService;
+
+	@Parameter
+	private AssistantService assistantService;
+
+	@Parameter
+	private ProviderService providerService;
+
+	@Parameter
+	private ConversationService conversationService;
 	// -- Non-Contextual fields --
 	private FijiAssistant assistant;
 	private final JFrame frame;
@@ -142,22 +161,9 @@ public class FijiAssistantChat {
 	private Conversation currentConversation;
 	private final ChatRequestParameters requestParameters;
 
-	public FijiAssistantChat(final String title, CommandService commandService,
-		PrefService prefService, PlatformService platformService,
-		AiToolService aiToolService, ContextItemService contextItemService,
-		ThreadService threadService, ChatbotService chatService,
-		AssistantService assistantService, ProviderService providerService,
-		ConversationService conversationService, String providerName,
-		String modelName)
+	public FijiAssistantChat(Context c, final String title, String providerName, String modelName)
 	{
-		this.commandService = commandService;
-		this.prefService = prefService;
-		this.platformService = platformService;
-		this.threadService = threadService;
-		this.contextItemSupplierService = contextItemService;
-		this.aiToolService = aiToolService;
-		this.conversationService = conversationService;
-		this.assistantService = assistantService;
+		c.inject(this);
 
 		this.contextItemButtons = new HashMap<>();
 		this.contextItems = new ArrayList<>();
@@ -601,8 +607,7 @@ public class FijiAssistantChat {
 		container.setOpaque(false);
 
 		try {
-			final List<ContextItemSupplier> suppliers = contextItemSupplierService
-				.getInstances();
+			final List<ContextItemSupplier> suppliers = contextItemService.getInstances();
 
 			if (suppliers == null || suppliers.isEmpty()) {
 				// No suppliers available - return empty scrollpane
