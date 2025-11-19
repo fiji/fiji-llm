@@ -22,7 +22,13 @@
 
 package sc.fiji.llm.tools;
 
+import java.util.List;
+import java.util.Map;
+
 import org.scijava.plugin.SingletonService;
+
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.ToolExecutor;
 
 /**
  * SciJava service for managing AI tools. This service is used to discover and
@@ -38,6 +44,21 @@ public interface AiToolService extends SingletonService<AiToolPlugin> {
 	 *         in incorrect API usage by some models.
 	 */
 	default String toolEnvironmentMessage() {
-		return "IMPORTANT: All tools are implemented in Java. Positional ordering MUST be respected.";
+		return "IMPORTANT: All tools are implemented in Java. Argument ordering MUST be respected.";
 	}
+
+	/**
+	 * This method allows for global definition of tools, e.g. when building an {@code AiService}
+	 *
+	 * @return The global map of available tools and their executors
+	 */
+	Map<ToolSpecification, ToolExecutor> getToolsWithExecutors();
+
+	/**
+	 * This method allows filtering of available tools in a particular {@code ChatRequest}
+	 * 
+	 * @param toolContext The desired {@link ToolContext}
+	 * @return All {@link ToolSpecifications} compatible with the given context
+	 */
+	List<ToolSpecification> getToolsForContext(ToolContext toolContext);
 }

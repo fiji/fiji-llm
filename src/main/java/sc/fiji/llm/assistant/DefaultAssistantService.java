@@ -34,7 +34,6 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolErrorContext;
 import dev.langchain4j.service.tool.ToolErrorHandlerResult;
-import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
@@ -51,13 +50,10 @@ public class DefaultAssistantService extends AbstractService implements
 	private ProviderService providerService;
 
 	@Parameter
-	private APIKeyService apiKeyService;
-
-	@Parameter
-	private AiToolService toolService;
-
-	@Parameter
 	private LogService logService;
+
+	@Parameter
+	private AiToolService aiToolService;
 
 	@Override
 	public <T> T createAssistant(final Class<T> assistantInterface,
@@ -72,10 +68,10 @@ public class DefaultAssistantService extends AbstractService implements
 
 		final var builder = AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(modelName))
+			.tools(aiToolService.getToolsWithExecutors())
 			.toolExecutionErrorHandler(this::handleExecutionError)
 			.toolArgumentsErrorHandler(this::handleArgumentError).chatModel(provider
-				.createChatModel(modelName)).tools(toolService.getInstances()
-					.toArray());
+				.createChatModel(modelName));
 
 		// Apply request parameters at AiServices level where they'll be used
 		if (defaultChatParameters != null) {

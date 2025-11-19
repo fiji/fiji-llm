@@ -32,17 +32,28 @@ import org.scijava.plugin.Plugin;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolContext;
 
 /**
  * AI tool that provides macro recording capabilities for the LLM. Allows the
  * assistant to open the macro recorder and capture user actions.
  */
 @Plugin(type = AiToolPlugin.class)
-public class ImageJMacroTool implements AiToolPlugin {
+public class ImageJMacroTool extends AbstractAiToolPlugin {
 
 	@Parameter
 	private LegacyService legacyService;
+
+	public ImageJMacroTool() {
+		super(ImageJMacroTool.class);
+	}
+	
+	@Override
+	public ToolContext getToolContext() {
+		return ToolContext.MACRO;
+	}
 
 	@Override
 	public String getName() {

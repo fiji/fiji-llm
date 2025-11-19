@@ -86,6 +86,7 @@ import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
+import sc.fiji.llm.tools.ToolContext;
 
 /**
  * Swing-based chat window for chatting with LLMs in Fiji.
@@ -825,6 +826,7 @@ public class FijiAssistantChat {
 
                 final ChatRequest chatRequest = ChatRequest.builder()
                     .messages(userMsg)
+					.toolSpecifications(aiToolService.getToolsForContext(ToolContext.ANY))
                     .build();
 
                 // Use streaming API

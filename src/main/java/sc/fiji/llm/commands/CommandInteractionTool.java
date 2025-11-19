@@ -47,13 +47,15 @@ import org.scijava.search.module.ModuleSearcher;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolContext;
 
 /**
  * AI tool for LLM agentic discovery and execution of available commands.
  */
 @Plugin(type = AiToolPlugin.class)
-public class CommandInteractionTool implements AiToolPlugin {
+public class CommandInteractionTool extends AbstractAiToolPlugin {
 
 	private static final int MAX_RESULTS = 10;
 
@@ -65,6 +67,15 @@ public class CommandInteractionTool implements AiToolPlugin {
 
 	@Parameter
 	private PluginService pluginService;
+
+	public CommandInteractionTool() {
+		super(CommandInteractionTool.class);
+	}
+	
+	@Override
+	public ToolContext getToolContext() {
+		return ToolContext.MACRO;
+	}
 
 	@Override
 	public String getName() {

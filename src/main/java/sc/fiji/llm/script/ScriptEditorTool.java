@@ -35,7 +35,9 @@ import org.scijava.ui.swing.script.TextEditorTab;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolContext;
 import sc.fiji.llm.ui.TextEditorUtils;
 
 /**
@@ -43,7 +45,7 @@ import sc.fiji.llm.ui.TextEditorUtils;
  * capabilities to open the editor and create/update scripts.
  */
 @Plugin(type = AiToolPlugin.class)
-public class ScriptEditorTool implements AiToolPlugin {
+public class ScriptEditorTool extends AbstractAiToolPlugin {
 
 	@Parameter
 	private CommandService commandService;
@@ -51,6 +53,15 @@ public class ScriptEditorTool implements AiToolPlugin {
 	@Override
 	public String getName() {
 		return "Script Editor Tools";
+	}
+
+	public ScriptEditorTool() {
+		super(ScriptEditorTool.class);
+	}
+
+	@Override
+	public ToolContext getToolContext() {
+		return ToolContext.SCRIPT;
 	}
 
 	@Override

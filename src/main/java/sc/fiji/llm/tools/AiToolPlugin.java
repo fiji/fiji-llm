@@ -22,7 +22,12 @@
 
 package sc.fiji.llm.tools;
 
+import java.util.Map;
+
 import org.scijava.plugin.SingletonPlugin;
+
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.ToolExecutor;
 
 /**
  * Plugin interface for AI tools that can be used by LLM assistants.
@@ -46,4 +51,16 @@ public interface AiToolPlugin extends SingletonPlugin {
 	 * @return a description of how this tool should be used by an LLM
 	 */
 	String getUsage();
+
+	/**
+	 * @return The tools provided by this plugin with their executors
+	 */
+	Map<ToolSpecification, ToolExecutor> getTools();
+
+	/**
+	 * @return the {@link ToolContext} where the tools provided by this plugin should be available.
+	 */
+	default ToolContext getToolContext() {
+		return ToolContext.ANY;
+	}
 }
