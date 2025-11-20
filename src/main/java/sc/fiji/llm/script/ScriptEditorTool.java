@@ -22,6 +22,8 @@
 
 package sc.fiji.llm.script;
 
+import java.io.File;
+
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 
@@ -358,7 +360,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			}
 
 			textEditor.switchTo(scriptID.tabIndex);
-			textEditor.setEditorPaneFileName(name);
+			textEditor.setEditorPaneFileName(new File(name));
 			textEditor.stateChanged(new ChangeEvent(tab));
 
 			result[0] = "Successfully renamed script at " + scriptID + " to " + name;
