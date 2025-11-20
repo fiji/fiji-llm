@@ -215,11 +215,10 @@
             <version>${flexmark.version}</version>
         </dependency>
 
-	<!-- GSON for JSON -->
+        <!-- GSON for JSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
         </dependency>
 
         <!-- Test dependencies -->

@@ -27,6 +27,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import sc.fiji.llm.chat.AbstractContextItem;
 
 /**
@@ -100,27 +104,26 @@ public class ImageMetaContextItem extends AbstractContextItem {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder();
-		sb.append("Metadata for image: ").append(imageName).append("\n");
+		final JsonObject obj = new JsonObject();
+		obj.addProperty("type", getType());
+		obj.addProperty("name", imageName);
 
 		if (!dimensions.isEmpty()) {
-			sb.append("Dimensions: ");
-			for (int i = 0; i < dimensions.size(); i++) {
-				if (i > 0) {
-					sb.append(" × ");
-				}
-				final Dimension dim = dimensions.get(i);
-				sb.append(dim.getLength()).append(" (").append(dim.getType()).append(
-					")");
+			final JsonArray dimensionsArray = new JsonArray();
+			for (final Dimension dim : dimensions) {
+				final JsonObject dimObj = new JsonObject();
+				dimObj.addProperty("type", dim.getType());
+				dimObj.addProperty("length", dim.getLength());
+				dimensionsArray.add(dimObj);
 			}
-			sb.append("\n");
+			obj.add("dimensions", dimensionsArray);
 		}
 
-		if (pixelType != null && !pixelType.isEmpty()) {
-			sb.append("Pixel Type: ").append(pixelType).append("\n");
+		if (!pixelType.isEmpty()) {
+			obj.addProperty("pixelType", pixelType);
 		}
 
-		return sb.toString();
+		return new Gson().toJson(obj);
 	}
 
 	/**

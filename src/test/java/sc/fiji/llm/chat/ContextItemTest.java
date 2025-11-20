@@ -22,14 +22,15 @@
 
 package sc.fiji.llm.chat;
 
+import java.util.Collections;
+import java.util.Objects;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Objects;
 import sc.fiji.llm.script.ScriptContextItem;
 
 /**
@@ -152,7 +153,7 @@ public class ContextItemTest {
 		assertNotNull(merged);
 		String mergedStr = merged.toString();
 		// Should only have one range entry: 1-4
-		assertTrue(mergedStr.contains("\"selectedLines\": [\"1-4\"]"));
+		assertTrue(mergedStr.contains("\"selectedLines\":[\"1-4\"]"));
 	}
 
 	@Test
@@ -171,7 +172,7 @@ public class ContextItemTest {
 		assertNotNull(merged);
 		String mergedStr = merged.toString();
 		// Should only have one range entry: 1-4
-		assertTrue(mergedStr.contains("\"selectedLines\": [\"1-4\"]"));
+		assertTrue(mergedStr.contains("\"selectedLines\":[\"1-4\"]"));
 	}
 
 	/**

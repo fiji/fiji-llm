@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import sc.fiji.llm.chat.AbstractContextItem;
 import sc.fiji.llm.chat.ContextItem;
 
@@ -138,23 +142,26 @@ public class ScriptContextItem extends AbstractContextItem {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder();
-		sb.append("{\n");
-		sb.append("  \"type\": \"Script\",\n");
-		sb.append("  \"name\": \"").append(escapeJson(scriptName)).append("\",\n");
-		sb.append("  \"id\": \"").append(id).append("\",\n");
+		final JsonObject obj = new JsonObject();
+		obj.addProperty("type", getType());
+		obj.addProperty("name", scriptName);
+		obj.addProperty("id", id.toString());
+
 		if (hasSelection()) {
-			sb.append("  \"selectedLines\": ").append(formatRangesAsJson(
-				selectedRanges)).append(",\n");
+			final JsonArray rangesArray = new JsonArray();
+			for (final LineRange range : selectedRanges) {
+				rangesArray.add(range.getStart() + "-" + range.getEnd());
+			}
+			obj.add("selectedLines", rangesArray);
 		}
-		sb.append("  \"content\": \"").append(escapeJson(scriptBody)).append("\"");
+
+		obj.addProperty("content", scriptBody);
+
 		if (!errorOutput.isEmpty()) {
-			sb.append(",\n");
-			sb.append("  \"errors\": \"").append(escapeJson(errorOutput)).append(
-				"\"");
+			obj.addProperty("errors", errorOutput);
 		}
-		sb.append("\n}\n");
-		return sb.toString();
+
+		return new Gson().toJson(obj);
 	}
 
 	@Override
@@ -200,29 +207,8 @@ public class ScriptContextItem extends AbstractContextItem {
 	}
 
 	/**
-	 * Escapes special characters for JSON strings.
+	 * Formats a list of line ranges as a string representation.
 	 */
-	private static String escapeJson(final String str) {
-		if (str == null) {
-			return "";
-		}
-		return str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
-			.replace("\r", "\\r").replace("\t", "\\t");
-	}
-
-	/**
-	 * Formats a list of line ranges as JSON array with range notation.
-	 */
-	private static String formatRangesAsJson(
-		final java.util.List<LineRange> ranges)
-	{
-		final StringJoiner joiner = new StringJoiner(", ", "[", "]");
-		for (final LineRange r : ranges) {
-			joiner.add("\"" + r.getStart() + "-" + r.getEnd() + "\"");
-		}
-		return joiner.toString();
-	}
-
 	private static String formatRangesAsString(
 		final java.util.List<LineRange> ranges)
 	{

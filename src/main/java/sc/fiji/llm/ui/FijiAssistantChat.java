@@ -67,7 +67,12 @@ import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.memory.ChatMemory;
@@ -779,16 +784,18 @@ public class FijiAssistantChat {
         List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
 
         // Add context item notes to the user message
-        // Add robust context item description to LLM message
+        // Add robust context item description to LLM message as JSON
+        Gson gson = new Gson();
         if (!mergedContextItems.isEmpty()) {
+            final JsonArray contextArray = new JsonArray();
             displayMessage.append("\n").append("```").append("\n");
-            userMessageWithContext.append("\n\n===Start of Context Items===\n");
+
             for (final ContextItem item : mergedContextItems) {
                 displayMessage.append(item.getLabel()).append("\n");
-                userMessageWithContext.append(item);
+                contextArray.add(gson.fromJson(item.toString(), JsonObject.class));
             }
             displayMessage.append("```");
-            userMessageWithContext.append("===End of Context Items===\n");
+            userMessageWithContext.append("\n\n").append(gson.toJson(contextArray));
         }
 
         // Add user message panel
@@ -824,8 +831,20 @@ public class FijiAssistantChat {
 
             final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
-                // Add user message to chat memory (with context)
-                final UserMessage userMsg = new UserMessage(userMessageWithContext.toString());
+                // Build user message with context items as attributes
+                final UserMessage.Builder msgBuilder = UserMessage.builder()
+                    .contents(List.of(new TextContent(userMessageWithContext.toString())));
+
+                // Attach context items as message attributes (not sent to model, but stored in memory)
+                if (!mergedContextItems.isEmpty()) {
+                    final JsonArray contextArray = new JsonArray();
+                    for (final ContextItem item : mergedContextItems) {
+                        contextArray.add(gson.fromJson(item.toString(), JsonObject.class));
+                    }
+                    msgBuilder.attributes(Map.of("contextItems", contextArray.toString()));
+                }
+
+                final UserMessage userMsg = msgBuilder.build();
 
                 // Save user message to conversation
                 currentConversation.addMessage(displayMessage.toString(), userMsg);
@@ -1252,6 +1271,9 @@ public class FijiAssistantChat {
 	 */
 	private String buildSystemMessage() {
 		final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
+
+		sb.append("\n\n## Context Items\n\n");
+		sb.append("Context items (scripts, images, runtime environment information, etc) may appear as JSON in user messages.");
 
 		sb.append("\n\n## Tool Usage\n\n");
 		sb.append(aiToolService.toolEnvironmentMessage());
