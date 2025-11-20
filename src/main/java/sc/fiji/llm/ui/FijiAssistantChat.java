@@ -135,6 +135,7 @@ public class FijiAssistantChat {
 
 	@Parameter
 	private ConversationService conversationService;
+
 	// -- Non-Contextual fields --
 	private FijiAssistant assistant;
 	private final JFrame frame;
@@ -208,7 +209,7 @@ public class FijiAssistantChat {
 		newConversationButton.setFocusPainted(false);
 		newConversationButton.setToolTipText("Start a new conversation");
 		newConversationButton.setEnabled(false);
-		newConversationButton.addActionListener(e -> startNewConversation());
+		newConversationButton.addActionListener(e -> clearConversation());
 		conversationPanel.add(newConversationButton);
 
 		deleteConversationButton = new JButton("-");
@@ -1315,11 +1316,10 @@ public class FijiAssistantChat {
 	}
 
 	/**
-	 * Start a new conversation. Clears chat history and waits for first message
-	 * to auto-name the conversation. Does nothing if the current conversation is
-	 * empty (no messages sent yet).
+	 * Clears chat history. Conversations auto-start with the first message.
+	 * Does nothing if the current conversation is empty (no messages sent yet).
 	 */
-	private void startNewConversation() {
+	private void clearConversation() {
 		// Don't allow starting a new conversation if the current one is empty
 		// (hasn't been named yet)
 		if (currentConversation == null) {
