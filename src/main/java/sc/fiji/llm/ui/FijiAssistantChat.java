@@ -762,6 +762,10 @@ public class FijiAssistantChat {
 		return scrollPane;
 	}
 
+	/**
+	 * Send the current chat contents to the LLM.
+	 * Must run on EDT
+	 */
 	private void sendMessage() {
         final String userMessage = inputArea.getText().trim();
         if (userMessage.isEmpty()) {
@@ -774,6 +778,8 @@ public class FijiAssistantChat {
         StringBuilder userMessageWithContext = new StringBuilder(userMessage);
         List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
 
+        // Add context item notes to the user message
+        // Add robust context item description to LLM message
         if (!mergedContextItems.isEmpty()) {
             displayMessage.append("\n").append("```").append("\n");
             userMessageWithContext.append("\n\n===Start of Context Items===\n");
@@ -785,7 +791,7 @@ public class FijiAssistantChat {
             userMessageWithContext.append("===End of Context Items===\n");
         }
 
-        // Add user message panel (display original without context markers)
+        // Add user message panel
         addMessagePanelToChat(ChatMessagePanel.MessageType.USER, displayMessage.toString());
         clearAllContextButtons();
 
