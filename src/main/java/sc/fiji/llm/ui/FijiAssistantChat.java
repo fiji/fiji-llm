@@ -845,74 +845,74 @@ public class FijiAssistantChat {
 
 				// Send user message to the LLM to initiate chat
 				assistant.chatStreaming(chatRequest)
-						.onPartialThinkingWithContext((thinking, context) -> {
-							if (stopRequested) {
-								stopRequested = false;
-								context.streamingHandle().cancel();
+					.onPartialThinkingWithContext((thinking, context) -> {
+						if (stopRequested) {
+							stopRequested = false;
+							context.streamingHandle().cancel();
+							removeChatBubble(currentStreamingPanel);
+						}
+					})
+					.onPartialResponseWithContext((partialResponse, context) -> {
+						if (!aiMessageStarted[0]) {
+							aiMessageStarted[0] = true;
+						}
+						if (stopRequested) {
+							stopRequested = false;
+							context.streamingHandle().cancel();
+							if (currentStreamingPanel.getText().isEmpty()) {
 								removeChatBubble(currentStreamingPanel);
 							}
-						})
-						.onPartialResponseWithContext((partialResponse, context) -> {
-							if (!aiMessageStarted[0]) {
-								aiMessageStarted[0] = true;
+						} else {
+							SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
+							// Scroll to bottom periodically (every 200ms) to avoid excessive updates
+							final long now = System.currentTimeMillis();
+							if (now - lastScrollTime[0] > updateDelay) {
+								lastScrollTime[0] = now;
+								SwingUtilities.invokeLater(() -> {
+									final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+									vertical.setValue(vertical.getMaximum());
+								});
 							}
-							if (stopRequested) {
-								stopRequested = false;
-								context.streamingHandle().cancel();
-								if (currentStreamingPanel.getText().isEmpty()) {
-									removeChatBubble(currentStreamingPanel);
-								}
-							} else {
-								SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
-								// Scroll to bottom periodically (every 200ms) to avoid excessive updates
-								final long now = System.currentTimeMillis();
-								if (now - lastScrollTime[0] > updateDelay) {
-									lastScrollTime[0] = now;
-									SwingUtilities.invokeLater(() -> {
-										final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-										vertical.setValue(vertical.getMaximum());
-									});
-								}
-							}
-						})
-						.onCompleteResponse(response -> {
-							if (!aiMessageStarted[0]) {
-								aiMessageStarted[0] = true;
-							}
-							// Save assistant response to conversation
-							if (currentConversation != null) {
-								currentConversation.addMessage(
-										currentStreamingPanel.getText(),
-										response.aiMessage()
-								);
-							}
+						}
+					})
+					.onCompleteResponse(response -> {
+						if (!aiMessageStarted[0]) {
+							aiMessageStarted[0] = true;
+						}
+						// Save assistant response to conversation
+						if (currentConversation != null) {
+							currentConversation.addMessage(
+									currentStreamingPanel.getText(),
+									response.aiMessage()
+							);
+						}
 
-							// Scroll to bottom one final time after streaming completes
-							SwingUtilities.invokeLater(() -> {
-								final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-								vertical.setValue(vertical.getMaximum());
-								setSendMode();
-							});
-						})
-						.onError(error -> {
-							// Handle errors
-							if (error instanceof RateLimitException) {
-								appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
+						// Scroll to bottom one final time after streaming completes
+						SwingUtilities.invokeLater(() -> {
+							final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+							vertical.setValue(vertical.getMaximum());
+							setSendMode();
+						});
+					})
+					.onError(error -> {
+						// Handle errors
+						if (error instanceof RateLimitException) {
+							appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
+						} else {
+							final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
+							if (msg.length() > 300) {
+								appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
 							} else {
-								final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
-								if (msg.length() > 300) {
-									appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
-								} else {
-									appendToChat(Sender.SYSTEM, "Error: " + msg);
-								}
+								appendToChat(Sender.SYSTEM, "Error: " + msg);
 							}
+						}
 
-							// Re-enable inputs and switch back to send mode
-							SwingUtilities.invokeLater(() -> {
-								setSendMode();
-							});
-						})
-						.start();
+						// Re-enable inputs and switch back to send mode
+						SwingUtilities.invokeLater(() -> {
+							setSendMode();
+						});
+					})
+					.start();
 			} catch (Exception e) {
 				// Handle immediate errors (before streaming starts)
 				final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";

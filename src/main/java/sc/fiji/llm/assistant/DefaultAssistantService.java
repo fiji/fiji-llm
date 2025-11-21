@@ -67,11 +67,11 @@ public class DefaultAssistantService extends AbstractService implements
 		}
 
 		final var builder = AiServices.builder(assistantInterface)
-			.streamingChatModel(provider.createStreamingChatModel(modelName)).tools(
-				aiToolService.getToolsWithExecutors()).toolExecutionErrorHandler(
-					this::handleExecutionError).toolArgumentsErrorHandler(
-						this::handleArgumentError).chatModel(provider.createChatModel(
-							modelName));
+			.streamingChatModel(provider.createStreamingChatModel(modelName))
+			.tools(aiToolService.getToolsWithExecutors())
+			.toolExecutionErrorHandler(this::handleExecutionError)
+			.toolArgumentsErrorHandler(this::handleArgumentError)
+			.chatModel(provider.createChatModel(modelName));
 
 		// Apply request parameters at AiServices level where they'll be used
 		if (defaultChatParameters != null) {
