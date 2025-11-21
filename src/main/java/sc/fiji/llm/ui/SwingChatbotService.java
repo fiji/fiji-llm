@@ -29,7 +29,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
-import sc.fiji.llm.chat.ContextItemService;
+import sc.fiji.llm.context.ContextItemService;
 
 /**
  * Swing implementation of ChatbotService that launches a SimpleChatWindow.

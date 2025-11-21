@@ -31,8 +31,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import sc.fiji.llm.chat.AbstractContextItem;
-import sc.fiji.llm.chat.ContextItem;
+import sc.fiji.llm.context.AbstractContextItem;
+import sc.fiji.llm.context.ContextItem;
 
 /**
  * Represents a script context item that can be added to the chat.

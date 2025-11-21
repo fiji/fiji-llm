@@ -20,7 +20,7 @@
  * #L%
  */
 
-package sc.fiji.llm.chat;
+package sc.fiji.llm.context;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -31,6 +31,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
+import sc.fiji.llm.context.AbstractContextItem;
+import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.script.ScriptContextItem;
 
 /**

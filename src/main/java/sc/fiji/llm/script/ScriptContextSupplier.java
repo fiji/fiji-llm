@@ -39,8 +39,8 @@ import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
-import sc.fiji.llm.chat.ContextItem;
-import sc.fiji.llm.chat.ContextItemSupplier;
+import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.context.ContextItemSupplier;
 import sc.fiji.llm.ui.TextEditorUtils;
 
 /**

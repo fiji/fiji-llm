@@ -40,8 +40,8 @@ import net.imagej.axis.AxisType;
 import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.ImageDisplayService;
-import sc.fiji.llm.chat.ContextItem;
-import sc.fiji.llm.chat.ContextItemSupplier;
+import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.context.ContextItemSupplier;
 
 /**
  * ContextItemSupplier implementation for {@link ImageMetaContextItem}s.

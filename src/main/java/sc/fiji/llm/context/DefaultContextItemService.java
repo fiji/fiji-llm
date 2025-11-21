@@ -20,15 +20,23 @@
  * #L%
  */
 
-package sc.fiji.llm.chat;
+package sc.fiji.llm.context;
 
-import org.scijava.plugin.SingletonService;
+import org.scijava.plugin.AbstractSingletonService;
+import org.scijava.plugin.Plugin;
+import org.scijava.service.Service;
 
 /**
- * SciJava service for discovering and managing context item supplier plugins.
- * This service is a registry for all available ContextItemSupplier
- * implementations and provides lookup methods to discover suppliers.
+ * Default implementation of ContextItemSupplierService. Provides registry and
+ * lookup functionality for ContextItemSupplier plugins.
  */
-public interface ContextItemService extends
-	SingletonService<ContextItemSupplier>
-{}
+@Plugin(type = Service.class)
+public class DefaultContextItemService extends
+	AbstractSingletonService<ContextItemSupplier> implements ContextItemService
+{
+
+	@Override
+	public Class<ContextItemSupplier> getPluginType() {
+		return ContextItemSupplier.class;
+	}
+}

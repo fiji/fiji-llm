@@ -20,23 +20,24 @@
  * #L%
  */
 
-package sc.fiji.llm.chat;
+package sc.fiji.llm.context;
 
-import org.scijava.plugin.AbstractSingletonService;
-import org.scijava.plugin.Plugin;
-import org.scijava.service.Service;
+import java.util.List;
+
+import com.google.gson.JsonObject;
 
 /**
- * Default implementation of ContextItemSupplierService. Provides registry and
- * lookup functionality for ContextItemSupplier plugins.
+ * Represents a context item that can be added to the chat.
  */
-@Plugin(type = Service.class)
-public class DefaultContextItemService extends
-	AbstractSingletonService<ContextItemSupplier> implements ContextItemService
-{
+public interface ContextItem {
 
-	@Override
-	public Class<ContextItemSupplier> getPluginType() {
-		return ContextItemSupplier.class;
-	}
+	public String getType();
+
+	public String getLabel();
+
+	public JsonObject getJson();
+
+	public String getMergeKey();
+
+	public ContextItem mergeWith(final List<ContextItem> others);
 }

@@ -31,7 +31,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import sc.fiji.llm.chat.AbstractContextItem;
+import sc.fiji.llm.context.AbstractContextItem;
 
 /**
  * Represents an image context item that can be added to the chat. Contains

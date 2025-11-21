@@ -20,7 +20,7 @@
  * #L%
  */
 
-package sc.fiji.llm.chat;
+package sc.fiji.llm.context;
 
 import java.util.Set;
 

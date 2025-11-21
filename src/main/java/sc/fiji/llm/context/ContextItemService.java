@@ -20,24 +20,15 @@
  * #L%
  */
 
-package sc.fiji.llm.chat;
+package sc.fiji.llm.context;
 
-import java.util.List;
-
-import com.google.gson.JsonObject;
+import org.scijava.plugin.SingletonService;
 
 /**
- * Represents a context item that can be added to the chat.
+ * SciJava service for discovering and managing context item supplier plugins.
+ * This service is a registry for all available ContextItemSupplier
+ * implementations and provides lookup methods to discover suppliers.
  */
-public interface ContextItem {
-
-	public String getType();
-
-	public String getLabel();
-
-	public JsonObject getJson();
-
-	public String getMergeKey();
-
-	public ContextItem mergeWith(final List<ContextItem> others);
-}
+public interface ContextItemService extends
+	SingletonService<ContextItemSupplier>
+{}
