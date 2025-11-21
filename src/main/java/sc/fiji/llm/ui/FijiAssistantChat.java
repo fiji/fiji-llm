@@ -302,9 +302,9 @@ public class FijiAssistantChat {
 		// Chat display area - MigLayout for proper resizing with messages at bottom
 		// Fill horizontally, wrap each component to new row
 		chatPanel = new JPanel(new MigLayout("fillx, wrap, insets 0", "[grow,fill]", // Column
-																																									// grows
-																																									// and
-																																									// fills
+			// grows
+			// and
+			// fills
 			"[grow][][]" // First row grows (pushes content down), then message rows
 		));
 		chatPanel.setBackground(Color.WHITE);
@@ -398,8 +398,8 @@ public class FijiAssistantChat {
 
 		// Apply light blue background to the scrollpane itself
 		contextTagsScrollPane.setBackground(new java.awt.Color(240, 248, 255)); // Light
-																																						// blue
-																																						// background
+		// blue
+		// background
 		contextTagsScrollPane.getViewport().setBackground(new java.awt.Color(240,
 			248, 255));
 		contextTagsScrollPane.setBorder(BorderFactory.createCompoundBorder(
@@ -757,10 +757,10 @@ public class FijiAssistantChat {
 		scrollPane.setHorizontalScrollBarPolicy(
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		scrollPane.setPreferredSize(new Dimension(600, 60)); // Taller to
-																													// accommodate buttons
-																													// + labels
+		// accommodate buttons
+		// + labels
 		scrollPane.setMinimumSize(new Dimension(60, 60)); // Taller to accommodate
-																											// buttons + labels
+		// buttons + labels
 		scrollPane.getVerticalScrollBar().setUnitIncrement(5);
 		scrollPane.setBorder(null);
 		scrollPane.setOpaque(false);
@@ -770,168 +770,167 @@ public class FijiAssistantChat {
 	}
 
 	/**
-	 * Send the current chat contents to the LLM.
-	 * Must run on EDT
+	 * Send the current chat contents to the LLM. Must run on EDT
 	 */
 	private void sendMessage() {
-        final String userText = inputArea.getText().trim();
-        if (userText.isEmpty()) {
-            return;
-        }
+		final String userText = inputArea.getText().trim();
+		if (userText.isEmpty()) {
+			return;
+		}
 
-        inputArea.setText(""); // Clear input immediately
+		inputArea.setText(""); // Clear input immediately
 
-        StringBuilder displayMessage = new StringBuilder(userText);
-        List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
-        final JsonArray contextArray = new JsonArray();
+		StringBuilder displayMessage = new StringBuilder(userText);
+		List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
+		final JsonArray contextArray = new JsonArray();
 
-        // Add context item notes to the user message
-        // Collect merged context items to JsonArray
-        if (!mergedContextItems.isEmpty()) {
-            displayMessage.append("\n").append("```").append("\n");
+		// Add context item notes to the user message
+		// Collect merged context items to JsonArray
+		if (!mergedContextItems.isEmpty()) {
+			displayMessage.append("\n").append("```").append("\n");
 
-            for (final ContextItem item : mergedContextItems) {
-                displayMessage.append(item.getLabel()).append("\n");
-                contextArray.add(item.getJson());
-            }
-            displayMessage.append("```");
-        }
+			for (final ContextItem item : mergedContextItems) {
+				displayMessage.append(item.getLabel()).append("\n");
+				contextArray.add(item.getJson());
+			}
+			displayMessage.append("```");
+		}
 
-        // Add user message panel
-        addMessagePanelToChat(ChatMessagePanel.MessageType.USER, displayMessage.toString());
-        clearAllContextButtons();
+		// Add user message panel
+		addMessagePanelToChat(ChatMessagePanel.MessageType.USER, displayMessage.toString());
+		clearAllContextButtons();
 
-        // Add empty assistant message panel for streaming
-        final ChatMessagePanel currentStreamingPanel = createEmptyAssistantMessagePanel();
+		// Add empty assistant message panel for streaming
+		final ChatMessagePanel currentStreamingPanel = createEmptyAssistantMessagePanel();
 
-        // Switch to stop mode
-        setStopMode();
-        final boolean[] messageReady = {false};
-        final int updateDelay = 200;
-        threadService.run(() -> {
-            while (!messageReady[0]) {
-                SwingUtilities.invokeLater(() -> {
+		// Switch to stop mode
+		setStopMode();
+		final boolean[] messageReady = {false};
+		final int updateDelay = 200;
+		threadService.run(() -> {
+			while (!messageReady[0]) {
+				SwingUtilities.invokeLater(() -> {
 					currentStreamingPanel.updateThinking();
-                });
-                try {
-                    Thread.sleep(updateDelay);
-                } catch (InterruptedException e) {
-                    // no-op
-                }
-            }
-        });
+				});
+				try {
+					Thread.sleep(updateDelay);
+				} catch (InterruptedException e) {
+					// no-op
+				}
+			}
+		});
 
-        // Process in background thread (LLM calls happen OFF the EDT)
-        threadService.run(() -> {
-            // If this is the first message in a new conversation, auto-name it
-            if (currentConversation == null) {
-                createNewConversation(userText);
-            }
+		// Process in background thread (LLM calls happen OFF the EDT)
+		threadService.run(() -> {
+			// If this is the first message in a new conversation, auto-name it
+			if (currentConversation == null) {
+				createNewConversation(userText);
+			}
 
-            final long[] lastScrollTime = {System.currentTimeMillis()};
-            try {
-                // Build user message with context items as attributes
-                final UserMessage.Builder msgBuilder = UserMessage.builder()
-                    .addContent(new TextContent(userText));
+			final long[] lastScrollTime = {System.currentTimeMillis()};
+			try {
+				// Build user message with context items as attributes
+				final UserMessage.Builder msgBuilder = UserMessage.builder()
+						.addContent(new TextContent(userText));
 
-                // Attach context items as message attributes
-                if (!mergedContextItems.isEmpty()) {
-                    msgBuilder.attributes(Map.of("contextItems", contextArray.toString()));
-                }
+				// Attach context items as message attributes
+				if (!mergedContextItems.isEmpty()) {
+					msgBuilder.attributes(Map.of("contextItems", contextArray.toString()));
+				}
 
-                final UserMessage userMsg = msgBuilder.build();
+				final UserMessage userMsg = msgBuilder.build();
 
-                // Save user message to conversation history
-                currentConversation.addMessage(displayMessage.toString(), userMsg);
+				// Save user message to conversation history
+				currentConversation.addMessage(displayMessage.toString(), userMsg);
 
-                // Build a chat request for the LLM
-                final ChatRequest chatRequest = ChatRequest.builder()
-                    .messages(userMsg)
-					.toolSpecifications(aiToolService.getToolsForContext(ToolContext.ANY))
-                    .build();
+				// Build a chat request for the LLM
+				final ChatRequest chatRequest = ChatRequest.builder()
+						.messages(userMsg)
+						.toolSpecifications(aiToolService.getToolsForContext(ToolContext.ANY))
+						.build();
 
-                // Send user message to the LLM to initiate chat
-                assistant.chatStreaming(chatRequest)
-                    .onPartialThinkingWithContext((thinking, context) -> {
-                        if (stopRequested) {
-                            context.streamingHandle().cancel();
-                            stopRequested = false;
-                        }
-                    })
-                    .onPartialResponseWithContext((partialResponse, context) -> {
-                        if (!messageReady[0]) {
-                            messageReady[0] = true;
-                            SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
-                        }
-                        if (stopRequested) {
-                            context.streamingHandle().cancel();
-                            stopRequested = false;
-                        }
-						SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
-						// Scroll to bottom periodically (every 200ms) to avoid excessive updates
-						final long now = System.currentTimeMillis();
-						if (now - lastScrollTime[0] > updateDelay) {
-							lastScrollTime[0] = now;
+				// Send user message to the LLM to initiate chat
+				assistant.chatStreaming(chatRequest)
+						.onPartialThinkingWithContext((thinking, context) -> {
+							if (stopRequested) {
+								context.streamingHandle().cancel();
+								stopRequested = false;
+							}
+						})
+						.onPartialResponseWithContext((partialResponse, context) -> {
+							if (!messageReady[0]) {
+								messageReady[0] = true;
+								SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
+							}
+							if (stopRequested) {
+								context.streamingHandle().cancel();
+								stopRequested = false;
+							}
+							SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
+							// Scroll to bottom periodically (every 200ms) to avoid excessive updates
+							final long now = System.currentTimeMillis();
+							if (now - lastScrollTime[0] > updateDelay) {
+								lastScrollTime[0] = now;
+								SwingUtilities.invokeLater(() -> {
+									final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+									vertical.setValue(vertical.getMaximum());
+								});
+							}
+						})
+						.onCompleteResponse(response -> {
+							if (!messageReady[0]) {
+								messageReady[0] = true;
+								SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
+							}
+							// Save assistant response to conversation
+							if (currentConversation != null) {
+								currentConversation.addMessage(
+										currentStreamingPanel.getText(),
+										response.aiMessage()
+								);
+							}
+
+							// Scroll to bottom one final time after streaming completes
 							SwingUtilities.invokeLater(() -> {
 								final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
 								vertical.setValue(vertical.getMaximum());
+								setSendMode();
 							});
-						}
-                    })
-                    .onCompleteResponse(response -> {
-                        if (!messageReady[0]) {
-                            messageReady[0] = true;
-                            SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
-                        }
-                        // Save assistant response to conversation
-                        if (currentConversation != null) {
-                            currentConversation.addMessage(
-                                currentStreamingPanel.getText(),
-                                response.aiMessage()
-                            );
-                        }
+						})
+						.onError(error -> {
+							// Handle errors
+							if (error instanceof RateLimitException) {
+								appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
+							} else {
+								final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
+								if (msg.length() > 300) {
+									appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
+								} else {
+									appendToChat(Sender.SYSTEM, "Error: " + msg);
+								}
+							}
 
-                        // Scroll to bottom one final time after streaming completes
-                        SwingUtilities.invokeLater(() -> {
-                            final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-                            vertical.setValue(vertical.getMaximum());
-                            setSendMode();
-                        });
-                    })
-                    .onError(error -> {
-                        // Handle errors
-                        if (error instanceof RateLimitException) {
-                            appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
-                        } else {
-                            final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
-                            if (msg.length() > 300) {
-                                appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
-                            } else {
-                                appendToChat(Sender.SYSTEM, "Error: " + msg);
-                            }
-                        }
+							// Re-enable inputs and switch back to send mode
+							SwingUtilities.invokeLater(() -> {
+								setSendMode();
+							});
+						})
+						.start();
+			} catch (Exception e) {
+				// Handle immediate errors (before streaming starts)
+				final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
+				if (msg.length() > 300) {
+					appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
+				} else {
+					appendToChat(Sender.SYSTEM, "Error: " + msg);
+				}
 
-                        // Re-enable inputs and switch back to send mode
-                        SwingUtilities.invokeLater(() -> {
-                            setSendMode();
-                        });
-                    })
-                    .start();
-            } catch (Exception e) {
-                // Handle immediate errors (before streaming starts)
-                final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
-                if (msg.length() > 300) {
-                    appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
-                } else {
-                    appendToChat(Sender.SYSTEM, "Error: " + msg);
-                }
-
-                SwingUtilities.invokeLater(() -> {
-                    setSendMode();
-                });
-            }
-        });
-    }
+				SwingUtilities.invokeLater(() -> {
+					setSendMode();
+				});
+			}
+		});
+	}
 
 	private List<ContextItem> mergeContextItems(List<ContextItem> contextItems) {
 		final List<ContextItem> result = new ArrayList<>();
@@ -1008,24 +1007,30 @@ public class FijiAssistantChat {
 	}
 
 	private void appendToChat(final Sender sender, final String message) {
-        if (message == null) return;
+		if (message == null) {
+			return;
+		}
 
-        // Always use invokeLater since this can be called from both EDT and background threads
-        SwingUtilities.invokeLater(() -> {
-            // Convert Sender enum to MessageType
-            final ChatMessagePanel.MessageType messageType = switch (sender) {
-                case USER -> ChatMessagePanel.MessageType.USER;
-                case ASSISTANT -> ChatMessagePanel.MessageType.ASSISTANT;
-                case SYSTEM -> ChatMessagePanel.MessageType.SYSTEM;
-                case ERROR -> ChatMessagePanel.MessageType.ERROR;
-            };
+		// Always use invokeLater since this can be called from both EDT and background threads
+		SwingUtilities.invokeLater(() -> {
+			// Convert Sender enum to MessageType
+			final ChatMessagePanel.MessageType messageType = switch (sender) {
+				case USER ->
+					ChatMessagePanel.MessageType.USER;
+				case ASSISTANT ->
+					ChatMessagePanel.MessageType.ASSISTANT;
+				case SYSTEM ->
+					ChatMessagePanel.MessageType.SYSTEM;
+				case ERROR ->
+					ChatMessagePanel.MessageType.ERROR;
+			};
 
-            addMessagePanelToChat(messageType, message);
+			addMessagePanelToChat(messageType, message);
 
-            // System and error messages are not added to chat memory
-            // User and assistant messages are already tracked in chatMemory via sendMessage()
-        });
-    }
+			// System and error messages are not added to chat memory
+			// User and assistant messages are already tracked in chatMemory via sendMessage()
+		});
+	}
 
 	/**
 	 * Adds a message panel to the chat (must be called on EDT).
@@ -1045,11 +1050,11 @@ public class FijiAssistantChat {
 				componentCount - 1);
 			chatPanel.remove(0); // Remove glue
 			chatPanel.remove(componentCount - 2); // Remove bottom spacer (index
-																						// shifts after first removal)
+			// shifts after first removal)
 			chatPanel.add(messagePanel, "growx"); // Grow horizontally only
 			chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
 			chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer
-																												// at end
+			// at end
 		}
 		else {
 			chatPanel.add(messagePanel, "growx");
@@ -1088,11 +1093,11 @@ public class FijiAssistantChat {
 				componentCount - 1);
 			chatPanel.remove(0); // Remove glue
 			chatPanel.remove(componentCount - 2); // Remove bottom spacer (index
-																						// shifts after first removal)
+			// shifts after first removal)
 			chatPanel.add(messagePanel, "growx"); // Grow horizontally only
 			chatPanel.add(glue, "pushy, growy", 0); // Re-add glue at top (index 0)
 			chatPanel.add(bottomSpacer, "growx, height 8!"); // Re-add bottom spacer
-																												// at end
+			// at end
 		}
 		else {
 			chatPanel.add(messagePanel, "growx");
