@@ -85,6 +85,7 @@ import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
+import sc.fiji.llm.context.AppContextService;
 import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.context.ContextItemService;
 import sc.fiji.llm.context.ContextItemSupplier;
@@ -127,6 +128,9 @@ public class FijiAssistantChat {
 
 	@Parameter
 	private ContextItemService contextItemService;
+
+	@Parameter
+	private AppContextService appContextService;
 
 	@Parameter
 	private ThreadService threadService;
@@ -827,9 +831,21 @@ public class FijiAssistantChat {
 				final UserMessage.Builder msgBuilder = UserMessage.builder()
 						.addContent(new TextContent(userText));
 
-				// Attach context items as message attributes
+				Map<String, Object> attributes = new HashMap<>();
+
+				// Attach user context from user
 				if (!mergedContextItems.isEmpty()) {
-					msgBuilder.attributes(Map.of("context:from_user", userContextArray.toString()));
+					attributes.put("context:from_user", userContextArray);
+				}
+
+				// Attach environment context
+				JsonArray appContext = appContextService.getCurrentEnvironment();
+				if (!appContext.isEmpty()) {
+					attributes.put("context:from_app", appContext);
+				}
+
+				if (!attributes.isEmpty()) {
+					msgBuilder.attributes(attributes);
 				}
 
 				final UserMessage userMsg = msgBuilder.build();
