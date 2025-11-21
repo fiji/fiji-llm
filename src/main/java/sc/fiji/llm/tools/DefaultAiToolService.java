@@ -49,7 +49,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	implements AiToolService
 {
 
-	private Map<ToolContext, List<ToolSpecification>> toolsByContext;
+	private Map<String, List<ToolSpecification>> toolsByContext;
 	private Map<ToolSpecification, ToolExecutor> toolsWithExecutors;
 
 	@Parameter
@@ -69,7 +69,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	}
 
 	@Override
-	public List<ToolSpecification> getToolsForContext(ToolContext toolContext) {
+	public List<ToolSpecification> getToolsForContext(String toolContext) {
 		if (toolsByContext == null) {
 			initMaps();
 		}
@@ -79,7 +79,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	private synchronized void initMaps() {
 		if (toolsWithExecutors == null || toolsByContext == null) {
 			// Use interim maps to collect tool specifications
-			Map<ToolContext, List<ToolSpecification>> interimContextMap =
+			Map<String, List<ToolSpecification>> interimContextMap =
 				new HashMap<>();
 			Map<ToolSpecification, ToolExecutor> interimExecutorMap = new HashMap<>();
 			List<ToolSpecification> anyContextList = new ArrayList<>();
@@ -87,7 +87,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 			Set<String> toolNames = new HashSet<>();
 
 			for (AiToolPlugin plugin : getInstances()) {
-				ToolContext context = plugin.getToolContext();
+				String context = plugin.getToolContext();
 				Map<ToolSpecification, ToolExecutor> specs = plugin.getTools();
 				if (specs == null) continue;
 
@@ -116,8 +116,8 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 			}
 
 			// Convert all lists to immutable
-			Map<ToolContext, List<ToolSpecification>> finalMap = new HashMap<>();
-			for (Map.Entry<ToolContext, List<ToolSpecification>> entry : interimContextMap
+			Map<String, List<ToolSpecification>> finalMap = new HashMap<>();
+			for (Map.Entry<String, List<ToolSpecification>> entry : interimContextMap
 				.entrySet())
 			{
 				finalMap.put(entry.getKey(), Collections.unmodifiableList(entry

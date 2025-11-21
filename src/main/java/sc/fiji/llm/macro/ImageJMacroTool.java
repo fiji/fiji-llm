@@ -51,7 +51,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 	}
 
 	@Override
-	public ToolContext getToolContext() {
+	public String getToolContext() {
 		return ToolContext.MACRO;
 	}
 

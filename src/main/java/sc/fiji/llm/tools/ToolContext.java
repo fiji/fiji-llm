@@ -22,6 +22,8 @@
 
 package sc.fiji.llm.tools;
 
-public enum ToolContext {
-		ANY, SCRIPT, MACRO;
+public final class ToolContext {
+	public static final String ANY = "fiji:any";
+	public static final String SCRIPT = "fiji:script";
+	public static final String MACRO = "fiji:macro";
 }

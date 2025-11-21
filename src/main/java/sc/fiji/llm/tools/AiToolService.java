@@ -28,6 +28,7 @@ import java.util.Map;
 import org.scijava.plugin.SingletonService;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.agent.tool.ToolSpecifications;
 import dev.langchain4j.service.tool.ToolExecutor;
 
 /**
@@ -59,8 +60,10 @@ public interface AiToolService extends SingletonService<AiToolPlugin> {
 	 * This method allows filtering of available tools in a particular
 	 * {@code ChatRequest}
 	 *
-	 * @param toolContext The desired {@link ToolContext}
+	 * See {@link ToolContext} for built-in contexts available.
+	 *
+	 * @param toolContext The desired context
 	 * @return All {@link ToolSpecifications} compatible with the given context
 	 */
-	List<ToolSpecification> getToolsForContext(ToolContext toolContext);
+	List<ToolSpecification> getToolsForContext(String toolContext);
 }

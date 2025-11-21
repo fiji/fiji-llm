@@ -58,10 +58,9 @@ public interface AiToolPlugin extends SingletonPlugin {
 	Map<ToolSpecification, ToolExecutor> getTools();
 
 	/**
-	 * @return the {@link ToolContext} where the tools provided by this plugin
-	 *         should be available.
+	 * @return Tool contexts allow filtering of available tools.
 	 */
-	default ToolContext getToolContext() {
+	default String getToolContext() {
 		return ToolContext.ANY;
 	}
 }
