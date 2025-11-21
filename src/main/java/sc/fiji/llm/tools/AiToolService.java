@@ -48,15 +48,17 @@ public interface AiToolService extends SingletonService<AiToolPlugin> {
 	}
 
 	/**
-	 * This method allows for global definition of tools, e.g. when building an {@code AiService}
+	 * This method allows for global definition of tools, e.g. when building an
+	 * {@code AiService}
 	 *
 	 * @return The global map of available tools and their executors
 	 */
 	Map<ToolSpecification, ToolExecutor> getToolsWithExecutors();
 
 	/**
-	 * This method allows filtering of available tools in a particular {@code ChatRequest}
-	 * 
+	 * This method allows filtering of available tools in a particular
+	 * {@code ChatRequest}
+	 *
 	 * @param toolContext The desired {@link ToolContext}
 	 * @return All {@link ToolSpecifications} compatible with the given context
 	 */

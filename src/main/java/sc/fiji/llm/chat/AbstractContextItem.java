@@ -51,10 +51,10 @@ public abstract class AbstractContextItem implements ContextItem {
 		return label;
 	}
 
-    @Override
-    public JsonObject getJson() {
-        return new Gson().fromJson(toString(), JsonObject.class);
-    }
+	@Override
+	public JsonObject getJson() {
+		return new Gson().fromJson(toString(), JsonObject.class);
+	}
 
 	/**
 	 * Returns a key for grouping mergeable items. Items with the same merge key

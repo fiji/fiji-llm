@@ -23,5 +23,5 @@
 package sc.fiji.llm.tools;
 
 public enum ToolContext {
-	ANY, SCRIPT, MACRO;
+		ANY, SCRIPT, MACRO;
 }

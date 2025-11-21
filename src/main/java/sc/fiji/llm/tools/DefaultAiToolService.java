@@ -48,6 +48,7 @@ import dev.langchain4j.service.tool.ToolExecutor;
 public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	implements AiToolService
 {
+
 	private Map<ToolContext, List<ToolSpecification>> toolsByContext;
 	private Map<ToolSpecification, ToolExecutor> toolsWithExecutors;
 
@@ -77,8 +78,9 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 
 	private synchronized void initMaps() {
 		if (toolsWithExecutors == null || toolsByContext == null) {
-			//Use interim maps to collect tool specifications
-			Map<ToolContext, List<ToolSpecification>> interimContextMap = new HashMap<>();
+			// Use interim maps to collect tool specifications
+			Map<ToolContext, List<ToolSpecification>> interimContextMap =
+				new HashMap<>();
 			Map<ToolSpecification, ToolExecutor> interimExecutorMap = new HashMap<>();
 			List<ToolSpecification> anyContextList = new ArrayList<>();
 			interimContextMap.put(ToolContext.ANY, anyContextList);
@@ -90,12 +92,14 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 				if (specs == null) continue;
 
 				// Add to context-specific list
-				List<ToolSpecification> contextList = interimContextMap.computeIfAbsent(context, k -> new ArrayList<>());
+				List<ToolSpecification> contextList = interimContextMap.computeIfAbsent(
+					context, k -> new ArrayList<>());
 				for (Entry<ToolSpecification, ToolExecutor> entry : specs.entrySet()) {
 					ToolSpecification spec = entry.getKey();
 					String name = spec.name();
 					if (toolNames.contains(name)) {
-						logService.error("Skipping duplicate tool: " + name + " in " + plugin.getClass());
+						logService.error("Skipping duplicate tool: " + name + " in " +
+							plugin.getClass());
 						continue;
 					}
 					toolNames.add(name);
@@ -113,8 +117,11 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 
 			// Convert all lists to immutable
 			Map<ToolContext, List<ToolSpecification>> finalMap = new HashMap<>();
-			for (Map.Entry<ToolContext, List<ToolSpecification>> entry : interimContextMap.entrySet()) {
-				finalMap.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+			for (Map.Entry<ToolContext, List<ToolSpecification>> entry : interimContextMap
+				.entrySet())
+			{
+				finalMap.put(entry.getKey(), Collections.unmodifiableList(entry
+					.getValue()));
 			}
 			toolsByContext = Collections.unmodifiableMap(finalMap);
 			toolsWithExecutors = Collections.unmodifiableMap(interimExecutorMap);

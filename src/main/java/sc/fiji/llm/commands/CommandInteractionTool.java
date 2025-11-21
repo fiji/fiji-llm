@@ -71,7 +71,7 @@ public class CommandInteractionTool extends AbstractAiToolPlugin {
 	public CommandInteractionTool() {
 		super(CommandInteractionTool.class);
 	}
-	
+
 	@Override
 	public ToolContext getToolContext() {
 		return ToolContext.MACRO;

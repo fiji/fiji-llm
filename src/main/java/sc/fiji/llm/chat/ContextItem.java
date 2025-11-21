@@ -35,7 +35,7 @@ public interface ContextItem {
 
 	public String getLabel();
 
-    public JsonObject getJson();
+	public JsonObject getJson();
 
 	public String getMergeKey();
 

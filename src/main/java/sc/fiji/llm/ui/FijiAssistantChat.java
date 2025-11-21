@@ -164,7 +164,8 @@ public class FijiAssistantChat {
 	private Conversation currentConversation;
 	private final ChatRequestParameters requestParameters;
 
-	public FijiAssistantChat(Context c, final String title, String providerName, String modelName)
+	public FijiAssistantChat(Context c, final String title, String providerName,
+		String modelName)
 	{
 		c.inject(this);
 
@@ -300,8 +301,10 @@ public class FijiAssistantChat {
 
 		// Chat display area - MigLayout for proper resizing with messages at bottom
 		// Fill horizontally, wrap each component to new row
-		chatPanel = new JPanel(new MigLayout("fillx, wrap, insets 0",
-			"[grow,fill]", // Column grows and fills
+		chatPanel = new JPanel(new MigLayout("fillx, wrap, insets 0", "[grow,fill]", // Column
+																																									// grows
+																																									// and
+																																									// fills
 			"[grow][][]" // First row grows (pushes content down), then message rows
 		));
 		chatPanel.setBackground(Color.WHITE);
@@ -607,7 +610,8 @@ public class FijiAssistantChat {
 		container.setOpaque(false);
 
 		try {
-			final List<ContextItemSupplier> suppliers = contextItemService.getInstances();
+			final List<ContextItemSupplier> suppliers = contextItemService
+				.getInstances();
 
 			if (suppliers == null || suppliers.isEmpty()) {
 				// No suppliers available - return empty scrollpane
@@ -1265,7 +1269,8 @@ public class FijiAssistantChat {
 		final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
 
 		sb.append("\n\n## Context Items\n\n");
-		sb.append("Context items (scripts, images, runtime environment information, etc) may appear as JSON in user messages.");
+		sb.append(
+			"Context items (scripts, images, runtime environment information, etc) may appear as JSON in user messages.");
 
 		sb.append("\n\n## Tool Usage\n\n");
 		sb.append(aiToolService.toolEnvironmentMessage());
@@ -1336,8 +1341,8 @@ public class FijiAssistantChat {
 	}
 
 	/**
-	 * Clears chat history. Conversations auto-start with the first message.
-	 * Does nothing if the current conversation is empty (no messages sent yet).
+	 * Clears chat history. Conversations auto-start with the first message. Does
+	 * nothing if the current conversation is empty (no messages sent yet).
 	 */
 	private void clearConversation() {
 		// Don't allow starting a new conversation if the current one is empty

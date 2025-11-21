@@ -38,6 +38,7 @@ import sc.fiji.llm.chat.ContextItemService;
 public class SwingChatbotService extends AbstractService implements
 	ChatbotService
 {
+
 	@Parameter
 	private ContextItemService contextItemService;
 
