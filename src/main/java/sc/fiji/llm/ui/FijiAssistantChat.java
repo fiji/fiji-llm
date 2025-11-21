@@ -67,9 +67,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
@@ -772,30 +770,27 @@ public class FijiAssistantChat {
 	 * Must run on EDT
 	 */
 	private void sendMessage() {
-        final String userMessage = inputArea.getText().trim();
-        if (userMessage.isEmpty()) {
+        final String userText = inputArea.getText().trim();
+        if (userText.isEmpty()) {
             return;
         }
 
         inputArea.setText(""); // Clear input immediately
 
-        StringBuilder displayMessage = new StringBuilder(userMessage);
-        StringBuilder userMessageWithContext = new StringBuilder(userMessage);
+        StringBuilder displayMessage = new StringBuilder(userText);
         List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
+        final JsonArray contextArray = new JsonArray();
 
         // Add context item notes to the user message
-        // Add robust context item description to LLM message as JSON
-        Gson gson = new Gson();
+        // Collect merged context items to JsonArray
         if (!mergedContextItems.isEmpty()) {
-            final JsonArray contextArray = new JsonArray();
             displayMessage.append("\n").append("```").append("\n");
 
             for (final ContextItem item : mergedContextItems) {
                 displayMessage.append(item.getLabel()).append("\n");
-                contextArray.add(gson.fromJson(item.toString(), JsonObject.class));
+                contextArray.add(item.getJson());
             }
             displayMessage.append("```");
-            userMessageWithContext.append("\n\n").append(gson.toJson(contextArray));
         }
 
         // Add user message panel
@@ -826,35 +821,32 @@ public class FijiAssistantChat {
         threadService.run(() -> {
             // If this is the first message in a new conversation, auto-name it
             if (currentConversation == null) {
-                createNewConversation(userMessage);
+                createNewConversation(userText);
             }
 
             final long[] lastScrollTime = {System.currentTimeMillis()};
             try {
                 // Build user message with context items as attributes
                 final UserMessage.Builder msgBuilder = UserMessage.builder()
-                    .contents(List.of(new TextContent(userMessageWithContext.toString())));
+                    .addContent(new TextContent(userText));
 
-                // Attach context items as message attributes (not sent to model, but stored in memory)
+                // Attach context items as message attributes
                 if (!mergedContextItems.isEmpty()) {
-                    final JsonArray contextArray = new JsonArray();
-                    for (final ContextItem item : mergedContextItems) {
-                        contextArray.add(gson.fromJson(item.toString(), JsonObject.class));
-                    }
                     msgBuilder.attributes(Map.of("contextItems", contextArray.toString()));
                 }
 
                 final UserMessage userMsg = msgBuilder.build();
 
-                // Save user message to conversation
+                // Save user message to conversation history
                 currentConversation.addMessage(displayMessage.toString(), userMsg);
 
+                // Build a chat request for the LLM
                 final ChatRequest chatRequest = ChatRequest.builder()
                     .messages(userMsg)
 					.toolSpecifications(aiToolService.getToolsForContext(ToolContext.ANY))
                     .build();
 
-                // Use streaming API
+                // Send user message to the LLM to initiate chat
                 assistant.chatStreaming(chatRequest)
                     .onPartialThinkingWithContext((thinking, context) -> {
                         if (stopRequested) {

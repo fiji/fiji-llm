@@ -25,6 +25,9 @@ package sc.fiji.llm.chat;
 import java.util.List;
 import java.util.Objects;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 /**
  * Represents a context item that can be added to the chat.
  */
@@ -47,6 +50,11 @@ public abstract class AbstractContextItem implements ContextItem {
 	public String getLabel() {
 		return label;
 	}
+
+    @Override
+    public JsonObject getJson() {
+        return new Gson().fromJson(toString(), JsonObject.class);
+    }
 
 	/**
 	 * Returns a key for grouping mergeable items. Items with the same merge key
