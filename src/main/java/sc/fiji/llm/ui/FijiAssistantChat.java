@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -805,26 +806,19 @@ public class FijiAssistantChat {
 
 		// Switch to stop mode
 		setStopMode();
-		final boolean[] messageReady = {false};
+		final boolean[] aiMessageStarted = {false};
+		final boolean[] cancelConversation = {false};
 		final int updateDelay = 200;
-		threadService.run(() -> {
-			while (!messageReady[0]) {
-				SwingUtilities.invokeLater(() -> {
-					currentStreamingPanel.updateThinking();
-				});
-				try {
-					Thread.sleep(updateDelay);
-				} catch (InterruptedException e) {
-					// no-op
-				}
-			}
-		});
 
-		// Process in background thread (LLM calls happen OFF the EDT)
-		threadService.run(() -> {
+		// Process chat in background thread (LLM calls happen OFF the EDT)
+		Future<?> msgThread = threadService.run(() -> {
 			// If this is the first message in a new conversation, auto-name it
 			if (currentConversation == null) {
-				createNewConversation(userText);
+				createNewConversation(userText, cancelConversation);
+			}
+			if (currentConversation == null) {
+				// Message was canceled
+				return;
 			}
 
 			final long[] lastScrollTime = {System.currentTimeMillis()};
@@ -853,34 +847,37 @@ public class FijiAssistantChat {
 				assistant.chatStreaming(chatRequest)
 						.onPartialThinkingWithContext((thinking, context) -> {
 							if (stopRequested) {
-								context.streamingHandle().cancel();
 								stopRequested = false;
+								context.streamingHandle().cancel();
+								removeChatBubble(currentStreamingPanel);
 							}
 						})
 						.onPartialResponseWithContext((partialResponse, context) -> {
-							if (!messageReady[0]) {
-								messageReady[0] = true;
-								SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
+							if (!aiMessageStarted[0]) {
+								aiMessageStarted[0] = true;
 							}
 							if (stopRequested) {
-								context.streamingHandle().cancel();
 								stopRequested = false;
-							}
-							SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
-							// Scroll to bottom periodically (every 200ms) to avoid excessive updates
-							final long now = System.currentTimeMillis();
-							if (now - lastScrollTime[0] > updateDelay) {
-								lastScrollTime[0] = now;
-								SwingUtilities.invokeLater(() -> {
-									final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-									vertical.setValue(vertical.getMaximum());
-								});
+								context.streamingHandle().cancel();
+								if (currentStreamingPanel.getText().isEmpty()) {
+									removeChatBubble(currentStreamingPanel);
+								}
+							} else {
+								SwingUtilities.invokeLater(() -> currentStreamingPanel.appendText(partialResponse.text()));
+								// Scroll to bottom periodically (every 200ms) to avoid excessive updates
+								final long now = System.currentTimeMillis();
+								if (now - lastScrollTime[0] > updateDelay) {
+									lastScrollTime[0] = now;
+									SwingUtilities.invokeLater(() -> {
+										final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+										vertical.setValue(vertical.getMaximum());
+									});
+								}
 							}
 						})
 						.onCompleteResponse(response -> {
-							if (!messageReady[0]) {
-								messageReady[0] = true;
-								SwingUtilities.invokeLater(() -> sendStopButton.setEnabled(true));
+							if (!aiMessageStarted[0]) {
+								aiMessageStarted[0] = true;
 							}
 							// Save assistant response to conversation
 							if (currentConversation != null) {
@@ -929,6 +926,41 @@ public class FijiAssistantChat {
 					setSendMode();
 				});
 			}
+		});
+
+		// Start an immediate thinking thread.
+		threadService.run(() -> {
+			boolean stopped = false;
+			while (!aiMessageStarted[0]) {
+				if (stopRequested && !stopped) {
+					stopped = true;
+					cancelConversation[0] = true;
+					msgThread.cancel(false);
+					stopRequested = false;
+					SwingUtilities.invokeLater(() -> {
+						aiMessageStarted[0] = true;
+						removeChatBubble(currentStreamingPanel);
+					});
+				} else {
+					SwingUtilities.invokeLater(() -> {
+						currentStreamingPanel.updateThinking();
+					});
+					try {
+						Thread.sleep(updateDelay);
+					} catch (InterruptedException e) {
+						// no-op
+					}
+				}
+			}
+		});
+	}
+
+	private void removeChatBubble(ChatMessagePanel chatMessagePanel) {
+		SwingUtilities.invokeLater(() -> {
+				chatPanel.remove(chatMessagePanel);
+				chatPanel.repaint();
+				JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+				vertical.setValue(vertical.getMaximum());
 		});
 	}
 
@@ -983,7 +1015,6 @@ public class FijiAssistantChat {
 		}
 		sendStopButton.setToolTipText("Send message");
 
-		sendStopButton.setEnabled(true);
 		inputArea.setEnabled(true);
 		inputArea.requestFocus();
 	}
@@ -1001,7 +1032,6 @@ public class FijiAssistantChat {
 		}
 		sendStopButton.setToolTipText("Interrupt the assistant");
 
-		sendStopButton.setEnabled(false);
 		inputArea.setText("");
 		inputArea.setEnabled(false);
 	}
@@ -1438,7 +1468,7 @@ public class FijiAssistantChat {
 	 * Create a new the conversation based on the user's first message. Sends a
 	 * separate request to the LLM to summarize the message.
 	 */
-	private void createNewConversation(String userMessage) {
+	private void createNewConversation(String userMessage, boolean[] cancelConversation) {
 		SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
 		buildAssistant(systemMessage);
 		String textToTruncate = userMessage;
@@ -1459,7 +1489,13 @@ public class FijiAssistantChat {
 		catch (Exception e) {
 			// No-op - user message is used as a fallback
 		}
-		// If naming fails, try using the first few words
+
+		// Check if the message was interrupted while we were waiting for the LLM.
+		if (cancelConversation[0]) {
+			return;
+		}
+
+		// Truncate to the the first few words
 		textToTruncate = textToTruncate.trim();
 		String[] words = textToTruncate.split("\\s+");
 		if (words.length <= 5) {
