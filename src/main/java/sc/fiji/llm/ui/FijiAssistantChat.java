@@ -783,7 +783,7 @@ public class FijiAssistantChat {
 
 		StringBuilder displayMessage = new StringBuilder(userText);
 		List<ContextItem> mergedContextItems = mergeContextItems(contextItems);
-		final JsonArray contextArray = new JsonArray();
+		final JsonArray userContextArray = new JsonArray();
 
 		// Add context item notes to the user message
 		// Collect merged context items to JsonArray
@@ -792,7 +792,7 @@ public class FijiAssistantChat {
 
 			for (final ContextItem item : mergedContextItems) {
 				displayMessage.append(item.getLabel()).append("\n");
-				contextArray.add(item.getJson());
+				userContextArray.add(item.getJson());
 			}
 			displayMessage.append("```");
 		}
@@ -829,7 +829,7 @@ public class FijiAssistantChat {
 
 				// Attach context items as message attributes
 				if (!mergedContextItems.isEmpty()) {
-					msgBuilder.attributes(Map.of("contextItems", contextArray.toString()));
+					msgBuilder.attributes(Map.of("context:from_user", userContextArray.toString()));
 				}
 
 				final UserMessage userMsg = msgBuilder.build();
