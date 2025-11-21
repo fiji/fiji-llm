@@ -20,7 +20,7 @@
  * #L%
  */
 
-package sc.fiji.llm.commands;
+package sc.fiji.llm.macro;
 
 import java.util.ArrayList;
 import java.util.Collections;
