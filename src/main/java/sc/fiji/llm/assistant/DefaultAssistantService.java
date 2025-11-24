@@ -22,7 +22,6 @@
 
 package sc.fiji.llm.assistant;
 
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -32,8 +31,6 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest.Builder;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.tool.ToolErrorContext;
-import dev.langchain4j.service.tool.ToolErrorHandlerResult;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
@@ -48,9 +45,6 @@ public class DefaultAssistantService extends AbstractService implements
 
 	@Parameter
 	private ProviderService providerService;
-
-	@Parameter
-	private LogService logService;
 
 	@Parameter
 	private AiToolService aiToolService;
@@ -69,8 +63,8 @@ public class DefaultAssistantService extends AbstractService implements
 		final var builder = AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(modelName))
 			.tools(aiToolService.getToolsWithExecutors())
-			.toolExecutionErrorHandler(this::handleExecutionError)
-			.toolArgumentsErrorHandler(this::handleArgumentError)
+			.toolExecutionErrorHandler(aiToolService::handleExecutionError)
+			.toolArgumentsErrorHandler(aiToolService::handleArgumentError)
 			.chatModel(provider.createChatModel(modelName));
 
 		// Apply request parameters at AiServices level where they'll be used
@@ -87,25 +81,5 @@ public class DefaultAssistantService extends AbstractService implements
 		}
 
 		return builder.build();
-	}
-
-	public ToolErrorHandlerResult handleExecutionError(Throwable error,
-		ToolErrorContext context)
-	{
-		return handle("Tool execution error", error, context);
-	}
-
-	public ToolErrorHandlerResult handleArgumentError(Throwable error,
-		ToolErrorContext context)
-	{
-		return handle("Tool argument error", error, context);
-	}
-
-	private ToolErrorHandlerResult handle(String message, Throwable error,
-		ToolErrorContext context)
-	{
-		logService.error(message, error);
-		return new ToolErrorHandlerResult(
-			"I encountered an issue. Please try again. If the problem persists, please contact the developers.");
 	}
 }

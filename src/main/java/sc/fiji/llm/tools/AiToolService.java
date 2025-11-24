@@ -29,6 +29,10 @@ import org.scijava.plugin.SingletonService;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
+import dev.langchain4j.service.tool.BeforeToolExecution;
+import dev.langchain4j.service.tool.ToolErrorContext;
+import dev.langchain4j.service.tool.ToolErrorHandlerResult;
+import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolExecutor;
 import net.imagej.ImageJService;
 
@@ -67,4 +71,24 @@ public interface AiToolService extends SingletonService<AiToolPlugin>, ImageJSer
 	 * @return All {@link ToolSpecifications} compatible with the given context
 	 */
 	List<ToolSpecification> getToolsForContext(String toolContext);
+
+	/**
+	 * Handler for {@link BeforeToolExecution} events
+	 */
+	void processToolRequest(BeforeToolExecution beforeToolExecutionEvent);
+
+	/**
+	 * Handler for {@link ToolExecution} events
+	 */
+	void processToolExecution(ToolExecution toolExecutionEvent);
+
+	/**
+	 * Handler for tool execution errors
+	 */
+	ToolErrorHandlerResult handleExecutionError(Throwable error, ToolErrorContext context);
+
+	/**
+	 * Handler for tool argument errors
+	 */
+	ToolErrorHandlerResult handleArgumentError(Throwable error, ToolErrorContext context);
 }

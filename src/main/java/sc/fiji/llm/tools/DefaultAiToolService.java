@@ -39,6 +39,10 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.Service;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.BeforeToolExecution;
+import dev.langchain4j.service.tool.ToolErrorContext;
+import dev.langchain4j.service.tool.ToolErrorHandlerResult;
+import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolExecutor;
 
 /**
@@ -51,6 +55,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 
 	private Map<String, List<ToolSpecification>> toolsByContext;
 	private Map<ToolSpecification, ToolExecutor> toolsWithExecutors;
+	private Map<String, AiToolPlugin> pluginsByToolName;
 
 	@Parameter
 	private LogService logService;
@@ -76,6 +81,52 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 		return toolsByContext.get(toolContext);
 	}
 
+	@Override
+	public void processToolRequest(BeforeToolExecution beforeToolExecutionEvent) {
+		// No-op
+	}
+
+	@Override
+	public void processToolExecution(ToolExecution toolExecutionEvent) {
+		// No-op
+	}
+
+	@Override
+	public ToolErrorHandlerResult handleExecutionError(Throwable error,
+		ToolErrorContext context)
+	{
+		return handleError(error, context, ToolErrorType.EXECUTION);
+	}
+
+	@Override
+	public ToolErrorHandlerResult handleArgumentError(Throwable error,
+		ToolErrorContext context)
+	{
+		return handleError(error, context, ToolErrorType.ARGUMENT);
+	}
+
+	private ToolErrorHandlerResult handleError(Throwable error,
+		ToolErrorContext context, ToolErrorType errorType)
+	{
+		final String name = context.toolExecutionRequest().name();
+		final AiToolPlugin plugin = pluginsByToolName.get(name);
+		if (plugin != null) {
+			ToolErrorHandlerResult result = plugin.handleToolError(error, context, errorType);
+			if (result != null) {
+				return result;
+			}
+		}
+		String message = "";
+		switch (errorType) {
+			case ARGUMENT -> message = "Tool argument error.";
+			case EXECUTION -> message = "Tool execution error";
+		}
+
+		logService.error(message, error);
+		return new ToolErrorHandlerResult(
+			"Error with tool: " + name + ".  Please contact the Fiji developers.");
+	}
+
 	private synchronized void initMaps() {
 		if (toolsWithExecutors == null || toolsByContext == null) {
 			// Use interim maps to collect tool specifications
@@ -84,6 +135,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 			Map<ToolSpecification, ToolExecutor> interimExecutorMap = new HashMap<>();
 			List<ToolSpecification> anyContextList = new ArrayList<>();
 			interimContextMap.put(ToolContext.ANY, anyContextList);
+			Map<String, AiToolPlugin> interimPluginMap = new HashMap<>();
 			Set<String> toolNames = new HashSet<>();
 
 			for (AiToolPlugin plugin : getInstances()) {
@@ -104,6 +156,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 					}
 					toolNames.add(name);
 					interimExecutorMap.put(spec, entry.getValue());
+					interimPluginMap.put(name, plugin);
 
 					// Always add to ANY list
 					anyContextList.add(spec);
@@ -125,6 +178,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 			}
 			toolsByContext = Collections.unmodifiableMap(finalMap);
 			toolsWithExecutors = Collections.unmodifiableMap(interimExecutorMap);
+			pluginsByToolName = Collections.unmodifiableMap(interimPluginMap);
 		}
 	}
 }

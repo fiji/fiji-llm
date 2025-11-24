@@ -27,6 +27,8 @@ import java.util.Map;
 import org.scijava.plugin.SingletonPlugin;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.ToolErrorContext;
+import dev.langchain4j.service.tool.ToolErrorHandlerResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 
 /**
@@ -56,6 +58,15 @@ public interface AiToolPlugin extends SingletonPlugin {
 	 * @return The tools provided by this plugin with their executors
 	 */
 	Map<ToolSpecification, ToolExecutor> getTools();
+
+	/**
+	 * Handler for when plugins from this tool encounter errors
+	 *
+	 * @return A {@link ToolErrorHandlerResult} tailored to this failure, or {@code null}
+	 */
+	default ToolErrorHandlerResult handleToolError(Throwable error, ToolErrorContext context, ToolErrorType type) {
+		return null;
+	}
 
 	/**
 	 * @return Tool contexts allow filtering of available tools.

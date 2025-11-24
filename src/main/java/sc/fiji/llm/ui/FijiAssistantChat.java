@@ -860,6 +860,8 @@ public class FijiAssistantChat {
 
 				// Send user message to the LLM to initiate chat
 				assistant.chatStreaming(chatRequest)
+					.beforeToolExecution(aiToolService::processToolRequest)
+					.onToolExecuted(aiToolService::processToolExecution)
 					.onPartialThinkingWithContext((thinking, context) -> {
 						if (stopRequested) {
 							stopRequested = false;
