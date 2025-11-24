@@ -39,9 +39,6 @@ public class SwingChatbotService extends AbstractService implements
 	ChatbotService
 {
 
-	@Parameter
-	private ContextItemService contextItemService;
-
 	@Override
 	public void launchChat(String title, String providerName, String modelName) {
 		SwingUtilities.invokeLater(() -> {

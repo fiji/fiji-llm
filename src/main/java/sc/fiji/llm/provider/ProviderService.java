@@ -24,11 +24,13 @@ package sc.fiji.llm.provider;
 
 import org.scijava.plugin.SingletonService;
 
+import net.imagej.ImageJService;
+
 /**
  * SciJava service for discovering and managing LLM provider plugins. This
  * service is stateless and provides access to available LLM providers.
  */
-public interface ProviderService extends SingletonService<LLMProvider> {
+public interface ProviderService extends SingletonService<LLMProvider>, ImageJService {
 
 	/**
 	 * Get the particular provider plugin for the given name.

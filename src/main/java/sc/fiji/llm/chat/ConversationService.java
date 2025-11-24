@@ -24,12 +24,12 @@ package sc.fiji.llm.chat;
 
 import java.util.List;
 
-import org.scijava.service.SciJavaService;
+import net.imagej.ImageJService;
 
 /**
- * {@link SciJavaService} for managing {@link Conversation}s.
+ * {@link ImageJService} for managing {@link Conversation}s.
  */
-public interface ConversationService extends SciJavaService {
+public interface ConversationService extends ImageJService {
 
 	/**
 	 * @return Names of all saved conversations

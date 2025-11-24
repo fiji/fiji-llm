@@ -22,13 +22,13 @@
 
 package sc.fiji.llm.auth;
 
-import org.scijava.service.SciJavaService;
+import net.imagej.ImageJService;
 
 /**
  * SciJava service for managing encrypted API keys for LLM providers. This
  * service handles secure storage and retrieval of API keys.
  */
-public interface APIKeyService extends SciJavaService {
+public interface APIKeyService extends ImageJService {
 
 	/**
 	 * Get the API key for the specified provider.

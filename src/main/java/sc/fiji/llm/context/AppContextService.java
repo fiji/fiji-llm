@@ -25,7 +25,9 @@ import org.scijava.plugin.SingletonService;
 
 import com.google.gson.JsonElement;
 
-public interface AppContextService extends SingletonService<AppContextSupplier> {
+import net.imagej.ImageJService;
+
+public interface AppContextService extends SingletonService<AppContextSupplier>, ImageJService {
 	
 	public JsonElement getCurrentEnvironment();
 }

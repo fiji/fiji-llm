@@ -22,12 +22,12 @@
 
 package sc.fiji.llm.ui;
 
-import org.scijava.service.SciJavaService;
+import net.imagej.ImageJService;
 
 /**
  * Service interface for launching chatbot UIs.
  */
-public interface ChatbotService extends SciJavaService {
+public interface ChatbotService extends ImageJService {
 
 	/**
 	 * Launch a chat window with the given assistant.

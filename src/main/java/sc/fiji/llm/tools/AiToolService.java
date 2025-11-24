@@ -30,12 +30,13 @@ import org.scijava.plugin.SingletonService;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
 import dev.langchain4j.service.tool.ToolExecutor;
+import net.imagej.ImageJService;
 
 /**
  * SciJava service for managing AI tools. This service is used to discover and
  * list all available tool plugins.
  */
-public interface AiToolService extends SingletonService<AiToolPlugin> {
+public interface AiToolService extends SingletonService<AiToolPlugin>, ImageJService {
 
 	/**
 	 * @return A system message fragment indicating language-specific

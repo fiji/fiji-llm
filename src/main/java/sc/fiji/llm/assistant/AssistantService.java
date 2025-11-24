@@ -22,17 +22,16 @@
 
 package sc.fiji.llm.assistant;
 
-import org.scijava.service.SciJavaService;
-
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import net.imagej.ImageJService;
 
 /**
  * SciJava service for creating LLM-powered assistants. This service creates
  * AiService instances (LangChain4j assistants) with specified providers,
  * models, and optional tools.
  */
-public interface AssistantService extends SciJavaService {
+public interface AssistantService extends ImageJService {
 
 	/**
 	 * Create an AI service instance (LangChain4j assistant) with the given

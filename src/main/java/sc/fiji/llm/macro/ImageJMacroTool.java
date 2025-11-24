@@ -57,6 +57,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 
 	@Override
 	public String getName() {
+		// legacyService.getIJ1Helper().getIJ().getWindows();
 		return "Macro Writing Tools";
 	}
 
