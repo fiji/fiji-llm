@@ -25,8 +25,6 @@ package sc.fiji.llm.context;
 import java.util.List;
 import java.util.Objects;
 
-import com.google.gson.Gson;
-
 /**
  * Represents a context item that can be added to the chat.
  */
@@ -83,7 +81,7 @@ public abstract class AbstractContextItem implements ContextItem {
 	 */
 	@Override
 	public String toString() {
-		return new Gson().toJson(toJson());
+		return toJson().toString();
 	}
 
 	@Override
