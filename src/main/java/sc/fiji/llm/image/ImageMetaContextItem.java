@@ -22,7 +22,6 @@
 
 package sc.fiji.llm.image;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -41,43 +40,41 @@ import sc.fiji.llm.context.AbstractContextItem;
  */
 public class ImageMetaContextItem extends AbstractContextItem {
 
-	private final String imageName;
+	private final String imageTitle;
+	private final int imageId;
 	private final List<Dimension> dimensions;
 	private final String pixelType;
-
-	/**
-	 * Creates an image context item with basic metadata.
-	 *
-	 * @param imageName the name of the image/dataset
-	 */
-	public ImageMetaContextItem(String imageName) {
-		this(imageName, Collections.emptyList(), "");
-	}
 
 	/**
 	 * Creates an image context item with detailed metadata.
 	 *
 	 * @param imageName the name of the image/dataset
+	 * @param imageId the id of this image
 	 * @param dimensions list of dimensions with their types, lengths, and
 	 *          ordering
 	 * @param pixelType the pixel type (e.g., "uint8", "uint16", "float32")
 	 */
-	public ImageMetaContextItem(String imageName, List<Dimension> dimensions,
+	public ImageMetaContextItem(String imageName, int imageId, List<Dimension> dimensions,
 		String pixelType)
 	{
 		super("Image", imageName);
-		this.imageName = imageName;
-		this.dimensions = dimensions != null ? new ArrayList<>(dimensions)
-			: new ArrayList<>();
+		this.imageTitle = imageName;
+		this.imageId = imageId;
+		this.dimensions = dimensions != null ? Collections.unmodifiableList(dimensions)
+			: Collections.emptyList();
 		this.pixelType = pixelType != null ? pixelType : "";
 	}
 
-	public String getImageName() {
-		return imageName;
+	public String getTitle() {
+		return imageTitle;
+	}
+
+	public int getId() {
+		return imageId;
 	}
 
 	public List<Dimension> getDimensions() {
-		return Collections.unmodifiableList(dimensions);
+		return dimensions;
 	}
 
 	public String getPixelType() {
@@ -93,20 +90,21 @@ public class ImageMetaContextItem extends AbstractContextItem {
 			return false;
 		}
 		final ImageMetaContextItem other = (ImageMetaContextItem) obj;
-		return Objects.equals(imageName, other.imageName) && Objects.equals(
-			getType(), other.getType());
+		return Objects.equals(imageTitle, other.imageTitle) && (imageId == other.imageId)
+			&& Objects.equals( getType(), other.getType());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getType(), imageName);
+		return Objects.hash(getType(), imageTitle);
 	}
 
 	@Override
 	public JsonElement toJson() {
 		final JsonObject obj = new JsonObject();
 		obj.addProperty("type", getType());
-		obj.addProperty("name", imageName);
+		obj.addProperty("title", imageTitle);
+		obj.addProperty("id", imageId);
 
 		if (!dimensions.isEmpty()) {
 			final JsonArray dimensionsArray = new JsonArray();
