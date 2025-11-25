@@ -24,7 +24,7 @@ package sc.fiji.llm.context;
 
 import java.util.List;
 
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 
 /**
  * Represents a context item that can be added to the chat.
@@ -35,7 +35,7 @@ public interface ContextItem {
 
 	public String getLabel();
 
-	public JsonObject getJson();
+	public JsonElement toJson();
 
 	public String getMergeKey();
 

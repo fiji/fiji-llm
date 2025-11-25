@@ -803,7 +803,7 @@ public class FijiAssistantChat {
 
 			for (final ContextItem item : mergedContextItems) {
 				displayMessage.append(item.getLabel()).append("\n");
-				userContextArray.add(item.getJson());
+				userContextArray.add(item.toJson());
 			}
 			displayMessage.append("```");
 		}

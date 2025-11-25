@@ -31,6 +31,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import sc.fiji.llm.script.ScriptContextItem;
 
 /**
@@ -132,7 +135,7 @@ public class ContextItemTest {
 		assertNotNull(merged);
 		assertTrue(merged instanceof ScriptContextItem);
 		String mergedStr = merged.toString();
-		assertTrue(mergedStr.contains("\"selectedLines\""));
+		assertTrue(mergedStr.contains("\"selected_lines\""));
 		assertTrue(mergedStr.contains("\"1-2\""));
 		assertTrue(mergedStr.contains("\"4-5\""));
 	}
@@ -153,7 +156,7 @@ public class ContextItemTest {
 		assertNotNull(merged);
 		String mergedStr = merged.toString();
 		// Should only have one range entry: 1-4
-		assertTrue(mergedStr.contains("\"selectedLines\":[\"1-4\"]"));
+		assertTrue(mergedStr.contains("\"selected_lines\":[\"1-4\"]"));
 	}
 
 	@Test
@@ -172,7 +175,7 @@ public class ContextItemTest {
 		assertNotNull(merged);
 		String mergedStr = merged.toString();
 		// Should only have one range entry: 1-4
-		assertTrue(mergedStr.contains("\"selectedLines\":[\"1-4\"]"));
+		assertTrue(mergedStr.contains("\"selected_lines\":[\"1-4\"]"));
 	}
 
 	/**
@@ -189,6 +192,11 @@ public class ContextItemTest {
 
 		public String getContent() {
 			return content;
+		}
+
+		@Override
+		public JsonElement toJson() {
+			return new JsonObject();
 		}
 
 		@Override
