@@ -87,7 +87,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 		"Returns: Information on all ImageJ macro functions in the given category" })
 	public String listMacroFunctionsByCategory(@P("category") String category) {
 		if (category == null || category.trim().isEmpty()) {
-			return "ERROR: Category cannot be empty";
+			return jsonError("Category cannot be empty");
 		}
 
 		List<MacroFunctionRegistry.MacroFunction> functions = MacroFunctionRegistry
@@ -124,7 +124,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 			return "Macro recorder is now active.";
 		}
 		catch (RuntimeException e) {
-			return "ERROR: Failed to open macro recorder: " + e.getMessage();
+			return jsonError("Failed to open macro recorder");
 		}
 	}
 }

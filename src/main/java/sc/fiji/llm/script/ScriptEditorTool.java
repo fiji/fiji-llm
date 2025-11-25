@@ -76,20 +76,10 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			"• When you want to make a new script id: first check isEditorOpen, then if false use startEditor, or if true use createScript.";
 	}
 
-	@Tool(value = { "Check if the script editor is open.",
-		"Returns: true if is open, false otherwise" })
-	public boolean isEditorOpen() {
-		return TextEditorUtils.getMostRecentVisibleEditor() != null;
-	}
-
-	@Tool(value = { "Start the script editor if it's not currently open",
-		"Returns: Info with id for the default script" })
+	@Tool(value = { "Open a script editor UI if it's not currently open" })
 	public String startEditor() {
 		try {
 			// Check if editor is already open
-			if (isEditorOpen()) {
-				return "ERROR: Script editor is already open. Use createScript instead.";
-			}
 
 			// Open the editor on EDT
 			if (SwingUtilities.isEventDispatchThread()) {
@@ -113,7 +103,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			}
 
 			if (textEditor == null) {
-				return "ERROR: Failed to open script editor";
+				return jsonError("Failed to open script editor");
 			}
 
 			// Get the editor and default tab indices
@@ -124,7 +114,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			return getTabJson(textEditor.getTab(tabIndex), editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return "ERROR: Failed to start script editor: " + e.getMessage();
+			return jsonError("Failed to start script editor");
 		}
 	}
 
@@ -137,7 +127,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			final TextEditor textEditor = TextEditorUtils
 				.getMostRecentVisibleEditor();
 			if (textEditor == null) {
-				return "ERROR: Script editor is not open. Use startEditor to open it first.";
+				return jsonError("Script editor is not open. Use startEditor to open it first.");
 			}
 
 			// Create new tab with default empty content
@@ -153,7 +143,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			return result[0];
 		}
 		catch (Exception e) {
-			return "ERROR: Failed to create script: " + e.getMessage();
+			return jsonError("Failed to create script");
 		}
 	}
 
@@ -166,29 +156,29 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 		try {
 			// Validate inputs
 			if (id == null || id.trim().isEmpty()) {
-				return "ERROR: Script id cannot be null or empty";
+				return jsonError("Script id cannot be null or empty");
 			}
 			if (content == null) {
-				return "ERROR: Script content cannot be null";
+				return jsonError("Script content cannot be null");
 			}
 
 			// Parse the id string
 			final ScriptID scriptID = parseID(id);
 			if (scriptID == null) {
-				return "ERROR: Invalid id format. Expected e.g., 0:1";
+				return jsonError("Invalid id format. Expected e.g., 0:1");
 			}
 
 			// Validate instance index
 			if (scriptID.editorIndex < 0 ||
 				scriptID.editorIndex >= TextEditor.instances.size())
 			{
-				return "ERROR: Invalid editor index " + scriptID.editorIndex;
+				return jsonError("Invalid editor index " + scriptID.editorIndex);
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(
 				scriptID.editorIndex);
 			if (textEditor == null) {
-				return "ERROR: No editor found at index " + scriptID.editorIndex;
+				return jsonError("No editor found at index " + scriptID.editorIndex);
 			}
 
 			// Perform UI operations on EDT
@@ -199,7 +189,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 					final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
 
 					if (tab == null) {
-						result[0] = "ERROR: No tab found at index " + scriptID.tabIndex;
+						result[0] = jsonError("No tab found at index " + scriptID.tabIndex);
 						return;
 					}
 
@@ -213,14 +203,14 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 					result[0] = "Successfully updated script at " + scriptID;
 				}
 				catch (Exception e) {
-					result[0] = "ERROR: Failed to update tab at index " +
-						scriptID.tabIndex + ": " + e.getMessage();
+					result[0] = jsonError("Failed to update tab at index " +
+						scriptID.tabIndex);
 				}
 			});
 			return result[0];
 		}
 		catch (Exception e) {
-			return "ERROR: Failed to update script: " + e.getMessage();
+			return jsonError("Failed to update script");
 		}
 	}
 
@@ -233,29 +223,29 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 		try {
 			// Validate inputs
 			if (id == null || id.trim().isEmpty()) {
-				return "ERROR: Script id cannot be null or empty";
+				return jsonError("Script id cannot be null or empty");
 			}
 			if (filename == null || filename.trim().isEmpty()) {
-				return "ERROR: Script name cannot be null or empty";
+				return jsonError("Script name cannot be null or empty");
 			}
 
 			// Parse the id string
 			final ScriptID scriptID = parseID(id);
 			if (scriptID == null) {
-				return "ERROR: Invalid id format. Expected e.g., 0:1";
+				return jsonError("Invalid id format. Expected e.g., 0:1");
 			}
 
 			// Validate instance index
 			if (scriptID.editorIndex < 0 ||
 				scriptID.editorIndex >= TextEditor.instances.size())
 			{
-				return "ERROR: Invalid editor index " + scriptID.editorIndex;
+				return jsonError("Invalid editor index " + scriptID.editorIndex);
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(
 				scriptID.editorIndex);
 			if (textEditor == null) {
-				return "ERROR: No editor found at index " + scriptID.editorIndex;
+				return jsonError("No editor found at index " + scriptID.editorIndex);
 			}
 
 			// Perform UI operations on EDT
@@ -271,7 +261,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			return result[0];
 		}
 		catch (Exception e) {
-			return "ERROR: Failed to rename script: " + e.getMessage();
+			return jsonError("Failed to rename script");
 		}
 	}
 
@@ -307,7 +297,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			return getTabJson(tab, editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return "ERROR: Failed to create new tab: " + e.getMessage();
+			return jsonError("Failed to create new tab");
 		}
 	}
 
@@ -351,7 +341,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
 
 			if (tab == null) {
-				result[0] = "ERROR: No tab found at index " + scriptID.tabIndex;
+				result[0] = jsonError("No tab found at index " + scriptID.tabIndex);
 				return;
 			}
 
@@ -362,8 +352,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			result[0] = "Successfully renamed script at " + scriptID + " to " + name;
 		}
 		catch (Exception e) {
-			result[0] = "ERROR: Failed to rename tab at index " + scriptID.tabIndex +
-				": " + e.getMessage();
+			result[0] = jsonError("Failed to rename tab at index " + scriptID.tabIndex);
 		}
 	}
 }
