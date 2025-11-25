@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonObject;
+
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
@@ -48,6 +50,16 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 			buildTools();
 		}
 		return tools;
+	}
+
+	/**
+	 * @param errorMessage Base error message
+	 * @return A Json-formated version of the error message
+	 */
+	public String jsonError(String errorMessage) {
+		JsonObject err = new JsonObject();
+		err.addProperty("error", errorMessage);
+		return err.toString();
 	}
 
 	private synchronized void buildTools() {

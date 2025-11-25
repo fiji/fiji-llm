@@ -97,7 +97,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 	public String runCommand(@P("menuPath") String menuPath) {
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
-				return "ERROR: Menu path cannot be empty";
+				return jsonError("Menu path cannot be empty");
 			}
 
 			// Create a MenuPath from the components by joining them
@@ -112,10 +112,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 				.findFirst().orElse(null);
 
 			if (moduleInfo == null) {
-				return "ERROR: Command not found at path: " + menuPath;
-			}
-			if (menuString.equals("Help > Update ImageJ...")) {
-				return "ERROR: All updates should be done with \"Help > Update...\"";
+				return jsonError("Command not found at path: " + menuPath);
 			}
 
 			// Validate that this command is allowed for agentic use
@@ -129,7 +126,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 				"Open Samples") && !leafName.equals("Open Samples");
 
 			if (!permittedCommand) {
-				return "ERROR: this command is not allowed for agentic use. Instruct user to run it.";
+				return jsonError("This command is not allowed for agentic use. Instruct user to run it.");
 			}
 
 			// Run the module - this goes through the same path as the search panel
@@ -138,7 +135,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 			return "Command executed: " + moduleInfo.getName();
 		}
 		catch (RuntimeException e) {
-			return "ERROR: " + e.getMessage();
+			return jsonError(e.getMessage());
 		}
 	}
 
@@ -148,7 +145,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 	public String searchCommands(@P("commandName") String commandName) {
 		try {
 			if (commandName == null || commandName.trim().isEmpty()) {
-				return "ERROR: Command name cannot be empty";
+				return jsonError("Command name cannot be empty");
 			}
 
 			// Collect results with a timeout
@@ -213,10 +210,10 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			return "ERROR: Search interrupted: " + e.getMessage();
+			return jsonError("Search interrupted");
 		}
 		catch (RuntimeException e) {
-			return "ERROR: Search failed: " + e.getMessage();
+			return jsonError("Search failed");
 		}
 	}
 
