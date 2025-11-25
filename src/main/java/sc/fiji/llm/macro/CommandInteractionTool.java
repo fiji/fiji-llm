@@ -84,13 +84,11 @@ public class CommandInteractionTool extends AbstractAiToolPlugin {
 
 	@Override
 	public String getUsage() {
-		return "Commands are reusable functions that can vary by runtime (e.g. installed plugins). These tools support command discovery and use.\n" +
-			"To find available commands, use searchCommands. Always search for a command first to verify it exists before suggesting it to the user.\n" +
-			"To run a command, use: 1) searchCommands, then 2) runCommand with the desired menuPath.\n" +
-			"Using update can fix problems if the app is out-of-date, and can change installed plugins via update sites.\n" +
-			"Using configureMAT can help with OutOfMemoryErrors or performance issues.\n" +
-			"Using configureIJ2 to turn off SCIFIO (default: off) can help with some problems opening images.\n" +
-			"Using configureSearch if the user isn't seeing expected search results.";
+		return """
+Commands are reusable functions. They vary by runtime (e.g. installed plugins).
+To find available commands, use searchCommands. Always search for a command first to verify it exists before suggesting it to the user.
+To run a command, use: 1) searchCommands, then 2) runCommand with the desired menuPath.
+""";
 	}
 
 	@Tool(value = {
@@ -258,29 +256,5 @@ public class CommandInteractionTool extends AbstractAiToolPlugin {
 		if (value == null) return "";
 		return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n",
 			"\\n").replace("\r", "\\r").replace("\t", "\\t");
-	}
-
-	@Tool(value = { "Configure the search bar",
-		"Runs \"Edit > Options > Search Bar...\"" })
-	public String configureSearch() {
-		return runCommand("Edit > Options > Search Bar...");
-	}
-
-	@Tool(value = { "Configure available memory and threads",
-		"Runs \"Edit > Options > Memory & Threads...\"", })
-	public String configureMAT() {
-		return runCommand("Edit > Options > Memory & Threads...");
-	}
-
-	@Tool(value = { "Configure ImageJ2-specific options",
-		"Runs \"Edit > Options > ImageJ2...\"", })
-	public String configureIJ2() {
-		return runCommand("Edit > Options > ImageJ2...");
-	}
-
-	@Tool(value = { "Check for updates and control installed plugins",
-		"Runs \"Help > Update...\"" })
-	public String update() {
-		return runCommand("Help > Update...");
 	}
 }
