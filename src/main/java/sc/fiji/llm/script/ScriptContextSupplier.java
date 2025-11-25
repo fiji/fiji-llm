@@ -189,9 +189,10 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 			.getText());
 		final String errorOutput = getErrorOutput(textEditor);
 		final int[] selectionLines = getSelectionLineNumbers(editorPane);
+		final String scriptLanguage = editorPane.getCurrentLanguage().getNames().get(0);
 
 		return new ScriptContextItem(scriptName, scriptContent, editorIndex,
-			tabIndex, errorOutput, selectionLines[0], selectionLines[1]);
+			tabIndex, selectionLines[0], selectionLines[1], scriptLanguage, errorOutput);
 	}
 
 	/**

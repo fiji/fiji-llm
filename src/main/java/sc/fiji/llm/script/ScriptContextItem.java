@@ -44,27 +44,31 @@ public class ScriptContextItem extends AbstractContextItem {
 	private final ScriptID id;
 	private final String errorOutput;
 	private final List<LineRange> selectedRanges;
+	private final String language;
 
-	public ScriptContextItem(String scriptName, String content, ScriptID id) {
-		this(scriptName, content, id, "", new ArrayList<>());
+	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex,
+		String language)
+	{
+		this(scriptName, content, editorIndex, tabIndex, -1, -1, language);
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptID id,
-		String errorOutput)
+	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex,
+		int selectionStartLine, int selectionEndLine, String language)
 	{
-		this(scriptName, content, id, errorOutput, new ArrayList<>());
+		this(scriptName, content, editorIndex, tabIndex, selectionStartLine,
+		selectionEndLine, language, "");
 	}
 
-	public ScriptContextItem(String scriptName, String content, ScriptID id,
-		String errorOutput, int selectionStartLine, int selectionEndLine)
+	public ScriptContextItem(String scriptName, String content, int editorIndex, int tabIndex,
+		int selectionStartLine, int selectionEndLine, String language, String errorOutput)
 	{
-		this(scriptName, content, id, errorOutput, selectionStartLine != -1 &&
+		this(scriptName, content, new ScriptID(editorIndex, tabIndex), selectionStartLine != -1 &&
 			selectionEndLine != -1 ? List.of(new LineRange(selectionStartLine,
-				selectionEndLine)) : new ArrayList<>());
+			selectionEndLine)) : new ArrayList<>(), language, errorOutput);
 	}
 
 	public ScriptContextItem(String scriptName, String content, ScriptID id,
-		String errorOutput, List<LineRange> selectedRanges)
+		List<LineRange> selectedRanges, String language, String errorOutput)
 	{
 		super("Script", scriptName);
 		this.scriptName = scriptName;
@@ -72,29 +76,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		this.id = Objects.requireNonNull(id, "id cannot be null");
 		this.errorOutput = errorOutput != null ? errorOutput : "";
 		this.selectedRanges = new ArrayList<>(selectedRanges);
-	}
-
-	// Backward compatibility constructors
-	public ScriptContextItem(String scriptName, String content, int editorIndex,
-		int tabIndex)
-	{
-		this(scriptName, content, new ScriptID(editorIndex, tabIndex), "",
-			new ArrayList<>());
-	}
-
-	public ScriptContextItem(String scriptName, String content, int editorIndex,
-		int tabIndex, String errorOutput)
-	{
-		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput,
-			new ArrayList<>());
-	}
-
-	public ScriptContextItem(String scriptName, String content, int editorIndex,
-		int tabIndex, String errorOutput, int selectionStartLine,
-		int selectionEndLine)
-	{
-		this(scriptName, content, new ScriptID(editorIndex, tabIndex), errorOutput,
-			selectionStartLine, selectionEndLine);
+		this.language = language != null ? language : "";
 	}
 
 	@Override
@@ -128,6 +110,11 @@ public class ScriptContextItem extends AbstractContextItem {
 		return id.tabIndex;
 	}
 
+	public String getLanguage() {
+		return language;
+	}
+
+
 	public String getErrorOutput() {
 		return errorOutput;
 	}
@@ -156,6 +143,7 @@ public class ScriptContextItem extends AbstractContextItem {
 		}
 
 		obj.addProperty("content", scriptBody);
+		obj.addProperty("language", language);
 
 		if (!errorOutput.isEmpty()) {
 			obj.addProperty("errors", errorOutput);
@@ -172,13 +160,13 @@ public class ScriptContextItem extends AbstractContextItem {
 		return Objects.equals(scriptName, other.scriptName) && Objects.equals(id,
 			other.id) && Objects.equals(getScriptBody(), other.getScriptBody()) &&
 			Objects.equals(errorOutput, other.errorOutput) && Objects.equals(
-				selectedRanges, other.selectedRanges);
+			selectedRanges, other.selectedRanges) && Objects.equals(language, other.language);
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(scriptName, id, getScriptBody(), errorOutput,
-			selectedRanges);
+			selectedRanges, language);
 	}
 
 	@Override
@@ -202,8 +190,8 @@ public class ScriptContextItem extends AbstractContextItem {
 		final List<LineRange> mergedRanges = LineRange.mergeRanges(ranges);
 
 		// Create a new merged item with merged ranges
-		return new ScriptContextItem(scriptName, getScriptBody(), id, errorOutput,
-			mergedRanges);
+		return new ScriptContextItem(scriptName, getScriptBody(), id,
+			mergedRanges, language, errorOutput);
 	}
 
 	/**
