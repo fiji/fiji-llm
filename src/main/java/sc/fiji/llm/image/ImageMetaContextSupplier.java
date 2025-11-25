@@ -31,7 +31,6 @@ import java.util.Set;
 import javax.swing.ImageIcon;
 
 import org.scijava.Priority;
-import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
@@ -53,10 +52,10 @@ import sc.fiji.llm.context.ContextItemSupplier;
 public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Parameter
-	private ImageDisplayService imageDisplayService;
+	private ImagePlusHelper iPlusHelper;
 
-	@Parameter(required = false)
-	private StatusService statusService;
+	@Parameter
+	private ImageDisplayService imageDisplayService;
 
 	@Override
 	public String getDisplayName() {
@@ -76,106 +75,80 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	public Set<ContextItem> listAvailable() {
 		final Set<ContextItem> items = new LinkedHashSet<>();
 
-		try {
-			if (imageDisplayService == null) {
-				return items;
-			}
-
-			// Get all image displays (handles both ImageJ1 and ImageJ2)
-			final List<ImageDisplay> imageDisplays = imageDisplayService
+		// Get all image displays (handles both ImageJ1 and ImageJ2)
+		final List<ImageDisplay> imageDisplays = imageDisplayService
 				.getImageDisplays();
 
-			if (imageDisplays == null || imageDisplays.isEmpty()) {
+		if (imageDisplays == null || imageDisplays.isEmpty()) {
 				return items;
-			}
+		}
 
-			for (final ImageDisplay imageDisplay : imageDisplays) {
-				try {
+		for (final ImageDisplay imageDisplay : imageDisplays) {
+			try {
 					// Get the active DatasetView from the ImageDisplay
 					final DatasetView datasetView = imageDisplayService
-						.getActiveDatasetView(imageDisplay);
-					if (datasetView != null) {
-						final Dataset dataset = datasetView.getData();
-						if (dataset != null) {
-							final ContextItem item = createImageContextItem(dataset);
-							if (item != null) {
-								items.add(item);
-							}
-						}
+							.getActiveDatasetView(imageDisplay);
+					if (datasetView == null) {
+						continue;
 					}
-				}
-				catch (Exception e) {
-					// Skip this display if we can't create a context item for it
-					if (statusService != null) {
-						statusService.warn(
-							"Could not create image metadata context item: " + e
-								.getMessage());
+
+					final Dataset dataset = datasetView.getData();
+					if (dataset == null) {
+						continue;
 					}
-				}
-			}
-		}
-		catch (Exception e) {
-			// If we can't access images, return empty list
-			if (statusService != null) {
-				statusService.warn("Could not list available images: " + e
-					.getMessage());
+
+					int id = iPlusHelper.getId(imageDisplay);
+					items.add(createImageContextItem(dataset, id));
+			} catch (Exception e) {
 			}
 		}
 
+		for (ContextItem i : items) {
+			System.out.println(i);
+		}
 		return items;
 	}
 
 	@Override
 	public ContextItem createActiveContextItem() {
-		try {
-			if (imageDisplayService == null) {
-				return null;
-			}
-
-			// Get the active dataset view (automatically handles ImageJ1 to ImageJ2
-			// conversion)
-			final DatasetView datasetView = imageDisplayService
-				.getActiveDatasetView();
-			if (datasetView == null) {
-				return null;
-			}
-
-			final Dataset dataset = datasetView.getData();
-			if (dataset == null) {
-				return null;
-			}
-
-			return createImageContextItem(dataset);
-		}
-		catch (RuntimeException e) {
-			if (statusService != null) {
-				statusService.warn("Could not create context item from active image: " +
-					e.getMessage());
-			}
+		// Get the active dataset view (automatically handles ImageJ1 to ImageJ2
+		// conversion)
+		final ImageDisplay display = imageDisplayService.getActiveImageDisplay();
+		if (display == null) {
 			return null;
 		}
+
+		final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
+		if (datasetView == null) {
+				return null;
+		}
+
+		final Dataset dataset = datasetView.getData();
+		if (dataset == null) {
+				return null;
+		}
+
+		int id = iPlusHelper.getId(display);
+		return createImageContextItem(dataset, id);
 	}
 
 	/**
 	 * Creates an {@link ImageMetaContextItem} from a Dataset. Extracts metadata
 	 * and creates a descriptive text for the LLM.
 	 */
-	private ImageMetaContextItem createImageContextItem(final Dataset dataset) {
+	private ImageMetaContextItem createImageContextItem(final Dataset dataset, final int id) {
 		if (dataset == null) {
 			return null;
 		}
 
-		final String imageName = dataset.getName();
-		if (imageName == null || imageName.isEmpty()) {
-			return null;
-		}
+		String imageTitle = iPlusHelper.getTitle(id);
 
 		// Extract all dimensions with their types and lengths
 		final List<ImageMetaContextItem.Dimension> dimensions = extractDimensions(
 			dataset);
 		final String pixelType = dataset.getType().getClass().getSimpleName();
 
-		return new ImageMetaContextItem(imageName, dimensions, pixelType);
+		return new ImageMetaContextItem(imageTitle, id, dimensions, pixelType);
 	}
 
 	/**

@@ -21,6 +21,8 @@
  */
 package sc.fiji.llm.image;
 
+import java.util.List;
+
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
@@ -28,13 +30,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.context.AppContextSupplier;
 
 @Plugin(type = AppContextSupplier.class)
 public class AppImageContext implements AppContextSupplier {
+
 	@Parameter
-	private LegacyService legacyService;
+	private ImagePlusHelper iPlusHelper;
 
 	@Override
 	public JsonElement appConext()
@@ -42,25 +44,18 @@ public class AppImageContext implements AppContextSupplier {
 		JsonObject imageContext = new JsonObject();
 		imageContext.addProperty(TYPE_KEY, "image_context");
 
-		if (legacyService.isActive()) {
-			try {
-				int[] ids = legacyService.getIJ1Helper().getIDList();
-				JsonArray openImageJson = new JsonArray();
-				for (int i=0; i<ids.length; i++) {
-					if (legacyService.getIJ1Helper().getImage(ids[i]).isVisible()) {
-						JsonObject imageJson = new JsonObject();
-						int id = ids[i];
-						imageJson.addProperty("id", id);
-						imageJson.addProperty("title", legacyService.getIJ1Helper().getImage(id).getTitle());
-						openImageJson.add(imageJson);
-					}
-				}
-				if (!openImageJson.isEmpty()) {
-					imageContext.add("open_images", openImageJson);
-				}
-			} catch (Exception e) {
-				// Presumably, no images open
+		List<Integer> ids = iPlusHelper.getIds();
+		JsonArray openImageJson = new JsonArray();
+		for (Integer id : ids) {
+			if (iPlusHelper.isVisible(id)) {
+				JsonObject imageJson = new JsonObject();
+				imageJson.addProperty("id", id);
+				imageJson.addProperty("title", iPlusHelper.getTitle(id));
+				openImageJson.add(imageJson);
 			}
+		}
+		if (!openImageJson.isEmpty()) {
+			imageContext.add("open_images", openImageJson);
 		}
 
 		return imageContext;
