@@ -179,9 +179,6 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 				return "ERROR: Invalid id format. Expected e.g., 0:1";
 			}
 
-			// Strip line numbers from content if present
-			final String cleanContent = TextEditorUtils.stripLineNumbers(content);
-
 			// Validate instance index
 			if (scriptID.editorIndex < 0 ||
 				scriptID.editorIndex >= TextEditor.instances.size())
@@ -209,7 +206,7 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 
 					// Update the tab content
 					final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-					editorPane.setText(cleanContent);
+					editorPane.setText(content);
 
 					// Switch to the updated tab
 					textEditor.switchTo(scriptID.tabIndex);
