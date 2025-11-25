@@ -185,8 +185,7 @@ public class ScriptContextSupplier implements ContextItemSupplier {
 	{
 		final String scriptName = stripLeadingAsterisks(tab.getTitle());
 		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-		final String scriptContent = TextEditorUtils.addLineNumbers(editorPane
-			.getText());
+		final String scriptContent = editorPane.getText();
 		final String errorOutput = getErrorOutput(textEditor);
 		final int[] selectionLines = getSelectionLineNumbers(editorPane);
 		final String scriptLanguage = editorPane.getCurrentLanguage().getNames().get(0);
