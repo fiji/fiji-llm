@@ -27,8 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import sc.fiji.llm.context.AbstractContextItem;
@@ -103,7 +103,7 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	}
 
 	@Override
-	public String toString() {
+	public JsonElement toJson() {
 		final JsonObject obj = new JsonObject();
 		obj.addProperty("type", getType());
 		obj.addProperty("name", imageName);
@@ -120,10 +120,10 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		}
 
 		if (!pixelType.isEmpty()) {
-			obj.addProperty("pixelType", pixelType);
+			obj.addProperty("pixel_type", pixelType);
 		}
 
-		return new Gson().toJson(obj);
+		return obj;
 	}
 
 	/**

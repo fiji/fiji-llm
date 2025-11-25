@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import sc.fiji.llm.context.AbstractContextItem;
@@ -128,7 +128,7 @@ public class ScriptContextItem extends AbstractContextItem {
 	}
 
 	@Override
-	public String toString() {
+	public JsonElement toJson() {
 		final JsonObject obj = new JsonObject();
 		obj.addProperty("type", getType());
 		obj.addProperty("name", scriptName);
@@ -139,17 +139,16 @@ public class ScriptContextItem extends AbstractContextItem {
 			for (final LineRange range : selectedRanges) {
 				rangesArray.add(range.getStart() + "-" + range.getEnd());
 			}
-			obj.add("selectedLines", rangesArray);
+			obj.add("selected_lines", rangesArray);
 		}
 
 		obj.addProperty("content", scriptBody);
 		obj.addProperty("language", language);
 
 		if (!errorOutput.isEmpty()) {
-			obj.addProperty("errors", errorOutput);
+			obj.addProperty("error_text", errorOutput);
 		}
-
-		return new Gson().toJson(obj);
+		return obj;
 	}
 
 	@Override
