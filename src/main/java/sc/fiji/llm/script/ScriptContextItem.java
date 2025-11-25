@@ -38,6 +38,13 @@ import sc.fiji.llm.context.ContextItem;
  * Represents a script context item that can be added to the chat.
  */
 public class ScriptContextItem extends AbstractContextItem {
+	public static final String CONTEXT_TYPE = "script";
+    public static final String SCRIPT_ID_KEY = "script_id";
+    public static final String NAME_KEY = "file_name";
+    public static final String LANGUAGE_KEY = "language";
+    public static final String CONTENT_KEY = "content";
+    public static final String ERROR_KEY = "error_output";
+    public static final String SELECTED_LINES_KEY = "selected_lines";
 
 	private final String scriptName;
 	private final String scriptBody;
@@ -70,10 +77,10 @@ public class ScriptContextItem extends AbstractContextItem {
 	public ScriptContextItem(String scriptName, String content, ScriptID id,
 		List<LineRange> selectedRanges, String language, String errorOutput)
 	{
-		super("Script", scriptName);
+		super(CONTEXT_TYPE, scriptName);
 		this.scriptName = scriptName;
 		this.scriptBody = content;
-		this.id = Objects.requireNonNull(id, "id cannot be null");
+		this.id = Objects.requireNonNull(id, SCRIPT_ID_KEY + " cannot be null");
 		this.errorOutput = errorOutput != null ? errorOutput : "";
 		this.selectedRanges = new ArrayList<>(selectedRanges);
 		this.language = language != null ? language : "";
@@ -130,23 +137,23 @@ public class ScriptContextItem extends AbstractContextItem {
 	@Override
 	public JsonElement toJson() {
 		final JsonObject obj = new JsonObject();
-		obj.addProperty("type", getType());
-		obj.addProperty("name", scriptName);
-		obj.addProperty("id", id.toString());
+		obj.addProperty(ContextItem.TYPE_KEY, getType());
+		obj.addProperty(NAME_KEY, scriptName);
+		obj.addProperty(SCRIPT_ID_KEY, id.toString());
 
 		if (hasSelection()) {
 			final JsonArray rangesArray = new JsonArray();
 			for (final LineRange range : selectedRanges) {
 				rangesArray.add(range.getStart() + "-" + range.getEnd());
 			}
-			obj.add("selected_lines", rangesArray);
+			obj.add(SELECTED_LINES_KEY, rangesArray);
 		}
 
-		obj.addProperty("content", scriptBody);
-		obj.addProperty("language", language);
+		obj.addProperty(CONTENT_KEY, scriptBody);
+		obj.addProperty(LANGUAGE_KEY, language);
 
 		if (!errorOutput.isEmpty()) {
-			obj.addProperty("error_text", errorOutput);
+			obj.addProperty(ERROR_KEY, errorOutput);
 		}
 		return obj;
 	}

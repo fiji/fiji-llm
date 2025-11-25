@@ -36,6 +36,9 @@ import sc.fiji.llm.context.AppContextSupplier;
 
 @Plugin(type = AppContextSupplier.class)
 public class AppScriptContext implements AppContextSupplier {
+    public static final String EDITOR_KEY = "editors";
+    public static final String TAB_KEY = "tabs";
+    public static final String EDITOR_ID = "editor_id";
 
     @Override
     public JsonElement appConext() {
@@ -46,8 +49,7 @@ public class AppScriptContext implements AppContextSupplier {
 			TextEditor textEditor = TextEditor.instances.get(i);
 			if (textEditor.isVisible()) {
 				JsonObject editorJson = new JsonObject();
-				editors.add(editorJson);
-				editorJson.addProperty("editor_index", i);
+				editorJson.addProperty(EDITOR_ID, i);
 
 				List<TextEditorTab> editorTabs = new ArrayList<>();
 				// Find all the tabs
@@ -63,17 +65,16 @@ public class AppScriptContext implements AppContextSupplier {
 
 				JsonArray tabJson = new JsonArray();
 				for (int j=0; j<editorTabs.size(); j++) {
-					JsonObject tab = new JsonObject();
-					tab.addProperty("tab_index", j);
-					tab.addProperty("name", editorTabs.get(j).getTitle());
+					JsonElement tab = ScriptContextUtilities.getTabJson(editorTabs.get(j), i, j);
 					tabJson.add(tab);
 				}
-				editorJson.add("tabs", tabJson);
+				editorJson.add(TAB_KEY, tabJson);
+				editors.add(editorJson);
 			}
 		}
 
 		if (!editors.isEmpty()) {
-			scriptContext.add("editors", editors);
+			scriptContext.add(EDITOR_KEY, editors);
 		}
 		return scriptContext;
     }
