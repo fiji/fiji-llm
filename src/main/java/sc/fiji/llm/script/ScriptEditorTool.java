@@ -71,7 +71,6 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 		return "Scripts are runnable programs, used to make reproducible workflows. These tools facilitate script creation and editing.\n" +
 			"Scripts are referenced by id, which may be provided by the user or returned by tool calls.\n" +
 			"A script's file extension determines its language (e.g., .py, .ijm, .groovy).\n" +
-			"BEFORE using any other Script Editor tool, use scriptGuide if it's not in your context.\n" +
 			"USAGE:\n" +
 			"• When you have a script id to edit: set the content using writeScript, set the display name and language extension using setScriptFilename.\n" +
 			"• When you want to make a new script id: first check isEditorOpen, then if false use startEditor, or if true use createScript.";
@@ -366,66 +365,5 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 			result[0] = "ERROR: Failed to rename tab at index " + scriptID.tabIndex +
 				": " + e.getMessage();
 		}
-	}
-
-	@Tool(value = { "Returns: A script syntax guide for YOU, the LLM." })
-	public String scriptGuide() {
-		return """
-				SciJava Scripting Guide
-				=======================
-
-				LANGUAGES (by extension)
-				-------------------------
-				Recommended: .py (Python), .ijm (ImageJ Macro), .groovy (Groovy)
-				Also: .js (JavaScript), .bsh (BeanShell), .java (Java)
-
-				NOTE: ImageJ Macros (.ijm) are typically created using the Macro Recorder.
-				Use available ImageJ Macro Tools to start, then edit the resulting script as needed.
-
-				@ PARAMETERS
-				------------
-				• A special magic syntax for script inputs and outputs
-				• ALL PARAMETER LINES MUST APPEAR FIRST (even before imports!)
-				• WRITTEN AS COMMENTS (e.g., # in Python, // in Groovy)
-				• Inputs Parameters are created automatically
-				* Output Parameters must be defined in the script.
-
-
-				Input: # @Type variableName (property=value, ...)
-				Output: #@output Type outputName
-
-				PARAMETER TYPES
-				---------------
-				UI-enabled (automatic widgets):
-				  • Dataset, ImagePlus, ImgPlus → Image selector (uses active image)
-				  • Boolean → Checkbox
-				  • Byte, Short, Long, Integer, Float, Double → Numeric input
-				  • String → Text field
-				  • Character → Single character
-				  • File, File[] → File/folder chooser
-				  • Date → Date picker
-				  • ColorRGB → Color picker
-
-				Injected (no UI): SciJavaServices (UIService, CommandService, etc.)
-
-				OPTIONAL PROPERTIES
-				-------------------
-				• label="text" → UI display name
-				• description="text" → Tooltip
-				• value=X → Default value
-				• required=true|false → Optional parameter
-				• min=X, max=X, stepSize=X → Numeric constraints
-				• style="slider|file|save|directory|files|directories" → Widget/mode
-				• visibility=NORMAL|TRANSIENT|INVISIBLE|MESSAGE
-
-				EXAMPLE
-				-------
-				# @ImagePlus img
-				#@output inverted
-
-				inverted = img.duplicate()
-				inverted.getProcessor().invert()
-				inverted.updateAndDraw()
-					""";
 	}
 }
