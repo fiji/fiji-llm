@@ -31,8 +31,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
-import sc.fiji.llm.context.AbstractContextItem;
-import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.script.ScriptContextItem;
 
 /**
@@ -107,7 +105,7 @@ public class ContextItemTest {
 	@Test
 	public void testScriptContextItemMergeKey() {
 		// Given: a script context item
-		ScriptContextItem item = new ScriptContextItem("test.py", "content", 0, 1);
+		ScriptContextItem item = new ScriptContextItem("test.py", "content", 0, 1, "Python");
 
 		// When: we get the merge key
 		String mergeKey = item.getMergeKey();
@@ -122,9 +120,9 @@ public class ContextItemTest {
 		// selections
 		String content = "line1\nline2\nline3\nline4\nline5";
 		ScriptContextItem item1 = new ScriptContextItem("test.py", content, 0, 1,
-			"", 1, 2);
+			1, 2, "Python");
 		ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1,
-			"", 4, 5);
+			4, 5, "Python");
 
 		// When: we merge them
 		ContextItem merged = item1.mergeWith(Collections.singletonList(item2));
@@ -144,9 +142,9 @@ public class ContextItemTest {
 		// Given: two script context items with overlapping selections
 		String content = "line1\nline2\nline3\nline4\nline5";
 		ScriptContextItem item1 = new ScriptContextItem("test.py", content, 0, 1,
-			"", 1, 3);
+			1, 3, "Python");
 		ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1,
-			"", 2, 4);
+			2, 4, "Python");
 
 		// When: we merge them
 		ContextItem merged = item1.mergeWith(Collections.singletonList(item2));
@@ -163,9 +161,9 @@ public class ContextItemTest {
 		// Given: two script context items with adjacent selections
 		String content = "line1\nline2\nline3\nline4\nline5";
 		ScriptContextItem item1 = new ScriptContextItem("test.py", content, 0, 1,
-			"", 1, 2);
+			1, 2, "Python");
 		ScriptContextItem item2 = new ScriptContextItem("test.py", content, 0, 1,
-			"", 3, 4);
+			3, 4, "Python");
 
 		// When: we merge them
 		ContextItem merged = item1.mergeWith(Collections.singletonList(item2));
