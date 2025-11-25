@@ -20,25 +20,26 @@
  * #L%
  */
 
-package sc.fiji.llm.context;
+package sc.fiji.llm.script;
 
-import java.util.List;
+import org.scijava.ui.swing.script.EditorPane;
+import org.scijava.ui.swing.script.TextEditorTab;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
-/**
- * Represents a context item that can be added to the chat.
- */
-public interface ContextItem {
-	public static final String TYPE_KEY = "type";
+public final class ScriptContextUtilities {
 
-	public String getType();
+	public static JsonElement getTabJson(TextEditorTab tab, ScriptID scriptID) {
+		JsonObject tabJson = new JsonObject();
+		tabJson.addProperty(ScriptContextItem.NAME_KEY, ((EditorPane)tab.getEditorPane()).getFile().getName());
+		tabJson.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
+		return tabJson;
+	}
 
-	public String getLabel();
+	public static JsonElement getTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {
+		return getTabJson(tab, new ScriptID(editorIndex, tabIndex));
+	}
 
-	public JsonElement toJson();
-
-	public String getMergeKey();
-
-	public ContextItem mergeWith(final List<ContextItem> others);
+	
 }

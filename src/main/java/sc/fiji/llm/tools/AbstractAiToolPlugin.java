@@ -57,8 +57,20 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 	 * @return A Json-formated version of the error message
 	 */
 	public String jsonError(String errorMessage) {
+		return jsonError(errorMessage, null);
+	}
+
+	/**
+	 * @param errorMessage Base error message
+	 * @param recommendedTool Optional tool name to recommend for resolving the error
+	 * @return A Json-formated version of the error message
+	 */
+	public String jsonError(String errorMessage, String recommendedTool) {
 		JsonObject err = new JsonObject();
 		err.addProperty("error", errorMessage);
+		if (recommendedTool != null && !recommendedTool.trim().isEmpty()) {
+			err.addProperty("recommended_tool", recommendedTool);
+		}
 		return err.toString();
 	}
 

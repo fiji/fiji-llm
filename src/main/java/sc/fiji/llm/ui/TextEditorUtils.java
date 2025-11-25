@@ -25,6 +25,9 @@ package sc.fiji.llm.ui;
 import java.util.List;
 
 import org.scijava.ui.swing.script.TextEditor;
+import org.scijava.ui.swing.script.TextEditorTab;
+
+import sc.fiji.llm.script.ScriptID;
 
 /**
  * Small helper utilities for working with the SciJava TextEditor instances.
@@ -59,6 +62,64 @@ public final class TextEditorUtils {
 	public static TextEditor getMostRecentVisibleEditor() {
 		final int editorIndex = getMostRecentVisibleEditorIndex();
 		return (editorIndex == -1) ? null : TextEditor.instances.get(editorIndex);
+	}
+
+	/**
+	 * Get the active script ID from the most recently visible editor's currently selected tab.
+	 *
+	 * @return ScriptID of the active script, or null if no editor is visible or no tab is selected
+	 */
+	public static ScriptID getActiveScriptID() {
+		final TextEditor textEditor = getMostRecentVisibleEditor();
+		if (textEditor == null) {
+			return null;
+		}
+
+		final int editorIndex = getMostRecentVisibleEditorIndex();
+		if (editorIndex == -1) {
+			return null;
+		}
+
+		final TextEditorTab activeTab = textEditor.getTab();
+		if (activeTab == null) {
+			return null;
+		}
+
+		final int tabIndex = getTabIndex(textEditor, activeTab);
+		if (tabIndex == -1) {
+			return null;
+		}
+
+		return new ScriptID(editorIndex, tabIndex);
+	}
+
+	/**
+	 * Find the index of a specific tab within a TextEditor.
+	 *
+	 * @param textEditor the TextEditor to search
+	 * @param targetTab the tab to find
+	 * @return the index of the tab, or -1 if not found
+	 */
+	public static int getTabIndex(final TextEditor textEditor, final TextEditorTab targetTab) {
+		if (textEditor == null || targetTab == null) {
+			return -1;
+		}
+
+		for (int i = 0;; i++) {
+			try {
+				final TextEditorTab currentTab = textEditor.getTab(i);
+				if (currentTab == null) {
+					break;
+				}
+				if (currentTab == targetTab) {
+					return i;
+				}
+			}
+			catch (Exception e) {
+				break;
+			}
+		}
+		return -1;
 	}
 
 	/**
