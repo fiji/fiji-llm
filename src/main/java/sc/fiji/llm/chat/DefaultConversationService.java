@@ -37,6 +37,7 @@ import org.scijava.app.AppService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
+import org.scijava.service.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -44,7 +45,7 @@ import com.google.gson.GsonBuilder;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 
-@Plugin(type = ConversationService.class)
+@Plugin(type = Service.class)
 public class DefaultConversationService extends AbstractService implements
 	ConversationService
 {
