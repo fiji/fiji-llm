@@ -24,12 +24,9 @@ package sc.fiji.llm.ui;
 
 import javax.swing.SwingUtilities;
 
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
-
-import sc.fiji.llm.context.ContextItemService;
 
 /**
  * Swing implementation of ChatbotService that launches a SimpleChatWindow.
@@ -38,7 +35,6 @@ import sc.fiji.llm.context.ContextItemService;
 public class SwingChatbotService extends AbstractService implements
 	ChatbotService
 {
-
 	@Override
 	public void launchChat(String title, String providerName, String modelName) {
 		SwingUtilities.invokeLater(() -> {
