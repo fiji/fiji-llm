@@ -465,16 +465,22 @@ public class FijiAssistantChat {
 		inputScrollPane.setHorizontalScrollBarPolicy(
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-		// Add KeyListener to handle Enter key (Shift+Enter for newline)
+		// Add KeyListener to handle Enter key (Shift+Enter and Alt+Enter for newline)
 		inputArea.addKeyListener(new java.awt.event.KeyAdapter() {
 
 			@Override
 			public void keyPressed(java.awt.event.KeyEvent e) {
-				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER && !e
-					.isShiftDown())
-				{
-					e.consume();
-					sendMessage();
+				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+					if (e.isShiftDown() || e.isAltDown()) {
+						// Shift+Enter or Alt+Enter: insert newline explicitly
+						e.consume();
+						inputArea.insert("\n", inputArea.getCaretPosition());
+					}
+					else {
+						// Plain Enter: submit message
+						e.consume();
+						sendMessage();
+					}
 				}
 			}
 		});
