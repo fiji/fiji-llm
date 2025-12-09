@@ -32,7 +32,7 @@ public final class ScriptContextUtilities {
 
 	public static JsonElement getTabJson(TextEditorTab tab, ScriptID scriptID) {
 		JsonObject tabJson = new JsonObject();
-		tabJson.addProperty(ScriptContextItem.NAME_KEY, ((EditorPane)tab.getEditorPane()).getFile().getName());
+		tabJson.addProperty(ScriptContextItem.NAME_KEY, ((EditorPane)tab.getEditorPane()).getName());
 		tabJson.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
 		return tabJson;
 	}
