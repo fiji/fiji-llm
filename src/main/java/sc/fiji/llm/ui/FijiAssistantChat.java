@@ -1326,11 +1326,12 @@ public class FijiAssistantChat {
 	private String buildSystemMessage() {
 		final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
 
-		sb.append("\n\n## Context Items\n\n");
+		sb.append("\n\n## Context\n");
 		sb.append(
-			"Context items (scripts, images, runtime environment information, etc) may appear as JSON in user messages.");
+			"Contextual information (scripts, images, runtime environment information, etc) is attached as JSON in user messages.\n" +
+			"This includes application state, and items focused by the user.\n");
 
-		sb.append("\n\n## Tool Usage\n\n");
+		sb.append("\n\n## Tool Usage\n");
 		sb.append(aiToolService.toolEnvironmentMessage());
 
 		final List<AiToolPlugin> tools = aiToolService.getInstances();

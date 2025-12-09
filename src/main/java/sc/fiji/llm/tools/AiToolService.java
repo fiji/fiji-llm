@@ -50,7 +50,10 @@ public interface AiToolService extends SingletonService<AiToolPlugin>, ImageJSer
 	 *         in incorrect API usage by some models.
 	 */
 	default String toolEnvironmentMessage() {
-		return "IMPORTANT: All tools are implemented in Java. Argument ordering MUST be respected.";
+		return """
+IMPORTANT: All tools are implemented in Java. Argument ordering MUST be respected.
+Remember: Tool methods are ONLY available to you, not to the user.
+""";
 	}
 
 	/**
