@@ -73,6 +73,8 @@ public class OllamaProvider implements LLMProvider {
 	private static final String TAG_BASE_URL = "https://ollama.com/library/";
 	private static final String LOCAL_SERVER_URL = "http://localhost:11434";
 	private static final String REMOTE_STRING = "* (remote)";
+	private static final Double TEMP = 0.1;
+	private static final Integer TOKEN_WINDOW = 40000;
 
 	private Process ollamaProcess;
 	private Ollama cachedOllamaClient;
@@ -99,7 +101,7 @@ public class OllamaProvider implements LLMProvider {
 
 	@Override
 	public ChatRequestParameters defaultChatRequestParameters() {
-		return ChatRequestParameters.builder().temperature(0.1).build();
+		return ChatRequestParameters.builder().temperature(TEMP).build();
 	}
 
 	@Override
@@ -177,7 +179,7 @@ public class OllamaProvider implements LLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-		return TokenWindowChatMemory.withMaxTokens(12000,
+		return TokenWindowChatMemory.withMaxTokens(TOKEN_WINDOW,
 			new OllamaTokenCountEstimator());
 	}
 
