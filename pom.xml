@@ -85,7 +85,7 @@
         <scijava.jvm.build.version>[17,)</scijava.jvm.build.version>
 
         <!-- Pinned version properties -->
-        <langchain4j.version>1.8.0</langchain4j.version>
+        <langchain4j.version>1.13.1</langchain4j.version>
         <ollama4j.version>1.1.4</ollama4j.version>
         <jsoup.version>1.21.2</jsoup.version>
         <flexmark.version>0.64.8</flexmark.version>
