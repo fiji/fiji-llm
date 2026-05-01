@@ -22,66 +22,33 @@
 
 package sc.fiji.llm.provider;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.scijava.app.StatusService;
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.DialogPrompt.MessageType;
-import org.scijava.ui.DialogPrompt.OptionType;
-import org.scijava.ui.DialogPrompt.Result;
 import org.scijava.ui.UIService;
 
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.Content;
-import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.TextContent;
-import dev.langchain4j.data.message.ToolExecutionResultMessage;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.memory.chat.TokenWindowChatMemory;
-import dev.langchain4j.model.TokenCountEstimator;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.chat.request.ChatRequestParameters;
-import dev.langchain4j.model.ollama.OllamaChatModel;
-import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
-import io.github.ollama4j.Ollama;
-import io.github.ollama4j.exceptions.OllamaException;
-
 /**
- * LLM provider plugin for Ollama (locally run models).
+ * Generalist LLM provider plugin for Ollama with user-selectable models.
+ * Allows users to choose from available installed models and download remote
+ * models from the Ollama library.
  */
 @Plugin(type = LLMProvider.class, name = "Ollama")
-public class OllamaProvider implements LLMProvider {
+public class OllamaProvider extends AbstractOllamaProvider {
 
 	private static final String MODEL_URL =
 		"https://ollama.com/search?c=tools&c=thinking";
 	private static final String TAG_BASE_URL = "https://ollama.com/library/";
-	private static final String LOCAL_SERVER_URL = "http://localhost:11434";
-	private static final String REMOTE_STRING = "* (remote)";
-	private static final Double TEMP = 0.1;
-	private static final Integer TOKEN_WINDOW = 40000;
 
-	private Process ollamaProcess;
-	private Ollama cachedOllamaClient;
 	private Set<String> cachedRemoteTags;
-
-	@Parameter
-	private LogService logService;
 
 	@Parameter
 	private UIService uIService;
@@ -96,224 +63,22 @@ public class OllamaProvider implements LLMProvider {
 
 	@Override
 	public String getDescription() {
-		return "Local Ollama models";
-	}
-
-	@Override
-	public ChatRequestParameters defaultChatRequestParameters() {
-		return ChatRequestParameters.builder().temperature(TEMP).build();
+		return "Local Ollama models (user-selectable)";
 	}
 
 	@Override
 	public List<String> getAvailableModels() {
-		if (!isOllamaServerRunning()) {
-			return Collections.emptyList();
-		}
+		// Get actual list of installed models from Ollama
+		List<String> models = getAvailableLocalModels();
 		// Get basic available remote models
 		Set<String> remoteTags = fetchRemoteTags();
-		// Get actual list of installed models from Ollama
-		List<String> models;
-		try {
-			models = ollamaClient().listModels().stream().map(model -> model
-				.getName()).collect(Collectors.toList());
-		}
-		catch (OllamaException e) {
-			return List.copyOf(remoteTags);
-		}
+		// Mark remote models that aren't installed
 		remoteTags.removeAll(models);
-		remoteTags.stream().map(m -> m + REMOTE_STRING).forEach(models::add);
+		remoteTags.stream().map(this::appendRemoteString).forEach(models::add);
 
 		return models;
 	}
 
-	@Override
-	public String validateModel(String modelToValidate) {
-		if (modelToValidate.endsWith(REMOTE_STRING)) {
-			if (uIService.showDialog(
-				"The selected LLM model will be downloaded. This could take some time.\nProceed?",
-				MessageType.WARNING_MESSAGE, OptionType.OK_CANCEL_OPTION).equals(
-					Result.OK_OPTION))
-			{
-
-				String modelName = modelToValidate.substring(0, modelToValidate
-					.length() - REMOTE_STRING.length());
-				statusService.showStatus(-1, -1, "Downloading Ollama model: " +
-					modelName);
-				try {
-					ollamaClient().pullModel(modelName);
-				}
-				catch (OllamaException e) {
-					statusService.clearStatus();
-					statusService.showStatus("Download failed: " + modelName);
-					// e.printStackTrace();
-					// Failed to pull
-					return modelToValidate;
-				}
-				statusService.clearStatus();
-				statusService.showStatus("Download complete: " + modelName);
-				// Pull successful
-				return modelName;
-			}
-			else {
-				return LLMProvider.VALIDATION_FAILED;
-			}
-		}
-		// Not a remote model
-		return modelToValidate;
-	}
-
-	@Override
-	public String getModelsDocumentationUrl() {
-		return "https://ollama.com/download";
-	}
-
-	@Override
-	public boolean requiresApiKey() {
-		return false;
-	}
-
-	@Override
-	public String getApiKeyUrl() {
-		return "";
-	}
-
-	@Override
-	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-		return TokenWindowChatMemory.withMaxTokens(TOKEN_WINDOW,
-			new OllamaTokenCountEstimator());
-	}
-
-	@Override
-	public ChatModel createChatModel(final String modelName) {
-		return OllamaChatModel.builder().baseUrl(LOCAL_SERVER_URL).modelName(
-			modelName).timeout(DEFAULT_TIMEOUT).build();
-	}
-
-	@Override
-	public StreamingChatModel createStreamingChatModel(final String modelName) {
-		return OllamaStreamingChatModel.builder().baseUrl(LOCAL_SERVER_URL)
-			.modelName(modelName).timeout(DEFAULT_TIMEOUT).build();
-	}
-
-	@Override
-	public void initialize() {
-		if (isOllamaServerRunning()) {
-			return;
-		}
-
-		// Try to start Ollama server
-		startOllamaServer();
-	}
-
-	@Override
-	public void dispose() {
-		// Only shut down Ollama if we started it ourselves.
-		// If the user has Ollama running independently, we shouldn't kill it.
-		if (ollamaProcess != null && ollamaProcess.isAlive()) {
-			try {
-				if (System.getProperty("os.name").toLowerCase().contains("win")) {
-					// Windows: use taskkill by PID
-					new ProcessBuilder("taskkill", "/PID", String.valueOf(ollamaProcess
-						.pid()), "/T", "/F").start();
-				}
-				else {
-					// macOS/Linux: send SIGINT instead of SIGTERM
-					new ProcessBuilder("kill", "-2", String.valueOf(ollamaProcess.pid()))
-						.start();
-				}
-
-				// Wait up to 5s for exit
-				for (int i = 0; i < 10; i++) {
-					if (!ollamaProcess.isAlive()) {
-						return;
-					}
-					Thread.sleep(500);
-				}
-			}
-			catch (Exception e) {
-
-			}
-		}
-	}
-
-	/**
-	 * Attempts to start the Ollama server using the ollama serve command.
-	 *
-	 * @return true if the server was started successfully, false otherwise
-	 */
-	private boolean startOllamaServer() {
-		try {
-			ProcessBuilder pb = new ProcessBuilder("ollama", "serve");
-
-			// Ensure environment is correct
-			Map<String, String> env = pb.environment();
-			env.putIfAbsent("HOME", System.getProperty("user.home"));
-			// If you’ve installed Ollama in a non-standard location, add it here:
-			// env.put("PATH", env.get("PATH") + ":/usr/local/bin");
-
-			File devNull;
-			String os = System.getProperty("os.name").toLowerCase();
-			if (os.contains("win")) {
-				devNull = new File("NUL");
-			}
-			else {
-				devNull = new File("/dev/null");
-			}
-			// Ignore output from the server
-			pb.redirectOutput(devNull);
-
-			// Redirect output so we can see startup logs
-			pb.redirectErrorStream(true);
-
-			ollamaProcess = pb.start();
-
-			// Poll for readiness
-			int maxAttempts = 10;
-			int pollIntervalMs = 1000;
-			for (int i = 0; i < maxAttempts; i++) {
-				if (isOllamaServerRunning()) {
-					return true;
-				}
-				Thread.sleep(pollIntervalMs);
-			}
-		}
-		catch (Exception e) {
-			// Ollama may not be installed and that's OK
-		}
-		return false;
-	}
-
-	/**
-	 * Gets or creates the cached Ollama client.
-	 *
-	 * @return the Ollama client instance
-	 */
-	private Ollama ollamaClient() {
-		if (cachedOllamaClient == null) {
-			cachedOllamaClient = new Ollama();
-		}
-		return cachedOllamaClient;
-	}
-
-	/**
-	 * Checks if the Ollama server is running by attempting to ping it. If
-	 * successful, caches the client. If unsuccessful, clears any cached client.
-	 *
-	 * @return true if the server is running and reachable, false otherwise
-	 */
-	private boolean isOllamaServerRunning() {
-		try {
-			Ollama client = ollamaClient();
-			if (client.ping()) {
-				return true;
-			}
-		}
-		catch (OllamaException e) {
-			// This isn't necessarily a problem
-		}
-		cachedOllamaClient = null;
-		return false;
-	}
 
 	/**
 	 * See https://github.com/ollama/ollama/issues/8241
@@ -385,127 +150,5 @@ public class OllamaProvider implements LLMProvider {
 		}
 		cachedRemoteTags = remoteTags;
 		return remoteTags;
-	}
-
-	/**
-	 * Simplified copy/paste from OpenAiTokenCountEstimator, without consideration
-	 * for model name.
-	 */
-	private static class OllamaTokenCountEstimator implements
-		TokenCountEstimator
-	{
-
-		@Override
-		public int estimateTokenCountInText(String text) {
-			return text.length() / 4;
-		}
-
-		@Override
-		public int estimateTokenCountInMessage(ChatMessage message) {
-			int tokenCount = 1; // 1 token for role
-			tokenCount += 3; // extra tokens per each message
-
-			if (message instanceof SystemMessage) {
-				tokenCount += estimateTokenCountIn((SystemMessage) message);
-			}
-			else if (message instanceof UserMessage) {
-				tokenCount += estimateTokenCountIn((UserMessage) message);
-			}
-			else if (message instanceof AiMessage) {
-				tokenCount += estimateTokenCountIn((AiMessage) message);
-			}
-			else if (message instanceof ToolExecutionResultMessage) {
-				tokenCount += estimateTokenCountIn(
-					(ToolExecutionResultMessage) message);
-			}
-			else {
-				throw new IllegalArgumentException("Unknown message type: " + message);
-			}
-
-			return tokenCount;
-		}
-
-		private int estimateTokenCountIn(SystemMessage systemMessage) {
-			return estimateTokenCountInText(systemMessage.text());
-		}
-
-		private int estimateTokenCountIn(UserMessage userMessage) {
-			int tokenCount = 0;
-
-			for (Content content : userMessage.contents()) {
-				if (content instanceof TextContent) {
-					tokenCount += estimateTokenCountInText(((TextContent) content)
-						.text());
-				}
-				else {
-					throw new IllegalArgumentException("Unknown content type: " +
-						content);
-				}
-			}
-
-			if (userMessage.name() != null) {
-				tokenCount += 1; // extra tokens per name
-				tokenCount += estimateTokenCountInText(userMessage.name());
-			}
-
-			return tokenCount;
-		}
-
-		@Override
-		public int estimateTokenCountInMessages(Iterable<ChatMessage> messages) {
-			// see
-			// https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
-
-			int tokenCount = 3; // every reply is primed with
-													// <|start|>assistant<|message|>
-			for (ChatMessage message : messages) {
-				tokenCount += estimateTokenCountInMessage(message);
-			}
-			return tokenCount;
-		}
-
-		private int estimateTokenCountIn(AiMessage aiMessage) {
-			int tokenCount = 0;
-
-			if (aiMessage.text() != null) {
-				tokenCount += estimateTokenCountInText(aiMessage.text());
-			}
-
-			if (aiMessage.hasToolExecutionRequests()) {
-				tokenCount += 6;
-				if (aiMessage.toolExecutionRequests().size() == 1) {
-					tokenCount -= 1;
-					ToolExecutionRequest toolExecutionRequest = aiMessage
-						.toolExecutionRequests().get(0);
-					tokenCount += estimateTokenCountInText(toolExecutionRequest.name()) *
-						2;
-					tokenCount += estimateTokenCountInText(toolExecutionRequest
-						.arguments());
-				}
-				else {
-					tokenCount += 15;
-					for (ToolExecutionRequest toolExecutionRequest : aiMessage
-						.toolExecutionRequests())
-					{
-						tokenCount += 7;
-						tokenCount += estimateTokenCountInText(toolExecutionRequest.name());
-
-						String arguments = toolExecutionRequest.arguments();
-						if (arguments == null || arguments.isEmpty()) {
-							continue;
-						}
-						tokenCount += estimateTokenCountInText(arguments);
-					}
-				}
-			}
-
-			return tokenCount;
-		}
-
-		private int estimateTokenCountIn(
-			ToolExecutionResultMessage toolExecutionResultMessage)
-		{
-			return estimateTokenCountInText(toolExecutionResultMessage.text());
-		}
 	}
 }
