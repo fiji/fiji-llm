@@ -75,6 +75,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	private static final int DEFAULT_PORT = 9090;
 	private static final int STARTUP_WAIT = 3;
 	private static final int SHUTDOWN_WAIT = 3000;
+	private static final String MCP_VERSION = "0.1.0";
 
 	@Parameter
 	private LogService logService;
@@ -228,7 +229,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 		// Create MCP server with tools support
 		final McpSyncServer mcpServer = McpServer.sync(transportServlet)
-			.serverInfo("fiji-mcp-server", "0.1.0")
+			.serverInfo("fiji-mcp-server", MCP_VERSION)
 			.capabilities(ServerCapabilities.builder()
 				.tools(true)
 				.build())
