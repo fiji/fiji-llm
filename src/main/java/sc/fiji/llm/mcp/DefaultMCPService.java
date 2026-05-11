@@ -22,14 +22,11 @@
 
 package sc.fiji.llm.mcp;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -37,6 +34,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.prefs.PrefService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
@@ -75,16 +73,21 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	private static final int DEFAULT_PORT = 9090;
 	private static final int STARTUP_WAIT = 3;
 	private static final int SHUTDOWN_WAIT = 3000;
-	private static final String MCP_VERSION = "0.1.0";
+	private static final String FIJI_MCP_VERSION = "0.1.0";
+	private static final String MCP_PORT_KEY = "sc.fiji.mcp.port";
 
 	@Parameter
 	private LogService logService;
+
+	@Parameter
+	private PrefService prefService;
 
 	@Parameter
 	private AiToolService aiToolService;
 
 	private ToolProvider toolProvider;
 	private Thread serverThread;
+	private int toolCount = 0;
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean disposed = new AtomicBoolean(false);
 	private final AtomicBoolean serverError = new AtomicBoolean(false);
@@ -112,7 +115,17 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 	@Override
 	public int getServerPort() {
-		return DEFAULT_PORT;
+		return prefService.getInt(MCPService.class, MCP_PORT_KEY, DEFAULT_PORT);
+	}
+
+	/**
+	 * Gets the number of tools currently available in the MCP server.
+	 *
+	 * @return the tool count (0 if server is not running)
+	 */
+	@Override
+	public int getToolCount() {
+		return toolCount;
 	}
 
 	@Override
@@ -145,7 +158,8 @@ public class DefaultMCPService extends AbstractService implements MCPService
 		}
 
 		try {
-			logService.info("Initializing MCP server on localhost:" + DEFAULT_PORT);
+			final int port = getServerPort();
+			logService.info("Initializing MCP server on localhost:" + port);
 
 			// Initialize the server ready signal
 			serverReady = new CountDownLatch(1);
@@ -155,7 +169,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 			// Start MCP server in a daemon thread
 			serverThread = new Thread(() -> {
 				try {
-					runMcpServer(aiToolService.getToolsWithExecutors());
+					runMcpServer(aiToolService.getToolsWithExecutors(), port);
 				} catch (final Exception e) {
 					logService.error("MCP server error", e);
 					serverError.set(true);
@@ -167,39 +181,39 @@ public class DefaultMCPService extends AbstractService implements MCPService
 			serverThread.start();
 
 			// Wait for server to be ready before creating client (with timeout)
-			logService.debug("Waiting for MCP server to be ready...");
+			logService.debug("Waiting for Fiji MCP server to be ready...");
 			final boolean serverStarted = serverReady.await(STARTUP_WAIT, TimeUnit.SECONDS);
 
 			if (!serverStarted) {
 				throw new RuntimeException(
-					"MCP server failed to start");
+					"Fiji MCP server failed to start");
 			}
 
 			if (serverError.get()) {
-				throw new RuntimeException("MCP server encountered an error during startup");
+				throw new RuntimeException("Fiji MCP server encountered an error during startup");
 			}
 
-			logService.debug("MCP server is ready, creating client...");
+			logService.debug("Fiji MCP server is ready, creating client...");
 
 			// Now that server is running, create the client and tool provider
-			createClientAndProvider();
+			createClientAndProvider(port);
 
 			initialized.set(true);
-			logService.info("MCP server initialized successfully");
+			logService.info("Fiji MCP server initialized successfully");
 		} catch (final Exception e) {
-			logService.error("Failed to initialize MCP server", e);
-			throw new RuntimeException("Failed to initialize MCP server", e);
+			logService.error("Failed to initialize Fiji MCP server", e);
+			throw new RuntimeException("Failed to initialize Fiji MCP server", e);
 		}
 	}
 
-	private void createClientAndProvider() {
+	private void createClientAndProvider(final int port) {
 		if (toolProvider != null) {
 			return; // Already created
 		}
 
-		logService.debug("Creating MCP client and tool provider");
+		logService.debug("Creating Fiji MCP client and tool provider");
 		final McpTransport transport = StreamableHttpMcpTransport.builder()
-			.url("http://localhost:" + DEFAULT_PORT + "/mcp")
+			.url("http://localhost:" + port + "/mcp")
 			.logRequests(true) // if you want to see the traffic in the log
 			.logResponses(true)
 			.build();
@@ -218,7 +232,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	 * Runs the MCP server with the given tools.
 	 */
 	private void runMcpServer(
-		final Map<ToolSpecification, ToolExecutor> tools) throws Exception
+		final Map<ToolSpecification, ToolExecutor> tools, final int port) throws Exception
 	{
 		// Create transport provider for streamable HTTP
 		final HttpServletStreamableServerTransportProvider transportServlet =
@@ -229,14 +243,14 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 		// Create MCP server with tools support
 		final McpSyncServer mcpServer = McpServer.sync(transportServlet)
-			.serverInfo("fiji-mcp-server", MCP_VERSION)
+			.serverInfo("fiji-mcp-server", FIJI_MCP_VERSION)
 			.capabilities(ServerCapabilities.builder()
 				.tools(true)
 				.build())
 			.build();
 
 		// Create and start Jetty server
-		final Server jettyServer = new Server(DEFAULT_PORT);
+		final Server jettyServer = new Server(port);
 		final ServletContextHandler context = new ServletContextHandler(
 			ServletContextHandler.SESSIONS);
 		context.setContextPath("/");
@@ -248,7 +262,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 		try {
 			jettyServer.start();
-			logService.info("Jetty server started on http://localhost:" + DEFAULT_PORT);
+			logService.info("Jetty server started on http://localhost:" + port);
 
 			// Register each tool from AiToolService with the MCP server
 			for (final Map.Entry<ToolSpecification, ToolExecutor> entry : tools
@@ -314,6 +328,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				mcpServer.addTool(syncTool);
 			}
 
+			toolCount = tools.size();
 			logService.info("MCP server started with " + tools.size() + " tools");
 
 			// Signal that the server is ready for client connections
@@ -339,7 +354,8 @@ public class DefaultMCPService extends AbstractService implements MCPService
 			}
 			try {
 				jettyServer.stop();
-				logService.debug("Jetty server stopped");
+				toolCount = 0;
+			logService.debug("Jetty server stopped");
 			} catch (final Exception e) {
 				logService.warn("Error stopping Jetty server", e);
 			}

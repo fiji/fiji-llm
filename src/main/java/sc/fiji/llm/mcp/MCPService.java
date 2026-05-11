@@ -60,4 +60,11 @@ public interface MCPService extends ImageJService {
 	 * @return the server port (default 9090)
 	 */
 	int getServerPort();
+
+	/**
+	 * Gets the number of tools currently available in the MCP server.
+	 *
+	 * @return the tool count (0 if server is not running)
+	 */
+	int getToolCount();
 }
