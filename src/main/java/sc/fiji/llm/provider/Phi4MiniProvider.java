@@ -34,7 +34,7 @@ import org.scijava.plugin.Plugin;
 @Plugin(type = LLMProvider.class, name = "Ollama (Phi4-Mini)")
 public class Phi4MiniProvider extends AbstractOllamaProvider {
 
-	private static final String MODEL_NAME = "phi4-mini";
+	private static final String MODEL_NAME = "phi4-mini:3.8b";
 
 	@Override
 	public String getName() {
