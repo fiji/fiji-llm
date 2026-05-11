@@ -131,3 +131,12 @@ These plugins contain methods annotated with `langchain4j`'s [`@Tool`](https://g
 ### [ChatbotService](src/main/java/sc/fiji/llm/ui/ChatbotService.java)
 
 For developing chatbots in particular UI environments.
+
+### [MCPService](src/main/java/sc/fiji/llm/mcp/MCPService.java)
+
+An MCP (Model Context Protocol) server exposes all registered `AiToolPlugin` implementations via HTTP, making them accessible to external clients at `http://localhost:9090/mcp` (default port).
+
+**Configuration and Usage:**
+- **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`
+- **Start Manually**: Click "Start Server" in the Manage MCP Server dialog
+- **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
