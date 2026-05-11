@@ -22,9 +22,8 @@
 
 package sc.fiji.llm.mcp;
 
-import net.imagej.ImageJService;
-
 import dev.langchain4j.service.tool.ToolProvider;
+import net.imagej.ImageJService;
 
 /**
  * Service for managing MCP (Model Context Protocol) server integration.
@@ -35,6 +34,26 @@ import dev.langchain4j.service.tool.ToolProvider;
  * </p>
  */
 public interface MCPService extends ImageJService {
+
+	/**
+	 * Preference key for the MCP server port configuration.
+	 */
+	String PORT_KEY = "sc.fiji.mcp.port";
+
+	/**
+	 * Default port for the MCP server.
+	 */
+	int DEFAULT_PORT = 9090;
+
+	/**
+	 * Preference key for the MCP launch on startup setting.
+	 */
+	String LAUNCH_ON_START_KEY = "sc.fiji.mcp.launchOnStartup";
+
+	/**
+	 * Default value for launch on startup (false).
+	 */
+	boolean DEFAULT_LAUNCH_ON_START = false;
 
 	/**
 	 * Gets the ToolProvider wrapping the MCP server connection.

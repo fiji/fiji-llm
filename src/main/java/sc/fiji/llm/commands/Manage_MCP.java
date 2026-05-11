@@ -33,7 +33,6 @@ import org.scijava.prefs.PrefService;
 import org.scijava.ui.UIService;
 import org.scijava.widget.Button;
 
-import sc.fiji.llm.mcp.DefaultMCPService;
 import sc.fiji.llm.mcp.MCPService;
 
 /**
@@ -46,8 +45,6 @@ import sc.fiji.llm.mcp.MCPService;
 public class Manage_MCP extends DynamicCommand {
 
 	private static final String WIDTH = "300";
-	private static final String MCP_PORT_KEY = "sc.fiji.mcp.port";
-	private static final int DEFAULT_PORT = 9090;
 
 	@Parameter
 	private MCPService mcpService;
@@ -70,6 +67,10 @@ public class Manage_MCP extends DynamicCommand {
 		persist = false)
 	private int port;
 
+	@Parameter(label = "Launch MCP on Startup",
+		description = "Automatically launch MCP server when Fiji starts")
+	private boolean launchOnStartup;
+
 	@Parameter(label = "Start Server", persist = false, callback = "startServer")
 	private Button help;
 
@@ -84,8 +85,13 @@ public class Manage_MCP extends DynamicCommand {
 			"Configure the server port and check its status here.</p></body>");
 		welcomeMessage = welcomeMsg.toString();
 
-		// Load current port from preferences (use DefaultMCPService.class as class reference)
-		port = prefService.getInt(MCPService.class, MCP_PORT_KEY, DEFAULT_PORT);
+		// Load current port from preferences
+		port = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
+			MCPService.DEFAULT_PORT);
+
+		// Load current launch on startup setting from preferences
+		launchOnStartup = prefService.getBoolean(MCPService.class, MCPService.LAUNCH_ON_START_KEY,
+			MCPService.DEFAULT_LAUNCH_ON_START);
 
 		// Update server status display
 		updateServerStatus();
@@ -119,10 +125,10 @@ public class Manage_MCP extends DynamicCommand {
 	@Override
 	public void run() {
 		// Check if port has changed
-		final int previousPort = prefService.getInt(DefaultMCPService.class, MCP_PORT_KEY,
-			DEFAULT_PORT);
+		final int previousPort = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
+			MCPService.DEFAULT_PORT);
 		if (port != previousPort) {
-			prefService.put(DefaultMCPService.class, MCP_PORT_KEY, port);
+			prefService.put(MCPService.class, MCPService.PORT_KEY, port);
 
 			// Notify user if server is running
 			if (mcpService.isServerRunning()) {
@@ -131,6 +137,14 @@ public class Manage_MCP extends DynamicCommand {
 						+ "Please restart Fiji for the new port to take effect.",
 					"MCP Server Port Changed");
 			}
+		}
+
+		// Check if launch on startup setting has changed
+		final boolean previousLaunchOnStartup = prefService.getBoolean(MCPService.class,
+			MCPService.LAUNCH_ON_START_KEY, MCPService.DEFAULT_LAUNCH_ON_START);
+		if (launchOnStartup != previousLaunchOnStartup) {
+			prefService.put(MCPService.class, MCPService.LAUNCH_ON_START_KEY,
+				launchOnStartup);
 		}
 	}
 

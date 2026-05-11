@@ -38,24 +38,24 @@ import org.scijava.prefs.PrefService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import io.modelcontextprotocol.json.McpJsonDefaults;
+import io.modelcontextprotocol.server.McpServer;
+import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
+import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.HttpServletStreamableServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.ServerCapabilities;
 import io.modelcontextprotocol.spec.McpSchema.Tool;
-import io.modelcontextprotocol.server.McpServer;
-import io.modelcontextprotocol.server.McpSyncServer;
-import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
-import dev.langchain4j.mcp.client.transport.McpTransport;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -70,11 +70,9 @@ import sc.fiji.llm.tools.AiToolService;
 public class DefaultMCPService extends AbstractService implements MCPService
 {
 
-	private static final int DEFAULT_PORT = 9090;
 	private static final int STARTUP_WAIT = 3;
 	private static final int SHUTDOWN_WAIT = 3000;
 	private static final String FIJI_MCP_VERSION = "0.1.0";
-	private static final String MCP_PORT_KEY = "sc.fiji.mcp.port";
 
 	@Parameter
 	private LogService logService;
@@ -115,7 +113,18 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 	@Override
 	public int getServerPort() {
-		return prefService.getInt(MCPService.class, MCP_PORT_KEY, DEFAULT_PORT);
+		return prefService.getInt(MCPService.class, MCPService.PORT_KEY,
+			MCPService.DEFAULT_PORT);
+	}
+
+	/**
+	 * Gets whether the MCP server should launch on startup.
+	 *
+	 * @return true if server should launch automatically, false otherwise
+	 */
+	private boolean launchOnStartup() {
+		return prefService.getBoolean(MCPService.class, MCPService.LAUNCH_ON_START_KEY,
+			MCPService.DEFAULT_LAUNCH_ON_START);
 	}
 
 	/**
@@ -126,6 +135,13 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	@Override
 	public int getToolCount() {
 		return toolCount;
+	}
+
+	@Override
+	public void initialize() {
+		if (!initialized.get() && launchOnStartup()) {
+			initializeServer();
+		}
 	}
 
 	@Override
