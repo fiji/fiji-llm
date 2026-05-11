@@ -22,52 +22,40 @@
 
 package sc.fiji.llm.provider;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
-import io.github.ollama4j.Ollama;
-import io.github.ollama4j.exceptions.OllamaException;
-
 /**
- * Utility class for managing the Ollama server process and client lifecycle.
+ * Utility class for managing the Ollama server process and CLI operations.
+ * Uses subprocess calls to the ollama CLI rather than a client library.
  */
 public class OllamaProcessManager {
 
-	private static final String LOCAL_SERVER_URL = "http://localhost:11434";
-
 	private Process ollamaProcess;
-	private Ollama cachedOllamaClient;
+	private List<String> cachedInstalledModels;
 
 	/**
-	 * Gets or creates the cached Ollama client.
-	 *
-	 * @return the Ollama client instance
-	 */
-	public Ollama getClient() {
-		if (cachedOllamaClient == null) {
-			cachedOllamaClient = new Ollama();
-		}
-		return cachedOllamaClient;
-	}
-
-	/**
-	 * Checks if the Ollama server is running by attempting to ping it. If
-	 * successful, caches the client. If unsuccessful, clears any cached client.
+	 * Checks if the Ollama server is running by attempting to list models.
+	 * The ollama list command succeeds only if the server is running.
 	 *
 	 * @return true if the server is running and reachable, false otherwise
 	 */
 	public boolean isServerRunning() {
 		try {
-			Ollama client = getClient();
-			if (client.ping()) {
-				return true;
-			}
+			ProcessBuilder pb = new ProcessBuilder("ollama", "list");
+			Process process = pb.start();
+			int exitCode = process.waitFor();
+			return exitCode == 0;
 		}
-		catch (OllamaException e) {
-			// This isn't necessarily a problem
+		catch (Exception e) {
+			// Command failed or ollama not found
+			return false;
 		}
-		cachedOllamaClient = null;
-		return false;
 	}
 
 	/**
@@ -113,6 +101,80 @@ public class OllamaProcessManager {
 			// Ollama may not be installed and that's OK
 		}
 		return false;
+	}
+
+	/**
+	 * Gets the list of installed models from the local Ollama server.
+	 * Results are cached until a new model is pulled.
+	 *
+	 * @return list of installed model names, or empty list if server is not running
+	 */
+	public List<String> getInstalledModels() {
+		// Return cached if available and server is still running
+		if (cachedInstalledModels != null && isServerRunning()) {
+			return cachedInstalledModels;
+		}
+
+		// Clear cache and return empty if server isn't running
+		if (!isServerRunning()) {
+			cachedInstalledModels = null;
+			return Collections.emptyList();
+		}
+
+		try {
+			ProcessBuilder pb = new ProcessBuilder("ollama", "list");
+			Process process = pb.start();
+
+			// Parse output: skip header, read model names from first column
+			List<String> models = new ArrayList<>();
+			try (BufferedReader reader = new BufferedReader(
+				new InputStreamReader(process.getInputStream())))
+			{
+				String line;
+				boolean firstLine = true;
+				while ((line = reader.readLine()) != null) {
+					if (firstLine) {
+						firstLine = false; // Skip header
+						continue;
+					}
+					String[] parts = line.split("\\s+");
+					if (parts.length > 0 && !parts[0].isEmpty()) {
+						models.add(parts[0]);
+					}
+				}
+			}
+
+			int exitCode = process.waitFor();
+			if (exitCode == 0) {
+				cachedInstalledModels = models;
+				return models;
+			}
+		}
+		catch (Exception e) {
+			// Failed to list models
+		}
+
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Pulls (downloads) a model from the Ollama registry.
+	 *
+	 * @param modelName the name of the model to pull
+	 * @throws Exception if the pull operation fails
+	 */
+	public void pullModel(String modelName) throws Exception {
+		ProcessBuilder pb = new ProcessBuilder("ollama", "pull", modelName);
+		pb.inheritIO(); // Show output to user
+		Process process = pb.start();
+		int exitCode = process.waitFor();
+		if (exitCode == 0) {
+			// Clear cache so it gets refreshed on next call
+			cachedInstalledModels = null;
+		}
+		else {
+			throw new RuntimeException("Failed to pull model: " + modelName);
+		}
 	}
 
 	/**

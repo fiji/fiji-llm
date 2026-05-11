@@ -1,231 +1,372 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.scijava</groupId>
-        <artifactId>pom-scijava</artifactId>
-        <version>43.0.0</version>
-        <relativePath />
-    </parent>
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>43.0.0</version>
+		<relativePath />
+	</parent>
 
-    <groupId>sc.fiji</groupId>
-    <artifactId>fiji-llm</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+	<groupId>sc.fiji</groupId>
+	<artifactId>fiji-llm</artifactId>
+	<version>0.1.0-SNAPSHOT</version>
 
-    <name>Fiji LLM Assistant</name>
-    <description>A Fiji plugin for integrating large language models.</description>
-    <url>https://github.com/fiji/fiji-llm</url>
-    <inceptionYear>2025</inceptionYear>
-    <organization>
-        <name>Fiji</name>
-        <url>http://fiji.sc/</url>
-    </organization>
-    <licenses>
-        <license>
-            <name>GNU General Public License v3+</name>
-            <url>http://www.gnu.org/licenses/gpl.html</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
+	<name>Fiji LLM Assistant</name>
+	<description>A Fiji plugin for integrating large language models.</description>
+	<url>https://github.com/fiji/fiji-llm</url>
+	<inceptionYear>2025</inceptionYear>
+	<organization>
+		<name>Fiji</name>
+		<url>http://fiji.sc/</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>GNU General Public License v3+</name>
+			<url>http://www.gnu.org/licenses/gpl.html</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 
-    <developers>
-        <developer>
-            <id>hinerm</id>
-            <name>Mark Hiner</name>
-            <url>https://github.com/hinerm</url>
-            <roles>
-                <role>lead</role>
-                <role>developer</role>
-                <role>maintainer</role>
-            </roles>
-        </developer>
-    </developers>
+	<developers>
+		<developer>
+			<id>hinerm</id>
+			<name>Mark Hiner</name>
+			<url>https://github.com/hinerm</url>
+			<roles>
+				<role>lead</role>
+				<role>developer</role>
+				<role>maintainer</role>
+			</roles>
+		</developer>
+	</developers>
 
-    <contributors>
-        <contributor>
-            <name>Mark Hiner</name>
-            <url>https://github.com/hinerm</url>
-        </contributor>
-    </contributors>
+	<contributors>
+		<contributor>
+			<name>Mark Hiner</name>
+			<url>https://github.com/hinerm</url>
+		</contributor>
+	</contributors>
 
-    <mailingLists>
-        <mailingList>
-            <name>Image.sc Forum</name>
-            <archive>https://forum.image.sc/tag/fiji</archive>
-        </mailingList>
-    </mailingLists>
+	<mailingLists>
+		<mailingList>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tag/fiji</archive>
+		</mailingList>
+	</mailingLists>
 
-    <scm>
-        <connection>scm:git:https://github.com/fiji/fiji-llm</connection>
-        <developerConnection>scm:git:git@github.com:fiji/fiji-llm</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/fiji/fiji-llm</url>
-    </scm>
-    <issueManagement>
-        <system>github.com</system>
-        <url>https://github.com/fiji/fiji-llm</url>
-    </issueManagement>
-    <ciManagement>
-        <system>GitHub Actions</system>
-        <url>https://github.com/fiji/fiji-llm/actions</url>
-    </ciManagement>
+	<scm>
+		<connection>scm:git:https://github.com/fiji/fiji-llm</connection>
+		<developerConnection>scm:git:git@github.com:fiji/fiji-llm</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/fiji/fiji-llm</url>
+	</scm>
+	<issueManagement>
+		<system>github.com</system>
+		<url>https://github.com/fiji/fiji-llm</url>
+	</issueManagement>
+	<ciManagement>
+		<system>GitHub Actions</system>
+		<url>https://github.com/fiji/fiji-llm/actions</url>
+	</ciManagement>
 
-    <properties>
-        <license.licenseName>gpl_v3</license.licenseName>
-        <license.copyrightOwners>ImageJ Developers</license.copyrightOwners>
+	<properties>
+		<license.licenseName>gpl_v3</license.licenseName>
+		<license.copyrightOwners>ImageJ Developers</license.copyrightOwners>
 
-        <!-- NB: Deploy releases to the SciJava Maven repository. -->
-        <releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
+		<!-- NB: Deploy releases to the SciJava Maven repository. -->
+		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
-        <!-- Java version requirements -->
-        <scijava.jvm.version>17</scijava.jvm.version>
-        <scijava.jvm.build.version>[17,)</scijava.jvm.build.version>
+		<!-- Java version requirements -->
+		<scijava.jvm.version>17</scijava.jvm.version>
+		<scijava.jvm.build.version>[17,)</scijava.jvm.build.version>
 
-        <!-- Pinned version properties -->
-        <langchain4j.version>1.13.1</langchain4j.version>
-        <ollama4j.version>1.1.4</ollama4j.version>
-        <jsoup.version>1.21.2</jsoup.version>
-        <flexmark.version>0.64.8</flexmark.version>
-    </properties>
+		<!-- Pinned version properties -->
+		<langchain4j.version>1.13.1</langchain4j.version>
+		<mcp-sdk.version>1.1.2</mcp-sdk.version>
+		<jackson2.version>2.19.2</jackson2.version>
+		<jackson3.version>3.0.3</jackson3.version>
+		<jsoup.version>1.21.2</jsoup.version>
+		<flexmark.version>0.64.8</flexmark.version>
+		<jetty.version>11.0.20</jetty.version>
+	</properties>
 
-    <repositories>
-        <repository>
-            <id>scijava.public</id>
-            <url>https://maven.scijava.org/content/groups/public</url>
-        </repository>
-    </repositories>
+	<repositories>
+		<repository>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
 
-    <dependencies>
-        <!-- SciJava dependencies -->
-        <dependency>
-            <groupId>org.scijava</groupId>
-            <artifactId>scijava-common</artifactId>
-        </dependency>
+	<dependencies>
+		<!-- SciJava dependencies -->
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-common</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>org.scijava</groupId>
-            <artifactId>script-editor</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>script-editor</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>org.scijava</groupId>
-            <artifactId>scijava-ui-swing</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-ui-swing</artifactId>
+		</dependency>
 
-        <!-- ImageJ dependencies -->
-        <dependency>
-            <groupId>net.imagej</groupId>
-            <artifactId>imagej-legacy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.imagej</groupId>
-            <artifactId>imagej-common</artifactId>
-        </dependency>
+		<!-- ImageJ dependencies -->
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-legacy</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-common</artifactId>
+		</dependency>
 
-        <!-- Third-party dependencies -->
-        <!-- LangChain4j core -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
+		<!-- Third-party dependencies -->
+		<!-- Jackson 2 core -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson2.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-core</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson2.version}</version>
+		</dependency>
 
-        <!-- LangChain4j providers -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson2.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-anthropic</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
+		<!-- Jackson 3 core -->
+		<dependency>
+			<groupId>tools.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson3.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-google-ai-gemini</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>tools.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson3.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-ollama</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>tools.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+			<version>${jackson3.version}</version>
+		</dependency>
 
-        <!-- Ollama support -->
-        <dependency>
-            <groupId>io.github.ollama4j</groupId>
-            <artifactId>ollama4j</artifactId>
-            <version>${ollama4j.version}</version>
-        </dependency>
+		<!-- LangChain4j core -->
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j</artifactId>
+			<version>${langchain4j.version}</version>
+		</dependency>
 
-        <!-- Jsoup for reading html -->
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>${jsoup.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-core</artifactId>
+			<version>${langchain4j.version}</version>
+		</dependency>
 
-        <!-- flexmark for rendering markdown -->
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark</artifactId>
-            <version>${flexmark.version}</version>
-        </dependency>
+		<!-- LangChain4j providers -->
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-open-ai</artifactId>
+			<version>${langchain4j.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-ext-gfm-tasklist</artifactId>
-            <version>${flexmark.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-anthropic</artifactId>
+			<version>${langchain4j.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-ext-gfm-strikethrough</artifactId>
-            <version>${flexmark.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-google-ai-gemini</artifactId>
+			<version>${langchain4j.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-ext-tables</artifactId>
-            <version>${flexmark.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-ollama</artifactId>
+			<version>${langchain4j.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-ext-emoji</artifactId>
-            <version>${flexmark.version}</version>
-        </dependency>
+		<!-- MCP Support -->
+		<dependency>
+			<groupId>io.modelcontextprotocol.sdk</groupId>
+			<artifactId>mcp</artifactId>
+			<version>${mcp-sdk.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-ext-autolink</artifactId>
-            <version>${flexmark.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-mcp</artifactId>
+			<version>${langchain4j.version}-beta23</version>
+		</dependency>
 
-        <!-- GSON for JSON -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
+		<!-- Jsoup for reading html -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>${jsoup.version}</version>
+		</dependency>
 
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+		<!-- flexmark for rendering markdown -->
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark</artifactId>
+			<version>${flexmark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-gfm-tasklist</artifactId>
+			<version>${flexmark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-gfm-strikethrough</artifactId>
+			<version>${flexmark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-tables</artifactId>
+			<version>${flexmark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-emoji</artifactId>
+			<version>${flexmark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-ext-autolink</artifactId>
+			<version>${flexmark.version}</version>
+		</dependency>
+
+		<!-- GSON for JSON -->
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+		</dependency>
+
+		<!-- Jetty for embedded HTTP server -->
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlet</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-util</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+
+		<!-- Test dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>unify-jackson3-jars</id>
+			<activation>
+				<property>
+					<name>scijava.app.directory</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<!-- The SciJava maven plugin will overwrite jackson 2 jars with jackson 3 -->
+						<!-- We want the final state of the app.directory to contain the both -->
+						<!-- see https://github.com/scijava/scijava-maven-plugin/issues/37 -->
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-dependencies</id>
+								<phase>install</phase>
+								<goals>
+									<goal>copy-dependencies</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/dependency</outputDirectory>
+									<stripVersion>false</stripVersion>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>rename-jackson3-jars</id>
+								<phase>install</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<!-- Rename Jackson 3 jars -->
+										<move
+											file="${scijava.app.directory}/jars/jackson-databind-${jackson3.version}.jar"
+											tofile="${scijava.app.directory}/jars/jackson3-databind-${jackson3.version}.jar"
+											failonerror="false" />
+										<move
+											file="${scijava.app.directory}/jars/jackson-core-${jackson3.version}.jar"
+											tofile="${scijava.app.directory}/jars/jackson3-core-${jackson3.version}.jar"
+											failonerror="false" />
+										<move
+											file="${scijava.app.directory}/jars/jackson-dataformat-yaml-${jackson3.version}.jar"
+											tofile="${scijava.app.directory}/jars/jackson3-dataformat-yaml-${jackson3.version}.jar"
+											failonerror="false" />
+
+										<!-- Restore Jackson 2 jars from target/dependency -->
+										<copy
+											file="${project.build.directory}/dependency/jackson-databind-${jackson2.version}.jar"
+											tofile="${scijava.app.directory}/jars/jackson-databind-${jackson2.version}.jar"
+											failonerror="false" />
+										<copy
+											file="${project.build.directory}/dependency/jackson-core-${jackson2.version}.jar"
+											tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar"
+											failonerror="false" />
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

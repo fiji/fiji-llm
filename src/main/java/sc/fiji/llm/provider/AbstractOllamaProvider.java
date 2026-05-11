@@ -23,9 +23,7 @@
 package sc.fiji.llm.provider;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
@@ -50,7 +48,6 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
-import io.github.ollama4j.exceptions.OllamaException;
 
 /**
  * Abstract base class for Ollama-based providers. Handles common functionality
@@ -162,16 +159,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	 * @return list of available local model names
 	 */
 	protected List<String> getAvailableLocalModels() {
-		if (!processManager.isServerRunning()) {
-			return Collections.emptyList();
-		}
-		try {
-			return processManager.getClient().listModels().stream().map(model -> model
-				.getName()).collect(Collectors.toList());
-		}
-		catch (OllamaException e) {
-			return Collections.emptyList();
-		}
+		return processManager.getInstalledModels();
 	}
 
 	/**
@@ -199,9 +187,9 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 			statusService.showStatus(-1, -1, "Downloading Ollama model: " +
 				modelName);
 			try {
-				processManager.getClient().pullModel(modelName);
+				processManager.pullModel(modelName);
 			}
-			catch (OllamaException e) {
+			catch (Exception e) {
 				statusService.clearStatus();
 				statusService.showStatus("Download failed: " + modelName);
 				// Failed to pull

@@ -31,6 +31,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest.Builder;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
+import sc.fiji.llm.mcp.MCPService;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
@@ -45,6 +46,9 @@ public class DefaultAssistantService extends AbstractService implements
 
 	@Parameter
 	private ProviderService providerService;
+
+	@Parameter
+	private MCPService mcpService;
 
 	@Parameter
 	private AiToolService aiToolService;
@@ -62,7 +66,7 @@ public class DefaultAssistantService extends AbstractService implements
 
 		final var builder = AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(modelName))
-			.tools(aiToolService.getToolsWithExecutors())
+			.toolProvider(mcpService.getToolProvider())
 			.toolExecutionErrorHandler(aiToolService::handleExecutionError)
 			.toolArgumentsErrorHandler(aiToolService::handleArgumentError)
 			.chatModel(provider.createChatModel(modelName));
