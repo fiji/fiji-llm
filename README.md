@@ -30,6 +30,23 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 
 3. **Start chatting**: Use `Help > Assistants > Fiji Chat...` (shortcut: `ctrl + 0`)
 
+## MCP Usage
+
+You can connect your VS Code LLMs to the Fiji MCP server! This allows your agents to run tasks in your local Fiji.
+The following examples show some common use cases. 
+
+**NB**: Update the port as necessary
+
+### VS Code
+
+Edit your `mcp.json` and add the following entry:
+
+```json
+		"fiji-mcp": {
+			"type": "http",
+			"url": "http://localhost:9090/mcp"
+		},
+```
 ## User Guide
 
 ### Basic Concepts
