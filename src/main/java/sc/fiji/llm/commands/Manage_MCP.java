@@ -63,6 +63,10 @@ public class Manage_MCP extends DynamicCommand {
 		persist = false, required = false)
 	private String serverStatus = "";
 
+	@Parameter(label = "MCP Server URL", visibility = ItemVisibility.MESSAGE,
+		persist = false, required = false)
+	private String mcpServerUrl = "";
+
 	@Parameter(label = "Port Configuration", description = "Port for MCP server",
 		persist = false)
 	private int port;
@@ -108,9 +112,18 @@ public class Manage_MCP extends DynamicCommand {
 			statusMsg.append("<p style='color: green;'><b>✓ Server Running</b></p>");
 			statusMsg.append("<p>Port: " + mcpService.getServerPort() + "</p>");
 			statusMsg.append("<p>Tools available: " + mcpService.getToolCount() + "</p>");
+
+			// Update MCP Server URL display
+			final int serverPort = mcpService.getServerPort();
+			StringBuilder urlMsg = new StringBuilder();
+			urlMsg.append("<p>http://localhost:" + serverPort + "/mcp</p>");
+			mcpServerUrl = urlMsg.toString();
 		} else {
 			statusMsg.append("<p style='color: orange;'><b>⚠ Server Not Running</b></p>");
 			statusMsg.append("<p>Click 'Start Server' to initialize.</p>");
+
+			// Clear MCP Server URL when server is not running
+			mcpServerUrl = "<p style='color: gray;'>Server URL will appear here when running.</p>";
 		}
 
 		statusMsg.append("</body>");
@@ -120,6 +133,11 @@ public class Manage_MCP extends DynamicCommand {
 		final MutableModuleItem<String> statusItem = getInfo().getMutableInput(
 			"serverStatus", String.class);
 		statusItem.setValue(this, serverStatus);
+
+		// Update the MCP Server URL display
+		final MutableModuleItem<String> urlItem = getInfo().getMutableInput(
+			"mcpServerUrl", String.class);
+		urlItem.setValue(this, mcpServerUrl);
 	}
 
 	@Override
