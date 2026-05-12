@@ -76,12 +76,12 @@ Scripts are user-facing single file programs used to build reproducible workflow
 Fiji users have a text editing interface supporting multiple editors open at once.
 Each editor can have multiple script files open at once.
 A script's file_name extension determines its programming language (e.g., .py, .ijm, .groovy).
-Tools to interact with scripts have a "fiji.script" prefix.
+Tools to interact with scripts have a "fiji_script_" prefix.
 Tools will either reference scripts by script_id, or operate on the active script.
 """;
 	}
 
-	@Tool(value = { "Open a script editor UI if it's not currently open" }, name = "fiji.script.start_editor")
+	@Tool(value = { "Open a script editor UI if it's not currently open" }, name = "fiji_script_start-editor")
 	public String startEditor() {
 		try {
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
@@ -124,7 +124,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Set the active script by its script_id." }, name = "fiji.script.set_active_script")
+	@Tool(value = { "Set the active script by its script_id." }, name = "fiji_script_set-active-script")
 	public String setActiveScript(@P("script_id") final String scriptId)
 	{
 		try {
@@ -166,13 +166,13 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Get information about the script currently active in the editor." }, name = "fiji.script.get_active_script")
+	@Tool(value = { "Get information about the script currently active in the editor." }, name = "fiji_script_get-active-script")
 	public String getActiveScript()
 	{
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found.", "fiji.script.start_editor");
+				return jsonError("No active script found.", "fiji_script_start-editor");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -185,14 +185,14 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Create a new script tab in the script editor." }, name = "fiji.script.create_script")
+	@Tool(value = { "Create a new script tab in the script editor." }, name = "fiji_script_create-script")
 	public String createScript() {
 		try {
 			// Check if editor is open
 			final TextEditor textEditor = TextEditorUtils
 				.getMostRecentVisibleEditor();
 			if (textEditor == null) {
-				return jsonError("Script editor is not open", "fiji.script.start_editor");
+				return jsonError("Script editor is not open", "fiji_script_start-editor");
 			}
 
 			// Create new tab with default empty content
@@ -212,7 +212,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Completely replace the content of the active script." }, name = "fiji.script.replace_script")
+	@Tool(value = { "Completely replace the content of the active script." }, name = "fiji_script_replace-script")
 	public String replaceScript(@P("content") final String content)
 	{
 		try {
@@ -223,7 +223,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -246,7 +246,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 	}
 
 	@Tool(value = { "Rename the active script file. Changing its extension will change its script language." },
-		name = "fiji.script.rename_script")
+		name = "fiji_script_rename-script")
 	public String renameScript(@P("file_name") final String filename)
 	{
 		try {
@@ -257,7 +257,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			// Perform UI operations on EDT
@@ -277,13 +277,13 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Read the complete content of the active script." }, name = "fiji.script.read_script")
+	@Tool(value = { "Read the complete content of the active script." }, name = "fiji_script_read-script")
 	public String readScript()
 	{
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -301,7 +301,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Read lines from the active script between the specified start and end lines (inclusive)" }, name = "fiji.script.read_lines")
+	@Tool(value = { "Read lines from the active script between the specified start and end lines (inclusive)" }, name = "fiji_script_read-lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -312,7 +312,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -349,7 +349,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Delete lines from the active script within a specified range." }, name = "fiji.script.delete_lines")
+	@Tool(value = { "Delete lines from the active script within a specified range." }, name = "fiji_script_delete-lines")
 	public String deleteLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -360,7 +360,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -383,7 +383,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Insert content at a specific line in the active script." }, name = "fiji.script.insert_at")
+	@Tool(value = { "Insert content at a specific line in the active script." }, name = "fiji_script_insert-at")
 	public String insertAt(@P("content") final String content, @P("start_line") final int startLine)
 	{
 		try {
@@ -399,7 +399,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -422,7 +422,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Replace lines in the active script within a specified range." }, name = "fiji.script.replace_lines")
+	@Tool(value = { "Replace lines in the active script within a specified range." }, name = "fiji_script_replace-lines")
 	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -438,7 +438,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji.script.create_script");
+				return jsonError("No active script found", "fiji_script_create-script");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
