@@ -350,7 +350,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 	}
 
 	@Tool(value = { "Delete lines from the active script within a specified range." }, name = "fiji_script_delete-lines")
-	public String deleteLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
+	public String deleteLines(@P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
 			// Validate line numbers
@@ -384,7 +384,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 	}
 
 	@Tool(value = { "Insert content at a specific line in the active script." }, name = "fiji_script_insert-at")
-	public String insertAt(@P("content") final String content, @P("start_line") final int startLine)
+	public String insertAt(@P("content") final String content, @P("start_line") final Integer startLine)
 	{
 		try {
 			// Validate content
@@ -423,7 +423,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 	}
 
 	@Tool(value = { "Replace lines in the active script within a specified range." }, name = "fiji_script_replace-lines")
-	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final int startLine, @P("end_line") final int endLine)
+	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
 			// Validate content
