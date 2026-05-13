@@ -486,10 +486,13 @@ public class DefaultMCPService extends AbstractService implements MCPService
 		// Convert LangChain4j parameters to MCP JSON schema
 		McpSchema.JsonSchema inputSchema = null;
 		final JsonObjectSchema params = toolSpec.parameters();
+		final Map<String, String> reverseMapping = new LinkedHashMap<>();
 		if (params != null) {
 			final Map<String, Object> rawProperties = convertProperties(
 				params.properties());
 			final Map<String, String> keyMapping = buildArgKeyMapping(rawProperties);
+			// Build reverse mapping: friendly name -> argN for use in callHandler
+			keyMapping.forEach((argN, friendlyName) -> reverseMapping.put(friendlyName, argN));
 			final Map<String, Object> properties = remapArgNames(rawProperties,
 				keyMapping);
 			final List<String> required = params.required() == null ? null
@@ -515,12 +518,19 @@ public class DefaultMCPService extends AbstractService implements MCPService
 			.callHandler((exchange, request) -> {
 				try {
 					logService.debug("Executing MCP tool: " + toolSpec.name());
+					// Remap argument keys from friendly names back to positional argN names
+					final Map<String, Object> remappedArgs = new LinkedHashMap<>();
+					if (request.arguments() != null) {
+						request.arguments().forEach((k, v) ->
+							remappedArgs.put(reverseMapping.getOrDefault(k, k), v));
+					}
 					// Create a ToolExecutionRequest for the LangChain4j tool executor
+					final String args = McpJsonDefaults.getMapper()
+							.writeValueAsString(remappedArgs);
 					final ToolExecutionRequest toolRequest = ToolExecutionRequest
 						.builder()
 						.name(toolSpec.name())
-						.arguments(McpJsonDefaults.getMapper()
-							.writeValueAsString(request.arguments()))
+						.arguments(args)
 						.build();
 					// Execute the tool and capture result
 					final String result = toolExecutor.execute(toolRequest, null);
