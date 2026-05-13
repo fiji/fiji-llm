@@ -287,60 +287,8 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				final ToolSpecification toolSpec = entry.getKey();
 				final ToolExecutor toolExecutor = entry.getValue();
 
-				// Convert LangChain4j parameters to MCP JSON schema
-				McpSchema.JsonSchema inputSchema = null;
-				try {
-					final Object params = toolSpec.parameters();
-					if (params != null) {
-						// Convert the parameters object to JsonSchema
-						final String jsonString = McpJsonDefaults.getMapper()
-							.writeValueAsString(params);
-						inputSchema = McpJsonDefaults.getMapper()
-							.readValue(jsonString, McpSchema.JsonSchema.class);
-					} else {
-						// Create an empty object schema if no parameters
-						inputSchema = new McpSchema.JsonSchema("object", null, null, null,
-							null, null);
-					}
-				} catch (final Exception e) {
-					logService.warn(
-						"Could not convert parameters for tool " + toolSpec.name(), e);
-					inputSchema = new McpSchema.JsonSchema("object", null, null, null,
-						null, null);
-				}
-
-				final SyncToolSpecification syncTool = SyncToolSpecification.builder()
-					.tool(Tool.builder()
-						.name(toolSpec.name())
-						.description(toolSpec.description())
-						.inputSchema(inputSchema)
-						.build())
-					.callHandler((exchange, request) -> {
-						try {
-							logService.debug("Executing MCP tool: " + toolSpec.name());
-							// Create a ToolExecutionRequest for the LangChain4j tool executor
-							final ToolExecutionRequest toolRequest = ToolExecutionRequest
-								.builder()
-								.name(toolSpec.name())
-								.arguments(McpJsonDefaults.getMapper()
-									.writeValueAsString(request.arguments()))
-								.build();
-							// Execute the tool and capture result
-							final String result = toolExecutor.execute(toolRequest, null);
-							return CallToolResult.builder()
-								.content(List.of(new McpSchema.TextContent(result)))
-								.build();
-						} catch (final Exception e) {
-							logService.error("Error executing tool " + toolSpec.name(), e);
-							return CallToolResult.builder()
-								.content(List.of(new McpSchema.TextContent(
-									"Error: " + e.getMessage())))
-								.isError(true)
-								.build();
-						}
-					})
-					.build();
-
+				final SyncToolSpecification syncTool = convertToolToSyncSpecification(
+					toolSpec, toolExecutor);
 				mcpServer.addTool(syncTool);
 			}
 
@@ -376,5 +324,71 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				logService.warn("Error stopping Jetty server", e);
 			}
 		}
+	}
+
+	/**
+	 * Converts a LangChain4j ToolSpecification and ToolExecutor into an MCP
+	 * SyncToolSpecification.
+	 *
+	 * @param toolSpec the tool specification
+	 * @param toolExecutor the tool executor
+	 * @return the converted SyncToolSpecification
+	 */
+	private SyncToolSpecification convertToolToSyncSpecification(
+		final ToolSpecification toolSpec, final ToolExecutor toolExecutor)
+	{
+		// Convert LangChain4j parameters to MCP JSON schema
+		McpSchema.JsonSchema inputSchema = null;
+		try {
+			final Object params = toolSpec.parameters();
+			if (params != null) {
+				// Convert the parameters object to JsonSchema
+				final String jsonString = McpJsonDefaults.getMapper()
+					.writeValueAsString(params);
+				inputSchema = McpJsonDefaults.getMapper()
+					.readValue(jsonString, McpSchema.JsonSchema.class);
+			} else {
+				// Create an empty object schema if no parameters
+				inputSchema = new McpSchema.JsonSchema("object", null, null, null,
+					null, null);
+			}
+		} catch (final Exception e) {
+			logService.warn(
+				"Could not convert parameters for tool " + toolSpec.name(), e);
+			inputSchema = new McpSchema.JsonSchema("object", null, null, null,
+				null, null);
+		}
+
+		return SyncToolSpecification.builder()
+			.tool(Tool.builder()
+				.name(toolSpec.name())
+				.description(toolSpec.description())
+				.inputSchema(inputSchema)
+				.build())
+			.callHandler((exchange, request) -> {
+				try {
+					logService.debug("Executing MCP tool: " + toolSpec.name());
+					// Create a ToolExecutionRequest for the LangChain4j tool executor
+					final ToolExecutionRequest toolRequest = ToolExecutionRequest
+						.builder()
+						.name(toolSpec.name())
+						.arguments(McpJsonDefaults.getMapper()
+							.writeValueAsString(request.arguments()))
+						.build();
+					// Execute the tool and capture result
+					final String result = toolExecutor.execute(toolRequest, null);
+					return CallToolResult.builder()
+						.content(List.of(new McpSchema.TextContent(result)))
+						.build();
+				} catch (final Exception e) {
+					logService.error("Error executing tool " + toolSpec.name(), e);
+					return CallToolResult.builder()
+						.content(List.of(new McpSchema.TextContent(
+							"Error: " + e.getMessage())))
+						.isError(true)
+						.build();
+				}
+			})
+			.build();
 	}
 }
