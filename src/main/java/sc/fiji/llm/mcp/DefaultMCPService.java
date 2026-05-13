@@ -102,7 +102,6 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	private int toolCount = 0;
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean disposed = new AtomicBoolean(false);
-	private final AtomicBoolean serverError = new AtomicBoolean(false);
 	private final AtomicBoolean stopServer = new AtomicBoolean(false);
 	private CountDownLatch serverReady;
 
@@ -193,7 +192,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 			// Initialize the server ready signal
 			serverReady = new CountDownLatch(1);
-			serverError.set(false);
+			final Exception[] startupException = new Exception[1];
 			stopServer.set(false);
 
 			// Start MCP server in a daemon thread
@@ -201,8 +200,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				try {
 					runMcpServer(aiToolService.getToolsWithExecutors(), port);
 				} catch (final Exception e) {
-					logService.error("MCP server error", e);
-					serverError.set(true);
+					startupException[0] = e;
 					serverReady.countDown(); // Signal failure to unblock waiting thread
 				}
 			});
@@ -214,13 +212,18 @@ public class DefaultMCPService extends AbstractService implements MCPService
 			logService.debug("Waiting for Fiji MCP server to be ready...");
 			final boolean serverStarted = serverReady.await(STARTUP_WAIT, TimeUnit.SECONDS);
 
-			if (!serverStarted) {
-				throw new RuntimeException(
-					"Fiji MCP server failed to start");
+			if (startupException[0] != null && startupException[0].getMessage().contains("Failed to bind")) {
+				logService.error("Fiji MCP server failed to startup: another instance of the server may be running");
+				return;
 			}
 
-			if (serverError.get()) {
-				throw new RuntimeException("Fiji MCP server encountered an error during startup");
+			if (!serverStarted) {
+				if (startupException[0] != null) {
+					throw new RuntimeException( "Encountered exception during server startup",
+					startupException[0]);
+				}
+				throw new RuntimeException(
+					"Fiji MCP server failed to start for unknown reasons");
 			}
 
 			logService.debug("Fiji MCP server is ready, creating client...");
