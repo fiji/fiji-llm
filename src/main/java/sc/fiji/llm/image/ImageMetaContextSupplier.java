@@ -102,10 +102,6 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			} catch (Exception e) {
 			}
 		}
-
-		for (ContextItem i : items) {
-			System.out.println(i);
-		}
 		return items;
 	}
 
