@@ -22,11 +22,14 @@
 
 package sc.fiji.llm.mcp;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -45,6 +48,17 @@ import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
+import dev.langchain4j.model.chat.request.json.JsonAnyOfSchema;
+import dev.langchain4j.model.chat.request.json.JsonArraySchema;
+import dev.langchain4j.model.chat.request.json.JsonBooleanSchema;
+import dev.langchain4j.model.chat.request.json.JsonEnumSchema;
+import dev.langchain4j.model.chat.request.json.JsonIntegerSchema;
+import dev.langchain4j.model.chat.request.json.JsonNullSchema;
+import dev.langchain4j.model.chat.request.json.JsonNumberSchema;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.chat.request.json.JsonReferenceSchema;
+import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
+import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import io.modelcontextprotocol.json.McpJsonDefaults;
@@ -327,6 +341,138 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	}
 
 	/**
+	 * Converts a map of named LangChain4j JsonSchemaElements to a
+	 * {@code Map<String, Object>} suitable for MCP's JsonSchema properties or
+	 * definitions field.
+	 */
+	private Map<String, Object> convertProperties(
+		final Map<String, JsonSchemaElement> source)
+	{
+		if (source == null) return null;
+		final Map<String, Object> result = new LinkedHashMap<>();
+		for (final Map.Entry<String, JsonSchemaElement> entry : source.entrySet()) {
+			result.put(entry.getKey(), schemaElementToMap(entry.getValue()));
+		}
+		return result;
+	}
+
+	/**
+	 * Converts a LangChain4j JsonSchemaElement to a plain {@code Map<String, Object>}
+	 * representing the equivalent JSON Schema.
+	 */
+	private Map<String, Object> schemaElementToMap(
+		final JsonSchemaElement element)
+	{
+		final Map<String, Object> map = new LinkedHashMap<>();
+		if (element instanceof JsonStringSchema) {
+			map.put("type", "string");
+			if (element.description() != null) map.put("description",
+				element.description());
+		} else if (element instanceof JsonIntegerSchema) {
+			map.put("type", "integer");
+			if (element.description() != null) map.put("description",
+				element.description());
+		} else if (element instanceof JsonNumberSchema) {
+			map.put("type", "number");
+			if (element.description() != null) map.put("description",
+				element.description());
+		} else if (element instanceof JsonBooleanSchema) {
+			map.put("type", "boolean");
+			if (element.description() != null) map.put("description",
+				element.description());
+		} else if (element instanceof JsonNullSchema) {
+			map.put("type", "null");
+			if (element.description() != null) map.put("description",
+				element.description());
+		} else if (element instanceof JsonEnumSchema) {
+			final JsonEnumSchema e = (JsonEnumSchema) element;
+			map.put("type", "string");
+			map.put("enum", e.enumValues());
+			if (e.description() != null) map.put("description", e.description());
+		} else if (element instanceof JsonArraySchema) {
+			final JsonArraySchema a = (JsonArraySchema) element;
+			map.put("type", "array");
+			if (a.items() != null) map.put("items",
+				schemaElementToMap(a.items()));
+			if (a.description() != null) map.put("description", a.description());
+		} else if (element instanceof JsonObjectSchema) {
+			final JsonObjectSchema o = (JsonObjectSchema) element;
+			map.put("type", "object");
+			if (o.description() != null) map.put("description", o.description());
+			if (o.properties() != null) map.put("properties",
+				convertProperties(o.properties()));
+			if (o.required() != null) map.put("required", o.required());
+			if (o.additionalProperties() != null) map.put("additionalProperties",
+				o.additionalProperties());
+			if (o.definitions() != null) map.put("definitions",
+				convertProperties(o.definitions()));
+		} else if (element instanceof JsonAnyOfSchema) {
+			final JsonAnyOfSchema a = (JsonAnyOfSchema) element;
+			final List<Object> anyOf = new ArrayList<>();
+			for (final JsonSchemaElement e : a.anyOf()) {
+				anyOf.add(schemaElementToMap(e));
+			}
+			map.put("anyOf", anyOf);
+			if (a.description() != null) map.put("description", a.description());
+		} else if (element instanceof JsonReferenceSchema) {
+			final JsonReferenceSchema r = (JsonReferenceSchema) element;
+			map.put("$ref", r.reference());
+			if (r.description() != null) map.put("description", r.description());
+		}
+		return map;
+	}
+
+	/**
+	 * Builds a mapping from argN keys to their description-based names, for use
+	 * in remapping the required list.
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String, String> buildArgKeyMapping(
+		final Map<String, Object> rawProperties)
+	{
+		final Map<String, String> mapping = new LinkedHashMap<>();
+		if (rawProperties == null) return mapping;
+		for (final Map.Entry<String, Object> entry : rawProperties.entrySet()) {
+			if (entry.getValue() instanceof Map) {
+				final Map<String, Object> propMap =
+					(Map<String, Object>) entry.getValue();
+				final Object desc = propMap.get("description");
+				if (desc instanceof String) {
+					mapping.put(entry.getKey(), (String) desc);
+				}
+			}
+		}
+		return mapping;
+	}
+
+	/**
+	 * Remaps properties from argN-keyed form to name-keyed form using each
+	 * property's "description" field as the new key. The "description" field is
+	 * removed from each property since it served only as the parameter name.
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> remapArgNames(
+		final Map<String, Object> rawProperties,
+		final Map<String, String> keyMapping)
+	{
+		if (rawProperties == null) return null;
+		final Map<String, Object> result = new LinkedHashMap<>();
+		for (final Map.Entry<String, Object> entry : rawProperties.entrySet()) {
+			final String newKey = keyMapping.getOrDefault(entry.getKey(),
+				entry.getKey());
+			if (entry.getValue() instanceof Map) {
+				final Map<String, Object> remapped = new LinkedHashMap<>(
+					(Map<String, Object>) entry.getValue());
+				remapped.remove("description");
+				result.put(newKey, remapped);
+			} else {
+				result.put(newKey, entry.getValue());
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Converts a LangChain4j ToolSpecification and ToolExecutor into an MCP
 	 * SyncToolSpecification.
 	 *
@@ -339,22 +485,23 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	{
 		// Convert LangChain4j parameters to MCP JSON schema
 		McpSchema.JsonSchema inputSchema = null;
-		try {
-			final Object params = toolSpec.parameters();
-			if (params != null) {
-				// Convert the parameters object to JsonSchema
-				final String jsonString = McpJsonDefaults.getMapper()
-					.writeValueAsString(params);
-				inputSchema = McpJsonDefaults.getMapper()
-					.readValue(jsonString, McpSchema.JsonSchema.class);
-			} else {
-				// Create an empty object schema if no parameters
-				inputSchema = new McpSchema.JsonSchema("object", null, null, null,
-					null, null);
-			}
-		} catch (final Exception e) {
-			logService.warn(
-				"Could not convert parameters for tool " + toolSpec.name(), e);
+		final JsonObjectSchema params = toolSpec.parameters();
+		if (params != null) {
+			final Map<String, Object> rawProperties = convertProperties(
+				params.properties());
+			final Map<String, String> keyMapping = buildArgKeyMapping(rawProperties);
+			final Map<String, Object> properties = remapArgNames(rawProperties,
+				keyMapping);
+			final List<String> required = params.required() == null ? null
+				: params.required().stream()
+					.map(k -> keyMapping.getOrDefault(k, k))
+					.collect(Collectors.toList());
+			final Map<String, Object> definitions = convertProperties(
+				params.definitions());
+			inputSchema = new McpSchema.JsonSchema("object", properties,
+				required, params.additionalProperties(), null,
+				definitions);
+		} else {
 			inputSchema = new McpSchema.JsonSchema("object", null, null, null,
 				null, null);
 		}
