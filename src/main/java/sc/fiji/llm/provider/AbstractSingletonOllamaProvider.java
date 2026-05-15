@@ -22,28 +22,27 @@
 
 package sc.fiji.llm.provider;
 
-import org.scijava.plugin.Plugin;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * LLM provider plugin for Ollama phi4-mini model.
- * Specialized provider for lightweight general-purpose conversations.
+ * Abstract base class for Ollama providers with a single model.
  */
-@Plugin(type = LLMProvider.class, name = "Ollama (Phi4-Mini)")
-public class Phi4MiniProvider extends AbstractSingletonOllamaProvider {
+public abstract class AbstractSingletonOllamaProvider extends AbstractOllamaProvider {
 
-	private static final String MODEL_NAME = "phi4-mini:3.8b";
+	private final String modelName;
 
-	public Phi4MiniProvider() {
-		super(MODEL_NAME);
+	protected AbstractSingletonOllamaProvider(String modelName) {
+		this.modelName = modelName;
 	}
 
 	@Override
-	public String getName() {
-		return "Ollama (Phi4-Mini)";
-	}
-
-	@Override
-	public String getDescription() {
-		return "Local Phi4-Mini model - very lightweight but limited functionality";
+	public List<String> getAvailableModels() {
+		List<String> localModels = getAvailableLocalModels();
+		if (localModels.contains(modelName)) {
+			return Collections.singletonList(modelName);
+		}
+		// Model not installed, mark as remote for download
+		return Collections.singletonList(appendRemoteString(modelName));
 	}
 }

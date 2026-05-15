@@ -22,9 +22,6 @@
 
 package sc.fiji.llm.provider;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 /**
@@ -32,27 +29,21 @@ import org.scijava.plugin.Plugin;
  * Specialized provider for code generation and analysis tasks.
  */
 @Plugin(type = LLMProvider.class, name = "Ollama (Qwen2.5-Coder:7B)")
-public class Qwen25CoderProvider extends AbstractOllamaProvider {
+public class Qwen25CoderProvider extends AbstractSingletonOllamaProvider {
 
 	private static final String MODEL_NAME = "qwen2.5-coder:7b";
 
+	public Qwen25CoderProvider() {
+		super(MODEL_NAME);
+	}
+
 	@Override
 	public String getName() {
-		return "Ollama (Qwen2.5-Coder:7B)";
+		return "Ollama (Qwen2.5-Coder)";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Qwen2.5-Coder 7B model optimized for code generation and analysis";
-	}
-
-	@Override
-	public List<String> getAvailableModels() {
-		List<String> localModels = getAvailableLocalModels();
-		if (localModels.contains(MODEL_NAME)) {
-			return Collections.singletonList(MODEL_NAME);
-		}
-		// Model not installed, mark as remote for download
-		return Collections.singletonList(appendRemoteString(MODEL_NAME));
+		return "Local Qwen2.5-Coder model - very lightweight but limited functionality.";
 	}
 }
