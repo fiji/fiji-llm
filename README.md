@@ -44,7 +44,8 @@ Edit your `mcp.json` and add the following entry:
 ```json
 		"fiji-mcp": {
 			"type": "http",
-			"url": "http://localhost:9090/mcp"
+			"url": "http://localhost:9090/mcp",
+			"startupMode": "onDemand"
 		},
 ```
 ## User Guide
