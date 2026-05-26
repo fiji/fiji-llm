@@ -277,30 +277,6 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Read the complete content of the active script." }, name = "fiji_script_read-script")
-	public String readScript()
-	{
-		try {
-			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
-			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
-			}
-
-			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-
-			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-			final String content = editorPane.getText();
-
-			JsonObject readState = ScriptContextUtilities.getTabJson(tab, scriptID).getAsJsonObject();
-			readState.addProperty(ScriptContextItem.CONTENT_KEY, content);
-			return jsonProp("read_script", readState);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to read active script");
-		}
-	}
-
 	@Tool(value = { "Read lines from the active script between the specified start and end lines (inclusive)" }, name = "fiji_script_read-lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
