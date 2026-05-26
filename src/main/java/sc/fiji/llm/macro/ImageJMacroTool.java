@@ -68,7 +68,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 			"To find macro functions, use: 1) listMacroCategories(), 2) listMacroFunctionsByCategory(category).";
 	}
 
-	@Tool(value = { "Returns: A list of ImageJ macro function category names" })
+	@Tool(value = { "Lists the built-in ImageJ macro function categories. Use fiji_macro_list_functions to list the functions for a particular category." }, name = "fiji_macro_list_categories")
 	public String listMacroCategories() {
 		List<String> categories = MacroFunctionRegistry.getCategories();
 		if (categories.isEmpty()) {
@@ -82,9 +82,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 		return sb.toString();
 	}
 
-	@Tool(value = {
-		"Args: category - the category name (from listMacroCategories)",
-		"Returns: Information on all ImageJ macro functions in the given category" })
+	@Tool(value = { "Lists the built-in ImageJ macro functions for the given category. Use fiji_macro_list_categories first to find categories." }, name = "fiji_macro_list_functions")
 	public String listMacroFunctionsByCategory(@P("category") String category) {
 		if (category == null || category.trim().isEmpty()) {
 			return jsonError("Category cannot be empty");
@@ -106,7 +104,7 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 		return sb.toString();
 	}
 
-	@Tool(value = { "Start the macro recorder", })
+	@Tool(value = { "Start the macro recorder" }, name = "fiji_macro_start_recorder" )
 	public String startRecorder() {
 		try {
 			// Run the macro recorder command through ImageJ

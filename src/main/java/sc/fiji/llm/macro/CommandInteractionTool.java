@@ -91,10 +91,9 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 """;
 	}
 
-	@Tool(value = {
-		"Run a command that requires user input (contains \"...\") or is in the \"Open Samples\" menu",
-		"Args: menuPath - formatted menu path (e.g., \"File > Open Samples > Blobs\")", })
-	public String runCommand(@P("menuPath") String menuPath) {
+	@Tool(value = { "Execute a command using its full menu path (e.g., \"File > Open Samples > Blobs\"). Also records execution if the macro recorder is running. Can only run interactive commands, containing \"...\") or in the \"Open Samples\" menu. Non-interactive commands are disabled for agentic use. Use fiji_command_search to find available commands.", },
+		name = "fiji_command_run" )
+	public String runCommand(@P("menu_path") String menuPath) {
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
 				return jsonError("Menu path cannot be empty");
@@ -139,12 +138,11 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 		}
 	}
 
-	@Tool(value = { "Search for available commands",
-		"Args: commandName - command to search for (name only, no menu info, e.g., 'Blur', 'Threshold', 'Open')",
-		"Returns: info for top commands, most relevant first" })
-	public String searchCommands(@P("commandName") String commandName) {
+	@Tool(value = { "Lists available commands whose name matches the given search term, sorted by descending relevancy." },
+		name = "fiji_command_search" )
+	public String searchCommands(@P("search_name") String searchName) {
 		try {
-			if (commandName == null || commandName.trim().isEmpty()) {
+			if (searchName == null || searchName.trim().isEmpty()) {
 				return jsonError("Command name cannot be empty");
 			}
 
@@ -180,7 +178,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 
 				// Start the search operation
 				SearchOperation operation = searchService.search(listener);
-				operation.search(commandName);
+				operation.search(searchName);
 
 				// Wait for results with timeout (2 seconds should be plenty)
 				searchComplete.await(2, TimeUnit.SECONDS);
@@ -195,7 +193,7 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 			}
 
 			if (results.isEmpty()) {
-				return "No commands found matching: " + commandName;
+				return "No commands found matching: " + searchName;
 			}
 
 			// Format results as JSON-like string for LLM consumption
