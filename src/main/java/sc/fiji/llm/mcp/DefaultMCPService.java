@@ -274,9 +274,15 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				.mcpEndpoint("/mcp")
 				.build();
 
+		final String instructions = "This server exposes tools for interacting with a separately " +
+			"running Fiji/ImageJ bioimage analysis application. Tool calls have real effects on the live app. " +
+			"Use fiji_context_* tools to query state. Note that state may change asynchronously by the human user " +
+			"and should be re-queried as needed.";
+
 		// Create MCP server with tools support
 		final McpSyncServer mcpServer = McpServer.sync(transportServlet)
 			.serverInfo("fiji-mcp-server", FIJI_MCP_VERSION)
+			.instructions(instructions)
 			.capabilities(ServerCapabilities.builder()
 				.tools(true)
 				.build())
