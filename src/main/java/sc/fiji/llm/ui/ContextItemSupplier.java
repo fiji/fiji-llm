@@ -20,13 +20,15 @@
  * #L%
  */
 
-package sc.fiji.llm.context;
+package sc.fiji.llm.ui;
 
 import java.util.Set;
 
 import javax.swing.ImageIcon;
 
 import org.scijava.plugin.SingletonPlugin;
+
+import sc.fiji.llm.context.ContextItem;
 
 /**
  * Plugin interface for supplying context items to the chat UI. Implementations

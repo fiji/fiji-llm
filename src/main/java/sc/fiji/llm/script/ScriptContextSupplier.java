@@ -40,7 +40,7 @@ import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import sc.fiji.llm.context.ContextItem;
-import sc.fiji.llm.context.ContextItemSupplier;
+import sc.fiji.llm.ui.ContextItemSupplier;
 import sc.fiji.llm.ui.TextEditorUtils;
 
 /**

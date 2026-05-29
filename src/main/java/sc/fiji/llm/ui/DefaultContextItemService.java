@@ -20,14 +20,14 @@
  * #L%
  */
 
-package sc.fiji.llm.context;
+package sc.fiji.llm.ui;
 
 import org.scijava.plugin.AbstractSingletonService;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.Service;
 
 /**
- * Default implementation of ContextItemSupplierService. Provides registry and
+ * Default implementation of ContextItemService. Provides registry and
  * lookup functionality for ContextItemSupplier plugins.
  */
 @Plugin(type = Service.class)

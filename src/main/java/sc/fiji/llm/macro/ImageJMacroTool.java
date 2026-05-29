@@ -22,12 +22,15 @@
 
 package sc.fiji.llm.macro;
 
+import java.awt.Frame;
 import java.util.List;
 
 import javax.swing.SwingUtilities;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+
+import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
@@ -124,5 +127,19 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 		catch (RuntimeException e) {
 			return jsonError("Failed to open macro recorder");
 		}
+	}
+
+	@Tool(value = { "Check whether the ImageJ macro recorder is currently open." }, name = "fiji_macro_recorder-state")
+	public String getMacroRecorderState() {
+		boolean recorderOpen = false;
+		for (Frame frame : Frame.getFrames()) {
+			if (frame.toString().startsWith("ij.plugin.frame.Recorder")) {
+				recorderOpen = frame.isVisible();
+				break;
+			}
+		}
+		JsonObject result = new JsonObject();
+		result.addProperty("recorder_is_open", recorderOpen);
+		return result.toString();
 	}
 }

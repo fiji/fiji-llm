@@ -40,7 +40,7 @@ import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.ImageDisplayService;
 import sc.fiji.llm.context.ContextItem;
-import sc.fiji.llm.context.ContextItemSupplier;
+import sc.fiji.llm.ui.ContextItemSupplier;
 
 /**
  * ContextItemSupplier implementation for {@link ImageMetaContextItem}s.

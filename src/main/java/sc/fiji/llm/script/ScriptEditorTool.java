@@ -23,6 +23,7 @@
 package sc.fiji.llm.script;
 
 import java.io.File;
+import java.util.List;
 
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
@@ -35,6 +36,7 @@ import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -650,6 +652,37 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		renameState.addProperty("old_name", oldName);
 		renameState.addProperty("new_name", name);
 		return jsonProp("renamed_script", renameState);
+	}
+
+	@Tool(value = { "List all open script editors and their tabs." }, name = "fiji_script_list-open")
+	public String listOpenScripts() {
+		JsonArray editors = new JsonArray();
+		List<TextEditor> instances = TextEditor.instances;
+		if (instances != null) {
+			for (int i = 0; i < instances.size(); i++) {
+				TextEditor textEditor = instances.get(i);
+				if (!textEditor.isVisible()) continue;
+				JsonObject editorJson = new JsonObject();
+				editorJson.addProperty("editor_id", i);
+				JsonArray tabs = new JsonArray();
+				int tabIndex = 0;
+				try {
+					while (true) {
+						TextEditorTab tab = textEditor.getTab(tabIndex);
+						tabs.add(ScriptContextUtilities.getTabJson(tab, i, tabIndex));
+						tabIndex++;
+					}
+				}
+				catch (IndexOutOfBoundsException e) {
+					// all tabs collected
+				}
+				editorJson.add("tabs", tabs);
+				editors.add(editorJson);
+			}
+		}
+		JsonObject result = new JsonObject();
+		result.add("editors", editors);
+		return result.toString();
 	}
 
     private String activeTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {

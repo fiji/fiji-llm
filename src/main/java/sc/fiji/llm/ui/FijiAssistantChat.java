@@ -86,15 +86,14 @@ import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
-import sc.fiji.llm.context.AppContextService;
 import sc.fiji.llm.context.ContextItem;
-import sc.fiji.llm.context.ContextItemService;
-import sc.fiji.llm.context.ContextItemSupplier;
+import sc.fiji.llm.ui.ContextItemService;
+import sc.fiji.llm.ui.ContextItemSupplier;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
-import sc.fiji.llm.tools.ToolContext;
+import sc.fiji.llm.tools.ToolScope;
 
 /**
  * Swing-based chat window for chatting with LLMs in Fiji.
@@ -129,9 +128,6 @@ public class FijiAssistantChat {
 
 	@Parameter
 	private ContextItemService contextItemService;
-
-	@Parameter
-	private AppContextService appContextService;
 
 	@Parameter
 	private ThreadService threadService;
@@ -845,9 +841,6 @@ public class FijiAssistantChat {
 					attributes.put("context:from_user", userContextArray);
 				}
 
-				// Attach environment context
-				JsonElement appContext = appContextService.getCurrentEnvironment();
-				attributes.put("context:from_app", appContext);
 
 				if (!attributes.isEmpty()) {
 					msgBuilder.attributes(attributes);
@@ -861,7 +854,7 @@ public class FijiAssistantChat {
 				// Build a chat request for the LLM
 				final ChatRequest chatRequest = ChatRequest.builder()
 						.messages(userMsg)
-						.toolSpecifications(aiToolService.getToolsForContext(ToolContext.ANY))
+						.toolSpecifications(aiToolService.getToolsForContext(ToolScope.ANY))
 						.build();
 
 				// Send user message to the LLM to initiate chat
