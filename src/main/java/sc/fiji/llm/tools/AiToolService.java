@@ -68,7 +68,7 @@ Remember: Tool methods are ONLY available to you, not to the user.
 	 * This method allows filtering of available tools in a particular
 	 * {@code ChatRequest}
 	 *
-	 * See {@link ToolContext} for built-in contexts available.
+	 * See {@link ToolScope} for built-in contexts available.
 	 *
 	 * @param toolContext The desired context
 	 * @return All {@link ToolSpecifications} compatible with the given context

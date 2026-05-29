@@ -49,7 +49,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
-import sc.fiji.llm.tools.ToolContext;
+import sc.fiji.llm.tools.ToolScope;
 
 /**
  * AI tool for LLM agentic discovery and execution of available commands.
@@ -73,8 +73,8 @@ public class CommandInteractionTool extends AbstractAiToolPlugin {
 	}
 
 	@Override
-	public String getToolContext() {
-		return ToolContext.MACRO;
+	public String getToolScope() {
+		return ToolScope.MACRO;
 	}
 
 	@Override

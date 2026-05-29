@@ -42,7 +42,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
-import sc.fiji.llm.tools.ToolContext;
+import sc.fiji.llm.tools.ToolScope;
 import sc.fiji.llm.ui.TextEditorUtils;
 
 /**
@@ -65,8 +65,8 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 	}
 
 	@Override
-	public String getToolContext() {
-		return ToolContext.SCRIPT;
+	public String getToolScope() {
+		return ToolScope.SCRIPT;
 	}
 
 	@Override

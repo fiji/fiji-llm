@@ -69,9 +69,9 @@ public interface AiToolPlugin extends SingletonPlugin {
 	}
 
 	/**
-	 * @return Tool contexts allow filtering of available tools.
+	 * @return Tool scopes allow filtering of available tools.
 	 */
-	default String getToolContext() {
-		return ToolContext.ANY;
+	default String getToolScope() {
+		return ToolScope.ANY;
 	}
 }

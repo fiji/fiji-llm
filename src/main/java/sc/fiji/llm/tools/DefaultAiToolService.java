@@ -134,18 +134,18 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 				new HashMap<>();
 			Map<ToolSpecification, ToolExecutor> interimExecutorMap = new HashMap<>();
 			List<ToolSpecification> anyContextList = new ArrayList<>();
-			interimContextMap.put(ToolContext.ANY, anyContextList);
+			interimContextMap.put(ToolScope.ANY, anyContextList);
 			Map<String, AiToolPlugin> interimPluginMap = new HashMap<>();
 			Set<String> toolNames = new HashSet<>();
 
 			for (AiToolPlugin plugin : getInstances()) {
-				String context = plugin.getToolContext();
+				String scope = plugin.getToolScope();
 				Map<ToolSpecification, ToolExecutor> specs = plugin.getTools();
 				if (specs == null) continue;
 
 				// Add to context-specific list
 				List<ToolSpecification> contextList = interimContextMap.computeIfAbsent(
-					context, k -> new ArrayList<>());
+					scope, k -> new ArrayList<>());
 				for (Entry<ToolSpecification, ToolExecutor> entry : specs.entrySet()) {
 					ToolSpecification spec = entry.getKey();
 					String name = spec.name();

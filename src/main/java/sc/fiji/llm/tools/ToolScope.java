@@ -22,7 +22,7 @@
 
 package sc.fiji.llm.tools;
 
-public final class ToolContext {
+public final class ToolScope {
 	public static final String ANY = "fiji:any";
 	public static final String SCRIPT = "fiji:script";
 	public static final String MACRO = "fiji:macro";
