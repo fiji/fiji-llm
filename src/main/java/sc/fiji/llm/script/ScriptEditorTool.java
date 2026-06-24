@@ -80,6 +80,7 @@ Each editor can have multiple script files open at once.
 A script's file_name extension determines its programming language (e.g., .py, .ijm, .groovy).
 Tools to interact with scripts have a "fiji_script_" prefix.
 Tools will either reference scripts by script_id, or operate on the active script.
+Script lines are 1-indexed and all line ranges are inclusive.
 """;
 	}
 
@@ -279,7 +280,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Read lines from the active script between the specified start and end lines (inclusive)" }, name = "fiji_script_read-lines")
+	@Tool(value = { "Read lines from the active script between the specified start and end lines" }, name = "fiji_script_read-lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -327,7 +328,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Delete lines from the active script within a specified range." }, name = "fiji_script_delete-lines")
+	@Tool(value = { "Delete lines from the active script within a specified range" }, name = "fiji_script_delete-lines")
 	public String deleteLines(@P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
@@ -361,8 +362,8 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Insert content at a specific line in the active script." }, name = "fiji_script_insert-at")
-	public String insertAt(@P("content") final String content, @P("start_line") final Integer startLine)
+	@Tool(value = { "Insert content before a specific line in the active script." }, name = "fiji_script_insert-at")
+	public String insertAt(@P("content") final String content, @P("before_line") final Integer beforeLine)
 	{
 		try {
 			// Validate content
@@ -371,8 +372,8 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 			}
 
 			// Validate line number
-			if (startLine < 1) {
-				return jsonError("start_line must be >= 1");
+			if (beforeLine < 1) {
+				return jsonError("before_line must be >= 1");
 			}
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -386,21 +387,21 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 			// Perform UI operations on EDT
 			final String[] result = new String[1];
 			if (SwingUtilities.isEventDispatchThread()) {
-				result[0] = performInsertAt(tab, scriptID, content, startLine);
+				result[0] = performInsertAt(tab, scriptID, content, beforeLine);
 			}
 			else {
 				SwingUtilities.invokeAndWait(() -> {
-					result[0] = performInsertAt(tab, scriptID, content, startLine);
+					result[0] = performInsertAt(tab, scriptID, content, beforeLine);
 				});
 			}
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to insert content into active script");
+			return jsonError("Failed to run insert-at tool: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Replace lines in the active script within a specified range." }, name = "fiji_script_replace-lines")
+	@Tool(value = { "Replace lines in the active script within a specified range" }, name = "fiji_script_replace-lines")
 	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
@@ -527,7 +528,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	private String performInsertAt(final TextEditorTab tab, final ScriptID scriptID, final String content, final int startLine)
+	private String performInsertAt(final TextEditorTab tab, final ScriptID scriptID, final String content, final int beforeLine)
 	{
 		try {
 			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
@@ -535,14 +536,14 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 			final String[] lines = currentContent.split("\n", -1);
 
 			// Validate that insertion line is valid (allow inserting at end)
-			if (startLine > lines.length + 1) {
-				return jsonError("start_line exceeds total number of lines + 1 (" + (lines.length + 1) + ")");
+			if (beforeLine > lines.length + 1) {
+				return jsonError("before_line exceeds total number of lines + 1 (" + (lines.length + 1) + ")");
 			}
 
 			// Build new content with insertion
 			final StringBuilder newContent = new StringBuilder();
 			for (int i = 0; i < lines.length; i++) {
-				if (i == startLine - 1) {
+				if (i == beforeLine - 1) {
 					newContent.append(content);
 					if (!content.endsWith("\n")) {
 						newContent.append("\n");
@@ -555,7 +556,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 			}
 
 			// Handle insertion at end of file
-			if (startLine > lines.length) {
+			if (beforeLine > lines.length) {
 				if (newContent.length() > 0 && !currentContent.endsWith("\n")) {
 					newContent.append("\n");
 				}
@@ -565,12 +566,13 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 			editorPane.setText(newContent.toString());
 
 			JsonObject insertState = ScriptContextUtilities.getTabJson(tab, scriptID).getAsJsonObject();
-			insertState.addProperty("inserted_at_line", startLine);
+			insertState.addProperty("inserted_before_line", beforeLine);
 			insertState.addProperty("new_total_lines", newContent.toString().split("\n", -1).length);
 			return jsonProp("inserted_content", insertState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to insert content into script");
+			e.printStackTrace();
+			return jsonError("Failed to insert content into script" + e.getMessage());
 		}
 	}
 
