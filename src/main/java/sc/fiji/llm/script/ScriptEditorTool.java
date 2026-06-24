@@ -83,7 +83,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 """;
 	}
 
-	@Tool(value = { "Open a script editor UI if it's not currently open" }, name = "fiji_script_start-editor")
+	@Tool(value = { "Open the script editor UI with an active blank script, if not currently open." }, name = "fiji_script_start-editor")
 	public String startEditor() {
 		try {
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
@@ -187,7 +187,7 @@ Tools will either reference scripts by script_id, or operate on the active scrip
 		}
 	}
 
-	@Tool(value = { "Create a new script tab in the script editor." }, name = "fiji_script_create-script")
+	@Tool(value = { "Create and activate a new script tab in the script editor; no-op if an unmodified blank script is already active." }, name = "fiji_script_create-script")
 	public String createScript() {
 		try {
 			// Check if editor is open
