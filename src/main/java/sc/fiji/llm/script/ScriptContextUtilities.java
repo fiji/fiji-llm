@@ -22,7 +22,6 @@
 
 package sc.fiji.llm.script;
 
-import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import com.google.gson.JsonElement;
@@ -32,9 +31,22 @@ public final class ScriptContextUtilities {
 
 	public static JsonElement getTabJson(TextEditorTab tab, ScriptID scriptID) {
 		JsonObject tabJson = new JsonObject();
-		tabJson.addProperty(ScriptContextItem.NAME_KEY, ((EditorPane)tab.getEditorPane()).getName());
+		tabJson.addProperty(ScriptContextItem.NAME_KEY, extractScriptName(tab));
 		tabJson.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
 		return tabJson;
+	}
+
+	private static String extractScriptName(TextEditorTab tab) {
+		String title = tab.getTitle();
+		// Remove leading asterisk if present (indicates file has been edited)
+		if (title.startsWith("*")) {
+			title = title.substring(1);
+		}
+		// Remove trailing " (Running)" if present
+		if (title.endsWith(" (Running)")) {
+			title = title.substring(0, title.length() - " (Running)".length());
+		}
+		return title;
 	}
 
 	public static JsonElement getTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {

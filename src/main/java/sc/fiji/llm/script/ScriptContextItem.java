@@ -40,7 +40,7 @@ import sc.fiji.llm.context.ContextItem;
 public class ScriptContextItem extends AbstractContextItem {
 	public static final String CONTEXT_TYPE = "script";
     public static final String SCRIPT_ID_KEY = "script_id";
-    public static final String NAME_KEY = "file_name";
+    public static final String NAME_KEY = "script_name";
     public static final String LANGUAGE_KEY = "language";
     public static final String CONTENT_KEY = "content";
     public static final String ERROR_KEY = "error_output";
