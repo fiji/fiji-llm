@@ -123,7 +123,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return activeTabJson(textEditor.getTab(tabIndex), editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to start script editor");
+			return jsonError("failed to run start-editor tool: " + e.getMessage());
 		}
 	}
 
@@ -165,7 +165,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to activate script: " + scriptId);
+			return jsonError("failed to run set-active-script tool: " + e.getMessage());
 		}
 	}
 
@@ -184,7 +184,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return activeTabJson(tab, scriptID.editorIndex, scriptID.tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to get active script");
+			return jsonError("failed to run get-active-script tool: " + e.getMessage());
 		}
 	}
 
@@ -211,7 +211,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to create script");
+			return jsonError("failed to run create-script tool: " + e.getMessage());
 		}
 	}
 
@@ -244,7 +244,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to update active script.");
+			return jsonError("failed to run replace-script tool: " + e.getMessage());
 		}
 	}
 
@@ -276,7 +276,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to rename active script");
+			return jsonError("failed to run rename-script tool: " + e.getMessage());
 		}
 	}
 
@@ -324,7 +324,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return jsonProp("read_lines", readState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to read lines from active script");
+			return jsonError("failed to run read-lines tool: " + e.getMessage());
 		}
 	}
 
@@ -358,7 +358,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to delete lines from active script");
+			return jsonError("failed to run delete-lines tool: " + e.getMessage());
 		}
 	}
 
@@ -436,7 +436,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to replace lines in active script");
+			return jsonError("failed to run replace-lines tool: " + e.getMessage());
 		}
 	}
 
@@ -477,7 +477,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return activeTabJson(tab, scriptID.editorIndex, scriptID.tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to activate script: " + scriptID.toString());
+			return jsonError("Failed to perform set-active-script: " + e.getMessage());
 		}
 	}
 
@@ -524,7 +524,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return jsonProp("deleted_lines", deleteState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to delete lines from script");
+			return jsonError("Failed to perform delete-lines: " + e.getMessage());
 		}
 	}
 
@@ -571,8 +571,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return jsonProp("inserted_content", insertState);
 		}
 		catch (Exception e) {
-			e.printStackTrace();
-			return jsonError("Failed to insert content into script" + e.getMessage());
+			return jsonError("Failed to perform insert-at: " + e.getMessage());
 		}
 	}
 
@@ -620,7 +619,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return jsonProp("replaced_lines", replaceState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to replace lines in script");
+			return jsonError("Failed to perform replace-lines: " + e.getMessage());
 		}
 	}
 
@@ -636,55 +635,65 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return activeTabJson(tab, editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to create new tab");
+			return jsonError("Failed to perform create-script: " + e.getMessage());
 		}
 	}
 
 	private String performRenameScript(final ScriptID scriptID, final String name)
 	{
-		final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-		final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
+		try {
+			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
+			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
 
-		String oldName = tab.getEditorPane().getName();
-		textEditor.setEditorPaneFileName(new File(name));
-		textEditor.stateChanged(new ChangeEvent(tab));
+			String oldName = tab.getEditorPane().getName();
+			textEditor.setEditorPaneFileName(new File(name));
+			textEditor.stateChanged(new ChangeEvent(tab));
 
-		JsonObject renameState = new JsonObject();
-		renameState.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
-		renameState.addProperty("old_name", oldName);
-		renameState.addProperty("new_name", name);
-		return jsonProp("renamed_script", renameState);
+			JsonObject renameState = new JsonObject();
+			renameState.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
+			renameState.addProperty("old_name", oldName);
+			renameState.addProperty("new_name", name);
+			return jsonProp("renamed_script", renameState);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to perform rename-script: " + e.getMessage());
+		}
 	}
 
 	@Tool(value = { "List all open script editors and their tabs." }, name = "fiji_script_list-open")
 	public String listOpenScripts() {
-		JsonArray editors = new JsonArray();
-		List<TextEditor> instances = TextEditor.instances;
-		if (instances != null) {
-			for (int i = 0; i < instances.size(); i++) {
-				TextEditor textEditor = instances.get(i);
-				if (!textEditor.isVisible()) continue;
-				JsonObject editorJson = new JsonObject();
-				editorJson.addProperty("editor_id", i);
-				JsonArray tabs = new JsonArray();
-				int tabIndex = 0;
-				try {
-					while (true) {
-						TextEditorTab tab = textEditor.getTab(tabIndex);
-						tabs.add(ScriptContextUtilities.getTabJson(tab, i, tabIndex));
-						tabIndex++;
+		try {
+			JsonArray editors = new JsonArray();
+			List<TextEditor> instances = TextEditor.instances;
+			if (instances != null) {
+				for (int i = 0; i < instances.size(); i++) {
+					TextEditor textEditor = instances.get(i);
+					if (!textEditor.isVisible()) continue;
+					JsonObject editorJson = new JsonObject();
+					editorJson.addProperty("editor_id", i);
+					JsonArray tabs = new JsonArray();
+					int tabIndex = 0;
+					try {
+						while (true) {
+							TextEditorTab tab = textEditor.getTab(tabIndex);
+							tabs.add(ScriptContextUtilities.getTabJson(tab, i, tabIndex));
+							tabIndex++;
+						}
 					}
+					catch (IndexOutOfBoundsException e) {
+						// all tabs collected
+					}
+					editorJson.add("tabs", tabs);
+					editors.add(editorJson);
 				}
-				catch (IndexOutOfBoundsException e) {
-					// all tabs collected
-				}
-				editorJson.add("tabs", tabs);
-				editors.add(editorJson);
 			}
+			JsonObject result = new JsonObject();
+			result.add("editors", editors);
+			return result.toString();
 		}
-		JsonObject result = new JsonObject();
-		result.add("editors", editors);
-		return result.toString();
+		catch (Exception e) {
+			return jsonError("failed to run list-open tool: " + e.getMessage());
+		}
 	}
 
     private String activeTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {
