@@ -317,7 +317,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 				}
 			}
 
-			JsonObject readState = ScriptContextUtilities.getTabJson(tab, scriptID).getAsJsonObject();
+			JsonObject readState = getTabJson(tab, scriptID);
 			readState.addProperty("start_line", startLine);
 			readState.addProperty("end_line", actualEndLine);
 			readState.addProperty("content", extractedContent.toString());
@@ -487,7 +487,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 		editorPane.setText(content);
 
-		JsonElement updateScript = ScriptContextUtilities.getTabJson(tab, scriptID);
+		JsonElement updateScript = getTabJson(tab, scriptID);
 		return jsonProp("replaced_script_content", updateScript);
 	}
 
@@ -517,7 +517,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 
 			editorPane.setText(newContent.toString());
 
-			JsonObject deleteState = ScriptContextUtilities.getTabJson(tab, scriptID).getAsJsonObject();
+			JsonObject deleteState = getTabJson(tab, scriptID);
 			deleteState.addProperty("deleted_start_line", startLine);
 			deleteState.addProperty("deleted_end_line", actualEndLine);
 			deleteState.addProperty("total_lines_remaining", lines.length - (actualEndLine - startLine + 1));
@@ -565,7 +565,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 
 			editorPane.setText(newContent.toString());
 
-			JsonObject insertState = ScriptContextUtilities.getTabJson(tab, scriptID).getAsJsonObject();
+			JsonObject insertState = getTabJson(tab, scriptID);
 			insertState.addProperty("inserted_before_line", beforeLine);
 			insertState.addProperty("new_total_lines", newContent.toString().split("\n", -1).length);
 			return jsonProp("inserted_content", insertState);
@@ -612,7 +612,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 
 			editorPane.setText(updatedContent.toString());
 
-			JsonObject replaceState = ScriptContextUtilities.getTabJson(tab, scriptID).getAsJsonObject();
+			JsonObject replaceState = getTabJson(tab, scriptID);
 			replaceState.addProperty("replaced_start_line", startLine);
 			replaceState.addProperty("replaced_end_line", actualEndLine);
 			replaceState.addProperty("new_total_lines", updatedContent.toString().split("\n", -1).length);
@@ -676,7 +676,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 					try {
 						while (true) {
 							TextEditorTab tab = textEditor.getTab(tabIndex);
-							tabs.add(ScriptContextUtilities.getTabJson(tab, i, tabIndex));
+							tabs.add(getTabJson(tab, i, tabIndex));
 							tabIndex++;
 						}
 					}
@@ -696,8 +696,22 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
+	// -- Helper methods --
+
+	private JsonObject getTabJson(TextEditorTab tab, ScriptID scriptID) {
+		return getTabJson(tab, scriptID.editorIndex, scriptID.tabIndex);
+	}
+
+	private JsonObject getTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {
+		ScriptContextItem scriptContext = ScriptContextUtilities.buildScriptContextItem(tab, editorIndex, tabIndex);
+        JsonObject tabJson = new JsonObject();
+        tabJson.addProperty(ScriptContextItem.NAME_KEY, scriptContext.getScriptName());
+        tabJson.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptContext.getId().toString());
+		return tabJson;
+	}
+
     private String activeTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {
-		JsonElement tabJson = ScriptContextUtilities.getTabJson(tab, editorIndex, tabIndex);
+        JsonObject tabJson = getTabJson(tab, editorIndex, tabIndex);
 		return jsonProp("active_script", tabJson);
     }
 
