@@ -24,6 +24,7 @@ package sc.fiji.llm.script;
 
 import java.io.File;
 import java.util.List;
+import java.util.StringJoiner;
 
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
@@ -54,6 +55,8 @@ import sc.fiji.llm.ui.TextEditorUtils;
 @Plugin(type = AiToolPlugin.class)
 public class ScriptEditorTool extends AbstractAiToolPlugin {
 
+	private static final String IS_ACTIVE_KEY = "is_active";
+
 	@Parameter
 	private CommandService commandService;
 
@@ -79,12 +82,12 @@ Fiji users have a text editing interface supporting multiple editors open at onc
 Each editor can have multiple script files open at once.
 A script's file_name extension determines its programming language (e.g., .py, .ijm, .groovy).
 Tools to interact with scripts have a "fiji_script_" prefix.
-Tools will either reference scripts by script_id, or operate on the active script.
+Tools will either reference scripts by their unique script_id, or operate on the active script.
 Script lines are 1-indexed and all line ranges are inclusive.
 """;
 	}
 
-	@Tool(value = { "Open the script editor UI with an active blank script, if not currently open." }, name = "fiji_script_start-editor")
+	@Tool(value = { "Open the script editor UI with an active blank script, if not currently open." }, name = "fiji_script_open-editor")
 	public String startEditor() {
 		try {
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
@@ -120,14 +123,14 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			int tabIndex = 0; // Default to the first tab 0
 
 			// Return indication of active tab
-			return activeTabJson(textEditor.getTab(tabIndex), editorIndex, tabIndex);
+			return activeScriptString(editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("failed to run start-editor tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_open-editor: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Set the active script by its script_id." }, name = "fiji_script_set-active-script")
+	@Tool(value = { "Set the active script by its script_id." }, name = "fiji_script_activate")
 	public String setActiveScript(@P("script_id") final String scriptId)
 	{
 		try {
@@ -142,11 +145,11 @@ Script lines are 1-indexed and all line ranges are inclusive.
 				return jsonError("Invalid script_id format. Expected e.g., 0:1");
 			}
 
-			// Validate instance index
+			// Validate editor index
 			if (scriptID.editorIndex < 0 ||
 				scriptID.editorIndex >= TextEditor.instances.size())
 			{
-				return jsonError("Invalid script_id. No text editor at index: " + scriptID.editorIndex);
+				return jsonError("Invalid script_id. No editor found at index: " + scriptID.editorIndex, "fiji_script_list");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(
@@ -165,37 +168,87 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("failed to run set-active-script tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_activate: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Get information about the script currently active in the editor." }, name = "fiji_script_get-active-script")
-	public String getActiveScript()
+	private String performSetActiveScript(final TextEditor textEditor, final ScriptID scriptID)
 	{
 		try {
-			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
-			if (scriptID == null) {
-				return jsonError("No active script found.", "fiji_script_start-editor");
+			TextEditorTab tab = null;
+
+			try {
+				// Validate tab index
+				tab = textEditor.getTab(scriptID.tabIndex);
+			} catch (ArrayIndexOutOfBoundsException e) {
+				// No-op, handled below
 			}
 
-			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
+			if (tab == null) {
+				return jsonError("Invalid script_id. No script found at index " + scriptID.tabIndex, "fiji_script_list");
+			}
 
-			return activeTabJson(tab, scriptID.editorIndex, scriptID.tabIndex);
+			// Switch to the specified tab
+			textEditor.switchTo(scriptID.tabIndex);
+
+			// Return indication of active tab
+			return activeScriptString(scriptID.editorIndex, scriptID.tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("failed to run get-active-script tool: " + e.getMessage());
+			return jsonError("Failed to perform set-active-script: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Create and activate a new script tab in the script editor; no-op if an unmodified blank script is already active." }, name = "fiji_script_create-script")
+	@Tool(value = { "List all open script editors and their tabs." }, name = "fiji_script_list")
+	public String listOpenScripts() {
+		try {
+			JsonArray editors = new JsonArray();
+			List<TextEditor> instances = TextEditor.instances;
+			if (instances != null) {
+				final ScriptID activeScriptID = TextEditorUtils.getActiveScriptID();
+
+				for (int editorIndex = 0; editorIndex < instances.size(); editorIndex++) {
+					TextEditor textEditor = instances.get(editorIndex);
+					if (!textEditor.isVisible()) continue;
+					JsonObject editorJson = new JsonObject();
+					editorJson.addProperty("editor_id", editorIndex);
+					JsonArray tabs = new JsonArray();
+					int tabIndex = 0;
+					try {
+						while (true) {
+							JsonObject tabJson = getTabJson(editorIndex, tabIndex);
+							tabJson.addProperty(IS_ACTIVE_KEY, editorIndex == activeScriptID.editorIndex && tabIndex == activeScriptID.tabIndex);
+							tabs.add(tabJson);
+							tabIndex++;
+						}
+					}
+					catch (IndexOutOfBoundsException e) {
+						// all tabs collected
+					}
+					editorJson.add("scripts", tabs);
+
+					editorJson.addProperty(IS_ACTIVE_KEY, editorIndex == activeScriptID.editorIndex);
+
+					editors.add(editorJson);
+				}
+			}
+			JsonObject result = new JsonObject();
+			result.add("editors", editors);
+			return result.toString();
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_script_list: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Create and activate a new script; no-op if an unmodified blank script is already active." }, name = "fiji_script_create")
 	public String createScript() {
 		try {
 			// Check if editor is open
 			final TextEditor textEditor = TextEditorUtils
 				.getMostRecentVisibleEditor();
 			if (textEditor == null) {
-				return jsonError("Script editor is not open", "fiji_script_start-editor");
+				return jsonError("Script editor is not open", "fiji_script_open-editor");
 			}
 
 			// Create new tab with default empty content
@@ -211,76 +264,97 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("failed to run create-script tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_create: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Completely replace the content of the active script." }, name = "fiji_script_replace-script")
-	public String replaceScript(@P("content") final String content)
-	{
+	private String performCreateNewTab(final TextEditor textEditor) {
 		try {
-			// Validate content
-			if (content == null) {
-				return jsonError("New script content cannot be null");
-			}
+			// Create new tab with default empty content and no extension
+			final TextEditorTab tab = textEditor.newTab("", "");
 
-			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
-			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
-			}
+			// Get the editor and tab indices
+			int editorIndex = TextEditor.instances.indexOf(textEditor);
+			int tabIndex = TextEditorUtils.getTabIndex(textEditor, tab);
 
-			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-
-			final String[] result = new String[1];
-			if (SwingUtilities.isEventDispatchThread()) {
-				result[0] = performReplaceScript(scriptID, tab, content);
-			}
-			else {
-				SwingUtilities.invokeAndWait(() -> {
-					result[0] = performReplaceScript(scriptID, tab, content);
-				});
-			}
-			return result[0];
+			return activeScriptString(editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("failed to run replace-script tool: " + e.getMessage());
+			return jsonError("Failed to perform create: " + e.getMessage());
 		}
 	}
 
 	@Tool(value = { "Rename the active script file. Changing its extension will change its script language." },
-		name = "fiji_script_rename-script")
-	public String renameScript(@P("file_name") final String filename)
+		name = "fiji_script_rename")
+	public String renameScript(@P("script_name") final String scriptName)
 	{
 		try {
 			// Validate filename
-			if (filename == null || filename.isEmpty()) {
-				return jsonError("New script name cannot be null or empty");
+			if (scriptName == null || scriptName.isEmpty()) {
+				return jsonError("New script_name cannot be null or empty");
 			}
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
+				return jsonError("No active script found", "fiji_script_create");
 			}
 
 			// Perform UI operations on EDT
 			final String[] result = new String[1];
 			if (SwingUtilities.isEventDispatchThread()) {
-				result[0] = performRenameScript(scriptID, filename);
+				result[0] = performRenameScript(scriptID, scriptName);
 			}
 			else {
 				SwingUtilities.invokeAndWait(() -> {
-					result[0] = performRenameScript(scriptID, filename);
+					result[0] = performRenameScript(scriptID, scriptName);
 				});
 			}
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("failed to run rename-script tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_rename: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Read lines from the active script between the specified start and end lines" }, name = "fiji_script_read-lines")
+	private String performRenameScript(final ScriptID scriptID, final String name)
+	{
+		try {
+			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
+			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
+
+			String oldName = ScriptContextUtilities.buildScriptContextItem(scriptID.editorIndex, scriptID.tabIndex).getScriptName();
+			textEditor.setEditorPaneFileName(new File(name));
+			textEditor.stateChanged(new ChangeEvent(tab));
+
+			JsonObject renameState = new JsonObject();
+			renameState.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
+			renameState.addProperty("old_name", oldName);
+			renameState.addProperty("new_name", name);
+			return stringProp("renamed_script", renameState);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to perform rename: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Return the content of the active script" }, name = "fiji_script_read-content")
+	public String readScript() {
+		try {
+			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
+			if (scriptContext == null) {
+				return jsonError("No active script found", "fiji_script_create");
+			}
+
+			JsonObject readScript = getTabJson(scriptContext.getEditorIndex(), scriptContext.getTabIndex());
+			readScript.addProperty(ScriptContextItem.CONTENT_KEY, scriptContext.getScriptBody());
+			return stringProp("read_content", readScript);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_script_read-content: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Return lines within a specified range from the active script" }, name = "fiji_script_read-lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -291,13 +365,12 @@ Script lines are 1-indexed and all line ranges are inclusive.
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
+				return jsonError("No active script found", "fiji_script_create");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
 			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
 
-			// Perform UI operations on EDT
 			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 			final String content = editorPane.getText();
 			final String[] lines = content.split("\n", -1);
@@ -312,19 +385,33 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			final StringBuilder extractedContent = new StringBuilder();
 			for (int i = startLine - 1; i < actualEndLine; i++) {
 				extractedContent.append(lines[i]);
-				if (i < actualEndLine - 1) {
-					extractedContent.append("\n");
-				}
 			}
 
-			JsonObject readState = getTabJson(tab, scriptID);
+			JsonObject readState = getTabJson(scriptID);
 			readState.addProperty("start_line", startLine);
 			readState.addProperty("end_line", actualEndLine);
 			readState.addProperty("content", extractedContent.toString());
-			return jsonProp("read_lines", readState);
+			return stringProp("read_lines", readState);
 		}
 		catch (Exception e) {
-			return jsonError("failed to run read-lines tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_read-lines: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Return the content of the active script's error log" }, name = "fiji_script_read-errors")
+	public String readLog() {
+		try {
+			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
+			if (scriptContext == null) {
+				return jsonError("No active script found", "fiji_script_create");
+			}
+
+			JsonObject scriptLog = getTabJson(scriptContext.getEditorIndex(), scriptContext.getTabIndex());
+			scriptLog.addProperty(ScriptContextItem.ERROR_KEY, scriptContext.getErrorOutput());
+			return stringProp("read_errors", scriptLog);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_script_read-errors: " + e.getMessage());
 		}
 	}
 
@@ -339,7 +426,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
+				return jsonError("No active script found", "fiji_script_create");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -358,11 +445,45 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("failed to run delete-lines tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_delete-lines: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Insert content before a specific line in the active script." }, name = "fiji_script_insert-at")
+	private String performDeleteLines(final TextEditorTab tab, final ScriptID scriptID, final int startLine, final int endLine)
+	{
+		try {
+			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+			final String content = editorPane.getText();
+			final String[] lines = content.split("\n", -1);
+
+			// Validate that requested lines exist
+			if (startLine > lines.length) {
+				return jsonError("start_line exceeds total number of lines (" + lines.length + ")");
+			}
+
+			// Delete the specified lines (1-indexed)
+			final int actualEndLine = Math.min(endLine, lines.length);
+			final StringJoiner newContent = new StringJoiner("\n");
+			for (int i = 0; i < lines.length; i++) {
+				if (i < startLine - 1 || i >= actualEndLine) {
+					newContent.add(lines[i]);
+				}
+			}
+
+			editorPane.setText(newContent.toString());
+
+			JsonObject deleteState = getTabJson(scriptID);
+			deleteState.addProperty("deleted_start_line", startLine);
+			deleteState.addProperty("deleted_end_line", actualEndLine);
+			deleteState.addProperty("total_lines_remaining", lines.length - (actualEndLine - startLine + 1));
+			return stringProp("deleted_lines", deleteState);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to perform delete-lines: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Insert content before a specific line in the active script." }, name = "fiji_script_insert-content")
 	public String insertAt(@P("content") final String content, @P("before_line") final Integer beforeLine)
 	{
 		try {
@@ -378,7 +499,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
+				return jsonError("No active script found", "fiji_script_create");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -387,22 +508,111 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			// Perform UI operations on EDT
 			final String[] result = new String[1];
 			if (SwingUtilities.isEventDispatchThread()) {
-				result[0] = performInsertAt(tab, scriptID, content, beforeLine);
+				result[0] = performInsert(tab, scriptID, content, beforeLine);
 			}
 			else {
 				SwingUtilities.invokeAndWait(() -> {
-					result[0] = performInsertAt(tab, scriptID, content, beforeLine);
+					result[0] = performInsert(tab, scriptID, content, beforeLine);
 				});
 			}
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run insert-at tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_insert-content: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Replace lines in the active script within a specified range" }, name = "fiji_script_replace-lines")
-	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
+	private String performInsert(final TextEditorTab tab, final ScriptID scriptID, final String content, final int beforeLine)
+	{
+		try {
+			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+			final String[] existingLines = editorPane.getText().split("\n", -1);
+			final String[] newLines = content.split("\n", -1);
+
+			StringJoiner newContent = new StringJoiner("\n");
+
+			// Validate that insertion line is valid (allow inserting at end)
+			if (beforeLine > existingLines.length + 1) {
+				return jsonError("before_line exceeds total number of lines + 1 (" + (existingLines.length + 1) + ")");
+			}
+
+			for (int i=0; i<existingLines.length; i++) {
+				if (i+1 == beforeLine) {
+					for (int j=0; j<newLines.length; j++) {
+						newContent.add(newLines[j]);
+					}
+				}
+				newContent.add(existingLines[i]);
+			}
+			if (beforeLine > existingLines.length) {
+				for (final String line : newLines) {
+					newContent.add(line);
+				}
+			}
+
+			editorPane.setText(newContent.toString());
+
+			JsonObject insertState = getTabJson(scriptID);
+			insertState.addProperty("inserted_before_line", beforeLine);
+			insertState.addProperty("new_total_lines", newLines.length + existingLines.length);
+			return stringProp("inserted_content", insertState);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to perform insert-at: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Completely replace the content of the active script." }, name = "fiji_script_replace-content")
+	public String replaceScript(@P("content") final String content)
+	{
+		try {
+			// Validate content
+			if (content == null) {
+				return jsonError("New script content cannot be null");
+			}
+
+			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
+			if (scriptID == null) {
+				return jsonError("No active script found", "fiji_script_create");
+			}
+
+			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
+			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
+
+			final String[] result = new String[1];
+			if (SwingUtilities.isEventDispatchThread()) {
+				result[0] = performReplaceScript(tab, scriptID, content);
+			}
+			else {
+				SwingUtilities.invokeAndWait(() -> {
+					result[0] = performReplaceScript(tab, scriptID, content);
+				});
+			}
+			return result[0];
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_script_replace-content: " + e.getMessage());
+		}
+	}
+
+	private String performReplaceScript(TextEditorTab tab, ScriptID scriptID, String content )
+	{
+		int oldLines =
+			ScriptContextUtilities.buildScriptContextItem(scriptID.editorIndex,
+			scriptID.tabIndex).getScriptBody().split("\n", -1).length;
+
+		// Update the tab content
+		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+		editorPane.setText(content);
+
+		JsonObject replaceState = getTabJson(scriptID);
+		replaceState.addProperty("old_total_lines", oldLines);
+		replaceState.addProperty("new_total_lines", content.split("\n", -1).length);
+		return stringProp("replaced_content", replaceState);
+	}
+
+	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line, extending the script if needed." }, name = "fiji_script_replace-lines")
+	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final Integer startLine)
 	{
 		try {
 			// Validate content
@@ -410,14 +620,14 @@ Script lines are 1-indexed and all line ranges are inclusive.
 				return jsonError("New content cannot be null");
 			}
 
-			// Validate line numbers
-			if (startLine < 1 || endLine < 1 || startLine > endLine) {
-				return jsonError("Invalid line range. Lines must be >= 1 and start_line <= end_line");
+			// Validate line number
+			if (startLine < 1) {
+				return jsonError("start_line must be >= 1");
 			}
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create-script");
+				return jsonError("No active script found", "fiji_script_create");
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -426,17 +636,54 @@ Script lines are 1-indexed and all line ranges are inclusive.
 			// Perform UI operations on EDT
 			final String[] result = new String[1];
 			if (SwingUtilities.isEventDispatchThread()) {
-				result[0] = performReplaceLines(tab, scriptID, newContent, startLine, endLine);
+				result[0] = performReplaceLines(tab, scriptID, newContent, startLine);
 			}
 			else {
 				SwingUtilities.invokeAndWait(() -> {
-					result[0] = performReplaceLines(tab, scriptID, newContent, startLine, endLine);
+					result[0] = performReplaceLines(tab, scriptID, newContent, startLine);
 				});
 			}
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("failed to run replace-lines tool: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_replace-lines: " + e.getMessage());
+		}
+	}
+
+	private String performReplaceLines(final TextEditorTab tab, final ScriptID scriptID, final String newContent, final int startLine)
+	{
+		try {
+			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
+			final String[] existingLines = editorPane.getText().split("\n", -1);
+
+			// Validate that requested lines exist
+			if (startLine > existingLines.length) {
+				return jsonError("start_line exceeds total number of lines (" + existingLines.length + ")");
+			}
+
+			final String[] newLines = newContent.split("\n", -1);
+			final int actualEndLine = Math.min(startLine + newLines.length - 1, existingLines.length);
+
+			final StringJoiner updatedContent = new StringJoiner("\n");
+			for (int i = 0; i < startLine - 1; i++) {
+				updatedContent.add(existingLines[i]);
+			}
+			for (final String line : newLines) {
+				updatedContent.add(line);
+			}
+			for (int i = actualEndLine; i < existingLines.length; i++) {
+				updatedContent.add(existingLines[i]);
+			}
+
+			editorPane.setText(updatedContent.toString());
+
+			JsonObject replaceState = getTabJson(scriptID);
+			replaceState.addProperty("replace_start_line", startLine);
+			replaceState.addProperty("new_total_lines", updatedContent.toString().split("\n", -1).length);
+			return stringProp("replaced_lines", replaceState);
+		}
+		catch (Exception e) {
+			return jsonError("Failed to perform replace-lines: " + e.getMessage());
 		}
 	}
 
@@ -460,265 +707,32 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	private String performSetActiveScript(final TextEditor textEditor, final ScriptID scriptID)
-	{
-		try {
-			// Validate tab index
-			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-
-			if (tab == null) {
-				return jsonError("Invalid script_id. No script tab found at index " + scriptID.tabIndex);
-			}
-
-			// Switch to the specified tab
-			textEditor.switchTo(scriptID.tabIndex);
-
-			// Return indication of active tab
-			return activeTabJson(tab, scriptID.editorIndex, scriptID.tabIndex);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform set-active-script: " + e.getMessage());
-		}
+	private JsonObject getTabJson(ScriptID scriptID) {
+		return getTabJson(scriptID.editorIndex, scriptID.tabIndex);
 	}
 
-	private String performReplaceScript( ScriptID scriptID, TextEditorTab tab, String content )
-	{
-		// Update the tab content
-		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-		editorPane.setText(content);
-
-		JsonElement updateScript = getTabJson(tab, scriptID);
-		return jsonProp("replaced_script_content", updateScript);
-	}
-
-	private String performDeleteLines(final TextEditorTab tab, final ScriptID scriptID, final int startLine, final int endLine)
-	{
-		try {
-			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-			final String content = editorPane.getText();
-			final String[] lines = content.split("\n", -1);
-
-			// Validate that requested lines exist
-			if (startLine > lines.length) {
-				return jsonError("start_line exceeds total number of lines (" + lines.length + ")");
-			}
-
-			// Delete the specified lines (1-indexed)
-			final int actualEndLine = Math.min(endLine, lines.length);
-			final StringBuilder newContent = new StringBuilder();
-			for (int i = 0; i < lines.length; i++) {
-				if (i < startLine - 1 || i >= actualEndLine) {
-					newContent.append(lines[i]);
-					if (i < lines.length - 1) {
-						newContent.append("\n");
-					}
-				}
-			}
-
-			editorPane.setText(newContent.toString());
-
-			JsonObject deleteState = getTabJson(tab, scriptID);
-			deleteState.addProperty("deleted_start_line", startLine);
-			deleteState.addProperty("deleted_end_line", actualEndLine);
-			deleteState.addProperty("total_lines_remaining", lines.length - (actualEndLine - startLine + 1));
-			return jsonProp("deleted_lines", deleteState);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform delete-lines: " + e.getMessage());
-		}
-	}
-
-	private String performInsertAt(final TextEditorTab tab, final ScriptID scriptID, final String content, final int beforeLine)
-	{
-		try {
-			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-			final String currentContent = editorPane.getText();
-			final String[] lines = currentContent.split("\n", -1);
-
-			// Validate that insertion line is valid (allow inserting at end)
-			if (beforeLine > lines.length + 1) {
-				return jsonError("before_line exceeds total number of lines + 1 (" + (lines.length + 1) + ")");
-			}
-
-			// Build new content with insertion
-			final StringBuilder newContent = new StringBuilder();
-			for (int i = 0; i < lines.length; i++) {
-				if (i == beforeLine - 1) {
-					newContent.append(content);
-					if (!content.endsWith("\n")) {
-						newContent.append("\n");
-					}
-				}
-				newContent.append(lines[i]);
-				if (i < lines.length - 1) {
-					newContent.append("\n");
-				}
-			}
-
-			// Handle insertion at end of file
-			if (beforeLine > lines.length) {
-				if (newContent.length() > 0 && !currentContent.endsWith("\n")) {
-					newContent.append("\n");
-				}
-				newContent.append(content);
-			}
-
-			editorPane.setText(newContent.toString());
-
-			JsonObject insertState = getTabJson(tab, scriptID);
-			insertState.addProperty("inserted_before_line", beforeLine);
-			insertState.addProperty("new_total_lines", newContent.toString().split("\n", -1).length);
-			return jsonProp("inserted_content", insertState);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform insert-at: " + e.getMessage());
-		}
-	}
-
-	private String performReplaceLines(final TextEditorTab tab, final ScriptID scriptID, final String newContent, final int startLine, final int endLine)
-	{
-		try {
-			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
-			final String content = editorPane.getText();
-			final String[] lines = content.split("\n", -1);
-
-			// Validate that requested lines exist
-			if (startLine > lines.length) {
-				return jsonError("start_line exceeds total number of lines (" + lines.length + ")");
-			}
-
-			// Replace the specified lines (1-indexed)
-			final int actualEndLine = Math.min(endLine, lines.length);
-			final StringBuilder updatedContent = new StringBuilder();
-			for (int i = 0; i < lines.length; i++) {
-				if (i == startLine - 1) {
-					updatedContent.append(newContent);
-					if (!newContent.endsWith("\n")) {
-						updatedContent.append("\n");
-					}
-					i = actualEndLine - 1; // Skip to after the replaced lines
-				}
-				else if (i > startLine - 1 && i <= actualEndLine - 1) {
-					// Skip lines being replaced
-					continue;
-				}
-				else {
-					updatedContent.append(lines[i]);
-					if (i < lines.length - 1) {
-						updatedContent.append("\n");
-					}
-				}
-			}
-
-			editorPane.setText(updatedContent.toString());
-
-			JsonObject replaceState = getTabJson(tab, scriptID);
-			replaceState.addProperty("replaced_start_line", startLine);
-			replaceState.addProperty("replaced_end_line", actualEndLine);
-			replaceState.addProperty("new_total_lines", updatedContent.toString().split("\n", -1).length);
-			return jsonProp("replaced_lines", replaceState);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform replace-lines: " + e.getMessage());
-		}
-	}
-
-	private String performCreateNewTab(final TextEditor textEditor) {
-		try {
-			// Create new tab with default empty content and no extension
-			final TextEditorTab tab = textEditor.newTab("", "");
-
-			// Get the editor and tab indices
-			int editorIndex = TextEditor.instances.indexOf(textEditor);
-			int tabIndex = TextEditorUtils.getTabIndex(textEditor, tab);
-
-			return activeTabJson(tab, editorIndex, tabIndex);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform create-script: " + e.getMessage());
-		}
-	}
-
-	private String performRenameScript(final ScriptID scriptID, final String name)
-	{
-		try {
-			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-
-			String oldName = tab.getEditorPane().getName();
-			textEditor.setEditorPaneFileName(new File(name));
-			textEditor.stateChanged(new ChangeEvent(tab));
-
-			JsonObject renameState = new JsonObject();
-			renameState.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
-			renameState.addProperty("old_name", oldName);
-			renameState.addProperty("new_name", name);
-			return jsonProp("renamed_script", renameState);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform rename-script: " + e.getMessage());
-		}
-	}
-
-	@Tool(value = { "List all open script editors and their tabs." }, name = "fiji_script_list-open")
-	public String listOpenScripts() {
-		try {
-			JsonArray editors = new JsonArray();
-			List<TextEditor> instances = TextEditor.instances;
-			if (instances != null) {
-				for (int i = 0; i < instances.size(); i++) {
-					TextEditor textEditor = instances.get(i);
-					if (!textEditor.isVisible()) continue;
-					JsonObject editorJson = new JsonObject();
-					editorJson.addProperty("editor_id", i);
-					JsonArray tabs = new JsonArray();
-					int tabIndex = 0;
-					try {
-						while (true) {
-							TextEditorTab tab = textEditor.getTab(tabIndex);
-							tabs.add(getTabJson(tab, i, tabIndex));
-							tabIndex++;
-						}
-					}
-					catch (IndexOutOfBoundsException e) {
-						// all tabs collected
-					}
-					editorJson.add("tabs", tabs);
-					editors.add(editorJson);
-				}
-			}
-			JsonObject result = new JsonObject();
-			result.add("editors", editors);
-			return result.toString();
-		}
-		catch (Exception e) {
-			return jsonError("failed to run list-open tool: " + e.getMessage());
-		}
-	}
-
-	// -- Helper methods --
-
-	private JsonObject getTabJson(TextEditorTab tab, ScriptID scriptID) {
-		return getTabJson(tab, scriptID.editorIndex, scriptID.tabIndex);
-	}
-
-	private JsonObject getTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {
-		ScriptContextItem scriptContext = ScriptContextUtilities.buildScriptContextItem(tab, editorIndex, tabIndex);
+	private JsonObject getTabJson(int editorIndex, int tabIndex) {
+		ScriptContextItem scriptContext = ScriptContextUtilities.buildScriptContextItem(editorIndex, tabIndex);
         JsonObject tabJson = new JsonObject();
         tabJson.addProperty(ScriptContextItem.NAME_KEY, scriptContext.getScriptName());
         tabJson.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptContext.getId().toString());
 		return tabJson;
 	}
 
-    private String activeTabJson(TextEditorTab tab, int editorIndex, int tabIndex) {
-        JsonObject tabJson = getTabJson(tab, editorIndex, tabIndex);
-		return jsonProp("active_script", tabJson);
-    }
+	private String activeScriptString(int editorIndex, int tabIndex) {
+		JsonObject activeTabJson = getTabJson(editorIndex, tabIndex);
+		activeTabJson.addProperty(IS_ACTIVE_KEY, true);
+		return activeTabJson.toString();
+	}
 
-	private String jsonProp(String key, JsonElement element) {
+	private String stringProp(String key, JsonElement element) {
+		return jsonProp(key, element).toString();
+	}
+
+	private JsonObject jsonProp(String key, JsonElement element) {
 		JsonObject jsonObject = new JsonObject();
 		jsonObject.add(key, element);
-		return jsonObject.toString();
+		return jsonObject;
 
 	}
 }

@@ -68,7 +68,7 @@ public final class ScriptContextUtilities {
 			}
 
 			final int editorIndex = TextEditor.instances.indexOf(textEditor);
-			return buildScriptContextItem(tab, editorIndex, tabIndex);
+			return buildScriptContextItem(editorIndex, tabIndex);
 		}
 		catch (RuntimeException e) {
 			return null;
@@ -96,8 +96,7 @@ public final class ScriptContextUtilities {
 							break;
 						}
 
-						final ScriptContextItem item = buildScriptContextItem(tab,
-							editorIndex, tabIndex);
+						final ScriptContextItem item = buildScriptContextItem(editorIndex, tabIndex);
 						if (item != null) {
 							items.add(item);
 						}
@@ -120,10 +119,11 @@ public final class ScriptContextUtilities {
 	/**
 	 * Builds a ScriptContextItem from a TextEditor and tab.
 	 */
-	public static ScriptContextItem buildScriptContextItem(final TextEditorTab tab,
-		final int editorIndex, final int tabIndex)
+	public static ScriptContextItem buildScriptContextItem(final int editorIndex, final int tabIndex)
 	{
 		final TextEditor textEditor = TextEditor.instances.get(editorIndex);
+		final TextEditorTab tab = textEditor.getTab(tabIndex);
+
 		final String scriptName = getSanitizedTabName(tab);
 		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 		final String scriptContent = editorPane.getText();

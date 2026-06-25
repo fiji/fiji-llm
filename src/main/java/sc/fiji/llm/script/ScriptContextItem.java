@@ -43,7 +43,7 @@ public class ScriptContextItem extends AbstractContextItem {
     public static final String NAME_KEY = "script_name";
     public static final String LANGUAGE_KEY = "language";
     public static final String CONTENT_KEY = "content";
-    public static final String ERROR_KEY = "error_output";
+    public static final String ERROR_KEY = "errors";
     public static final String SELECTED_LINES_KEY = "selected_lines";
 
 	private final String scriptName;
