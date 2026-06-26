@@ -43,7 +43,7 @@ import sc.fiji.llm.tools.AiToolPlugin;
 /**
  * AI tool for querying open images in Fiji.
  */
-@Plugin(type = AiToolPlugin.class)
+// @Plugin(type = AiToolPlugin.class)
 public class ImageTool extends AbstractAiToolPlugin {
 
 	@Parameter

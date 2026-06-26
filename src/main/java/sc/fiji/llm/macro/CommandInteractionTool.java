@@ -54,7 +54,7 @@ import sc.fiji.llm.tools.ToolScope;
 /**
  * AI tool for LLM agentic discovery and execution of available commands.
  */
-@Plugin(type = AiToolPlugin.class)
+// @Plugin(type = AiToolPlugin.class)
 public class CommandInteractionTool extends AbstractAiToolPlugin {
 
 	private static final int MAX_RESULTS = 10;

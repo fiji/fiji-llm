@@ -43,7 +43,7 @@ import sc.fiji.llm.tools.ToolScope;
  * AI tool that provides macro recording capabilities for the LLM. Allows the
  * assistant to open the macro recorder and capture user actions.
  */
-@Plugin(type = AiToolPlugin.class)
+// @Plugin(type = AiToolPlugin.class)
 public class ImageJMacroTool extends AbstractAiToolPlugin {
 
 	@Parameter
