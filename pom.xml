@@ -25,8 +25,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>GNU General Public License v3+</name>
-			<url>http://www.gnu.org/licenses/gpl.html</url>
+			<name>Simplified BSD License</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -74,8 +73,9 @@
 	</ciManagement>
 
 	<properties>
-		<license.licenseName>gpl_v3</license.licenseName>
-		<license.copyrightOwners>ImageJ Developers</license.copyrightOwners>
+		<license.licenseName>bsd_2</license.licenseName>
+		<license.copyrightOwners>ImageJ2 Developers</license.copyrightOwners>
+		<license.projectName>Fiji software for LLM integration.</license.projectName>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
