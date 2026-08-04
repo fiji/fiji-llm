@@ -65,7 +65,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
 		// Filter to show only the main/latest models to avoid overwhelming users
 		return Stream.of(OpenAiChatModelName.values()).map(
 			OpenAiChatModelName::toString).filter(this::isMainChatModel).collect(
-				Collectors.toList());
+				Collectors.toUnmodifiableList());
 	}
 
 	@Override
