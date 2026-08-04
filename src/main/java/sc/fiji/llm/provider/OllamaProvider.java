@@ -30,6 +30,7 @@
 package sc.fiji.llm.provider;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +77,7 @@ public class OllamaProvider extends AbstractOllamaProvider {
 	@Override
 	public List<String> getAvailableModels() {
 		// Get actual list of installed models from Ollama
-		List<String> models = getAvailableLocalModels();
+		List<String> models = new ArrayList<>(getAvailableLocalModels());
 		// Get basic available remote models
 		Set<String> remoteTags = fetchRemoteTags();
 		// Mark remote models that aren't installed
