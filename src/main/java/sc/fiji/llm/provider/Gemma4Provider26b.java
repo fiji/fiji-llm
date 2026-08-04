@@ -32,25 +32,25 @@ package sc.fiji.llm.provider;
 import org.scijava.plugin.Plugin;
 
 /**
- * LLM provider plugin for Ollama phi4-mini model.
- * Specialized provider for lightweight general-purpose conversations.
+ * LLM provider plugin for Ollama Gemma4:26B model.
+ * See: https://huggingface.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf
  */
-@Plugin(type = LLMProvider.class, name = "Ollama (Phi4-Mini)")
-public class Phi4MiniProvider extends AbstractSingletonOllamaProvider {
+@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:26B)")
+public class Gemma4Provider26b extends AbstractSingletonOllamaProvider {
 
-	private static final String MODEL_NAME = "phi4-mini:3.8b";
+	private static final String MODEL_NAME = "hf.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf:latest";
 
-	public Phi4MiniProvider() {
+	public Gemma4Provider26b() {
 		super(MODEL_NAME);
 	}
 
 	@Override
 	public String getName() {
-		return "Ollama (Phi4-Mini)";
+		return "Ollama (Gemma4 - medium)";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Local Phi4-Mini model - very lightweight but limited functionality";
+		return "Local Gemma4 model - medium parameter count and memory footprint.";
 	}
 }

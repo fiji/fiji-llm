@@ -32,25 +32,25 @@ package sc.fiji.llm.provider;
 import org.scijava.plugin.Plugin;
 
 /**
- * LLM provider plugin for Ollama qwen3-coder:30b model.
- * Specialized provider for large-code-generation tasks.
+ * LLM provider plugin for Ollama gemma4:12b model.
+ * See: https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf
  */
-@Plugin(type = LLMProvider.class, name = "Ollama (Qwen3-Coder)")
-public class Qwen3CoderProvider extends AbstractSingletonOllamaProvider {
+@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:12B)")
+public class Gemma4Provider12b extends AbstractSingletonOllamaProvider {
 
-	private static final String MODEL_NAME = "qwen3-coder:30b";
+	private static final String MODEL_NAME = "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest";
 
-	public Qwen3CoderProvider() {
+	public Gemma4Provider12b() {
 		super(MODEL_NAME);
 	}
 
 	@Override
 	public String getName() {
-		return "Ollama (Qwen3-Coder)";
+		return "Ollama (Gemma4 - small)";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Local Qwen3-Coder - a sensible first-try for general use.";
+		return "Local Gemma4 model - smallest parameter count and memory footprint.";
 	}
 }
