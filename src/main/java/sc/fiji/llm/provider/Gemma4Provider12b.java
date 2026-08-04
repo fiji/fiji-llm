@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.provider;
 
+import java.util.Optional;
+
 import org.scijava.plugin.Plugin;
 
 /**
@@ -53,4 +55,10 @@ public class Gemma4Provider12b extends AbstractSingletonOllamaProvider {
 	public String getDescription() {
 		return "Local Gemma4 model - smallest parameter count and memory footprint.";
 	}
+
+	@Override
+	public Optional<String> getRecommendedModel() {
+		return Optional.of(MODEL_NAME);
+	}
+
 }

@@ -145,17 +145,37 @@ public class Fiji_Chat extends DynamicCommand {
 		providerItem.setChoices(List.of(providerNames));
 
 		// Set default provider if available
+		String recommendedModel = "";
 		if (providerNames.length > 0) {
 			String defaultProvider = prefService.get(Fiji_Chat.class,
 				LAST_CHAT_PROVIDER, "");
+			if (defaultProvider.isEmpty()) {
+				final var recommended = providerService.getInstances().stream()
+					.filter(p -> p.getRecommendedModel().isPresent())
+					.findFirst();
+				if (recommended.isPresent() && providerItem.getChoices().contains(
+					recommended.get().getName()))
+				{
+					defaultProvider = recommended.get().getName();
+					recommendedModel = recommended.get().getRecommendedModel().get();
+				}
+			}
 			if (!providerItem.getChoices().contains(defaultProvider)) {
 				defaultProvider = providerNames[0];
 			}
 			providerItem.setValue(this, defaultProvider);
 			providerChanged();
+			if (!recommendedModel.isEmpty()) {
+				final MutableModuleItem<String> modelItem = getInfo().getMutableInput(
+					"model", String.class);
+				if (modelItem.getChoices().contains(recommendedModel)) {
+					modelItem.setValue(this, recommendedModel);
+				}
+			}
 		}
 
-		if (prefService.getBoolean(Fiji_Chat.class, AUTO_RUN, false)) {
+		// A recommended default was applied, so show the config dialog regardless
+		if (recommendedModel.isEmpty() && prefService.getBoolean(Fiji_Chat.class, AUTO_RUN, false)) {
 			for (final var input : getInfo().inputs()) {
 				resolveInput(input.getName());
 			}

@@ -31,6 +31,7 @@ package sc.fiji.llm.provider;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import org.scijava.Disposable;
 import org.scijava.Initializable;
@@ -114,6 +115,15 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * @return URL to the models documentation page
 	 */
 	String getModelsDocumentationUrl();
+
+	/**
+	 * Recommended models are used to provide default guides towards model selection.
+	 *
+	 * @return {@link Optional} that may contain the recommended model for this provider.
+	 */
+	default Optional<String> getRecommendedModel() {
+		return Optional.empty();
+	}
 
 	/**
 	 * Get the URL where users can obtain an API key for this provider.
