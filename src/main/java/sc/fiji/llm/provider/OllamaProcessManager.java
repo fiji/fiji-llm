@@ -153,8 +153,8 @@ public class OllamaProcessManager {
 
 			int exitCode = process.waitFor();
 			if (exitCode == 0) {
-				cachedInstalledModels = models;
-				return models;
+				cachedInstalledModels = Collections.unmodifiableList(models);
+				return cachedInstalledModels;
 			}
 		}
 		catch (Exception e) {
