@@ -29,11 +29,14 @@
 
 package sc.fiji.llm.provider;
 
+import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
@@ -78,6 +81,9 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 
 	@Parameter
 	protected StatusService statusService;
+
+	@Parameter
+	protected PlatformService platformService;
 
 	protected AbstractOllamaProvider() {
 		this.processManager = new OllamaProcessManager();
@@ -179,6 +185,24 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	 */
 	@Override
 	public String validateModel(String modelToValidate) {
+		if (!processManager.isServerRunning()) {
+
+			boolean openOllama = uIService.showDialog("An Ollama installation is required but not found." +
+			"\nPlease try again after installing Ollama locally." +
+			"\nWould you like to open the Ollama download site now?", "Missing Service: Ollama", MessageType.ERROR_MESSAGE, OptionType.YES_NO_OPTION)
+			.equals(Result.YES_OPTION);
+
+			if (openOllama) {
+				try {
+					platformService.open(URI.create("https://ollama.com/download").toURL());
+				} catch (IOException e) {
+					logService.error(e);
+				}
+			}
+
+			return LLMProvider.VALIDATION_FAILED;
+		}
+
 		if (!isRemoteModel(modelToValidate)) {
 			// Not a remote model, no validation needed
 			return modelToValidate;
@@ -200,7 +224,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 				statusService.clearStatus();
 				statusService.showStatus("Download failed: " + modelName);
 				// Failed to pull
-				return modelToValidate;
+				return LLMProvider.VALIDATION_FAILED;
 			}
 			statusService.clearStatus();
 			statusService.showStatus("Download complete: " + modelName);
