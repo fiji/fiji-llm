@@ -133,10 +133,10 @@ public class Manage_Keys extends DynamicCommand {
 		welcomeMsg.append(singleProvider ? "" : "s");
 		welcomeMsg.append("</h2>");
 		welcomeMsg.append(
-			"<p><b>API keys</b> allow applications (like Fiji) to access cloud-based AI services.<br />");
+			"<p>This model provider requires an <b>API key</b>, which allows applications (like Fiji) to access cloud-based AI services.</p>");
 		welcomeMsg.append(
-			"They also serve as <i>authentication for you</i>, as most services charge for this functionality.");
-		welcomeMsg.append("Here, you can add, update, or remove the API key for ");
+			"<p>An API key also serves as your <i>identification and authentication</i>, which providers may require to charge for usage of this functionality.</p>");
+		welcomeMsg.append("<p>Here, you can add, update, or remove your API key for ");
 		welcomeMsg.append(singleProvider ? provider
 			: "a selected AI service provider");
 		welcomeMsg.append(".</p></body>");
@@ -149,7 +149,7 @@ public class Manage_Keys extends DynamicCommand {
 			providerMsg.append("<body style='width: " + WIDTH + "px'>");
 			providerMsg.append("<p>First, select an <b>AI Service</b>.<br />");
 			providerMsg.append(
-				"This is the <i>general</i> service provider you want to edit the key for.</p></body>");
+				"This is the <i>model provider</i> whose key you want to edit.</p></body>");
 			providerMessage = providerMsg.toString();
 		}
 		else {
@@ -166,7 +166,7 @@ public class Manage_Keys extends DynamicCommand {
 		apiKeyMsg.append(singleProvider ? "Please" : "Next,");
 		apiKeyMsg.append(" enter your API Key for this AI service.<br />");
 		apiKeyMsg.append(
-			"If you're not sure where to get one, click the <b>Get API Key</b> link.</p></body>");
+			"If you need a new key, click the <b>Get API Key</b> link.</p></body>");
 		apiKeyMessage = apiKeyMsg.toString();
 
 		final MutableModuleItem<String> providerItem = getInfo().getMutableInput(

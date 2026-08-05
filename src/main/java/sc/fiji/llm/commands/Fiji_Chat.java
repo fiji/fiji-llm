@@ -61,10 +61,17 @@ public class Fiji_Chat extends DynamicCommand {
 
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
-	public static final String NO_MODELS_AVAILABLE =
-		"<No Models Available For This Service>";
 	public static final String AUTO_RUN = "sc.fiji.chat.autoRunChat";
+	private static final String NO_MODELS_AVAILABLE =
+		"<No Models Available For This Service>";
 	private static final String WIDTH = "400";
+	private static final String MULTIPLE_MODEL_MESSAGE = "<html><body style='width: " + WIDTH + "px'>" +
+		"<p>Next, choose a <b>Chat Model</b>. This is the <i>specific</i> model that you will chat with.<br />" +
+		"The <b>Service Info</b> page can help you decide, as usage rates and capabilities can vary.</p>" +
+		"</body></html>";
+	private static final String SINGLE_MODEL_MESSAGE = "<html><body style='width: " + WIDTH + "px'>" +
+		"<p>See the <b>Service Info</b> page for more information about this model provider.</p>" +
+		"</body></html>";
 
 	@Parameter
 	private ProviderService providerService;
@@ -103,7 +110,10 @@ public class Fiji_Chat extends DynamicCommand {
 		"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" +
 		"<body style='width: " + WIDTH + "px'>" +
 		"<p>First, select an <b>AI Service</b>.<br />" +
-		"This is the <i>general</i> service provider you want to use (e.g. if you subscribe to ChatGPT or Claude).</p>" +
+		"This is typically the <i>general</i> model provider you want to use (e.g. ChatGPT or Claude).</p>" +
+		"<p>Model selection can be overwhelming! We recommend starting with a curated (<b>*</b>) local model.</p>" +
+		"<p>In general, local model services (e.g. Ollama) provide control, reproducibility, and security.<br />" +
+		"However, they are limited by your local hardware, and have reduced scope compared to frontier models.</p>" +
 		"</body></html>";
 
 	@Parameter(label = "AI Service →", callback = "providerChanged",
@@ -112,10 +122,7 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
-	private String modelMessage = "<html><body style='width: " + WIDTH + "px'>" +
-		"<p>Next, choose a <b>Chat Model</b>. This is the <i>specific</i> model that you will chat with.<br />" +
-		"The <b>Service Info</b> page can help you decide, as usage rates and capabilities can vary.</p>" +
-		"</body></html>";
+	private String modelMessage = MULTIPLE_MODEL_MESSAGE;
 
 	@Parameter(label = "Service Info →",
 		visibility = org.scijava.ItemVisibility.MESSAGE, persist = false,
@@ -130,7 +137,8 @@ public class Fiji_Chat extends DynamicCommand {
 		persist = false, required = false)
 	private String nextStepsMessage = "<html><body style='width: " + WIDTH +
 		"px'>" +
-		"<p>Click <b>OK</b> when you're ready to proceed. If needed, you can set an <b>API key</b> next.</p>" +
+		"<p>Click <b>OK</b> after you've made your selection.<br />" +
+		"Note that some AI services will require additional configuration.</p>" +
 		"</body></html>";
 
 	@Override
@@ -222,6 +230,7 @@ public class Fiji_Chat extends DynamicCommand {
 			modelItem.setChoices(List.of(NO_MODELS_AVAILABLE));
 			modelItem.setValue(this, NO_MODELS_AVAILABLE);
 		}
+		modelMessage = models.size() == 1 ? SINGLE_MODEL_MESSAGE : MULTIPLE_MODEL_MESSAGE;
 	}
 
 	/**

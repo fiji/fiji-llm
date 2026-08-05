@@ -106,7 +106,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 
 	@Override
 	public String getModelsDocumentationUrl() {
-		return "https://ollama.com/download";
+		return "https://ollama.com/";
 	}
 
 	@Override

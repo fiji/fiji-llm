@@ -48,7 +48,7 @@ public class Gemma4Provider12b extends AbstractSingletonOllamaProvider {
 
 	@Override
 	public String getName() {
-		return "Ollama (Gemma4 - small)";
+		return "*Gemma4 - small (Ollama)";
 	}
 
 	@Override
