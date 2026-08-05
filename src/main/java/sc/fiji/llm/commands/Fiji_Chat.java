@@ -250,6 +250,8 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 		prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
+		prefService.remove(Fiji_Chat.class, LAST_CHAT_MODEL);
+		prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
 		final LLMProvider selectedProvider = providerService.getProvider(provider);
 		String validatedModel = selectedProvider.validateModel(model);
