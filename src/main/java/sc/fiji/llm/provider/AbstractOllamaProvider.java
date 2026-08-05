@@ -34,10 +34,10 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 
-import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
+import org.scijava.task.TaskService;
 import org.scijava.ui.DialogPrompt.MessageType;
 import org.scijava.ui.DialogPrompt.OptionType;
 import org.scijava.ui.DialogPrompt.Result;
@@ -80,7 +80,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	private UIService uIService;
 
 	@Parameter
-	private StatusService statusService;
+	private TaskService taskService;
 
 	@Parameter
 	private PlatformService platformService;
@@ -215,19 +215,13 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 		{
 			String modelName = modelToValidate.substring(0, modelToValidate
 				.length() - REMOTE_STRING.length());
-			statusService.showStatus(-1, -1, "Downloading Ollama model: " +
-				modelName);
 			try {
-				processManager.pullModel(modelName);
+				processManager.pullModel(modelName, taskService);
 			}
 			catch (Exception e) {
-				statusService.clearStatus();
-				statusService.showStatus("Download failed: " + modelName);
 				// Failed to pull
 				return LLMProvider.VALIDATION_FAILED;
 			}
-			statusService.clearStatus();
-			statusService.showStatus("Download complete: " + modelName);
 			// Pull successful
 			return modelName;
 		}

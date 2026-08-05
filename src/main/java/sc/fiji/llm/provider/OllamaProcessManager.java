@@ -34,8 +34,12 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.scijava.task.TaskService;
 
 /**
  * Utility class for managing the Ollama server process and CLI operations.
@@ -165,23 +169,155 @@ public class OllamaProcessManager {
 	}
 
 	/**
-	 * Pulls (downloads) a model from the Ollama registry.
+	 * Pulls (downloads) a model from the Ollama registry using the task service
+	 * to report progress and allow cancellation.
 	 *
 	 * @param modelName the name of the model to pull
-	 * @throws Exception if the pull operation fails
+	 * @param taskService the task service for progress reporting and cancellation
+	 * @throws Exception if the pull operation fails or is cancelled
 	 */
-	public void pullModel(String modelName) throws Exception {
+	public void pullModel(String modelName, TaskService taskService) throws Exception {
+		// Create a task for monitoring the download
+		var task = taskService.createTask("Downloading model: " + modelName);
+
 		ProcessBuilder pb = new ProcessBuilder("ollama", "pull", modelName);
-		pb.inheritIO(); // Show output to user
+		// Don't inherit I/O so we can capture it for progress
+		pb.redirectErrorStream(true);
+
 		Process process = pb.start();
-		int exitCode = process.waitFor();
-		if (exitCode == 0) {
-			// Clear cache so it gets refreshed on next call
-			cachedInstalledModels = null;
+
+		// Track download state
+		Set<String> seenSegments = new HashSet<>();
+		int segmentProgress = 0;
+		String lastSeenHash = null;
+		String failureReason = null;
+		boolean wasCancelled = false;
+
+		try {
+			// Read output in a thread-safe manner to avoid blocking
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+				process.getInputStream()));
+			String line;
+
+			task.setProgressMaximum(100);
+
+			while ((line = reader.readLine()) != null) {
+				// Check if task was cancelled
+				if (task.isCanceled()) {
+					process.destroyForcibly();
+					reader.close();
+					wasCancelled = true;
+					break;
+				}
+
+				// Extract hash from output (format: "pulling <hash>:")
+				String hash = extractSegmentHash(line);
+				if (hash != null && !seenSegments.contains(hash)) {
+					// New segment encountered - reset progress for this segment
+					seenSegments.add(hash);
+					segmentProgress = 0;
+					task.setProgressValue(0);
+					lastSeenHash = hash;
+				}
+
+				// Only update progress if it's from the current segment
+				if (hash != null && hash.equals(lastSeenHash)) {
+					int progress = extractProgressPercentage(line);
+					if (progress >= 0) {
+						segmentProgress = progress;
+						task.setProgressValue(segmentProgress);
+					}
+
+					// Update task status with segment info (keep it simple and clean)
+					task.setStatusMessage(" - current segment " + lastSeenHash.substring(0,
+						Math.min(12, lastSeenHash.length())) + ": " + segmentProgress + "%");
+				}
+			}
+
+			int exitCode = process.waitFor();
+			reader.close();
+
+			if (exitCode != 0) {
+				failureReason = "Failed to pull model: " + modelName + " (exit code: " +
+					exitCode + ")";
+			}
+			else {
+				// Clear cache so it gets refreshed on next call
+				cachedInstalledModels = null;
+			}
 		}
-		else {
-			throw new RuntimeException("Failed to pull model: " + modelName);
+		catch (Exception e) {
+			// Wrap other exceptions
+			if (process.isAlive()) {
+				process.destroyForcibly();
+			}
+			failureReason = "Error pulling model: " + modelName + " - " + e.getMessage();
 		}
+		finally {
+			// Single throw point: handle all error states
+			task.finish();
+
+			if (wasCancelled) {
+				throw new RuntimeException("Download cancelled by user for model: " +
+					modelName);
+			}
+			if (failureReason != null) {
+				throw new RuntimeException(failureReason);
+			}
+
+			// Success
+			task.setProgressValue(100);
+			task.setStatusMessage("Model downloaded successfully: " + modelName);
+		}
+	}
+
+	/**
+	 * Extracts the segment hash from ollama output lines.
+	 * Expected format: "pulling <hash>: N% ▕█████ ... ▏ ..."
+	 * The hash is typically a 12-character hex string.
+	 *
+	 * @param line the output line from ollama
+	 * @return the segment hash, or null if no hash found
+	 */
+	private String extractSegmentHash(String line) {
+		// Look for pattern "pulling <hex>:" where hex can have uppercase or lowercase
+		// Pattern allows optional whitespace before the colon
+		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+			"pulling\\s+([a-fA-F0-9]+)\\s*:", java.util.regex.Pattern.CASE_INSENSITIVE);
+		java.util.regex.Matcher matcher = pattern.matcher(line);
+
+		if (matcher.find()) {
+			return matcher.group(1);
+		}
+		return null;
+	}
+
+	/**
+	 * Extracts the progress percentage from ollama output lines.
+	 * Expected format: "pulling 93567e57a8fe:   5% ▕█████ ... ▏ 339 MB/7.0 GB   43 MB/s   2m33s"
+	 *
+	 * @param line the output line from ollama
+	 * @return the progress percentage (0-100), or -1 if no percentage found
+	 */
+	private int extractProgressPercentage(String line) {
+		// Look for pattern like "5%" or "45%" etc
+		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{1,3})%");
+		java.util.regex.Matcher matcher = pattern.matcher(line);
+
+		if (matcher.find()) {
+			try {
+				int percent = Integer.parseInt(matcher.group(1));
+				// Validate it's a reasonable percentage
+				if (percent >= 0 && percent <= 100) {
+					return percent;
+				}
+			}
+			catch (NumberFormatException e) {
+				// Ignore and return -1
+			}
+		}
+
+		return -1;
 	}
 
 	/**
