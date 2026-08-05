@@ -65,27 +65,27 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
  */
 public abstract class AbstractOllamaProvider implements LLMProvider {
 
-	protected static final String LOCAL_SERVER_URL = "http://localhost:11434";
-	protected static final Double DEFAULT_TEMPERATURE = 0.1;
-	protected static final Integer DEFAULT_TOKEN_WINDOW = 40000;
-	protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
-	protected static final String REMOTE_STRING = "* (remote)";
+	private static final String LOCAL_SERVER_URL = "http://localhost:11434";
+	private static final Double DEFAULT_TEMPERATURE = 0.1;
+	private static final Integer DEFAULT_TOKEN_WINDOW = 40000;
+	private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
+	private static final String REMOTE_STRING = "* (remote)";
 
-	protected OllamaProcessManager processManager;
-
-	@Parameter
-	protected LogService logService;
+	private OllamaProcessManager processManager;
 
 	@Parameter
-	protected UIService uIService;
+	private LogService logService;
 
 	@Parameter
-	protected StatusService statusService;
+	private UIService uIService;
 
 	@Parameter
-	protected PlatformService platformService;
+	private StatusService statusService;
 
-	protected AbstractOllamaProvider() {
+	@Parameter
+	private PlatformService platformService;
+
+	public AbstractOllamaProvider() {
 		this.processManager = new OllamaProcessManager();
 	}
 

@@ -39,7 +39,7 @@ public abstract class AbstractSingletonOllamaProvider extends AbstractOllamaProv
 
 	private final String modelName;
 
-	protected AbstractSingletonOllamaProvider(String modelName) {
+	public AbstractSingletonOllamaProvider(String modelName) {
 		this.modelName = modelName;
 	}
 
