@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.provider;
 
+import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -40,6 +41,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.scijava.task.TaskService;
+
+import sc.fiji.llm.ui.TaskProgressFrame;
 
 /**
  * Utility class for managing the Ollama server process and CLI operations.
@@ -178,7 +181,16 @@ public class OllamaProcessManager {
 	 */
 	public void pullModel(String modelName, TaskService taskService) throws Exception {
 		// Create a task for monitoring the download
-		var task = taskService.createTask("Downloading model: " + modelName);
+		var task = taskService.createTask("Fetching Ollama model: " + modelName);
+
+		// Show progress frame if running graphically
+		try {
+			TaskProgressFrame progressFrame = new TaskProgressFrame(task);
+			progressFrame.showFrame();
+		}
+		catch (HeadlessException e) {
+			// Running headless, skip GUI
+		}
 
 		ProcessBuilder pb = new ProcessBuilder("ollama", "pull", modelName);
 		// Don't inherit I/O so we can capture it for progress
@@ -229,8 +241,8 @@ public class OllamaProcessManager {
 					}
 
 					// Update task status with segment info (keep it simple and clean)
-					task.setStatusMessage(" - current segment " + lastSeenHash.substring(0,
-						Math.min(12, lastSeenHash.length())) + ": " + segmentProgress + "%");
+					task.setStatusMessage("Downloading segment: " + lastSeenHash.substring(0,
+						Math.min(12, lastSeenHash.length())));
 				}
 			}
 
