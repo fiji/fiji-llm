@@ -100,7 +100,7 @@ public class InteractiveGuide {
 	}
 
 	/**
-	 * Show the dialog for the current guide step.
+	 * Show the guide dialog for the current step.
 	 */
 	private void showCurrentStep() {
 		if (currentIndex >= elements.size()) {
@@ -109,28 +109,6 @@ public class InteractiveGuide {
 		}
 
 		final GuideElement element = elements.get(currentIndex);
-		final Component component = element.getComponent();
-
-		// Flash the component border briefly
-		flashComponentBorder(component);
-
-		// Close previous dialog if any
-		if (currentDialog != null) {
-			currentDialog.dispose();
-		}
-
-		// Create dialog with explanation
-		currentDialog = createGuideDialog(element);
-		currentDialog.setVisible(true);
-	}
-
-	/**
-	 * Create a dialog for a guide element.
-	 */
-	private JDialog createGuideDialog(GuideElement element) {
-		final JDialog dialog = new JDialog(parentFrame, false);
-		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		dialog.setUndecorated(true);
 
 		// First, create the button panel to get its preferred width
 		final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20,
@@ -169,6 +147,78 @@ public class InteractiveGuide {
 			buttonPanel.remove(cancelButton);
 		}
 
+		// Title
+		final JLabel titleLabel = new JLabel(element.getTitle() + " (" +
+			(currentIndex + 1) + " of " + elements.size() + ")");
+		titleLabel.setFont(titleLabel.getFont().deriveFont(14f).deriveFont(
+			Font.BOLD));
+		titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JDialog dialog = createGuideDialog(element, titleLabel, buttonPanel, buttonPanelWidth);
+
+		showElement(element, dialog);
+	}
+
+	/**
+	 * Manually show a guide-style popup for the given element.
+	 * Note that this does not retain the element as part of the guide.
+	 */
+	public void showSingleton(Component component, String title,
+		String description)
+	{
+		GuideElement element = new GuideElement(component, title, description);
+
+		// OK button which simply closes the dialog
+		final JButton okButton = new JButton("OK");
+		okButton.addActionListener(e -> cancel());
+		okButton.setFocusPainted(false);
+		okButton.setContentAreaFilled(false);
+		okButton.setBorder(BorderFactory.createCompoundBorder(new LineBorder(Color.GRAY, 1),
+			BorderFactory.createEmptyBorder(4, 12, 4, 12)));
+		final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20,
+			0));
+		buttonPanel.setOpaque(false);
+		buttonPanel.add(okButton);
+
+		// Short title (no step counters)
+		final JLabel titleLabel = new JLabel(element.getTitle());
+		titleLabel.setFont(titleLabel.getFont().deriveFont(13f).deriveFont(Font.BOLD));
+		titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		buttonPanel.doLayout();
+		JDialog dialog = createGuideDialog(element, titleLabel, buttonPanel, buttonPanel.getPreferredSize().width);
+
+		showElement(element, dialog);
+	}
+
+	/**
+	 * Display the given element element
+	 */
+	private void showElement(GuideElement element, JDialog dialog) {
+		final Component component = element.getComponent();
+
+		// Close previous dialog if any
+		if (currentDialog != null) {
+			currentDialog.dispose();
+		}
+		resetCurrentComponentBorder();
+
+		// Flash the component border briefly
+		flashComponentBorder(component);
+
+		// Create dialog with explanation
+		currentDialog = dialog;
+		currentDialog.setVisible(true);
+	}
+
+	/**
+	 * Create a dialog for a guide element.
+	 */
+	private JDialog createGuideDialog(GuideElement element, JLabel titleLabel, JPanel buttonPanel, int buttonPanelWidth) {
+		final JDialog dialog = new JDialog(parentFrame, false);
+		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		dialog.setUndecorated(true);
+
 		// Now create the content panel with proper sizing
 		final JPanel contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -177,18 +227,15 @@ public class InteractiveGuide {
 		contentPanel.setBackground(new Color(255, 250, 240)); // Warm beige
 		contentPanel.setOpaque(true);
 
-		// Title
-		final JLabel titleLabel = new JLabel(element.getTitle() + " (" +
-			(currentIndex + 1) + " of " + elements.size() + ")");
-		titleLabel.setFont(titleLabel.getFont().deriveFont(14f).deriveFont(
-			Font.BOLD));
-		titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		contentPanel.add(titleLabel);
 		contentPanel.add(Box.createVerticalStrut(8));
 
+		titleLabel.doLayout();
+		final int titleWidth = titleLabel.getPreferredSize().width;
+
 		// Description - constrained to button panel width
 		final JLabel descriptionLabel = new JLabel("<html><div style='width:" +
-			buttonPanelWidth + "px'>" + element.getDescription() + "</div></html>");
+			titleWidth + "px'>" + element.getDescription() + "</div></html>");
 		descriptionLabel.setFont(descriptionLabel.getFont().deriveFont(12f));
 		descriptionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		contentPanel.add(descriptionLabel);
@@ -207,16 +254,17 @@ public class InteractiveGuide {
 				.getLocationOnScreen();
 			final Toolkit toolkit = Toolkit.getDefaultToolkit();
 			final Dimension screenSize = toolkit.getScreenSize();
+			final int xOffset = 5;
 
 			// Try to place to the right of the component
 			int dialogX = componentLocation.x + element.getComponent().getWidth() +
-				10;
+				xOffset;
 			int dialogY = componentLocation.y;
 
 			// Check if dialog would be off-screen to the right
 			if (dialogX + dialog.getWidth() > screenSize.width) {
 				// Try placing to the left of the component instead
-				dialogX = componentLocation.x - dialog.getWidth() - 10;
+				dialogX = componentLocation.x - dialog.getWidth() - xOffset;
 				if (dialogX < 0) {
 					// If still off-screen, place it centered
 					dialogX = (screenSize.width - dialog.getWidth()) / 2;
@@ -269,18 +317,19 @@ public class InteractiveGuide {
 		}
 
 		final int[] flashCount = { 0 };
+		Border flashBorder = new LineBorder(highlightColor, 3);
 		flashTimer = new Timer(150, e -> {
 			if (flashCount[0] % 2 == 0) {
-				jComponent.setBorder(new LineBorder(highlightColor, 3));
+				jComponent.setBorder(flashBorder);
 			}
 			else {
 				jComponent.setBorder(currentOriginalBorder);
 			}
 			flashCount[0]++;
 
-			if (flashCount[0] >= 6) {
+			if (flashCount[0] >= 7) {
 				((Timer) e.getSource()).stop();
-				jComponent.setBorder(currentOriginalBorder);
+				jComponent.setBorder(flashBorder);
 			}
 		});
 

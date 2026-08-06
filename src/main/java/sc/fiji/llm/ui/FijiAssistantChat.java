@@ -110,6 +110,7 @@ public class FijiAssistantChat {
 	public static final float CHAT_FONT_SIZE = 16f;
 	private static final int INPUT_PANEL_PADDING = 8;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
+	private static final String GUIDE_SHOWN_PREF = "guideShown";
 
 	private static enum Sender {
 			USER, ASSISTANT, SYSTEM, ERROR
@@ -159,6 +160,7 @@ public class FijiAssistantChat {
 	private final JScrollPane contextTagsScrollPane;
 	private final JButton clearAllButton;
 	private final java.util.Map<ContextItem, JButton> contextItemButtons;
+	private final JButton guideButton;
 	private final List<ContextItem> contextItems;
 	private JComboBox<String> conversationComboBox;
 	private JButton newConversationButton;
@@ -291,7 +293,6 @@ public class FijiAssistantChat {
 		buttonPanel.add(configureChatButton);
 
 		// Launch guide button
-		final JButton guideButton;
 		final URL questionIconUrl = getClass().getResource(
 			"/icons/question-icon-32.png");
 		if (questionIconUrl != null) {
@@ -574,6 +575,13 @@ public class FijiAssistantChat {
 	public void show() {
 		frame.setVisible(true);
 		inputArea.requestFocus();
+		if (!prefService.getBoolean(FijiAssistantChat.class, GUIDE_SHOWN_PREF,
+			false))
+		{
+			guide.showSingleton(guideButton, "Welcome to Fiji chat!",
+				"Click here for a brief tour.");
+			prefService.put(FijiAssistantChat.class, GUIDE_SHOWN_PREF, true);
+		}
 	}
 
 	/**
