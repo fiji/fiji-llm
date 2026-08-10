@@ -5,6 +5,8 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [MCP Usage](#mcp-server)
+  - [VS Code](#vs-code)
 - [User Guide](#user-guide)
   - [Basic Concepts](#basic-concepts)
   - [Supported AI Providers](#supported-ai-providers)
@@ -30,16 +32,20 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 
 3. **Start chatting**: Use `Help > Assistants > Fiji Chat...` (shortcut: `ctrl + 0`)
 
-## MCP Usage
+## MCP Server
 
-You can connect your VS Code LLMs to the Fiji MCP server! This allows your agents to run tasks in your local Fiji.
-The following examples show some common use cases. 
+All LLM tools in Fiji are accessed via an [MCP Server](https://en.wikipedia.org/wiki/Model_Context_Protocol). While we provide a basic, integrated chat interface, this also allows external applications ("harnesses") to interact with Fiji through this local server.
 
-**NB**: Update the port as necessary
+Currently, the MCP server is tied to a running Fiji application - which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (note the default port 9090)
+
+**Available Configuration**
+- **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`
+- **Start Manually**: Click "Start Server" in the Manage MCP Server dialog
+- **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
 
 ### VS Code
 
-Edit your `mcp.json` and add the following entry:
+You can connect your VS Code LLMs to the Fiji MCP server! This allows your agents to run tasks in a local Fiji. Edit your `mcp.json` and add the following entry:
 
 ```json
 		"fiji-mcp": {
@@ -48,6 +54,12 @@ Edit your `mcp.json` and add the following entry:
 			"startupMode": "onDemand"
 		},
 ```
+
+In the `Configure Tools` dialog, you should see a new `fiji-mcp-server` option that you can toggle on or off.
+
+**NB**: Update the port in `mcp.json` as necessary
+**NB**: Your local Fiji application must be running first for the MCP server to be findable by VS Code. For best results, (re)start the server from `mcp.json` after launching Fiji.
+
 ## User Guide
 
 ### Basic Concepts
@@ -152,9 +164,5 @@ For developing chatbots in particular UI environments.
 
 ### [MCPService](src/main/java/sc/fiji/llm/mcp/MCPService.java)
 
-An MCP (Model Context Protocol) server exposes all registered `AiToolPlugin` implementations via HTTP, making them accessible to external clients at `http://localhost:9090/mcp` (default port).
+An MCP (Model Context Protocol) server exposes all registered `AiToolPlugin` implementations via local HTTP, making them accessible to external clients.
 
-**Configuration and Usage:**
-- **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`
-- **Start Manually**: Click "Start Server" in the Manage MCP Server dialog
-- **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
