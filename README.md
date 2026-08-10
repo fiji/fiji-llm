@@ -5,7 +5,7 @@ Chat with AI assistants directly in Fiji to get help with image analysis, script
 ## Table of Contents
 
 - [Quick Start](#quick-start)
-- [MCP Usage](#mcp-server)
+- [MCP Server](#mcp-server)
   - [VS Code](#vs-code)
 - [User Guide](#user-guide)
   - [Basic Concepts](#basic-concepts)
