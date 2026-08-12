@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.scijava.script.ScriptLanguage;
 import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
@@ -136,7 +137,8 @@ public final class ScriptContextUtilities {
 		final String scriptContent = editorPane.getText();
 		final String errorOutput = getErrorOutput(textEditor);
 		final int[] selectionLines = getSelectionLineNumbers(editorPane);
-		final String scriptLanguage = editorPane.getCurrentLanguage().getNames().get(0);
+		final ScriptLanguage currentLanguage = editorPane.getCurrentLanguage();
+		final String scriptLanguage = currentLanguage == null ? null : currentLanguage.getNames().get(0);
 
 		return new ScriptContextItem(scriptName, scriptContent, editorIndex,
 			tabIndex, selectionLines[0], selectionLines[1], scriptLanguage, errorOutput);
