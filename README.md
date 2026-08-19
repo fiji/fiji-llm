@@ -1,9 +1,30 @@
 # Fiji Large Language Model (LLM) Integration
 
-Chat with AI assistants directly in Fiji to get help with image analysis, scripting, macros, and general questions.
+This project brings extensible, reproducible AI assistance into Fiji, helping scientists discover tools, build image analysis workflows, and connect with both local and external language models.
+
+## Core Goals
+
+* **Make Fiji More Accessible:** Help scientists discover relevant tools, learn unfamiliar workflows, and create reusable scripts through guided natural-language interactions.
+
+* **Enable Reproducible Agentic Workflows:** Give AI agents structured access to Fiji’s application context and core capabilities, with an emphasis on generating familiar scripts and macros rather than de novo workflow formats.
+
+* **Provide an Extensible AI Foundation:** Establish shared extension points for agentic tools and model connectivity so that developers can add new capabilities without creating isolated or incompatible integrations.
+
+* **Support Private and Equitable Model Access:** Make local, open-weight models a first-class option while retaining flexible connectivity to external model providers and AI clients.
+
+## Key Architecture and Components
+
+* **In-App Chat Interface:** Provides scientists with guided AI assistance directly inside Fiji.
+
+* **Model Context Protocol (MCP) Server:** Exposes Fiji’s agentic tools to compatible external assistants, development environments, and other MCP clients.
+
+* **Annotated Tool Registry:** Uses the SciJava plugin framework to dynamically discover and register capabilities that developers expose to AI agents.
+
+* **Extensible Model Engine:** Separates model connectivity from agentic functionality, allowing new local or remote model providers to be added through plugins.
+
+* **Context-Aware Analysis Tools:** Give agents structured access to Fiji’s environment, including installed commands, open images, analysis metadata, the Script Editor, and macro recorder.
 
 ## Table of Contents
-
 - [Quick Start](#quick-start)
 - [MCP Server](#mcp-server)
   - [VS Code](#vs-code)
