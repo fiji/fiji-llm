@@ -41,6 +41,9 @@ This project brings extensible, reproducible AI assistance into Fiji, helping sc
   - [AiToolPlugin](#aitoolplugin)
   - [ChatbotService](#chatbotservice)
 
+## See Also
+- [Technical Summary](doc/TECHNICAL_SUMMARY.md)
+
 ## Quick Start
 
 1. **Install Fiji**: Download the `Latest` version from [imagej.net/software/fiji](https://imagej.net/software/fiji/)
