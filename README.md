@@ -55,6 +55,7 @@ This project brings extensible, reproducible AI assistance into Fiji, helping sc
     - Future `Fiji Chat...` runs will go right to chatting with your last selected service and model.
 
 4. **Select a model**:
+
 	**Option A: Local Models (Recommended for beginners)**
 	- These are open models which run on your machine.
 	- Download and install [Ollama](https://ollama.com/download) now (no Fiji restart needed)
