@@ -46,12 +46,28 @@ This project brings extensible, reproducible AI assistance into Fiji, helping sc
 1. **Install Fiji**: Download the `Latest` version from [imagej.net/software/fiji](https://imagej.net/software/fiji/)
 
 2. **Add the Fiji-chat Update Site**:
-
    - See [instructions on adding unlisted update sites](https://imagej.net/update-sites/following#adding-unlisted-sites).
    - Add the (*currently unlisted*) `Fiji-chat` site: `https://sites.imagej.net/Fiji-chat/`
    - Restart Fiji afterwards
 
-3. **Start chatting**: Use `Help > Assistants > Fiji Chat...` (shortcut: `ctrl + 0`)
+3. **Open the chat**: Run `Help > Assistants > Fiji Chat...` (shortcut: `ctrl + 0`)
+	- The first time you run `Fiji Chat...` you will see a landing page where you select an AI Service and model.
+    - Future `Fiji Chat...` runs will go right to chatting with your last selected service and model.
+
+4. **Select a model**:
+	**Option A: Local Models (Recommended for beginners)**
+	- These are open models which run on your machine.
+	- Download and install [Ollama](https://ollama.com/download) now (no Fiji restart needed)
+	- We recommend starting with the curated `Gemma4 - small (Ollama)` service, which auto-selects a model aimed at maximizing hardware compatibility.
+	- The general `Ollama` service allows for full model exploration.
+	- Click `OK` to start chatting. You will need to wait for the selected model to download (only on first chat with a model)
+
+	**Option B: Cloud Models**
+	- If you have an account with an AI service (Gemini, Claude, ChatGPT, etc.) you can use it with Fiji chat. Most services require paid subscriptions or credits for this function.
+	- Select your provider, then choose an available model. Different models have different pricing schemes.
+	- Click `OK` to start chatting. You will be prompted for an API key and provided with a link to your provider's key page (only on first chat with a remote provider)
+
+	**Want to switch later?** Use the ⚙️ button in chat to change models and/or providers.
 
 ## MCP Server
 
@@ -111,11 +127,11 @@ In the `Configure Tools` dialog, you should see a new `fiji-mcp-server` option t
 - Models typically come in varieants (`7b`, `20b`, etc...), indicating the number of model parameters (in billions). More parameters means a better ability to conceptualize solutions, but also more resource use.-
 - Fiji-chat is intended for use with models that support [Tool Use](https://ollama.com/search?c=tools).
 - **Installation**:
-  1. Download and install Ollama from [ollama.ai](https://ollama.com/download)
+  1. Download and install [Ollama](https://ollama.com/download)
   2. (Optionally) Use the ollama UI or command line tool to download a model of interest.
   3. When you can start a new chat you can choose from compatible models, which will be downloaded as needed.
 - **Recommended model(s)**:
-  * `gpt-oss:20b`
+  * `Gemma4` - Depending on your available video memory, select `small` (8GB), `medium` (16GB), or `large` (24GB or more).
 
 #### Anthropic (Claude)
 - **Getting an API Key**:
