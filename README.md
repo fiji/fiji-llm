@@ -47,7 +47,7 @@ This project brings extensible, reproducible AI assistance into Fiji, helping sc
 
 2. **Add the Fiji-chat Update Site**:
 
-   - See [instructions on adding update sites](https://imagej.net/update-sites/following#adding-unlisted-sites).
+   - See [instructions on adding unlisted update sites](https://imagej.net/update-sites/following#adding-unlisted-sites).
    - Add the (*currently unlisted*) `Fiji-chat` site: `https://sites.imagej.net/Fiji-chat/`
    - Restart Fiji afterwards
 
