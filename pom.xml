@@ -85,7 +85,8 @@
 		<scijava.jvm.build.version>[17,)</scijava.jvm.build.version>
 
 		<!-- Pinned version properties -->
-		<langchain4j.version>1.13.1</langchain4j.version>
+		<langchain4j.version>1.19.0</langchain4j.version>
+		<langchain4j-mcp-beta.version>beta29</langchain4j-mcp-beta.version>
 		<mcp-sdk.version>1.1.2</mcp-sdk.version>
 		<jackson2.version>2.19.2</jackson2.version>
 		<jackson3.version>3.0.3</jackson3.version>
@@ -215,7 +216,7 @@
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-mcp</artifactId>
-			<version>${langchain4j.version}-beta23</version>
+			<version>${langchain4j.version}-${langchain4j-mcp-beta.version}</version>
 		</dependency>
 
 		<!-- Jsoup for reading html -->
