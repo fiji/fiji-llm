@@ -43,6 +43,7 @@ This project brings extensible, reproducible AI assistance into Fiji, helping sc
 
 ## See Also
 - [Technical Summary](doc/TECHNICAL_SUMMARY.md)
+- [Proposed Foundation Issues](doc/FOUNDATION_ISSUES.md)
 
 ## Quick Start
 
