@@ -142,6 +142,8 @@ Ask questions that generate actionable development information:
 
 # Development capability targets
 
+Capability rows below were checked against the workshop outline above (they should map to something a participant actually does in sections 1-7), and coverage was re-verified against the current source in September 2026. "Draft: issue N" refers to [DEVELOPMENT-CAPABILITY-ISSUES.md](DEVELOPMENT-CAPABILITY-ISSUES.md), which is scoped to workshop-specific gaps and does not duplicate the foundational infrastructure issues ([#30](https://github.com/fiji/fiji-llm/issues/30)-[#40](https://github.com/fiji/fiji-llm/issues/40)).
+
 ## Tier 0: Essential Concepts
 The assistant should be able to answer:
 > **“What do you know about my current Fiji state, and how do you know it?”**
@@ -156,7 +158,7 @@ Making that provenance visible will also help users develop an accurate mental m
 |---|---|---|
 | Explain what the assistant knows about current Fiji state and how it knows it | **Partial** | The chat attaches selected context and exposes live script tools, but it lacks a general provenance contract. Drafts: issues 1, 2, and 8 in [DEVELOPMENT-CAPABILITY-ISSUES.md](DEVELOPMENT-CAPABILITY-ISSUES.md). |
 | Connect reasoning with the participant’s actual installation | **Partial** | Provider/model lists are live, but command and plugin discovery tools are dormant. Draft: issue 1; related: [#25](https://github.com/fiji/fiji-llm/issues/25), [#30](https://github.com/fiji/fiji-llm/issues/30). |
-| Connect reasoning with active images | **Partial** | Image metadata can be attached from the UI; image querying and pixel/media input are incomplete. Draft: issue 2; related: [#26](https://github.com/fiji/fiji-llm/issues/26), [#40](https://github.com/fiji/fiji-llm/issues/40). |
+| Connect reasoning with active images | **Partial** | Image metadata can be attached from the UI; image querying and pixel/media input are incomplete. Draft: issue 2; related: [#40](https://github.com/fiji/fiji-llm/issues/40). |
 | Connect reasoning with installed capabilities | **Not supported** | No complete live capability inventory is exposed to the assistant. Draft: issue 1. |
 | Connect reasoning with open scripts | **Supported** | Script context suppliers and the registered Script Editor tool expose open scripts. |
 | Connect reasoning with recorded actions | **Not supported** | Macro recorder integration is dormant and no action history is available. Draft: issue 6. |
@@ -171,7 +173,7 @@ Making that provenance visible will also help users develop an accurate mental m
 | Start a new conversation reliably | **Partial** | [FijiAssistantChat.java](../src/main/java/sc/fiji/llm/ui/FijiAssistantChat.java) creates a conversation on the first message; the New Conversation button is disabled for an empty conversation. Related: [#16](https://github.com/fiji/fiji-llm/issues/16). |
 | Select a supported provider and model | **Supported** | [Fiji_Chat.java](../src/main/java/sc/fiji/llm/commands/Fiji_Chat.java) populates provider/model choices and validates the selected model. Related: [#17](https://github.com/fiji/fiji-llm/issues/17). |
 | Explain provider/model requirements in the UI | **Partial** | [Fiji_Chat.java](../src/main/java/sc/fiji/llm/commands/Fiji_Chat.java) provides provider guidance, documentation links, and API-key configuration, but no model capability descriptor. Related: [#30](https://github.com/fiji/fiji-llm/issues/30). |
-| Attach the active image as context | **Supported** | [ImageMetaContextSupplier.java](../src/main/java/sc/fiji/llm/image/ImageMetaContextSupplier.java) attaches image metadata; it does not attach pixels. Related: [#26](https://github.com/fiji/fiji-llm/issues/26), [#40](https://github.com/fiji/fiji-llm/issues/40). |
+| Attach the active image as context | **Supported** | [ImageMetaContextSupplier.java](../src/main/java/sc/fiji/llm/image/ImageMetaContextSupplier.java) attaches image metadata; it does not attach pixels. Related: [#40](https://github.com/fiji/fiji-llm/issues/40). |
 | Attach an open script or macro as context | **Supported** | [ScriptContextSupplier.java](../src/main/java/sc/fiji/llm/script/ScriptContextSupplier.java) lists open editor tabs and supports active-script context. |
 | Clearly display which context items are attached | **Supported** | [FijiAssistantChat.java](../src/main/java/sc/fiji/llm/ui/FijiAssistantChat.java) renders attached context tags. |
 | Remove an accidentally attached context item | **Supported** | [FijiAssistantChat.java](../src/main/java/sc/fiji/llm/ui/FijiAssistantChat.java) supports per-item removal and Clear All. |
@@ -269,18 +271,18 @@ These significantly improve the workshop but need not all be on the shared criti
 | Use the Macro Recorder as evidence for valid command syntax | **Not supported** | No live recorder tool or action-history path. Draft: issue 6. |
 | Summarize the sequence of actions already performed | **Not supported** | No action history is recorded. Draft: issue 6. |
 | Produce a concise “what to validate next” checklist | **Partial** | The model can generate a generic checklist, but it cannot ground it in Fiji results. Drafts: issues 3, 4, and 6. |
-| Generate a forum-ready problem report containing environment and error details, while excluding secrets or private data | **Not supported** | No sanitized diagnostic-report generator. Draft: issue 8. |
+| Generate a forum-ready problem report containing environment and error details, while excluding secrets or private data | **Not supported** | No sanitized diagnostic-report generator. Draft: issue 9. |
 ## Tier 3: Demonstration or stretch capabilities
 These are attractive but risky as core workshop dependencies:
 
 | Capability | Coverage | Evidence / related issue |
 |---|---|---|
-| Building TrackMate workflows | **Not supported** | No TrackMate adapter or capability-specific workflow contract. Draft: issue 9. |
-| StarDist or Labkit setup and execution | **Not supported** | No StarDist/Labkit adapter or setup path. Draft: issue 9. |
-| Suggestion or activation of update sites | **Not supported** | No update-site inspection or approval workflow. Draft: issue 10; related: [#25](https://github.com/fiji/fiji-llm/issues/25). |
+| Building TrackMate workflows | **Not supported** | No TrackMate adapter or capability-specific workflow contract. Not required for this workshop; not drafted as an issue. |
+| StarDist or Labkit setup and execution | **Not supported** | No StarDist/Labkit adapter or setup path. Not required for this workshop; not drafted as an issue. |
+| Suggestion or activation of update sites | **Not supported** | No update-site inspection or approval workflow. Not required for this workshop; not drafted as an issue. Loosely related: [#25](https://github.com/fiji/fiji-llm/issues/25). |
 | Robust analysis of arbitrary participant datasets | **Partial** | Basic image metadata works for open datasets, but calibration, ROI, preflight, result inspection, and safety controls are incomplete. Drafts: issues 2-5. |
 | Interactive workflow execution, prompting the user for steps | **Partial** | Chat can stream and call tools, but explicit request-for-input and approval loops are not implemented. Related: [#31](https://github.com/fiji/fiji-llm/issues/31)-[#34](https://github.com/fiji/fiji-llm/issues/34); draft: issue 4. |
-| Visual interpretation of biological structures | **Partial** | The current implementation supplies image metadata rather than pixels or computer-vision results. Related: [#26](https://github.com/fiji/fiji-llm/issues/26), [#40](https://github.com/fiji/fiji-llm/issues/40). |
+| Visual interpretation of biological structures | **Partial** | The current implementation supplies image metadata rather than pixels or computer-vision results. Related: [#40](https://github.com/fiji/fiji-llm/issues/40). |
 | Local-model setup during the session | **Supported** | [AbstractOllamaProvider.java](../src/main/java/sc/fiji/llm/provider/AbstractOllamaProvider.java) and [OllamaProcessManager.java](../src/main/java/sc/fiji/llm/provider/OllamaProcessManager.java) start Ollama and pull models, subject to local installation. Related: [#17](https://github.com/fiji/fiji-llm/issues/17), [#28](https://github.com/fiji/fiji-llm/issues/28). |
 | External MCP client demonstrations | **Partial** | The checkout provides a local MCP server/client loop for Fiji tools, but not a configurable external MCP client adapter. Related: [#39](https://github.com/fiji/fiji-llm/issues/39). |
 # Prompt acceptance suite
@@ -296,34 +298,42 @@ These prompts can become regression tests across recommended models. Maintain a 
 1. **“What images are currently open in Fiji, and which one is active?”**
 2. **“Describe the active image using information available from Fiji. Separate observed facts from anything you are inferring.”**
 3. **“What are the dimensions, bit depth, channels, slices, frames, and spatial calibration of this image?”**
-4. **“I am new to Fiji. Explain what I am looking at without assuming I know image-analysis terminology.”**
+4. **“Which channel, slice, or frame am I currently viewing? Is there an active selection (ROI) on this image?”**
+5. **“I am new to Fiji. Explain what I am looking at without assuming I know image-analysis terminology.”**
 ## Discovery
 1. **“I want to inspect the distribution of pixel values. Find the relevant installed command and tell me what it will show.”**
 2. **“What installed tools could help me separate bright objects from a darker background? Give me two simple options and explain the tradeoffs.”**
 3. **“Is Analyze Particles available in this Fiji installation? What input does it expect?”**
 4. **“Do not invent a menu path. Use Fiji’s available commands to find the operation.”**
+5. **“What’s the difference between setting a threshold and actually converting the image to a binary mask?”**
 ## Guided analysis
 1. **“I want to count bright, separated objects and measure their areas. Before doing anything, ask me the questions needed to choose a reasonable workflow.”**
-2. **“Guide me through this one step at a time. Preserve the original image.”**
-3. **“Show me which settings require scientific judgment rather than choosing them silently.”**
-4. **“Apply the agreed thresholding step to a duplicate and tell me what changed.”**
-5. **“Help me inspect whether the result matches the objects I intended to identify.”**
-6. **“Run the measurement step and summarize what outputs Fiji created. Do not interpret biological significance.”**
+2. **“Show me the histogram of the active image and tell me if there’s evidence of saturation before we choose a threshold.”**
+3. **“Guide me through this one step at a time. Preserve the original image.”**
+4. **“Show me which settings require scientific judgment rather than choosing them silently.”**
+5. **“Apply the agreed thresholding step to a duplicate and tell me what changed.”**
+6. **“Help me inspect whether the result matches the objects I intended to identify.”**
+7. **“Run the measurement step and summarize what outputs Fiji created. Do not interpret biological significance.”**
 ## Reproducibility
 1. **“Turn the workflow we just performed into an ImageJ macro.”**
 2. **“Open the macro in the Script Editor and add comments explaining each step.”**
 3. **“Replace hard-coded analysis values with clearly named variables at the top.”**
 4. **“Adapt this macro to process all TIFF files in a folder, while keeping the original files unchanged.”**
 5. **“Review this macro for commands or syntax that may not work in ImageJ macro language.”**
+6. **“Compare the macro you just generated with what the Macro Recorder captured while I performed the same steps manually. Are they consistent?”**
 ## Error recovery
 1. **“Why did the last command fail? Use the error and current Fiji state rather than guessing.”**
 2. **“There is no active image. Explain what I need to do before continuing.”**
 3. **“The spatial calibration is missing. What measurements would be affected?”**
 4. **“The command you proposed is not installed. Find an available alternative or explain what is missing.”**
 5. **“You appear to have assumed something about my image. Identify the assumption and revise the plan.”**
+6. **“Three images are open and I didn’t say which one to use. Ask me instead of guessing.”**
+7. **“I asked you to measure the selected region, but I never made a selection. What should happen?”**
+8. **“The tool you just called failed. Tell me exactly what went wrong instead of assuming it worked.”**
 ## Metacognition and trust
 1. **“What information from Fiji did you use to answer me?”**
 2. **“What parts of your proposed workflow are uncertain?”**
 3. **“What should I check manually before accepting these measurements?”**
 4. **“Explain what you can do here that a general web chatbot cannot.”**
 5. **“Summarize what we did in a form I could include in my analysis notes.”**
+6. **“Generate a summary of this error I can post to the Fiji forum, without including my API key or file paths.”**
