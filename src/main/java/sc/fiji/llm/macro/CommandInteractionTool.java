@@ -61,6 +61,7 @@ import sc.fiji.llm.tools.ToolScope;
 /**
  * AI tool for LLM agentic discovery and execution of available commands.
  */
+// TODO - currently removed from tools registry until a revision pass is made
 // @Plugin(type = AiToolPlugin.class)
 public class CommandInteractionTool extends AbstractAiToolPlugin {
 
