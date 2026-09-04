@@ -57,6 +57,11 @@ public class Gemma4Provider12b extends AbstractSingletonOllamaProvider {
 	}
 
 	@Override
+	protected int getContextSize() {
+		return 32 * 1024;
+	}
+
+	@Override
 	public Optional<String> getRecommendedModel() {
 		return Optional.of(MODEL_NAME);
 	}

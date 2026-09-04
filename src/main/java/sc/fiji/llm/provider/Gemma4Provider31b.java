@@ -53,4 +53,9 @@ public class Gemma4Provider31b extends AbstractSingletonOllamaProvider {
 	public String getDescription() {
 		return "Local Gemma4 model - largest parameter count and memory footprint.";
 	}
+
+	@Override
+	protected int getContextSize() {
+		return 64 * 1024;
+	}
 }

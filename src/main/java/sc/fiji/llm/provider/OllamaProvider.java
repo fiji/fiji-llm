@@ -75,6 +75,11 @@ public class OllamaProvider extends AbstractOllamaProvider {
 	}
 
 	@Override
+	protected int getContextSize() {
+		return 32 * 1024;
+	}
+
+	@Override
 	public List<String> getAvailableModels() {
 		// Get actual list of installed models from Ollama
 		List<String> models = new ArrayList<>(getAvailableLocalModels());

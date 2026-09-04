@@ -53,4 +53,9 @@ public class Gemma4Provider26b extends AbstractSingletonOllamaProvider {
 	public String getDescription() {
 		return "Local Gemma4 model - medium parameter count and memory footprint.";
 	}
+
+	@Override
+	protected int getContextSize() {
+		return 32 * 1024;
+	}
 }

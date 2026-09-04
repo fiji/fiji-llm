@@ -53,4 +53,9 @@ public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 	public String getDescription() {
 		return "Local Muse Glimmer model - smallest parameter count and memory footprint.";
 	}
+
+	@Override
+	protected int getContextSize() {
+		return 32 * 1024;
+	}
 }
