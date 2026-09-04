@@ -76,7 +76,6 @@ import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
@@ -94,8 +93,6 @@ import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
-import sc.fiji.llm.ui.ContextItemService;
-import sc.fiji.llm.ui.ContextItemSupplier;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolPlugin;

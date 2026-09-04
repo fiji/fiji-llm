@@ -128,39 +128,4 @@ public final class TextEditorUtils {
 		}
 		return -1;
 	}
-
-	/**
-	 * Strips markdown code fences from content if present. Handles both ``` and
-	 * ```language formats. Returns the original content if no code fences are
-	 * found.
-	 */
-	private static String stripMarkdownCodeFences(final String content) {
-		if (content == null || content.isEmpty()) {
-			return content;
-		}
-
-		final String trimmed = content.trim();
-
-		// Check if content starts with ``` (with optional language)
-		if (trimmed.startsWith("```")) {
-			// Find the end of the first line (the opening fence)
-			final int firstNewline = trimmed.indexOf('\n');
-			if (firstNewline == -1) {
-				// Only a code fence, no actual content
-				return "";
-			}
-
-			// Check if content ends with ```
-			if (trimmed.endsWith("```")) {
-				// Find the start of the last line (the closing fence)
-				final int lastFenceStart = trimmed.lastIndexOf("\n```");
-				if (lastFenceStart > firstNewline) {
-					// Extract content between fences
-					return trimmed.substring(firstNewline + 1, lastFenceStart);
-				}
-			}
-		}
-
-		return content;
-	}
 }

@@ -197,10 +197,6 @@ public class ContextItemTest {
 			this.content = content;
 		}
 
-		public String getContent() {
-			return content;
-		}
-
 		@Override
 		public JsonElement toJson() {
 			return new JsonObject();
