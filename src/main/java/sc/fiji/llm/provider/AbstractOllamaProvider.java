@@ -65,7 +65,6 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
  */
 public abstract class AbstractOllamaProvider implements LLMProvider {
 
-	private static final String LOCAL_SERVER_URL = "http://localhost:11434";
 	private static final Double DEFAULT_TEMPERATURE = 0.1;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
 	private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
@@ -129,13 +128,13 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return OllamaChatModel.builder().baseUrl(LOCAL_SERVER_URL).modelName(
+		return OllamaChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL).modelName(
 			modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
-		return OllamaStreamingChatModel.builder().baseUrl(LOCAL_SERVER_URL)
+		return OllamaStreamingChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL)
 			.modelName(modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
 			.build();
 	}

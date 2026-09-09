@@ -32,7 +32,15 @@ package sc.fiji.llm.provider;
 import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,24 +58,36 @@ import sc.fiji.llm.ui.TaskProgressFrame;
  */
 public class OllamaProcessManager {
 
+	public static final String LOCAL_SERVER_URL = "http://localhost:11434";
+	private static final String OLLAMA_COMMAND = "ollama";
+	private static final URI OLLAMA_SERVER_URI = URI.create(
+		LOCAL_SERVER_URL);
+	private static final Duration SERVER_TIMEOUT = Duration.ofSeconds(2);
+	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+		.connectTimeout(SERVER_TIMEOUT).build();
+
 	private Process ollamaProcess;
 	private List<String> cachedInstalledModels;
 
 	/**
-	 * Checks if the Ollama server is running by attempting to list models.
-	 * The ollama list command succeeds only if the server is running.
+	 * Checks if the Ollama server is running by querying its local HTTP endpoint.
+	 * This does not depend on the ollama executable being present in Fiji's PATH.
 	 *
 	 * @return true if the server is running and reachable, false otherwise
 	 */
 	public boolean isServerRunning() {
 		try {
-			ProcessBuilder pb = new ProcessBuilder("ollama", "list");
-			Process process = pb.start();
-			int exitCode = process.waitFor();
-			return exitCode == 0;
+			HttpRequest request = HttpRequest.newBuilder(OLLAMA_SERVER_URI)
+				.timeout(SERVER_TIMEOUT).GET().build();
+			HttpResponse<Void> response = HTTP_CLIENT.send(request,
+				HttpResponse.BodyHandlers.discarding());
+			return response.statusCode() == 200;
 		}
-		catch (Exception e) {
-			// Command failed or ollama not found
+		catch (IOException e) {
+			return false;
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			return false;
 		}
 	}
@@ -79,7 +99,7 @@ public class OllamaProcessManager {
 	 */
 	public boolean startServer() {
 		try {
-			ProcessBuilder pb = new ProcessBuilder("ollama", "serve");
+			ProcessBuilder pb = createOllamaProcessBuilder("serve");
 
 			// Ensure environment is correct
 			Map<String, String> env = pb.environment();
@@ -136,7 +156,7 @@ public class OllamaProcessManager {
 		}
 
 		try {
-			ProcessBuilder pb = new ProcessBuilder("ollama", "list");
+			ProcessBuilder pb = createOllamaProcessBuilder("list");
 			Process process = pb.start();
 
 			// Parse output: skip header, read model names from first column
@@ -192,7 +212,7 @@ public class OllamaProcessManager {
 			// Running headless, skip GUI
 		}
 
-		ProcessBuilder pb = new ProcessBuilder("ollama", "pull", modelName);
+		ProcessBuilder pb = createOllamaProcessBuilder("pull", modelName);
 		// Don't inherit I/O so we can capture it for progress
 		pb.redirectErrorStream(true);
 
@@ -330,6 +350,66 @@ public class OllamaProcessManager {
 		}
 
 		return -1;
+	}
+
+	private ProcessBuilder createOllamaProcessBuilder(String... arguments) {
+		List<String> command = new ArrayList<>();
+		command.add(resolveOllamaExecutable());
+		Collections.addAll(command, arguments);
+		return new ProcessBuilder(command);
+	}
+
+	private String resolveOllamaExecutable() {
+		String executableName = isWindows() ? OLLAMA_COMMAND + ".exe" : OLLAMA_COMMAND;
+		String path = System.getenv("PATH");
+		if (path != null) {
+			for (String directory : path.split(java.util.regex.Pattern.quote(
+				File.pathSeparator)))
+			{
+				Path candidate = Path.of(directory, executableName);
+				if (Files.isExecutable(candidate)) {
+					return candidate.toString();
+				}
+			}
+		}
+
+		for (Path candidate : standardOllamaPaths(executableName)) {
+			if (Files.isExecutable(candidate)) {
+				return candidate.toString();
+			}
+		}
+
+		// Let ProcessBuilder report the usual command-not-found error if no
+		// known installation location exists.
+		return OLLAMA_COMMAND;
+	}
+
+	private List<Path> standardOllamaPaths(String executableName) {
+		List<Path> paths = new ArrayList<>();
+		if (isWindows()) {
+			String localAppData = System.getenv("LOCALAPPDATA");
+			if (localAppData != null) {
+				paths.add(Path.of(localAppData, "Programs", "Ollama", executableName));
+			}
+			String programFiles = System.getenv("PROGRAMFILES");
+			if (programFiles != null) {
+				paths.add(Path.of(programFiles, "Ollama", executableName));
+			}
+		}
+		else {
+			paths.add(Path.of("/usr/local/bin", executableName));
+			paths.add(Path.of("/opt/homebrew/bin", executableName));
+			paths.add(Path.of("/usr/bin", executableName));
+			paths.add(Path.of("/Applications/Ollama.app/Contents/Resources",
+				executableName));
+			paths.add(Path.of(System.getProperty("user.home"), ".local", "bin",
+				executableName));
+		}
+		return paths;
+	}
+
+	private boolean isWindows() {
+		return System.getProperty("os.name").toLowerCase().contains("win");
 	}
 
 	/**
