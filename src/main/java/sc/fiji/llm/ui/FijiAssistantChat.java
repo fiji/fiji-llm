@@ -265,7 +265,7 @@ public class FijiAssistantChat {
 
 		// Change API Keys button
 		final JButton configureKeysButton;
-		final URL lockIconUrl = getClass().getResource("/icons/lock-noun-32.png");
+		final URL lockIconUrl = getClass().getResource("/icons/key-pao-32.png");
 		if (lockIconUrl != null) {
 			configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
 			configureKeysButton.setPreferredSize(new Dimension(36, 36));
