@@ -40,6 +40,7 @@ This project brings extensible, reproducible AI assistance into Fiji, helping sc
   - [ContextItemSupplier](#contextitemsupplier)
   - [AiToolPlugin](#aitoolplugin)
   - [ChatbotService](#chatbotservice)
+- [FAQ](#frequently-asked-questions)
 
 ## See Also
 - [Technical Summary](doc/TECHNICAL_SUMMARY.md)
@@ -208,3 +209,8 @@ For developing chatbots in particular UI environments.
 
 An MCP (Model Context Protocol) server exposes all registered `AiToolPlugin` implementations via local HTTP, making them accessible to external clients.
 
+## Frequently Asked Questions
+
+### Q: How does Fiji LLM get its information?
+
+**A:** Each individual LLM has a baseline "knowledge" that is frozen in time based on when it was *trained*. To obtain current information, LLMs can use tools (such as web searches). We provide a core set of tools to help connected LLMs gather information related to Fiji use.
