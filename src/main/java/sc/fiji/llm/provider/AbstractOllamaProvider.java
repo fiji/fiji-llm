@@ -33,6 +33,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
@@ -71,6 +78,10 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	private static final String REMOTE_STRING = "* (remote)";
 
 	private OllamaProcessManager processManager;
+	private final Map<String, CompletableFuture<Void>> preparationFutures =
+		new ConcurrentHashMap<>();
+	private final ExecutorService preparationExecutor = Executors
+		.newSingleThreadExecutor();
 
 	@Parameter
 	private LogService logService;
@@ -140,6 +151,33 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	}
 
 	@Override
+	public CompletionStage<Void> prepare(final String modelName) {
+		if (modelName == null || modelName.isBlank()) {
+			return CompletableFuture.failedFuture(new IllegalArgumentException(
+				"Model name must not be blank"));
+		}
+
+		return preparationFutures.computeIfAbsent(modelName, name -> {
+			final CompletableFuture<Void> preparation = CompletableFuture.runAsync(() -> {
+				try {
+					processManager.prepareModel(name);
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					throw new CompletionException(e);
+				}
+				catch (IOException e) {
+					throw new CompletionException(e);
+				}
+			}, preparationExecutor);
+			preparation.whenComplete((result, error) -> {
+				preparationFutures.remove(name, preparation);
+			});
+			return preparation;
+		});
+	}
+
+	@Override
 	public void initialize() {
 		if (processManager.isServerRunning()) {
 			return;
@@ -149,6 +187,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 
 	@Override
 	public void dispose() {
+		preparationExecutor.shutdownNow();
 		processManager.shutdown();
 	}
 

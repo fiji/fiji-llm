@@ -164,9 +164,12 @@ public class FijiAssistantChat {
 	private JButton deleteConversationButton;
 	private boolean stopRequested = false;
 	private boolean isSendMode = true;
+	private boolean modelReady = false;
 	private ImageIcon sendIcon;
 	private ImageIcon stopIcon;
 	private InteractiveGuide guide;
+	private ChatMessagePanel preparationPanel;
+	private javax.swing.Timer preparationTimer;
 	private LLMProvider llmProvider;
 	private final String modelName;
 	private Conversation currentConversation;
@@ -567,11 +570,15 @@ public class FijiAssistantChat {
 			"Configure API credentials for the active AI service.");
 		guide.addElement(configureChatButton, "Configure Chat Button",
 			"Select a different AI service or model.");
+
+		startModelPreparation();
 	}
 
 	public void show() {
 		frame.setVisible(true);
-		inputArea.requestFocus();
+		if (modelReady) {
+			inputArea.requestFocus();
+		}
 		if (!prefService.getBoolean(FijiAssistantChat.class, GUIDE_SHOWN_PREF,
 			false))
 		{
@@ -793,6 +800,10 @@ public class FijiAssistantChat {
 	 * Send the current chat contents to the LLM. Must run on EDT
 	 */
 	private void sendMessage() {
+		if (!modelReady) {
+			return;
+		}
+
 		final String userText = inputArea.getText().trim();
 		if (userText.isEmpty()) {
 			return;
@@ -1043,8 +1054,11 @@ public class FijiAssistantChat {
 		}
 		sendStopButton.setToolTipText("Send message");
 
-		inputArea.setEnabled(true);
-		inputArea.requestFocus();
+		sendStopButton.setEnabled(modelReady);
+		inputArea.setEnabled(modelReady);
+		if (modelReady) {
+			inputArea.requestFocus();
+		}
 	}
 
 	/**
@@ -1059,6 +1073,7 @@ public class FijiAssistantChat {
 			sendStopButton.setText("Stop");
 		}
 		sendStopButton.setToolTipText("Interrupt the assistant");
+		sendStopButton.setEnabled(modelReady);
 
 		inputArea.setText("");
 		inputArea.setEnabled(false);
@@ -1096,8 +1111,11 @@ public class FijiAssistantChat {
 	private void addMessagePanelToChat(
 		final ChatMessagePanel.MessageType messageType, final String message)
 	{
-		final ChatMessagePanel messagePanel = new ChatMessagePanel(messageType,
-			message, CHAT_FONT_SIZE);
+		addMessagePanelToChat(new ChatMessagePanel(messageType, message,
+			CHAT_FONT_SIZE));
+	}
+
+	private void addMessagePanelToChat(final ChatMessagePanel messagePanel) {
 
 		// Remove the glue and bottom spacer, add message, re-add glue and spacer to
 		// keep messages at bottom
@@ -1169,6 +1187,62 @@ public class FijiAssistantChat {
 
 	private void launchGuide() {
 		guide.start();
+	}
+
+	private void startModelPreparation() {
+		if (!SwingUtilities.isEventDispatchThread()) {
+			throw new IllegalStateException("Must be called on EDT");
+		}
+
+		setPreparationControlsEnabled(false);
+		preparationPanel = new ChatMessagePanel(ChatMessagePanel.MessageType.SYSTEM,
+			"*Getting your assistant ready*", CHAT_FONT_SIZE);
+		addMessagePanelToChat(preparationPanel);
+
+		preparationTimer = new javax.swing.Timer(200, e -> {
+			if (preparationPanel != null) {
+				preparationPanel.updateThinking("Getting your assistant ready");
+			}
+		});
+		preparationTimer.start();
+
+		llmProvider.prepare(modelName).whenComplete((ignored, error) ->
+			SwingUtilities.invokeLater(() -> finishModelPreparation(error)));
+	}
+
+	private void finishModelPreparation(final Throwable error) {
+		if (preparationTimer != null) {
+			preparationTimer.stop();
+			preparationTimer = null;
+		}
+
+		final ChatMessagePanel completedPreparationPanel = preparationPanel;
+		preparationPanel = null;
+		if (completedPreparationPanel != null) {
+			removeChatBubble(completedPreparationPanel);
+		}
+
+		if (error != null) {
+			final Throwable cause = error.getCause() == null ? error : error.getCause();
+			final String message = cause.getMessage() == null ? cause.toString() : cause
+				.getMessage();
+			appendToChat(Sender.ERROR, "Unable to prepare the assistant: " + message);
+			return;
+		}
+
+		setPreparationControlsEnabled(true);
+		setSendMode();
+	}
+
+	private void setPreparationControlsEnabled(final boolean enabled) {
+		modelReady = enabled;
+		conversationComboBox.setEnabled(enabled);
+		inputArea.setEnabled(enabled);
+		sendStopButton.setEnabled(enabled);
+		if (!enabled) {
+			newConversationButton.setEnabled(false);
+			deleteConversationButton.setEnabled(false);
+		}
 	}
 
 	private void configureKeys() {
@@ -1386,6 +1460,10 @@ public class FijiAssistantChat {
 	 * Called when a conversation is selected from the combo box.
 	 */
 	private void onConversationSelected() {
+		if (!modelReady) {
+			return;
+		}
+
 		Object selected = conversationComboBox.getSelectedItem();
 		if (selected != null && !selected.toString().isEmpty()) {
 			String selectedName = selected.toString();
@@ -1409,6 +1487,10 @@ public class FijiAssistantChat {
 	 * nothing if the current conversation is empty (no messages sent yet).
 	 */
 	private void clearConversation() {
+		if (!modelReady) {
+			return;
+		}
+
 		// Don't allow starting a new conversation if the current one is empty
 		// (hasn't been named yet)
 		if (currentConversation == null) {
@@ -1427,6 +1509,10 @@ public class FijiAssistantChat {
 	 * Load a previously saved conversation.
 	 */
 	private void loadConversation(String conversationName) {
+		if (!modelReady) {
+			return;
+		}
+
 		Conversation conversation = conversationService.getConversation(
 			conversationName);
 		if (conversation == null) {

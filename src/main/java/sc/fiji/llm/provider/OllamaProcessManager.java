@@ -50,6 +50,8 @@ import java.util.Set;
 
 import org.scijava.task.TaskService;
 
+import com.google.gson.JsonObject;
+
 import sc.fiji.llm.ui.TaskProgressFrame;
 
 /**
@@ -62,7 +64,10 @@ public class OllamaProcessManager {
 	private static final String OLLAMA_COMMAND = "ollama";
 	private static final URI OLLAMA_SERVER_URI = URI.create(
 		LOCAL_SERVER_URL);
+	private static final URI OLLAMA_GENERATE_URI = URI.create(
+		LOCAL_SERVER_URL + "/api/generate");
 	private static final Duration SERVER_TIMEOUT = Duration.ofSeconds(2);
+	private static final Duration MODEL_PREPARATION_TIMEOUT = Duration.ofMinutes(10);
 	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
 		.connectTimeout(SERVER_TIMEOUT).build();
 
@@ -89,6 +94,44 @@ public class OllamaProcessManager {
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return false;
+		}
+	}
+
+	/**
+	 * Loads a model into Ollama's memory by making a non-streaming generation
+	 * request with an empty prompt.
+	 *
+	 * @param modelName the name of the model to prepare
+	 * @throws IOException if the server cannot be reached or rejects the request
+	 * @throws InterruptedException if the request is interrupted
+	 */
+	public void prepareModel(final String modelName) throws IOException,
+		InterruptedException
+	{
+		if (!isServerRunning() && !startServer()) {
+			throw new IOException("Ollama server is not running");
+		}
+
+		final JsonObject requestBody = new JsonObject();
+		requestBody.addProperty("model", modelName);
+		requestBody.addProperty("prompt", "");
+		requestBody.addProperty("stream", false);
+
+		final HttpRequest request = HttpRequest.newBuilder(OLLAMA_GENERATE_URI)
+			.timeout(MODEL_PREPARATION_TIMEOUT)
+			.header("Content-Type", "application/json")
+			.POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
+			.build();
+		final HttpResponse<String> response = HTTP_CLIENT.send(request,
+			HttpResponse.BodyHandlers.ofString());
+
+		if (response.statusCode() < 200 || response.statusCode() >= 300) {
+			String responseBody = response.body();
+			if (responseBody.length() > 500) {
+				responseBody = responseBody.substring(0, 500) + "...";
+			}
+			throw new IOException("Ollama failed to prepare model '" + modelName +
+				"' (HTTP " + response.statusCode() + "): " + responseBody);
 		}
 	}
 

@@ -32,6 +32,8 @@ package sc.fiji.llm.provider;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.scijava.Disposable;
 import org.scijava.Initializable;
@@ -86,6 +88,17 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	default ChatRequestParameters defaultChatRequestParameters() {
 		return ChatRequestParameters.builder().frequencyPenalty(0.0)
 			.presencePenalty(0.0).temperature(0.1).build();
+	}
+
+	/**
+	 * Prepare a model for use. Providers that do not need model-specific
+	 * preparation complete immediately.
+	 *
+	 * @param modelName the name of the model to prepare
+	 * @return a stage that completes when the model is ready
+	 */
+	default CompletionStage<Void> prepare(final String modelName) {
+		return CompletableFuture.completedFuture(null);
 	}
 
 	/**

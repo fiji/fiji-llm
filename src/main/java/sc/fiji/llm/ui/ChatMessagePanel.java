@@ -404,11 +404,15 @@ public class ChatMessagePanel extends JPanel {
 	}
 
 	public void updateThinking() {
+		updateThinking("Thinking");
+	}
+
+	public void updateThinking(final String status) {
 		thinkingStage++;
 		if (thinkingStage == THINKING_STAGES) {
 			thinkingStage = 0;
 		}
-		StringBuilder sb = new StringBuilder("*Thinking");
+		StringBuilder sb = new StringBuilder("*").append(status);
 		for (int i = 0; i < thinkingStage; i++) {
 			sb.append(".");
 		}
