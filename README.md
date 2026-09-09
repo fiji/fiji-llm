@@ -50,7 +50,6 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 
 ## See Also
 - [Technical Summary](doc/TECHNICAL_SUMMARY.md)
-- [Proposed Foundation Issues](doc/FOUNDATION_ISSUES.md)
 
 <a id="quick-start"></a>
 
