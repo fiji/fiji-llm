@@ -656,9 +656,22 @@ public class FijiAssistantChat {
 		else {
 			for (final ContextItemSupplier supplier : suppliers) {
 				final String displayName = supplier.getDisplayName();
-				final JMenuItem currentItem = new JMenuItem("Current " +
+				final JMenuItem currentItem = new JMenuItem("Attach current " +
 					displayName, supplier.getIcon());
-				currentItem.addActionListener(e -> addCurrentContextItem(supplier));
+				boolean currentItemAvailable = false;
+				try {
+					currentItemAvailable = supplier.createActiveContextItem() != null;
+				}
+				catch (Exception e) {
+				}
+				currentItem.setEnabled(currentItemAvailable);
+				if (currentItemAvailable) {
+					currentItem.addActionListener(e -> addCurrentContextItem(supplier));
+				}
+				else {
+					currentItem.setToolTipText("No " + displayName +
+						" is currently available");
+				}
 				menu.add(currentItem);
 			}
 
@@ -703,10 +716,6 @@ public class FijiAssistantChat {
 				final ContextItem item = supplier.createActiveContextItem();
 				if (item != null) {
 					addContextItem(item, supplier);
-				}
-				else {
-					showTemporaryContextNotice("No active " + displayName +
-						" available", supplier);
 				}
 			}
 			catch (Exception e) {
@@ -1347,41 +1356,6 @@ public class FijiAssistantChat {
 		return tagButton;
 	}
 
-	private void showTemporaryContextNotice(final String message,
-		final ContextItemSupplier supplier)
-	{
-		if (!SwingUtilities.isEventDispatchThread()) {
-			SwingUtilities.invokeLater(() -> showTemporaryContextNotice(message,
-				supplier));
-			return;
-		}
-
-		final JButton noticeButton = createContextTagButton(message, supplier, false);
-		noticeButton.setToolTipText(message);
-		noticeButton.addActionListener(e -> removeTemporaryContextNotice(
-			noticeButton));
-
-		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
-			.getView();
-		tagsContainer.remove(contextPlaceholderLabel);
-		tagsContainer.add(noticeButton);
-		contextTagsPanel.revalidate();
-		contextTagsPanel.repaint();
-
-		flashButton(noticeButton, () -> removeTemporaryContextNotice(noticeButton));
-	}
-
-	private void removeTemporaryContextNotice(final JButton noticeButton) {
-		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
-			.getView();
-		tagsContainer.remove(noticeButton);
-		if (contextItems.isEmpty()) {
-			tagsContainer.add(contextPlaceholderLabel);
-		}
-		contextTagsPanel.revalidate();
-		contextTagsPanel.repaint();
-	}
-
 	private void removeContextItem(final ContextItem item,
 		final JButton tagButton)
 	{
@@ -1454,10 +1428,6 @@ public class FijiAssistantChat {
 	}
 
 	private void flashButton(final JButton button) {
-		flashButton(button, null);
-	}
-
-	private void flashButton(final JButton button, final Runnable onComplete) {
 		// Flash the button orange to indicate duplicate
 		final java.awt.Color originalBg = button.getBackground();
 		final java.awt.Color flashColor = new java.awt.Color(255, 165, 0); // Orange
@@ -1478,9 +1448,6 @@ public class FijiAssistantChat {
 			if (flashCount[0] >= 6) { // 3 flashes (on-off-on-off-on-off)
 				timer.stop();
 				button.setBackground(originalBg);
-				if (onComplete != null) {
-					onComplete.run();
-				}
 			}
 		});
 
