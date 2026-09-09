@@ -571,7 +571,7 @@ public class FijiAssistantChat {
 
 		// Bottom panel combining context tags and input
 		final JPanel bottomPanel = new JPanel(new MigLayout(
-			"fillx, wrap, insets 0 0 " + INPUT_PANEL_PADDING + " " +
+			"fillx, wrap, insets 0 " + INPUT_PANEL_PADDING + " " +
 				INPUT_PANEL_PADDING + ", gapy " + INPUT_PANEL_PADDING, "[grow,fill]",
 			"[][grow,fill]"));
 		bottomPanel.add(contextTagsPanel, "growx, wrap");
