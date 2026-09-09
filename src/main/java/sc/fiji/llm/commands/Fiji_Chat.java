@@ -110,9 +110,9 @@ public class Fiji_Chat extends DynamicCommand {
 		"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" +
 		"<body style='width: " + WIDTH + "px'>" +
 		"<p>First, select an <b>AI Service</b>.<br />" +
-		"This is typically the <i>general</i> model provider you want to use (e.g. ChatGPT or Claude).</p>" +
-		"<p>Model selection can be overwhelming! We recommend starting with a curated (<b>*</b>) local model.</p>" +
-		"<p>In general, local model services (e.g. Ollama) provide control, reproducibility, and security.<br />" +
+		"This is typically the <i>general</i> model provider you want to use (e.g. ChatGPT or Claude).<br />" +
+		"Model selection can be overwhelming! We recommend starting with a curated (<b>*</b>) local model.<br />" +
+		"In general, local model services (e.g. Ollama) provide control, reproducibility, and security.<br />" +
 		"However, they are limited by your local hardware, and have reduced scope compared to frontier models.</p>" +
 		"</body></html>";
 
