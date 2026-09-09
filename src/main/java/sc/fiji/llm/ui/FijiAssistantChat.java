@@ -230,7 +230,13 @@ public class FijiAssistantChat {
 		newConversationButton.addActionListener(e -> clearConversation());
 		conversationPanel.add(newConversationButton);
 
-		deleteConversationButton = new JButton("-");
+		final URL trashIconUrl = getClass().getResource(
+			"/icons/trash-noun-20.png");
+		if (trashIconUrl != null) {
+			deleteConversationButton = new JButton(new ImageIcon(trashIconUrl));
+		} else {
+			deleteConversationButton = new JButton("-");
+		}
 		deleteConversationButton.setPreferredSize(new Dimension(prefHeight,
 			prefHeight));
 		deleteConversationButton.setFocusPainted(false);
