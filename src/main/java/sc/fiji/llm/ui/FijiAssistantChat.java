@@ -55,11 +55,13 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -213,12 +215,26 @@ public class FijiAssistantChat {
 		conversationComboBox = new JComboBox<>();
 		int prefHeight = conversationComboBox.getPreferredSize().height;
 		conversationComboBox.setPreferredSize(new Dimension(280, prefHeight));
+		conversationComboBox.setRenderer(new DefaultListCellRenderer() {
+
+			@Override
+			public java.awt.Component getListCellRendererComponent(
+				final JList<?> list, final Object value, final int index,
+				final boolean isSelected, final boolean cellHasFocus)
+			{
+				final Object displayValue = index == -1 && value == null ?
+					"<no conversation>" : value;
+				return super.getListCellRendererComponent(list, displayValue, index,
+					isSelected, cellHasFocus);
+			}
+		});
 
 		conversationComboBox.setToolTipText("Load a previous conversation");
 		conversationService.getConversationNames().stream().forEach(
 			conversationComboBox::addItem);
 		conversationComboBox.setSelectedIndex(-1);
 		conversationComboBox.addActionListener(e -> onConversationSelected());
+		conversationPanel.add(new JLabel("Conversation:"));
 		conversationPanel.add(conversationComboBox);
 
 		newConversationButton = new JButton("+");
