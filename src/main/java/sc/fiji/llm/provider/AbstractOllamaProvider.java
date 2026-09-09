@@ -151,6 +151,22 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	}
 
 	@Override
+	public CompletionStage<Boolean> isPrepared(final String modelName) {
+		if (modelName == null || modelName.isBlank()) {
+			return CompletableFuture.failedFuture(new IllegalArgumentException(
+				"Model name must not be blank"));
+		}
+
+		final CompletableFuture<Void> preparation = preparationFutures.get(modelName);
+		if (preparation != null) {
+			return preparation.thenApply(ignored -> true);
+		}
+
+		return CompletableFuture.supplyAsync(() -> processManager.isModelPrepared(
+			modelName), preparationExecutor);
+	}
+
+	@Override
 	public CompletionStage<Void> prepare(final String modelName) {
 		if (modelName == null || modelName.isBlank()) {
 			return CompletableFuture.failedFuture(new IllegalArgumentException(
@@ -160,7 +176,9 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 		return preparationFutures.computeIfAbsent(modelName, name -> {
 			final CompletableFuture<Void> preparation = CompletableFuture.runAsync(() -> {
 				try {
-					processManager.prepareModel(name);
+					if (!processManager.isModelPrepared(name)) {
+						processManager.prepareModel(name);
+					}
 				}
 				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();

@@ -800,7 +800,13 @@ public class FijiAssistantChat {
 	 * Send the current chat contents to the LLM. Must run on EDT
 	 */
 	private void sendMessage() {
+		if (!isSendMode) {
+			return;
+		}
 		if (!modelReady) {
+			if (preparationPanel == null) {
+				startModelPreparation();
+			}
 			return;
 		}
 
@@ -808,6 +814,22 @@ public class FijiAssistantChat {
 		if (userText.isEmpty()) {
 			return;
 		}
+
+		setPreparationControlsEnabled(false);
+		llmProvider.isPrepared(modelName).whenComplete((prepared, error) ->
+			SwingUtilities.invokeLater(() -> {
+				if (error != null || !Boolean.TRUE.equals(prepared)) {
+					startModelPreparation(() -> sendPreparedMessage(userText));
+				}
+				else {
+					setPreparationControlsEnabled(true);
+					setSendMode();
+					sendPreparedMessage(userText);
+				}
+			}));
+	}
+
+	private void sendPreparedMessage(final String userText) {
 
 		inputArea.setText(""); // Clear input immediately
 
@@ -1190,8 +1212,15 @@ public class FijiAssistantChat {
 	}
 
 	private void startModelPreparation() {
+		startModelPreparation(null);
+	}
+
+	private void startModelPreparation(final Runnable onSuccess) {
 		if (!SwingUtilities.isEventDispatchThread()) {
 			throw new IllegalStateException("Must be called on EDT");
+		}
+		if (preparationPanel != null) {
+			return;
 		}
 
 		setPreparationControlsEnabled(false);
@@ -1207,10 +1236,12 @@ public class FijiAssistantChat {
 		preparationTimer.start();
 
 		llmProvider.prepare(modelName).whenComplete((ignored, error) ->
-			SwingUtilities.invokeLater(() -> finishModelPreparation(error)));
+			SwingUtilities.invokeLater(() -> finishModelPreparation(error, onSuccess)));
 	}
 
-	private void finishModelPreparation(final Throwable error) {
+	private void finishModelPreparation(final Throwable error,
+		final Runnable onSuccess)
+	{
 		if (preparationTimer != null) {
 			preparationTimer.stop();
 			preparationTimer = null;
@@ -1232,6 +1263,9 @@ public class FijiAssistantChat {
 
 		setPreparationControlsEnabled(true);
 		setSendMode();
+		if (onSuccess != null) {
+			onSuccess.run();
+		}
 	}
 
 	private void setPreparationControlsEnabled(final boolean enabled) {
@@ -1239,7 +1273,14 @@ public class FijiAssistantChat {
 		conversationComboBox.setEnabled(enabled);
 		inputArea.setEnabled(enabled);
 		sendStopButton.setEnabled(enabled);
-		if (!enabled) {
+		if (enabled) {
+			final Object selectedConversation = conversationComboBox.getSelectedItem();
+			final boolean hasSelectedConversation = selectedConversation != null &&
+				!selectedConversation.toString().isEmpty();
+			newConversationButton.setEnabled(hasSelectedConversation);
+			deleteConversationButton.setEnabled(hasSelectedConversation);
+		}
+		else {
 			newConversationButton.setEnabled(false);
 			deleteConversationButton.setEnabled(false);
 		}

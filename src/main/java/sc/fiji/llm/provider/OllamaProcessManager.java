@@ -51,6 +51,7 @@ import java.util.Set;
 import org.scijava.task.TaskService;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import sc.fiji.llm.ui.TaskProgressFrame;
 
@@ -66,6 +67,8 @@ public class OllamaProcessManager {
 		LOCAL_SERVER_URL);
 	private static final URI OLLAMA_GENERATE_URI = URI.create(
 		LOCAL_SERVER_URL + "/api/generate");
+	private static final URI OLLAMA_RUNNING_MODELS_URI = URI.create(
+		LOCAL_SERVER_URL + "/api/ps");
 	private static final Duration SERVER_TIMEOUT = Duration.ofSeconds(2);
 	private static final Duration MODEL_PREPARATION_TIMEOUT = Duration.ofMinutes(10);
 	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
@@ -95,6 +98,52 @@ public class OllamaProcessManager {
 			Thread.currentThread().interrupt();
 			return false;
 		}
+	}
+
+	/**
+	 * Checks whether a model is currently loaded in Ollama memory.
+	 *
+	 * @param modelName the name of the model to check
+	 * @return true if Ollama reports the model as loaded
+	 */
+	public boolean isModelPrepared(final String modelName) {
+		if (modelName == null || modelName.isBlank()) {
+			return false;
+		}
+
+		try {
+			final HttpRequest request = HttpRequest.newBuilder(
+				OLLAMA_RUNNING_MODELS_URI).timeout(SERVER_TIMEOUT).GET().build();
+			final HttpResponse<String> response = HTTP_CLIENT.send(request,
+				HttpResponse.BodyHandlers.ofString());
+			if (response.statusCode() != 200) {
+				return false;
+			}
+
+			final JsonObject responseBody = JsonParser.parseString(response.body())
+				.getAsJsonObject();
+			if (!responseBody.has("models") || responseBody.get("models").isJsonNull()) {
+				return false;
+			}
+
+			for (var model : responseBody.getAsJsonArray("models")) {
+				final JsonObject modelObject = model.getAsJsonObject();
+				if (modelObject.has("name") && modelName.equals(modelObject.get("name")
+					.getAsString()))
+				{
+					return true;
+				}
+				if (modelObject.has("model") && modelName.equals(modelObject.get("model")
+					.getAsString()))
+				{
+					return true;
+				}
+			}
+		}
+		catch (Exception e) {
+			// Treat an unavailable or malformed status response as not prepared.
+		}
+		return false;
 	}
 
 	/**

@@ -102,6 +102,17 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
+	 * Check whether a model is currently prepared for use. Providers that do not
+	 * unload models complete immediately with {@code true}.
+	 *
+	 * @param modelName the name of the model to check
+	 * @return a stage containing whether the model is ready
+	 */
+	default CompletionStage<Boolean> isPrepared(final String modelName) {
+		return CompletableFuture.completedFuture(true);
+	}
+
+	/**
 	 * Get the name of this provider.
 	 *
 	 * @return the provider name (e.g., "OpenAI", "Anthropic", "Google")
