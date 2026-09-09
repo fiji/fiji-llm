@@ -31,7 +31,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 * **Context-Aware Analysis Tools:** Give agents structured access to Fiji’s environment, including installed commands, open images, analysis metadata, the Script Editor, and macro recorder.
 
 ## Table of Contents
-- [Quick Start](#quick-start)
+- [Fiji Chat Quick Start](#fiji-chat-quick-start)
 - [MCP Server](#mcp-server)
   - [VS Code](#vs-code)
 - [User Guide](#user-guide)
@@ -52,7 +52,9 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 - [Technical Summary](doc/TECHNICAL_SUMMARY.md)
 - [Proposed Foundation Issues](doc/FOUNDATION_ISSUES.md)
 
-## Quick Start
+<a id="quick-start"></a>
+
+## Fiji Chat Quick Start
 
 1. **Install Fiji**: Download the `Latest` version from [imagej.net/software/fiji](https://imagej.net/software/fiji/)
 
