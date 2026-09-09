@@ -2,6 +2,12 @@
 
 This project brings extensible, reproducible AI assistance into Fiji, helping scientists discover tools, build image analysis workflows, and connect with both local and external language models.
 
+## From a User's Perspective
+
+![A user interacts with Fiji through Fiji-LLM, its chat interface, AI models, and core Fiji capabilities](doc/images/fiji-llm-user-perspective.png)
+
+Fiji-LLM was developed to help users access Fiji's capabilities through natural-language interaction, while allowing them to choose the AI model that best fits their needs.
+
 ## Core Goals
 
 * **Make Fiji More Accessible:** Help scientists discover relevant tools, learn unfamiliar workflows, and create reusable scripts through guided natural-language interactions.
