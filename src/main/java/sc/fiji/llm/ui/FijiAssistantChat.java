@@ -34,9 +34,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -106,6 +108,8 @@ public class FijiAssistantChat {
 
 	public static final float CHAT_FONT_SIZE = 16f;
 	private static final int INPUT_PANEL_PADDING = 8;
+	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 72;
+	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
 	private static final String GUIDE_SHOWN_PREF = "guideShown";
 
@@ -175,8 +179,7 @@ public class FijiAssistantChat {
 	private Conversation currentConversation;
 	private final ChatRequestParameters requestParameters;
 
-	public FijiAssistantChat(Context c, final String title, String providerName,
-		String modelName)
+	public FijiAssistantChat(Context c, String providerName, String modelName)
 	{
 		c.inject(this);
 
@@ -189,7 +192,7 @@ public class FijiAssistantChat {
 		requestParameters = llmProvider.defaultChatRequestParameters();
 
 		// Create the frame
-		frame = new JFrame("Fiji Chat - " + title);
+		frame = new JFrame("Fiji Chat");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
 
@@ -282,12 +285,24 @@ public class FijiAssistantChat {
 		final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
 		if (gearIconUrl != null) {
 			configureChatButton = new JButton(new ImageIcon(gearIconUrl));
-			configureChatButton.setPreferredSize(new Dimension(36, 36));
-			configureChatButton.setToolTipText("Configure AI service");
 		}
 		else {
-			configureChatButton = new JButton("Change Model");
+			configureChatButton = new JButton();
 		}
+		configureChatButton.setText(buildConfigureChatButtonText(providerName,
+			modelName, llmProvider.supportsModelSelection(), configureChatButton
+			.getFont()));
+		configureChatButton.setPreferredSize(new Dimension(
+			CONFIGURE_CHAT_BUTTON_WIDTH, 36));
+		configureChatButton.setMinimumSize(configureChatButton.getPreferredSize());
+		configureChatButton.setMaximumSize(configureChatButton.getPreferredSize());
+		configureChatButton.setHorizontalAlignment(SwingConstants.LEFT);
+		configureChatButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+		configureChatButton.setVerticalTextPosition(SwingConstants.CENTER);
+		configureChatButton.setIconTextGap(6);
+		configureChatButton.setMargin(new Insets(0, 0, 0, 0));
+		configureChatButton.setToolTipText(buildConfigureChatTooltip(providerName,
+			modelName, llmProvider.getDescription()));
 		configureChatButton.setFocusPainted(false);
 		configureChatButton.addActionListener(e -> configureChat());
 		buttonPanel.add(configureChatButton);
@@ -800,13 +815,7 @@ public class FijiAssistantChat {
 	 * Send the current chat contents to the LLM. Must run on EDT
 	 */
 	private void sendMessage() {
-		if (!isSendMode) {
-			return;
-		}
 		if (!modelReady) {
-			if (preparationPanel == null) {
-				startModelPreparation();
-			}
 			return;
 		}
 
@@ -814,22 +823,6 @@ public class FijiAssistantChat {
 		if (userText.isEmpty()) {
 			return;
 		}
-
-		setPreparationControlsEnabled(false);
-		llmProvider.isPrepared(modelName).whenComplete((prepared, error) ->
-			SwingUtilities.invokeLater(() -> {
-				if (error != null || !Boolean.TRUE.equals(prepared)) {
-					startModelPreparation(() -> sendPreparedMessage(userText));
-				}
-				else {
-					setPreparationControlsEnabled(true);
-					setSendMode();
-					sendPreparedMessage(userText);
-				}
-			}));
-	}
-
-	private void sendPreparedMessage(final String userText) {
 
 		inputArea.setText(""); // Clear input immediately
 
@@ -1212,15 +1205,8 @@ public class FijiAssistantChat {
 	}
 
 	private void startModelPreparation() {
-		startModelPreparation(null);
-	}
-
-	private void startModelPreparation(final Runnable onSuccess) {
 		if (!SwingUtilities.isEventDispatchThread()) {
 			throw new IllegalStateException("Must be called on EDT");
-		}
-		if (preparationPanel != null) {
-			return;
 		}
 
 		setPreparationControlsEnabled(false);
@@ -1236,12 +1222,10 @@ public class FijiAssistantChat {
 		preparationTimer.start();
 
 		llmProvider.prepare(modelName).whenComplete((ignored, error) ->
-			SwingUtilities.invokeLater(() -> finishModelPreparation(error, onSuccess)));
+			SwingUtilities.invokeLater(() -> finishModelPreparation(error)));
 	}
 
-	private void finishModelPreparation(final Throwable error,
-		final Runnable onSuccess)
-	{
+	private void finishModelPreparation(final Throwable error) {
 		if (preparationTimer != null) {
 			preparationTimer.stop();
 			preparationTimer = null;
@@ -1263,9 +1247,6 @@ public class FijiAssistantChat {
 
 		setPreparationControlsEnabled(true);
 		setSendMode();
-		if (onSuccess != null) {
-			onSuccess.run();
-		}
 	}
 
 	private void setPreparationControlsEnabled(final boolean enabled) {
@@ -1273,14 +1254,7 @@ public class FijiAssistantChat {
 		conversationComboBox.setEnabled(enabled);
 		inputArea.setEnabled(enabled);
 		sendStopButton.setEnabled(enabled);
-		if (enabled) {
-			final Object selectedConversation = conversationComboBox.getSelectedItem();
-			final boolean hasSelectedConversation = selectedConversation != null &&
-				!selectedConversation.toString().isEmpty();
-			newConversationButton.setEnabled(hasSelectedConversation);
-			deleteConversationButton.setEnabled(hasSelectedConversation);
-		}
-		else {
+		if (!enabled) {
 			newConversationButton.setEnabled(false);
 			deleteConversationButton.setEnabled(false);
 		}
@@ -1307,6 +1281,63 @@ public class FijiAssistantChat {
 
 		// Re-invoke the Fiji_Chat command to show the selection dialog
 		commandService.run(Fiji_Chat.class, true);
+	}
+
+	private static String buildConfigureChatButtonText(final String providerName,
+		final String modelName, final boolean supportsModelSelection,
+		final Font buttonFont)
+	{
+		if (!supportsModelSelection) {
+			return "<html>" + noWrap(truncateText(providerName, buttonFont,
+				CONFIGURE_CHAT_TEXT_WIDTH)) + "</html>";
+		}
+
+		final Font modelFont = buttonFont.deriveFont(Font.BOLD);
+		final Font providerFont = buttonFont.deriveFont(Math.max(1f, buttonFont
+			.getSize2D() - 2f));
+		final String modelText = noWrap(truncateText(modelName, modelFont,
+			CONFIGURE_CHAT_TEXT_WIDTH));
+		final String providerText = noWrap(truncateText(providerName,
+			providerFont, CONFIGURE_CHAT_TEXT_WIDTH));
+		return "<html><b>" + modelText + "</b><br><font size=\"-1\">" +
+			providerText + "</font></html>";
+	}
+
+	private static String buildConfigureChatTooltip(final String providerName,
+		final String modelName, final String description)
+	{
+		final String descriptionText = escapeHtml(description).replace("\r\n",
+			"<br>").replace("\n", "<br>");
+		return "<html>" + escapeHtml(providerName) + "<br>" + descriptionText +
+			"<br><br>Model: " + escapeHtml(modelName) +
+			"<br>Click to change provider or model</html>";
+	}
+
+	private static String truncateText(final String text, final Font font,
+		final int maxWidth)
+	{
+		final String value = text == null ? "" : text;
+		final FontMetrics metrics = new JButton().getFontMetrics(font);
+		final String ellipsis = "...";
+		if (metrics.stringWidth(value) <= maxWidth) return value;
+
+		int end = value.length();
+		while (end > 0 && metrics.stringWidth(value.substring(0, end) + ellipsis) >
+			maxWidth)
+		{
+			end--;
+		}
+		return value.substring(0, end) + ellipsis;
+	}
+
+	private static String noWrap(final String text) {
+		return escapeHtml(text).replace(" ", "&nbsp;");
+	}
+
+	private static String escapeHtml(final String text) {
+		if (text == null) return "";
+		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">",
+			"&gt;").replace("\"", "&quot;");
 	}
 
 	private void openForumInBrowser() {

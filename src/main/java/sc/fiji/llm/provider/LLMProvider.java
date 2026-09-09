@@ -113,6 +113,15 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
+	 * Report if this provider supports model selection.
+	 *
+	 * @return true if this LLM provider allows model selection
+	 */
+	default boolean supportsModelSelection() {
+		return true;
+	}
+
+	/**
 	 * Get the name of this provider.
 	 *
 	 * @return the provider name (e.g., "OpenAI", "Anthropic", "Google")

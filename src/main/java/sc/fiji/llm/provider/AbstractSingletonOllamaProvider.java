@@ -52,4 +52,10 @@ public abstract class AbstractSingletonOllamaProvider extends AbstractOllamaProv
 		// Model not installed, mark as remote for download
 		return Collections.singletonList(appendRemoteString(modelName));
 	}
+
+	@Override
+	public boolean supportsModelSelection() {
+		return false;
+	}
+
 }
