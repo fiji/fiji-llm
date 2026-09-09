@@ -62,6 +62,7 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -161,7 +162,9 @@ public class FijiAssistantChat {
 	private final JButton sendStopButton;
 	private final JPanel contextTagsPanel;
 	private final JScrollPane contextTagsScrollPane;
+	private final JButton attachContextButton;
 	private final JButton clearAllButton;
+	private final JLabel contextPlaceholderLabel;
 	private final java.util.Map<ContextItem, JButton> contextItemButtons;
 	private final JButton guideButton;
 	private final List<ContextItem> contextItems;
@@ -374,20 +377,6 @@ public class FijiAssistantChat {
 		chatScrollPane.setPreferredSize(new Dimension(600, 400));
 		chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-		// Button bar with context buttons - wrapped in outer panel with space
-		// reserved on right (matching contextTagsPanel structure)
-		final JScrollPane suppliersScrollPane = createContextSelectorPanel();
-		final JPanel buttonBar = new JPanel(new MigLayout("insets 0, fillx",
-			"[grow,fill][shrink]", "[grow,fill]"));
-		buttonBar.setOpaque(false);
-		buttonBar.add(suppliersScrollPane, "growx, growy, pushy");
-
-		// Add spacer on the right to match the width of the Clear All button (28px)
-		final JPanel spacerPanel = new JPanel();
-		spacerPanel.setOpaque(false);
-		spacerPanel.setPreferredSize(new Dimension(28, 1));
-		buttonBar.add(spacerPanel, "width 28!, aligny center");
-
 		// Context tags panel (shows active context items as removable tags)
 		// Create inner panel for tags that will wrap
 		final JPanel tagsContainer = new JPanel() {
@@ -432,6 +421,11 @@ public class FijiAssistantChat {
 		tagsContainer.setOpaque(false);
 		tagsContainer.setToolTipText(
 			"Attached items will be included as context with your message");
+		contextPlaceholderLabel = new JLabel("No context attached");
+		contextPlaceholderLabel.setForeground(Color.GRAY);
+		contextPlaceholderLabel.setFont(contextPlaceholderLabel.getFont().deriveFont(
+			14f));
+		tagsContainer.add(contextPlaceholderLabel);
 
 		// Create scrollable container for tags
 		contextTagsScrollPane = new JScrollPane(tagsContainer);
@@ -456,8 +450,24 @@ public class FijiAssistantChat {
 
 		// Create the outer panel that always shows
 		contextTagsPanel = new JPanel(new MigLayout("insets 0, fillx",
-			"[grow,fill][shrink]", "[grow,fill]"));
+			"[shrink][grow,fill][shrink]", "[grow,fill]"));
 		contextTagsPanel.setOpaque(false);
+
+		final URL attachIconUrl = getClass().getResource(
+			"/icons/attach-noun-20.png");
+		if (attachIconUrl != null) {
+			attachContextButton = new JButton(new ImageIcon(attachIconUrl));
+		}
+		else {
+			attachContextButton = new JButton("+");
+		}
+		attachContextButton.setPreferredSize(new Dimension(28, 28));
+		attachContextButton.setToolTipText("Attach context");
+		attachContextButton.setFocusPainted(false);
+		attachContextButton.setMargin(new Insets(0, 0, 0, 0));
+		attachContextButton.addActionListener(e -> showContextMenu(
+			attachContextButton));
+		contextTagsPanel.add(attachContextButton, "aligny center, width 28!, height 28!");
 
 		// Add scrollable tags area in the center
 		contextTagsPanel.add(contextTagsScrollPane, "growx, growy, pushy");
@@ -559,12 +569,11 @@ public class FijiAssistantChat {
 		inputPanel.add(inputScrollPane, "growx, growy, pushy");
 		inputPanel.add(sendStopButton, "aligny bottom, height 28!");
 
-		// Bottom panel combining context tags, button bar, and input
+		// Bottom panel combining context tags and input
 		final JPanel bottomPanel = new JPanel(new MigLayout(
 			"fillx, wrap, insets 0 0 " + INPUT_PANEL_PADDING + " " +
 				INPUT_PANEL_PADDING + ", gapy " + INPUT_PANEL_PADDING, "[grow,fill]",
-			"[][][grow,fill]"));
-		bottomPanel.add(buttonBar, "growx, wrap");
+			"[][grow,fill]"));
 		bottomPanel.add(contextTagsPanel, "growx, wrap");
 		bottomPanel.add(inputPanel, "growx, growy, pushy, grow");
 
@@ -589,8 +598,8 @@ public class FijiAssistantChat {
 			"Type your message here and press 'enter' to chat with the AI assistant.");
 		guide.addElement(sendStopButton, "Send / Stop Button",
 			"Click to send your message, or to interrupt the assistant while it's responding.");
-		guide.addElement(suppliersScrollPane, "Context Buttons",
-			"Attach active item as chat context, or click the dropdown to choose from available items.");
+		guide.addElement(attachContextButton, "Attach Context",
+			"Attach the current item or choose an available item as chat context.");
 		guide.addElement(contextTagsScrollPane, "Context Items",
 			"Currently attached context items are shown here. Click on an item to remove it.");
 		guide.addElement(clearAllButton, "Clear Context",
@@ -625,212 +634,86 @@ public class FijiAssistantChat {
 		}
 	}
 
-	/**
-	 * Generic selector panel that builds a button + dropdown for each registered
-	 * ContextItemSupplier. Creates a wrappable, scrollable panel similar to the
-	 * context tags panel.
-	 */
-	private JScrollPane createContextSelectorPanel() {
-		// Create wrapping container similar to context tags
-		final JPanel container = new JPanel() {
-
-			@Override
-			public Dimension getPreferredSize() {
-				if (getParent() instanceof javax.swing.JViewport) {
-					int w = ((javax.swing.JViewport) getParent()).getWidth();
-
-					// Calculate wrapped height manually
-					FlowLayout layout = (FlowLayout) getLayout();
-					int hgap = layout.getHgap();
-					int vgap = layout.getVgap();
-
-					int maxWidth = w - (hgap * 2);
-					int currentWidth = hgap;
-					int currentHeight = vgap;
-					int rowHeight = 0;
-
-					for (java.awt.Component comp : getComponents()) {
-						Dimension d = comp.getPreferredSize();
-
-						if (currentWidth + d.width > maxWidth && currentWidth > hgap) {
-							// Wrap to new row
-							currentHeight += rowHeight + vgap;
-							currentWidth = hgap;
-							rowHeight = 0;
-						}
-
-						currentWidth += d.width + hgap;
-						rowHeight = Math.max(rowHeight, d.height);
-					}
-
-					currentHeight += rowHeight + vgap;
-
-					return new Dimension(w, currentHeight);
-				}
-				return super.getPreferredSize();
-			}
-		};
-		container.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
-		container.setOpaque(false);
-
+	private void showContextMenu(final JButton attachButton) {
+		final JPopupMenu menu = new JPopupMenu();
+		final List<ContextItemSupplier> suppliers;
 		try {
-			final List<ContextItemSupplier> suppliers = contextItemService
-				.getInstances();
+			suppliers = contextItemService.getInstances();
+		}
+		catch (Exception e) {
+			final JMenuItem unavailable = new JMenuItem("Context unavailable");
+			unavailable.setEnabled(false);
+			menu.add(unavailable);
+			menu.show(attachButton, 0, attachButton.getHeight());
+			return;
+		}
 
-			if (suppliers == null || suppliers.isEmpty()) {
-				// No suppliers available - return empty scrollpane
-				final JScrollPane scrollPane = new JScrollPane(container);
-				scrollPane.setVerticalScrollBarPolicy(
-					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-				scrollPane.setHorizontalScrollBarPolicy(
-					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-				scrollPane.setPreferredSize(new Dimension(600, 45));
-				scrollPane.setMinimumSize(new Dimension(45, 45));
-				scrollPane.getVerticalScrollBar().setUnitIncrement(5);
-				scrollPane.setBorder(null);
-				scrollPane.setOpaque(false);
-				scrollPane.getViewport().setOpaque(false);
-
-				return scrollPane;
+		if (suppliers == null || suppliers.isEmpty()) {
+			final JMenuItem unavailable = new JMenuItem("No context providers");
+			unavailable.setEnabled(false);
+			menu.add(unavailable);
+		}
+		else {
+			for (final ContextItemSupplier supplier : suppliers) {
+				final String displayName = supplier.getDisplayName();
+				final JMenuItem currentItem = new JMenuItem("Current " +
+					displayName, supplier.getIcon());
+				currentItem.addActionListener(e -> addCurrentContextItem(supplier));
+				menu.add(currentItem);
 			}
+
+			menu.addSeparator();
 
 			for (final ContextItemSupplier supplier : suppliers) {
 				final String displayName = supplier.getDisplayName();
+				final JMenu chooseMenu = new JMenu("Choose " + displayName);
+				chooseMenu.setIcon(supplier.getIcon());
+				try {
+					final Set<ContextItem> available = supplier.listAvailable();
+					if (available == null || available.isEmpty()) {
+						final JMenuItem none = new JMenuItem("(none)");
+						none.setEnabled(false);
+						chooseMenu.add(none);
+					}
+					else {
+						for (final ContextItem item : available) {
+							final JMenuItem itemMenu = new JMenuItem(item.getLabel());
+							itemMenu.addActionListener(e -> addContextItem(item,
+								supplier));
+							chooseMenu.add(itemMenu);
+						}
+					}
+				}
+				catch (Exception e) {
+					final JMenuItem unavailable = new JMenuItem("(not available)");
+					unavailable.setEnabled(false);
+					chooseMenu.add(unavailable);
+				}
+				menu.add(chooseMenu);
+			}
+		}
 
-				// Create a unit panel for this supplier (button + dropdown + label)
-				final JPanel unitPanel = new JPanel(new BorderLayout(0, 1));
-				unitPanel.setOpaque(false);
+		menu.show(attachButton, 0, attachButton.getHeight());
+	}
 
-				// Top part: buttons (main + dropdown)
-				final JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
-					0, 0));
-				buttonsPanel.setOpaque(false);
-
-				// Main button (36x36 with icon or text)
-				final JButton contextItemButton;
-				final ImageIcon supplierIcon = supplier.getIcon();
-				if (supplierIcon != null) {
-					contextItemButton = new JButton(supplierIcon);
-					contextItemButton.setPreferredSize(new Dimension(36, 36));
-					contextItemButton.setToolTipText("Attach active " + displayName);
-					contextItemButton.setFocusPainted(false);
+	private void addCurrentContextItem(final ContextItemSupplier supplier) {
+		final String displayName = supplier.getDisplayName();
+		threadService.run(() -> {
+			try {
+				final ContextItem item = supplier.createActiveContextItem();
+				if (item != null) {
+					addContextItem(item, supplier);
 				}
 				else {
-					final String iconText = displayName.length() > 0 ? displayName
-						.substring(0, 1) : "?";
-					contextItemButton = new JButton(iconText);
-					contextItemButton.setPreferredSize(new Dimension(36, 36));
-					contextItemButton.setToolTipText("Attach active " + displayName);
-					contextItemButton.setFont(contextItemButton.getFont().deriveFont(
-						14f));
-					contextItemButton.setFocusPainted(false);
+					appendToChat(Sender.ERROR, "No active " + displayName +
+						" available");
 				}
-
-				// Add darker outer border and lighter right divider
-				final Color darkBorder = Color.GRAY;
-				final Color lightDivider = new Color(200, 200, 200);
-				contextItemButton.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(1, 1, 1, 1, darkBorder), BorderFactory
-						.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 0, 1,
-							lightDivider), BorderFactory.createEmptyBorder(2, 2, 2, 1))));
-
-				// Dropdown button (smaller, 20x36 to match height)
-				final JButton dropdownButton = new JButton("▼");
-				dropdownButton.setPreferredSize(new Dimension(20, 36));
-				dropdownButton.setToolTipText("Select " + displayName +
-					" to attach as context");
-				dropdownButton.setFont(dropdownButton.getFont().deriveFont(12f));
-				dropdownButton.setFocusPainted(false);
-
-				// Add darker outer border and lighter left divider
-				dropdownButton.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(1, 0, 1, 1, darkBorder), BorderFactory
-						.createCompoundBorder(BorderFactory.createMatteBorder(0, 1, 0, 0,
-							lightDivider), BorderFactory.createEmptyBorder(2, 1, 2, 2))));
-
-				// Main action: create active context item via supplier
-				contextItemButton.addActionListener(e -> {
-					threadService.run(() -> {
-						try {
-							final ContextItem item = supplier.createActiveContextItem();
-							if (item != null) {
-								addContextItem(item, supplier);
-							}
-							else {
-								appendToChat(Sender.ERROR, "No active " + displayName +
-									" available");
-							}
-						}
-						catch (Exception ex) {
-							appendToChat(Sender.ERROR, "Failed to create active " +
-								displayName + ": " + ex.getMessage());
-						}
-					});
-				});
-
-				// Dropdown: list available items from supplier
-				dropdownButton.addActionListener(e -> {
-					final JPopupMenu menu = new JPopupMenu();
-					try {
-						final Set<ContextItem> available = supplier.listAvailable();
-						if (available == null || available.isEmpty()) {
-							final JMenuItem none = new JMenuItem("(none)");
-							none.setEnabled(false);
-							menu.add(none);
-						}
-						else {
-							for (final ContextItem it : available) {
-								final JMenuItem mi = new JMenuItem(it.getLabel());
-								mi.addActionListener(ae -> addContextItem(it, supplier));
-								menu.add(mi);
-							}
-						}
-					}
-					catch (Exception ex) {
-						final JMenuItem err = new JMenuItem("(not available)");
-						err.setEnabled(false);
-						menu.add(err);
-					}
-
-					menu.show(dropdownButton, 0, dropdownButton.getHeight());
-				});
-
-				buttonsPanel.add(contextItemButton);
-				buttonsPanel.add(dropdownButton);
-
-				// Bottom part: label
-				final JLabel label = new JLabel(displayName + "s",
-					SwingConstants.CENTER);
-				label.setFont(label.getFont().deriveFont(11f));
-
-				unitPanel.add(buttonsPanel, BorderLayout.NORTH);
-				unitPanel.add(label, BorderLayout.SOUTH);
-
-				container.add(unitPanel);
 			}
-
-		}
-		catch (Exception e) {
-			// If the supplier service fails, show nothing
-		}
-
-		// Wrap in scrollpane
-		final JScrollPane scrollPane = new JScrollPane(container);
-		scrollPane.setVerticalScrollBarPolicy(
-			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setHorizontalScrollBarPolicy(
-			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		scrollPane.setPreferredSize(new Dimension(600, 60)); // Taller to
-		// accommodate buttons
-		// + labels
-		scrollPane.setMinimumSize(new Dimension(60, 60)); // Taller to accommodate
-		// buttons + labels
-		scrollPane.getVerticalScrollBar().setUnitIncrement(5);
-		scrollPane.setBorder(null);
-		scrollPane.setOpaque(false);
-		scrollPane.getViewport().setOpaque(false);
-
-		return scrollPane;
+			catch (Exception e) {
+				appendToChat(Sender.ERROR, "Failed to create active " + displayName +
+					": " + e.getMessage());
+			}
+		});
 	}
 
 	/**
@@ -1448,6 +1331,7 @@ public class FijiAssistantChat {
 		// Get the tags container from the scrollpane's viewport
 		JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
 			.getView();
+		tagsContainer.remove(contextPlaceholderLabel);
 		tagsContainer.add(tagButton);
 
 		// Enable the Clear All button now that we have context items
@@ -1464,6 +1348,9 @@ public class FijiAssistantChat {
 		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
 			.getView();
 		tagsContainer.remove(tagButton);
+		if (contextItems.isEmpty()) {
+			tagsContainer.add(contextPlaceholderLabel);
+		}
 
 		// Disable the Clear All button if no more context items
 		if (contextItems.isEmpty()) {
@@ -1484,6 +1371,7 @@ public class FijiAssistantChat {
 		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
 			.getView();
 		tagsContainer.removeAll();
+		tagsContainer.add(contextPlaceholderLabel);
 		clearAllButton.setEnabled(false);
 		contextTagsPanel.revalidate();
 		contextTagsPanel.repaint();
