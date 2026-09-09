@@ -705,8 +705,8 @@ public class FijiAssistantChat {
 					addContextItem(item, supplier);
 				}
 				else {
-					appendToChat(Sender.ERROR, "No active " + displayName +
-						" available");
+					showTemporaryContextNotice("No active " + displayName +
+						" available", supplier);
 				}
 			}
 			catch (Exception e) {
@@ -1282,21 +1282,8 @@ public class FijiAssistantChat {
 			displayLabel = displayLabel.substring(0, maxLabelLength - 1) + "…";
 		}
 
-		// Create a removable tag button with icon (if available) or text, plus X
-		final JButton tagButton;
-		final ImageIcon supplierIcon = supplier.getIcon();
-		if (supplierIcon != null) {
-			// Scale icon down to 16x16 for tag display
-			final Image scaledImage = supplierIcon.getImage().getScaledInstance(16,
-				16, Image.SCALE_SMOOTH);
-			final ImageIcon scaledIcon = new ImageIcon(scaledImage);
-			tagButton = new JButton(displayLabel + " ✕", scaledIcon);
-			tagButton.setHorizontalTextPosition(JButton.RIGHT);
-			tagButton.setVerticalTextPosition(JButton.CENTER);
-		}
-		else {
-			tagButton = new JButton(displayLabel + " ✕");
-		}
+		final JButton tagButton = createContextTagButton(displayLabel, supplier,
+			true);
 
 		// Build tooltip
 		String tooltipText = item.getLabel() + " - Click to remove";
@@ -1306,7 +1293,36 @@ public class FijiAssistantChat {
 		// Store the button reference (item -> button)
 		contextItemButtons.put(item, tagButton);
 
-		// Style the button to look like a flat tag
+		// Get the tags container from the scrollpane's viewport
+		JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
+			.getView();
+		tagsContainer.remove(contextPlaceholderLabel);
+		tagsContainer.add(tagButton);
+
+		// Enable the Clear All button now that we have context items
+		clearAllButton.setEnabled(true);
+		contextTagsPanel.revalidate();
+		contextTagsPanel.repaint();
+	}
+
+	private JButton createContextTagButton(final String displayLabel,
+		final ContextItemSupplier supplier, final boolean removable)
+	{
+		final String buttonText = removable ? displayLabel + " ✕" : displayLabel;
+		final ImageIcon supplierIcon = supplier.getIcon();
+		final JButton tagButton;
+		if (supplierIcon != null) {
+			final Image scaledImage = supplierIcon.getImage().getScaledInstance(16,
+				16, Image.SCALE_SMOOTH);
+			final ImageIcon scaledIcon = new ImageIcon(scaledImage);
+			tagButton = new JButton(buttonText, scaledIcon);
+			tagButton.setHorizontalTextPosition(JButton.RIGHT);
+			tagButton.setVerticalTextPosition(JButton.CENTER);
+		}
+		else {
+			tagButton = new JButton(buttonText);
+		}
+
 		tagButton.setFocusPainted(false);
 		tagButton.setContentAreaFilled(false);
 		tagButton.setOpaque(true);
@@ -1328,14 +1344,40 @@ public class FijiAssistantChat {
 			}
 		});
 
-		// Get the tags container from the scrollpane's viewport
-		JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
+		return tagButton;
+	}
+
+	private void showTemporaryContextNotice(final String message,
+		final ContextItemSupplier supplier)
+	{
+		if (!SwingUtilities.isEventDispatchThread()) {
+			SwingUtilities.invokeLater(() -> showTemporaryContextNotice(message,
+				supplier));
+			return;
+		}
+
+		final JButton noticeButton = createContextTagButton(message, supplier, false);
+		noticeButton.setToolTipText(message);
+		noticeButton.addActionListener(e -> removeTemporaryContextNotice(
+			noticeButton));
+
+		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
 			.getView();
 		tagsContainer.remove(contextPlaceholderLabel);
-		tagsContainer.add(tagButton);
+		tagsContainer.add(noticeButton);
+		contextTagsPanel.revalidate();
+		contextTagsPanel.repaint();
 
-		// Enable the Clear All button now that we have context items
-		clearAllButton.setEnabled(true);
+		flashButton(noticeButton, () -> removeTemporaryContextNotice(noticeButton));
+	}
+
+	private void removeTemporaryContextNotice(final JButton noticeButton) {
+		final JPanel tagsContainer = (JPanel) contextTagsScrollPane.getViewport()
+			.getView();
+		tagsContainer.remove(noticeButton);
+		if (contextItems.isEmpty()) {
+			tagsContainer.add(contextPlaceholderLabel);
+		}
 		contextTagsPanel.revalidate();
 		contextTagsPanel.repaint();
 	}
@@ -1412,6 +1454,10 @@ public class FijiAssistantChat {
 	}
 
 	private void flashButton(final JButton button) {
+		flashButton(button, null);
+	}
+
+	private void flashButton(final JButton button, final Runnable onComplete) {
 		// Flash the button orange to indicate duplicate
 		final java.awt.Color originalBg = button.getBackground();
 		final java.awt.Color flashColor = new java.awt.Color(255, 165, 0); // Orange
@@ -1432,6 +1478,9 @@ public class FijiAssistantChat {
 			if (flashCount[0] >= 6) { // 3 flashes (on-off-on-off-on-off)
 				timer.stop();
 				button.setBackground(originalBg);
+				if (onComplete != null) {
+					onComplete.run();
+				}
 			}
 		});
 
