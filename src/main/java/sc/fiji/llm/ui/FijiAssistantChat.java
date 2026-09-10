@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -76,6 +77,7 @@ import javax.swing.SwingUtilities;
 
 import org.scijava.Context;
 import org.scijava.command.CommandService;
+import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
 import org.scijava.prefs.PrefService;
@@ -153,6 +155,9 @@ public class FijiAssistantChat {
 
 	@Parameter
 	private ConversationService conversationService;
+
+	@Parameter
+	private LogService logService;
 
 	// -- Non-Contextual fields --
 	private FijiAssistant assistant;
@@ -772,17 +777,19 @@ public class FijiAssistantChat {
 
 		// Process chat in background thread (LLM calls happen OFF the EDT)
 		Future<?> msgThread = threadService.run(() -> {
-			// If this is the first message in a new conversation, auto-name it
-			if (currentConversation == null) {
-				createNewConversation(userText, cancelConversation);
-			}
-			if (currentConversation == null) {
-				// Message was canceled
-				return;
-			}
-
-			final long[] lastScrollTime = {System.currentTimeMillis()};
 			try {
+				// If this is the first message in a new conversation, auto-name it
+				if (currentConversation == null) {
+					createNewConversation(userText, cancelConversation);
+				}
+				if (currentConversation == null) {
+					// Message was canceled before the conversation was created
+					aiMessageStarted.set(true);
+					removeChatBubble(currentStreamingPanel);
+					return;
+				}
+
+				final long[] lastScrollTime = {System.currentTimeMillis()};
 				// Build user message with context items as attributes
 				final UserMessage.Builder msgBuilder = UserMessage.builder()
 						.addContent(new TextContent(userText));
@@ -861,8 +868,9 @@ public class FijiAssistantChat {
 							});
 						}
 						catch (Exception e) {
-							handleAssistantFailure(e, currentStreamingPanel,
-								aiMessageStarted);
+							handleAssistantFailure(e,
+								"Unable to save the assistant response", true);
+							SwingUtilities.invokeLater(this::setSendMode);
 						}
 					})
 					.onError(error -> {
@@ -977,27 +985,82 @@ public class FijiAssistantChat {
 		if (streamingPanel.getText().isEmpty()) {
 			removeChatBubble(streamingPanel);
 		}
+		handleAssistantFailure(error, "Assistant request failed", false);
+		SwingUtilities.invokeLater(this::setSendMode);
+	}
 
+	private void handleAssistantFailure(final Throwable error,
+		final String context, final boolean recovered)
+	{
+		logService.debug(context, error);
+		if (!recovered) {
+			appendToChat(Sender.SYSTEM, buildAssistantFailureMessage(error, context));
+		}
+	}
+
+	private String buildAssistantFailureMessage(final Throwable error,
+		final String context)
+	{
+		if (hasCause(error, RateLimitException.class)) {
+			return "Rate limit reached. Please wait before retrying, or select a different model.";
+		}
+
+		if (isInvalidApiKey(error)) {
+			final String providerName = llmProvider.getName();
+			final StringBuilder message = new StringBuilder("The API key for **")
+				.append(providerName)
+				.append("** was rejected. Please edit the API key in Fiji and try again.");
+			final String apiKeyUrl = llmProvider.getApiKeyUrl();
+			if (apiKeyUrl != null && !apiKeyUrl.isBlank()) {
+				message.append("\n\n[Get a new API key](").append(apiKeyUrl).append(")");
+			}
+			return message.toString();
+		}
+
+		final Throwable cause = rootCause(error);
+		final String message = cause != null && cause.getMessage() != null ? cause
+			.getMessage().replaceAll("\\s+", " ") : "(no message)";
+		final String shortened = message.length() > 300 ? message.substring(0,
+			300) + "..." : message;
+		return context + ": " + shortened;
+	}
+
+	private boolean isInvalidApiKey(final Throwable error) {
 		Throwable cause = error;
-		while (cause != null && cause.getCause() != null &&
-			!(cause instanceof RateLimitException))
-		{
+		while (cause != null) {
+			final String message = cause.getMessage();
+			if (message != null) {
+				final String normalized = message.toLowerCase(Locale.ROOT);
+				if (normalized.contains("api_key_invalid") || normalized.contains(
+					"api key not valid") || normalized.contains("invalid api key"))
+				{
+					return true;
+				}
+			}
 			cause = cause.getCause();
 		}
+		return false;
+	}
 
-		if (cause instanceof RateLimitException) {
-			appendToChat(Sender.SYSTEM,
-				"Rate limit reached. Please wait before retrying, or select a different model.");
+	private static <T extends Throwable> boolean hasCause(final Throwable error,
+		final Class<T> type)
+	{
+		Throwable cause = error;
+		while (cause != null) {
+			if (type.isInstance(cause)) {
+				return true;
+			}
+			cause = cause.getCause();
 		}
-		else {
-			final String message = cause != null && cause.getMessage() != null ? cause
-				.getMessage().replaceAll("\\s+", " ") : "(no message)";
-			final String shortened = message.length() > 300 ? message.substring(0,
-				300) + "..." : message;
-			appendToChat(Sender.SYSTEM, "Error: " + shortened);
-		}
+		return false;
+	}
 
-		SwingUtilities.invokeLater(this::setSendMode);
+	private static Throwable rootCause(final Throwable error) {
+		Throwable cause = error;
+		while (cause != null && cause.getCause() != null) {
+			cause = cause.getCause();
+		}
+		return cause;
 	}
 
 	/**
@@ -1162,10 +1225,7 @@ public class FijiAssistantChat {
 		}
 
 		if (error != null) {
-			final Throwable cause = error.getCause() == null ? error : error.getCause();
-			final String message = cause.getMessage() == null ? cause.toString() : cause
-				.getMessage();
-			appendToChat(Sender.ERROR, "Unable to prepare the assistant: " + message);
+			handleAssistantFailure(error, "Unable to prepare the assistant", false);
 			return;
 		}
 
@@ -1481,8 +1541,10 @@ public class FijiAssistantChat {
 				// Already active
 				loadConversation(selected.toString());
 			}
-			deleteConversationButton.setEnabled(true);
-			newConversationButton.setEnabled(true);
+			final boolean conversationLoaded = currentConversation != null &&
+				currentConversation.name().equals(selectedName);
+			deleteConversationButton.setEnabled(conversationLoaded);
+			newConversationButton.setEnabled(conversationLoaded);
 		}
 		else {
 			deleteConversationButton.setEnabled(false);
@@ -1527,34 +1589,47 @@ public class FijiAssistantChat {
 			return;
 		}
 
-		currentConversation = conversation;
-		clearChatPanel();
+		final Conversation previousConversation = currentConversation;
+		final FijiAssistant previousAssistant = assistant;
+		try {
+			// Reload chat memory with conversation messages before changing the UI.
+			final ChatMemory chatMemory = buildAssistant(conversation.systemMessage());
+			for (Conversation.Message msg : conversation.messages()) {
+				chatMemory.add(msg.memory());
+			}
 
-		// Reload chat memory with conversation messages
-		ChatMemory chatMemory = buildAssistant(conversation.systemMessage());
-
-		for (Conversation.Message msg : conversation.messages()) {
-			chatMemory.add(msg.memory());
-			addMessagePanelToChat(msg
-				.memory() instanceof dev.langchain4j.data.message.UserMessage
-					? ChatMessagePanel.MessageType.USER
-					: ChatMessagePanel.MessageType.ASSISTANT, msg.display());
+			currentConversation = conversation;
+			clearChatPanel();
+			for (Conversation.Message msg : conversation.messages()) {
+				addMessagePanelToChat(msg
+					.memory() instanceof dev.langchain4j.data.message.UserMessage
+						? ChatMessagePanel.MessageType.USER
+						: ChatMessagePanel.MessageType.ASSISTANT, msg.display());
+			}
+		}
+		catch (Exception e) {
+			currentConversation = previousConversation;
+			assistant = previousAssistant;
+			handleAssistantFailure(e, "Unable to load conversation", false);
+			return;
 		}
 
 		inputArea.requestFocus();
 	}
 
 	private ChatMemory buildAssistant(SystemMessage systemMessage) {
-		ChatMemory chatMemory = null;
+		ChatMemory chatMemory;
 		try {
 			chatMemory = llmProvider.createTokenChatMemory(modelName);
+			chatMemory.add(systemMessage);
 		}
-		catch (Exception e) {}
-		if (chatMemory == null) {
+		catch (Exception e) {
+			handleAssistantFailure(e,
+				"Token counting unavailable; using message-count chat memory", true);
 			// Fall back to a 20-message window
 			chatMemory = MessageWindowChatMemory.builder().maxMessages(20).build();
+			chatMemory.add(systemMessage);
 		}
-		chatMemory.add(systemMessage);
 
 		// Recreate the assistant with the chat memory for proper tool tracking
 		assistant = assistantService.createAssistant(FijiAssistant.class,
@@ -1612,7 +1687,9 @@ public class FijiAssistantChat {
 			textToTruncate = response.text();
 		}
 		catch (Exception e) {
-			// No-op - user message is used as a fallback
+			handleAssistantFailure(e,
+				"Unable to generate a conversation name; using the first message instead",
+				true);
 		}
 
 		// Check if the message was interrupted while we were waiting for the LLM.
