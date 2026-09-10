@@ -162,7 +162,15 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 						continue;
 					}
 					toolNames.add(name);
+<<<<<<< HEAD
 					interimExecutorMap.put(spec, entry.getValue());
+=======
+					ToolExecutor deadlineExecutor = new DeadlineToolExecutor(entry
+						.getValue());
+					interimCatalog.add(new ToolRegistration(spec, deadlineExecutor,
+						scope, plugin));
+					interimExecutorMap.put(spec, deadlineExecutor);
+>>>>>>> 703286e (Add turn and tool execution deadlines)
 					interimPluginMap.put(name, plugin);
 
 					// Always add to ANY list

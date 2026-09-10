@@ -9,6 +9,7 @@ import org.scijava.log.LogService;
 
 import dev.langchain4j.observability.api.event.AiServiceCompletedEvent;
 import dev.langchain4j.observability.api.event.AiServiceErrorEvent;
+import dev.langchain4j.observability.api.event.AiServiceEvent;
 import dev.langchain4j.observability.api.event.AiServiceRequestIssuedEvent;
 import dev.langchain4j.observability.api.event.AiServiceResponseReceivedEvent;
 import dev.langchain4j.observability.api.listener.AiServiceListener;
@@ -36,7 +37,9 @@ public final class AssistantTimingListeners {
 		private final Map<UUID, AtomicInteger> rounds = new ConcurrentHashMap<>();
 	}
 
-	private abstract static class Listener<T> implements AiServiceListener<T> {
+	private abstract static class Listener<T extends AiServiceEvent> implements
+		AiServiceListener<T>
+	{
 
 		protected final State state;
 		protected final LogService logService;

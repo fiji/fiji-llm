@@ -51,13 +51,13 @@ public class DefaultAssistantService extends AbstractService implements
 	AssistantService
 {
 	@Parameter
-	private LogService logService;
-
-	@Parameter
 	private ProviderService providerService;
 
 	@Parameter
 	private AiToolService aiToolService;
+
+	@Parameter
+	private LogService logService;
 
 	@Override
 	public <T> T createAssistant(final Class<T> assistantInterface,

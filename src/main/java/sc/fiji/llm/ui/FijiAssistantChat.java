@@ -44,6 +44,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +55,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -94,6 +101,8 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import dev.langchain4j.model.chat.response.StreamingHandle;
+import dev.langchain4j.service.TokenStream;
 import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
@@ -119,6 +128,7 @@ public class FijiAssistantChat {
 	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
 	private static final String GUIDE_SHOWN_PREF = "guideShown";
+	private static final Duration TURN_TIMEOUT = Duration.ofMinutes(5);
 
 	private static enum Sender {
 			USER, ASSISTANT, SYSTEM, ERROR
@@ -178,7 +188,19 @@ public class FijiAssistantChat {
 	private JComboBox<String> conversationComboBox;
 	private JButton newConversationButton;
 	private JButton deleteConversationButton;
-	private volatile boolean stopRequested = false;
+	private final ScheduledExecutorService deadlineExecutor = Executors
+		.newSingleThreadScheduledExecutor(task -> {
+			Thread thread = new Thread(task, "Fiji-AI-Deadline");
+			thread.setDaemon(true);
+			return thread;
+		});
+	private final AtomicBoolean activeTurnCancelled = new AtomicBoolean();
+	private final AtomicReference<Future<?>> activeMessageThread = new AtomicReference<>();
+	private final AtomicReference<Future<?>> activeStreamFuture = new AtomicReference<>();
+	private final AtomicReference<StreamingHandle> activeStreamingHandle = new AtomicReference<>();
+	private final AtomicReference<ScheduledFuture<?>> activeTurnDeadline = new AtomicReference<>();
+	private final AtomicReference<AtomicBoolean> activeMessageStarted = new AtomicReference<>();
+	private final AtomicReference<ChatMessagePanel> activeStreamingPanel = new AtomicReference<>();
 	private boolean isSendMode = true;
 	private boolean modelReady = false;
 	private ImageIcon sendIcon;
@@ -773,18 +795,38 @@ public class FijiAssistantChat {
 		// Switch to stop mode
 		setStopMode();
 		final AtomicBoolean aiMessageStarted = new AtomicBoolean();
-		final AtomicBoolean cancelConversation = new AtomicBoolean();
+		activeTurnCancelled.set(false);
+		activeMessageStarted.set(aiMessageStarted);
+		activeStreamingPanel.set(currentStreamingPanel);
+		activeTurnDeadline.set(deadlineExecutor.schedule(() -> {
+			if (activeTurnCancelled.compareAndSet(false, true)) {
+				logService.debug("LLM timing turn-timeout model=" + modelName +
+					" durationMs=" + TURN_TIMEOUT.toMillis());
+				cancelActiveTurn();
+				aiMessageStarted.set(true);
+				handleAssistantFailure(new TimeoutException(
+					"Assistant turn exceeded " + TURN_TIMEOUT.toMinutes() + " minutes"),
+					currentStreamingPanel, aiMessageStarted);
+			}
+		}, TURN_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
 		final int updateDelay = 200;
 
 		// Process chat in background thread (LLM calls happen OFF the EDT)
 		Future<?> msgThread = threadService.run(() -> {
 			try {
+<<<<<<< HEAD
 				// If this is the first message in a new conversation, auto-name it
+=======
+				if (activeTurnCancelled.get()) {
+					aiMessageStarted.set(true);
+					return;
+				}
+				Conversation conversationForNaming = null;
+>>>>>>> 703286e (Add turn and tool execution deadlines)
 				if (currentConversation == null) {
 					createNewConversation(userText, cancelConversation);
 				}
-				if (currentConversation == null) {
-					// Message was canceled before the conversation was created
+				if (activeTurnCancelled.get() || currentConversation == null) {
 					aiMessageStarted.set(true);
 					removeChatBubble(currentStreamingPanel);
 					return;
@@ -829,7 +871,7 @@ public class FijiAssistantChat {
 				};
 
 				// Send user message to the LLM to initiate chat
-				assistant.chatStreaming(chatRequest)
+				final TokenStream tokenStream = assistant.chatStreaming(chatRequest)
 					.beforeToolExecution(event -> {
 						logFirstModelEvent.run();
 						logService.debug("LLM timing tool-start name=" + event.request().name());
@@ -843,19 +885,19 @@ public class FijiAssistantChat {
 							Long.toString(duration.toMillis())) + " failed=" + event.hasFailed());
 					})
 					.onPartialThinkingWithContext((thinking, context) -> {
+						activeStreamingHandle.set(context.streamingHandle());
 						logFirstModelEvent.run();
-						if (stopRequested) {
-							stopRequested = false;
+						if (activeTurnCancelled.get()) {
 							aiMessageStarted.set(true);
 							context.streamingHandle().cancel();
 							removeChatBubble(currentStreamingPanel);
 						}
 					})
 					.onPartialResponseWithContext((partialResponse, context) -> {
+						activeStreamingHandle.set(context.streamingHandle());
 						logFirstModelEvent.run();
 						aiMessageStarted.set(true);
-						if (stopRequested) {
-							stopRequested = false;
+						if (activeTurnCancelled.get()) {
 							context.streamingHandle().cancel();
 							if (currentStreamingPanel.getText().isEmpty()) {
 								removeChatBubble(currentStreamingPanel);
@@ -874,10 +916,14 @@ public class FijiAssistantChat {
 						}
 					})
 					.onCompleteResponse(response -> {
+						finishActiveTurn();
 						final long elapsed = (System.nanoTime() - streamStart) / 1_000_000;
 						logService.debug("LLM timing stream-complete model=" + modelName +
 							" durationMs=" + elapsed);
 						aiMessageStarted.set(true);
+						if (activeTurnCancelled.get()) {
+							return;
+						}
 						try {
 							if (currentConversation != null) {
 								currentConversation.addMessage(
@@ -900,33 +946,52 @@ public class FijiAssistantChat {
 						}
 					})
 					.onError(error -> {
+						finishActiveTurn();
 						final long elapsed = (System.nanoTime() - streamStart) / 1_000_000;
 						logService.debug("LLM timing stream-failed model=" + modelName +
 							" durationMs=" + elapsed + " error=" + error.getClass()
 							.getSimpleName());
+<<<<<<< HEAD
 						handleAssistantFailure(error, currentStreamingPanel,
 							aiMessageStarted);
 					})
 					.start();
+=======
+						if (!activeTurnCancelled.get()) {
+							handleAssistantFailure(error, currentStreamingPanel,
+								aiMessageStarted);
+						}
+					});
+
+				final Future<?> streamFuture = threadService.run(tokenStream::start);
+				activeStreamFuture.set(streamFuture);
+				if (activeTurnCancelled.get()) {
+					cancelActiveTurn();
+				}
+
+				if (conversationForNaming != null) {
+					startConversationNaming(userText, conversationForNaming);
+				}
+>>>>>>> 703286e (Add turn and tool execution deadlines)
 			} catch (Exception e) {
-				handleAssistantFailure(e, currentStreamingPanel, aiMessageStarted);
+				if (!activeTurnCancelled.get()) {
+					handleAssistantFailure(e, currentStreamingPanel, aiMessageStarted);
+				}
 			}
 		});
+		activeMessageThread.set(msgThread);
+		if (activeTurnCancelled.get()) {
+			msgThread.cancel(true);
+		}
 
 		// Start an immediate thinking thread.
 		threadService.run(() -> {
-			boolean stopped = false;
 			while (!aiMessageStarted.get()) {
-				if (stopRequested && !stopped) {
-					stopped = true;
-					cancelConversation.set(true);
-					msgThread.cancel(false);
-					stopRequested = false;
-					SwingUtilities.invokeLater(() -> {
-						aiMessageStarted.set(true);
-						removeChatBubble(currentStreamingPanel);
-					});
-				} else {
+				if (activeTurnCancelled.get()) {
+					aiMessageStarted.set(true);
+					break;
+				}
+				else {
 					SwingUtilities.invokeLater(() -> {
 						currentStreamingPanel.updateThinking();
 					});
@@ -983,8 +1048,48 @@ public class FijiAssistantChat {
 	 * Requests the current generation to stop.
 	 */
 	private void requestStop() {
-		stopRequested = true;
+		activeTurnCancelled.set(true);
+		cancelActiveTurn();
+		final AtomicBoolean messageStarted = activeMessageStarted.getAndSet(null);
+		if (messageStarted != null) {
+			messageStarted.set(true);
+		}
+		final ChatMessagePanel streamingPanel = activeStreamingPanel.getAndSet(null);
+		if (streamingPanel != null) {
+			removeChatBubble(streamingPanel);
+		}
 		setSendMode();
+	}
+
+	private void cancelActiveTurn() {
+		final StreamingHandle streamingHandle = activeStreamingHandle.get();
+		if (streamingHandle != null) {
+			streamingHandle.cancel();
+		}
+		final Future<?> streamFuture = activeStreamFuture.get();
+		if (streamFuture != null) {
+			streamFuture.cancel(true);
+		}
+		final Future<?> messageThread = activeMessageThread.get();
+		if (messageThread != null) {
+			messageThread.cancel(true);
+		}
+		final ScheduledFuture<?> deadline = activeTurnDeadline.getAndSet(null);
+		if (deadline != null) {
+			deadline.cancel(false);
+		}
+	}
+
+	private void finishActiveTurn() {
+		final ScheduledFuture<?> deadline = activeTurnDeadline.getAndSet(null);
+		if (deadline != null) {
+			deadline.cancel(false);
+		}
+		activeStreamFuture.set(null);
+		activeStreamingHandle.set(null);
+		activeMessageThread.set(null);
+		activeMessageStarted.set(null);
+		activeStreamingPanel.set(null);
 	}
 
 	/**
@@ -1749,6 +1854,50 @@ public class FijiAssistantChat {
 			deleteConversationButton.setEnabled(true);
 			newConversationButton.setEnabled(true);
 		});
+<<<<<<< HEAD
+=======
+		return conversation;
+	}
+
+	private void startConversationNaming(String userMessage,
+		final Conversation conversation)
+	{
+		threadService.run(() -> {
+			try {
+				final String namingPrompt =
+					"Respond with ONLY a 3-5 word summary of the following text: \"" +
+						userMessage + "\"";
+				final ChatRequest nameRequest = ChatRequest.builder().messages(
+					new UserMessage(namingPrompt)).build();
+				final String generatedName = buildTemporaryAssistant().chat(nameRequest)
+					.text();
+				final String conversationName = formatConversationName(generatedName);
+				final String oldName = conversation.name();
+				if (conversationService.renameConversation(oldName, conversationName)) {
+					SwingUtilities.invokeLater(() -> {
+						conversationComboBox.removeItem(oldName);
+						conversationComboBox.insertItemAt(conversationName, 0);
+						if (currentConversation == conversation) {
+							conversationComboBox.setSelectedItem(conversationName);
+						}
+					});
+				}
+			}
+			catch (Exception e) {
+				handleAssistantFailure(e,
+					"Unable to generate a conversation name; keeping the provisional name",
+					true);
+			}
+		});
+	}
+
+	private String formatConversationName(String text) {
+		String[] words = text.trim().split("\\s+");
+		String name = words.length <= 5 ? text.trim() : String.join(" ", Arrays
+			.copyOf(words, 5)) + "...";
+		if (name.length() > 30) name = name.substring(0, 27) + "...";
+		return name + new SimpleDateFormat(" [dd.MMM.yyyy]").format(new Date());
+>>>>>>> 703286e (Add turn and tool execution deadlines)
 	}
 
 	/**
