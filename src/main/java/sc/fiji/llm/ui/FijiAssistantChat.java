@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -171,7 +172,7 @@ public class FijiAssistantChat {
 	private JComboBox<String> conversationComboBox;
 	private JButton newConversationButton;
 	private JButton deleteConversationButton;
-	private boolean stopRequested = false;
+	private volatile boolean stopRequested = false;
 	private boolean isSendMode = true;
 	private boolean modelReady = false;
 	private ImageIcon sendIcon;
@@ -765,8 +766,8 @@ public class FijiAssistantChat {
 
 		// Switch to stop mode
 		setStopMode();
-		final boolean[] aiMessageStarted = {false};
-		final boolean[] cancelConversation = {false};
+		final AtomicBoolean aiMessageStarted = new AtomicBoolean();
+		final AtomicBoolean cancelConversation = new AtomicBoolean();
 		final int updateDelay = 200;
 
 		// Process chat in background thread (LLM calls happen OFF the EDT)
@@ -816,14 +817,13 @@ public class FijiAssistantChat {
 					.onPartialThinkingWithContext((thinking, context) -> {
 						if (stopRequested) {
 							stopRequested = false;
+							aiMessageStarted.set(true);
 							context.streamingHandle().cancel();
 							removeChatBubble(currentStreamingPanel);
 						}
 					})
 					.onPartialResponseWithContext((partialResponse, context) -> {
-						if (!aiMessageStarted[0]) {
-							aiMessageStarted[0] = true;
-						}
+						aiMessageStarted.set(true);
 						if (stopRequested) {
 							stopRequested = false;
 							context.streamingHandle().cancel();
@@ -844,69 +844,48 @@ public class FijiAssistantChat {
 						}
 					})
 					.onCompleteResponse(response -> {
-						if (!aiMessageStarted[0]) {
-							aiMessageStarted[0] = true;
-						}
-						// Save assistant response to conversation
-						if (currentConversation != null) {
-							currentConversation.addMessage(
-									currentStreamingPanel.getText(),
-									response.aiMessage()
-							);
-						}
+						aiMessageStarted.set(true);
+						try {
+							if (currentConversation != null) {
+								currentConversation.addMessage(
+										currentStreamingPanel.getText(),
+										response.aiMessage()
+									);
+							}
 
-						// Scroll to bottom one final time after streaming completes
-						SwingUtilities.invokeLater(() -> {
-							final JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-							vertical.setValue(vertical.getMaximum());
-							setSendMode();
-						});
+							SwingUtilities.invokeLater(() -> {
+								final JScrollBar vertical = chatScrollPane
+									.getVerticalScrollBar();
+								vertical.setValue(vertical.getMaximum());
+								setSendMode();
+							});
+						}
+						catch (Exception e) {
+							handleAssistantFailure(e, currentStreamingPanel,
+								aiMessageStarted);
+						}
 					})
 					.onError(error -> {
-						// Handle errors
-						if (error instanceof RateLimitException) {
-							appendToChat(Sender.SYSTEM, "Rate limit reached. Please wait before retrying, or select a different model.");
-						} else {
-							final String msg = error != null && error.getMessage() != null ? error.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
-							if (msg.length() > 300) {
-								appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
-							} else {
-								appendToChat(Sender.SYSTEM, "Error: " + msg);
-							}
-						}
-
-						// Re-enable inputs and switch back to send mode
-						SwingUtilities.invokeLater(() -> {
-							setSendMode();
-						});
+						handleAssistantFailure(error, currentStreamingPanel,
+							aiMessageStarted);
 					})
 					.start();
 			} catch (Exception e) {
-				// Handle immediate errors (before streaming starts)
-				final String msg = e.getMessage() != null ? e.getMessage().replaceAll("\n", " ").replaceAll("\s+", " ") : "(no message)";
-				if (msg.length() > 300) {
-					appendToChat(Sender.SYSTEM, "Error: " + msg.substring(0, 300) + "…");
-				} else {
-					appendToChat(Sender.SYSTEM, "Error: " + msg);
-				}
-
-				SwingUtilities.invokeLater(() -> {
-					setSendMode();
-				});
+				handleAssistantFailure(e, currentStreamingPanel, aiMessageStarted);
 			}
 		});
 
 		// Start an immediate thinking thread.
 		threadService.run(() -> {
 			boolean stopped = false;
-			while (!aiMessageStarted[0]) {
+			while (!aiMessageStarted.get()) {
 				if (stopRequested && !stopped) {
 					stopped = true;
-					cancelConversation[0] = true;
+					cancelConversation.set(true);
 					msgThread.cancel(false);
 					stopRequested = false;
 					SwingUtilities.invokeLater(() -> {
-						aiMessageStarted[0] = true;
+						aiMessageStarted.set(true);
 						removeChatBubble(currentStreamingPanel);
 					});
 				} else {
@@ -988,6 +967,37 @@ public class FijiAssistantChat {
 		if (modelReady) {
 			inputArea.requestFocus();
 		}
+	}
+
+	private void handleAssistantFailure(final Throwable error,
+		final ChatMessagePanel streamingPanel,
+		final AtomicBoolean aiMessageStarted)
+	{
+		aiMessageStarted.set(true);
+		if (streamingPanel.getText().isEmpty()) {
+			removeChatBubble(streamingPanel);
+		}
+
+		Throwable cause = error;
+		while (cause != null && cause.getCause() != null &&
+			!(cause instanceof RateLimitException))
+		{
+			cause = cause.getCause();
+		}
+
+		if (cause instanceof RateLimitException) {
+			appendToChat(Sender.SYSTEM,
+				"Rate limit reached. Please wait before retrying, or select a different model.");
+		}
+		else {
+			final String message = cause != null && cause.getMessage() != null ? cause
+				.getMessage().replaceAll("\\s+", " ") : "(no message)";
+			final String shortened = message.length() > 300 ? message.substring(0,
+				300) + "..." : message;
+			appendToChat(Sender.SYSTEM, "Error: " + shortened);
+		}
+
+		SwingUtilities.invokeLater(this::setSendMode);
 	}
 
 	/**
@@ -1581,7 +1591,9 @@ public class FijiAssistantChat {
 	 * Create a new the conversation based on the user's first message. Sends a
 	 * separate request to the LLM to summarize the message.
 	 */
-	private void createNewConversation(String userMessage, boolean[] cancelConversation) {
+	private void createNewConversation(String userMessage,
+		final AtomicBoolean cancelConversation)
+	{
 		SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
 		buildAssistant(systemMessage);
 		String textToTruncate = userMessage;
@@ -1604,7 +1616,7 @@ public class FijiAssistantChat {
 		}
 
 		// Check if the message was interrupted while we were waiting for the LLM.
-		if (cancelConversation[0]) {
+		if (cancelConversation.get()) {
 			return;
 		}
 
