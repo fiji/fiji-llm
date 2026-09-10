@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.mcp;
 
+import java.net.ServerSocket;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -37,6 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.service.tool.ToolProvider;
 import sc.fiji.llm.tools.AiToolService;
@@ -49,10 +52,20 @@ public class DefaultMCPServiceTest {
 	private Context context;
 	private MCPService mcpService;
 	private AiToolService aiToolService;
+	private PrefService prefService;
+	private int originalPort;
+	private int testPort;
 
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		context = new Context();
+		prefService = context.getService(PrefService.class);
+		originalPort = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
+			MCPService.DEFAULT_PORT);
+		try (ServerSocket socket = new ServerSocket(0)) {
+			testPort = socket.getLocalPort();
+		}
+		prefService.put(MCPService.class, MCPService.PORT_KEY, testPort);
 		mcpService = context.getService(MCPService.class);
 		aiToolService = context.getService(AiToolService.class);
 	}
@@ -61,6 +74,9 @@ public class DefaultMCPServiceTest {
 	public void tearDown() {
 		if (mcpService != null) {
 			mcpService.dispose();
+		}
+		if (prefService != null) {
+			prefService.put(MCPService.class, MCPService.PORT_KEY, originalPort);
 		}
 		if (context != null) {
 			context.dispose();
@@ -96,9 +112,9 @@ public class DefaultMCPServiceTest {
 		// When: we get the server port
 		final int port = mcpService.getServerPort();
 
-		// Then: it should be the default port
+		// Then: it should be the configured test port
 		assertTrue(port > 0);
-		assertTrue(port == 9090);
+		assertTrue(port == testPort);
 	}
 
 	@Test
