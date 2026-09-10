@@ -32,6 +32,8 @@ package sc.fiji.llm.provider;
 import java.util.Arrays;
 import java.util.List;
 
+import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -46,6 +48,9 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
  */
 @Plugin(type = LLMProvider.class, name = "Gemini")
 public class GeminiProvider extends AbstractLLMProvider {
+
+	@Parameter
+	private LogService logService;
 
 	@Override
 	public String getName() {
@@ -79,8 +84,9 @@ public class GeminiProvider extends AbstractLLMProvider {
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
 		return TokenWindowChatMemory.withMaxTokens(8000,
-			GoogleAiGeminiTokenCountEstimator.builder().apiKey(apiKey()).modelName(
-				modelName).build());
+			new TimedTokenCountEstimator(GoogleAiGeminiTokenCountEstimator.builder()
+				.apiKey(apiKey()).modelName(modelName).build(), getName(), modelName,
+				logService));
 	}
 
 	@Override

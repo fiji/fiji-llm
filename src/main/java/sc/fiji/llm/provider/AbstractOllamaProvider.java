@@ -134,7 +134,8 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
 		return TokenWindowChatMemory.withMaxTokens(getContextSize() *
 			MEMORY_CONTEXT_PERCENTAGE / 100,
-			new OllamaTokenCountEstimator());
+				new TimedTokenCountEstimator(new OllamaTokenCountEstimator(), getName(),
+					modelName, logService));
 	}
 
 	@Override

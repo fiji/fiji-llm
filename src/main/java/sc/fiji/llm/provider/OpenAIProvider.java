@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -48,6 +50,9 @@ import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
  */
 @Plugin(type = LLMProvider.class, name = "ChatGPT")
 public class OpenAIProvider extends AbstractLLMProvider {
+
+	@Parameter
+	private LogService logService;
 
 	@Override
 	public String getName() {
@@ -94,7 +99,8 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
 		return TokenWindowChatMemory.withMaxTokens(8000,
-			new OpenAiTokenCountEstimator(modelName));
+			new TimedTokenCountEstimator(new OpenAiTokenCountEstimator(modelName),
+				getName(), modelName, logService));
 	}
 
 	@Override

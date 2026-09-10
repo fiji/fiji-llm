@@ -818,11 +818,32 @@ public class FijiAssistantChat {
 						.toolSpecifications(aiToolService.getToolsForContext(ToolScope.ANY))
 						.build();
 
+				final long streamStart = System.nanoTime();
+				final AtomicBoolean firstModelEventLogged = new AtomicBoolean();
+				final Runnable logFirstModelEvent = () -> {
+					if (firstModelEventLogged.compareAndSet(false, true)) {
+						final long elapsed = (System.nanoTime() - streamStart) / 1_000_000;
+						logService.debug("LLM timing first-model-event model=" + modelName +
+							" durationMs=" + elapsed);
+					}
+				};
+
 				// Send user message to the LLM to initiate chat
 				assistant.chatStreaming(chatRequest)
-					.beforeToolExecution(aiToolService::processToolRequest)
-					.onToolExecuted(aiToolService::processToolExecution)
+					.beforeToolExecution(event -> {
+						logFirstModelEvent.run();
+						logService.debug("LLM timing tool-start name=" + event.request().name());
+						aiToolService.processToolRequest(event);
+					})
+					.onToolExecuted(event -> {
+						aiToolService.processToolExecution(event);
+						final var duration = event.duration();
+						logService.debug("LLM timing tool-complete name=" + event.request()
+							.name() + " durationMs=" + (duration == null ? "unknown" :
+							Long.toString(duration.toMillis())) + " failed=" + event.hasFailed());
+					})
 					.onPartialThinkingWithContext((thinking, context) -> {
+						logFirstModelEvent.run();
 						if (stopRequested) {
 							stopRequested = false;
 							aiMessageStarted.set(true);
@@ -831,6 +852,7 @@ public class FijiAssistantChat {
 						}
 					})
 					.onPartialResponseWithContext((partialResponse, context) -> {
+						logFirstModelEvent.run();
 						aiMessageStarted.set(true);
 						if (stopRequested) {
 							stopRequested = false;
@@ -852,6 +874,9 @@ public class FijiAssistantChat {
 						}
 					})
 					.onCompleteResponse(response -> {
+						final long elapsed = (System.nanoTime() - streamStart) / 1_000_000;
+						logService.debug("LLM timing stream-complete model=" + modelName +
+							" durationMs=" + elapsed);
 						aiMessageStarted.set(true);
 						try {
 							if (currentConversation != null) {
@@ -875,6 +900,10 @@ public class FijiAssistantChat {
 						}
 					})
 					.onError(error -> {
+						final long elapsed = (System.nanoTime() - streamStart) / 1_000_000;
+						logService.debug("LLM timing stream-failed model=" + modelName +
+							" durationMs=" + elapsed + " error=" + error.getClass()
+							.getSimpleName());
 						handleAssistantFailure(error, currentStreamingPanel,
 							aiMessageStarted);
 					})

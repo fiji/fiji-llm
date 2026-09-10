@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.assistant;
 
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -49,6 +50,8 @@ import sc.fiji.llm.tools.AiToolService;
 public class DefaultAssistantService extends AbstractService implements
 	AssistantService
 {
+	@Parameter
+	private LogService logService;
 
 	@Parameter
 	private ProviderService providerService;
@@ -72,7 +75,8 @@ public class DefaultAssistantService extends AbstractService implements
 			.toolExecutionErrorHandler(aiToolService::handleExecutionError)
 			.toolArgumentsErrorHandler(aiToolService::handleArgumentError)
 			.chatModel(provider.createChatModel(modelName));
-
+		builder.registerListeners(AssistantTimingListeners.create(logService,
+			providerName, modelName));
 		// Apply request parameters at AiServices level where they'll be used
 		if (defaultChatParameters != null) {
 			builder.chatRequestTransformer(chatRequest -> {
