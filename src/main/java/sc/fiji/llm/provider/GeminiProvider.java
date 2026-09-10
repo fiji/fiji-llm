@@ -61,8 +61,9 @@ public class GeminiProvider extends AbstractLLMProvider {
 	public List<String> getAvailableModels() {
 		// Google AI doesn't provide a public API endpoint to list models
 		// Fall back to hard-coded list
-		return Arrays.asList("gemini-2.5-pro", "gemini-2.5-flash",
-			"gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-2.0-flash-lite");
+		return Arrays.asList("gemini-3.8-flash", "gemini-3.7-flash",
+			"gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite",
+			"gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite");
 	}
 
 	@Override
