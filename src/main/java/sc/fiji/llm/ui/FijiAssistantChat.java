@@ -85,6 +85,7 @@ import org.scijava.thread.ThreadService;
 
 import com.google.gson.JsonArray;
 
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
@@ -1637,14 +1638,6 @@ public class FijiAssistantChat {
 		return chatMemory;
 	}
 
-	private FijiAssistant buildTemporaryAssistant() {
-		ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(2);
-		chatMemory.add(new SystemMessage(
-			"Your response text cannot contain: more than 5 words, special formatting, or punctuation."));
-		return assistantService.createAssistant(FijiAssistant.class, llmProvider
-			.getName(), modelName, chatMemory, requestParameters);
-	}
-
 	/**
 	 * Clear the chat panel (removes all message panels).
 	 */
@@ -1670,20 +1663,22 @@ public class FijiAssistantChat {
 		final AtomicBoolean cancelConversation)
 	{
 		SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
-		buildAssistant(systemMessage);
+		ChatMemory chatMemory = buildAssistant(systemMessage);
 		String textToTruncate = userMessage;
 		String conversationName;
 		try {
 			// Create a simple request to summarize the user's message into a brief
 			// name
 			final String namingPrompt =
-				"Respond with ONLY a 3-5 word summary of the following text: \"" +
+				"Following is the first message of a new conversation. Respond " +
+				"with ONLY a 3-5 word summary of this message, suitable for a " +
+				"conversation title: \"" +
 					userMessage + "\"";
 			final ChatRequest nameRequest = ChatRequest.builder().messages(
-				new dev.langchain4j.data.message.UserMessage(namingPrompt)).build();
+				new UserMessage(namingPrompt)).build();
 
-			final dev.langchain4j.data.message.AiMessage response =
-				buildTemporaryAssistant().chat(nameRequest);
+			final AiMessage response = assistant.chat(nameRequest);
+			chatMemory.clear();
 			textToTruncate = response.text();
 		}
 		catch (Exception e) {
