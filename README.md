@@ -45,6 +45,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
   - [LLMProvider](#llmprovider)
   - [ContextItemSupplier](#contextitemsupplier)
   - [AiToolPlugin](#aitoolplugin)
+    - [Tool Best Practices](#tool-best-practices)
   - [ChatbotService](#chatbotservice)
 - [FAQ](#frequently-asked-questions)
 
@@ -207,6 +208,18 @@ Provide a mapping from the Fiji application environment to [`ContextItems`](src/
 ### [AiToolPlugin](src/main/java/sc/fiji/llm/tools/AiToolPlugin.java)
 
 These plugins contain methods annotated with `langchain4j`'s [`@Tool`](https://github.com/langchain4j/langchain4j/blob/main/langchain4j-core/src/main/java/dev/langchain4j/agent/tool/Tool.java) annotation. New tools enable code to be run by the AI assistants.
+
+#### Tool Best Practices
+
+When adding an `AiToolPlugin`:
+
+* **Use scoped tool names.** Give every `@Tool` an explicit name following the `fiji_<scope>_<operation>` pattern. Use lower-case names and kebab case (also called cigar case) for multiword operations, such as `fiji_script_read-content`. The scope prevents collisions between plugins. Existing tools use both underscores and hyphens in operation names, so preserve an existing name when modifying a tool and use the exact name consistently in descriptions, errors, and recommendations.
+
+* **Choose useful parameter names.** Use `@P` to provide descriptive, stable names to the LLM, usually in `snake_case`, even when the Java parameter uses `camelCase`: `@P("image_id")`, `@P("menu_path")`, or `@P("start_line")`. Include units, indexing conventions, and other constraints in the tool description when they matter.
+
+* **Keep descriptions at the right level.** Keep `getUsage()` as a short overview of the whole `fiji_<scope>_*` namespace and its basic workflow. Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description.
+
+* **Return valid JSON strings.** Tool methods return `String`, so serialize every success and error result as JSON. Use the shared helpers in [`AbstractAiToolPlugin`](src/main/java/sc/fiji/llm/tools/AbstractAiToolPlugin.java): `jsonProp("key", value).toString()` for a simple property, `stringProp("key", object)` for a named object result, and `jsonError(...)` for validation failures, unavailable state, and caught exceptions. Build larger responses with `JsonObject` and `JsonArray`; do not concatenate JSON by hand.
 
 ### [ChatbotService](src/main/java/sc/fiji/llm/ui/ChatbotService.java)
 
