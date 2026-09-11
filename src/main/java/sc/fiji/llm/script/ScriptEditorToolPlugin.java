@@ -59,7 +59,7 @@ import sc.fiji.llm.ui.TextEditorUtils;
  * Provides capabilities to open the editor and create/update scripts.
  */
 @Plugin(type = AiToolPlugin.class)
-public class ScriptEditorTool extends AbstractAiToolPlugin {
+public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 	private static final String IS_ACTIVE_KEY = "is_active";
 
@@ -71,8 +71,8 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 		return "Script Editor Tools";
 	}
 
-	public ScriptEditorTool() {
-		super(ScriptEditorTool.class);
+	public ScriptEditorToolPlugin() {
+		super(ScriptEditorToolPlugin.class);
 	}
 
 	@Override

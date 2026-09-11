@@ -63,10 +63,10 @@ AiServices.builder(FijiAssistant.class)
 Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensitive filtering.
 
 Built-in tools include:
-- **`ImageJMacroTool`** — macro recorder integration, macro function discovery
-- **`CommandInteractionTool`** — ImageJ command execution
-- **`ScriptEditorTool`** — script editor interaction
-- **`ImageTool`** — active image metadata access
+- **`ImageJMacroToolPlugin`** — macro recorder integration, macro function discovery
+- **`CommandInteractionToolPlugin`** — ImageJ command execution
+- **`ScriptEditorToolPlugin`** — script editor interaction
+- **`ImageToolPlugin`** — active image metadata access
 
 ### MCP (Model Context Protocol) Bridge
 

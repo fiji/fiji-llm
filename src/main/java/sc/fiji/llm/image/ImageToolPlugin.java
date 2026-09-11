@@ -51,7 +51,7 @@ import sc.fiji.llm.tools.AiToolPlugin;
  * AI tool collection for querying open images in Fiji.
  */
 @Plugin(type = AiToolPlugin.class)
-public class ImageTool extends AbstractAiToolPlugin {
+public class ImageToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private ImagePlusHelper iPlusHelper;
@@ -59,8 +59,8 @@ public class ImageTool extends AbstractAiToolPlugin {
 	@Parameter
 	private ImageDisplayService imageDisplayService;
 
-	public ImageTool() {
-		super(ImageTool.class);
+	public ImageToolPlugin() {
+		super(ImageToolPlugin.class);
 	}
 
 	@Override

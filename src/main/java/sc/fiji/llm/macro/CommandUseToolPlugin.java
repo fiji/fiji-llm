@@ -64,7 +64,7 @@ import sc.fiji.llm.tools.ToolScope;
  * AI tool collection for LLM discovery and execution of available commands.
  */
 @Plugin(type = AiToolPlugin.class)
-public class CommandInteractionTool extends AbstractAiToolPlugin {
+public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	private static final int MAX_RESULTS = 10;
 
@@ -77,8 +77,8 @@ public class CommandInteractionTool extends AbstractAiToolPlugin {
 	@Parameter
 	private PluginService pluginService;
 
-	public CommandInteractionTool() {
-		super(CommandInteractionTool.class);
+	public CommandUseToolPlugin() {
+		super(CommandUseToolPlugin.class);
 	}
 
 	@Override

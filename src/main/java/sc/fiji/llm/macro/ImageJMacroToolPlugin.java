@@ -51,13 +51,13 @@ import sc.fiji.llm.tools.ToolScope;
  * Allows the assistant to open the macro recorder and capture user actions.
  */
 @Plugin(type = AiToolPlugin.class)
-public class ImageJMacroTool extends AbstractAiToolPlugin {
+public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private LegacyService legacyService;
 
-	public ImageJMacroTool() {
-		super(ImageJMacroTool.class);
+	public ImageJMacroToolPlugin() {
+		super(ImageJMacroToolPlugin.class);
 	}
 
 	@Override
