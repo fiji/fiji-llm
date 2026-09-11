@@ -48,10 +48,9 @@ import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /**
- * AI tool for querying open images in Fiji.
+ * AI tool collection for querying open images in Fiji.
  */
-// TODO - currently removed from tools registry until a revision pass is made
-// @Plugin(type = AiToolPlugin.class)
+@Plugin(type = AiToolPlugin.class)
 public class ImageTool extends AbstractAiToolPlugin {
 
 	@Parameter
@@ -71,61 +70,70 @@ public class ImageTool extends AbstractAiToolPlugin {
 
 	@Override
 	public String getUsage() {
-		return "Tools for querying open images in Fiji. Use fiji_image_list to see all open images, " +
-			"and fiji_image_details to get metadata (dimensions, pixel type) for a specific image by id.";
+		return """
+The fiji_image_* tools query images currently open in Fiji.
+""";
 	}
 
-	@Tool(value = { "List all currently open and visible images with their id and title." }, name = "fiji_image_list")
+	@Tool(value = { "List all currently open and visible images, including each image's id and title." }, name = "fiji_image_list")
 	public String listImages() {
-		JsonArray images = new JsonArray();
-		List<Integer> ids = iPlusHelper.getIds();
-		for (Integer id : ids) {
-			if (iPlusHelper.isVisible(id)) {
-				JsonObject imageJson = new JsonObject();
-				imageJson.addProperty("id", id);
-				imageJson.addProperty("title", iPlusHelper.getTitle(id));
-				images.add(imageJson);
+		try {
+			JsonArray images = new JsonArray();
+			List<Integer> ids = iPlusHelper.getIds();
+			for (Integer id : ids) {
+				if (iPlusHelper.isVisible(id)) {
+					JsonObject imageJson = new JsonObject();
+					imageJson.addProperty("id", id);
+					imageJson.addProperty("title", iPlusHelper.getTitle(id));
+					images.add(imageJson);
+				}
 			}
+			return jsonProp("open_images", images).toString();
 		}
-		JsonObject result = new JsonObject();
-		result.add("open_images", images);
-		return result.toString();
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_image_list: " + e.getMessage());
+		}
 	}
 
-	@Tool(value = { "Get detailed metadata for an open image by its id, including dimensions and pixel type." }, name = "fiji_image_details")
+	@Tool(value = { "Get metadata for an open image by its id, including its title, pixel type, and dimensions. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
 	public String getImageDetails(@P("image_id") int imageId) {
-		List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-		if (displays == null || displays.isEmpty()) {
-			return jsonError("No images are currently open");
-		}
-		for (ImageDisplay display : displays) {
-			if (iPlusHelper.getId(display) != imageId) continue;
-			DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
-			if (datasetView == null) continue;
-			Dataset dataset = datasetView.getData();
-			if (dataset == null) continue;
-
-			JsonObject result = new JsonObject();
-			result.addProperty("id", imageId);
-			result.addProperty("title", iPlusHelper.getTitle(imageId));
-			result.addProperty("pixel_type", dataset.getType().getClass().getSimpleName());
-
-			JsonArray dims = new JsonArray();
-			for (int i = 0; i < dataset.numDimensions(); i++) {
-				JsonObject dimObj = new JsonObject();
-				try {
-					AxisType axisType = dataset.axis(i).type();
-					dimObj.addProperty("type", axisType != null ? axisType.getLabel() : "Unknown");
+		try {
+			List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
+			if (displays == null || displays.isEmpty()) {
+				return jsonError("No images are currently open");
 				}
-				catch (Exception e) {
-					dimObj.addProperty("type", "Dim" + i);
+			for (ImageDisplay display : displays) {
+				if (iPlusHelper.getId(display) != imageId) continue;
+				DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
+				if (datasetView == null) continue;
+				Dataset dataset = datasetView.getData();
+				if (dataset == null) continue;
+
+				JsonObject result = new JsonObject();
+				result.addProperty("id", imageId);
+				result.addProperty("title", iPlusHelper.getTitle(imageId));
+				result.addProperty("pixel_type", dataset.getType().getClass().getSimpleName());
+
+				JsonArray dims = new JsonArray();
+				for (int i = 0; i < dataset.numDimensions(); i++) {
+					JsonObject dimObj = new JsonObject();
+					try {
+						AxisType axisType = dataset.axis(i).type();
+						dimObj.addProperty("type", axisType != null ? axisType.getLabel() : "Unknown");
+					}
+					catch (Exception e) {
+						dimObj.addProperty("type", "Dim" + i);
+					}
+					dimObj.addProperty("length", dataset.dimension(i));
+					dims.add(dimObj);
 				}
-				dimObj.addProperty("length", dataset.dimension(i));
-				dims.add(dimObj);
+				result.add("dimensions", dims);
+				return result.toString();
 			}
-			result.add("dimensions", dims);
-			return result.toString();
+			return jsonError("No open image found with id: " + imageId);
 		}
-		return jsonError("No open image found with id: " + imageId);
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_image_details: " + e.getMessage());
+		}
 	}
 }
