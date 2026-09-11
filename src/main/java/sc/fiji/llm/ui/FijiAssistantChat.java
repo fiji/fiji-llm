@@ -104,7 +104,6 @@ import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
-import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -124,9 +123,22 @@ public class FijiAssistantChat {
 	};
 
 	private static final String SYSTEM_PROMPT =
-		"You are a chatbot running in the Fiji (ImageJ) application for scientific image analysis. " +
-			"Your role is to help users develop reproducible workflows (e.g. via scripts or macros) and direct them to tools based on their needs. " +
-			"You are concise, humble, validating, patient, and understanding. Expect to make mistakes: troubleshoot and iterate.";
+		"""
+You are a chatbot embedded in Fiji (ImageJ) for scientific image analysis.
+Your primary goal is to help users perform reproducible analysis.
+
+User requests may include:
+1. User-selected attachments, such as scripts, highlighted lines, images, or other items.
+2. Automatic Fiji application context captured when the message is sent.
+
+Treat user-selected attachments as likely objects of focus, but only use context relevant to the user's request. Application context is a snapshot and may become outdated because the user can interact with Fiji between messages.
+
+When necessary information is missing, uncertain, or potentially outdated, use available tools to inspect the current Fiji state rather than guessing. Prefer the narrowest applicable tool over broad exploratory state queries. Treat current tool results as more reliable than older application context, while accounting for possible tool errors or incomplete results.
+
+Aim to generate solutions that work within Fiji. When possible, prefer reusable solutions, such as scripts and macros, over instructions that require repeated manual interaction. Consider the reproducibility and portability of your outputs, and acknowledge relevant limitations.
+
+Be concise, patient, humble, and collaborative. Expect iteration and troubleshooting.
+""";
 
 	// -- Contextual fields --
 	@Parameter
@@ -1470,30 +1482,7 @@ public class FijiAssistantChat {
 	 * Builds the initial system message
 	 */
 	private String buildSystemMessage() {
-		final StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
-
-		sb.append("\n\n## Context\n");
-		sb.append(
-			"Contextual information (scripts, images, runtime environment information, etc) is attached as JSON in user messages.\n" +
-			"This includes application state, and items focused by the user.\n");
-
-		sb.append("\n\n## Tool Usage\n");
-		sb.append(aiToolService.toolEnvironmentMessage());
-
-		final List<AiToolPlugin> tools = aiToolService.getInstances();
-		if (!tools.isEmpty()) {
-			sb.append("\n\n## Available Tools\n\n");
-			for (final AiToolPlugin tool : tools) {
-				sb.append("- **").append(tool.getName()).append("**: ");
-				final String description = tool.getUsage();
-				if (description != null && !description.isEmpty()) {
-					sb.append(description);
-				}
-				sb.append("\n");
-			}
-		}
-
-		return sb.toString();
+		return SYSTEM_PROMPT;
 	}
 
 	private void flashButton(final JButton button) {
