@@ -50,20 +50,6 @@ import net.imagej.ImageJService;
 public interface AiToolService extends SingletonService<AiToolPlugin>, ImageJService {
 
 	/**
-	 * @return A system message fragment indicating language-specific
-	 *         considerations for executing tools. This is necessary when using
-	 *         {@link dev.langchain4j.agent.tool.P} parameter annotations. These
-	 *         can make all tools appear as Python methods with kwargs and result
-	 *         in incorrect API usage by some models.
-	 */
-	default String toolEnvironmentMessage() {
-		return """
-IMPORTANT: All tools are implemented in Java. Argument ordering MUST be respected.
-Remember: Tool methods are ONLY available to you, not to the user.
-""";
-	}
-
-	/**
 	 * This method allows for global definition of tools, e.g. when building an
 	 * {@code AiService}
 	 *
