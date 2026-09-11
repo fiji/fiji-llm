@@ -84,17 +84,11 @@ public class ScriptEditorTool extends AbstractAiToolPlugin {
 	@Override
 	public String getUsage() {
 		return """
-Scripts are user-facing single file programs used to build reproducible workflows.
-Fiji users have a text editing interface supporting multiple editors open at once.
-Each editor can have multiple script files open at once.
-A script's file_name extension determines its programming language (e.g., .py, .ijm, .groovy).
-Tools to interact with scripts have a "fiji_script_" prefix.
-Tools will either reference scripts by their unique script_id, or operate on the active script.
-Script lines are 1-indexed and all line ranges are inclusive.
+The fiji_script_* tools interact with Fiji scripts: user-facing, single-file programs used to build reproducible workflows. Multiple scripts may be open across multiple editor windows. Many tools operate on the active script; use fiji_script_activate to set the active script first, as needed.
 """;
 	}
 
-	@Tool(value = { "Open the script editor UI with an active blank script, if not currently open." }, name = "fiji_script_open-editor")
+	@Tool(value = { "Open a script editor UI with an active blank script, if no editor is currently open; no-op if an editor is open" }, name = "fiji_script_open-editor")
 	public String startEditor() {
 		try {
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
@@ -137,7 +131,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Set the active script by its script_id." }, name = "fiji_script_activate")
+	@Tool(value = { "Use this tool first, as needed, to set the active script by its script_id" }, name = "fiji_script_activate")
 	public String setActiveScript(@P("script_id") final String scriptId)
 	{
 		try {
@@ -206,7 +200,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "List all open script editors and their tabs." }, name = "fiji_script_list")
+	@Tool(value = { "Return a list all open scripts, including their script_id's, grouped by their parent script editor" }, name = "fiji_script_list")
 	public String listOpenScripts() {
 		try {
 			JsonArray editors = new JsonArray();
@@ -248,7 +242,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Create and activate a new script; no-op if an unmodified blank script is already active." }, name = "fiji_script_create")
+	@Tool(value = { "Create and activate a new blank script; no-op if an unmodified blank script is currently active" }, name = "fiji_script_create")
 	public String createScript() {
 		try {
 			// Check if editor is open
@@ -291,7 +285,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Rename the active script file. Changing its extension will change its script language." },
+	@Tool(value = { "Rename the active script. A script's programming language is determined by its name ending in a recognized extension (e.g., .py, .ijm, .groovy). Changing a script's extension will change its language" },
 		name = "fiji_script_rename")
 	public String renameScript(@P("script_name") final String scriptName)
 	{
@@ -361,7 +355,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Return lines within a specified range from the active script" }, name = "fiji_script_read-lines")
+	@Tool(value = { "Return lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_read-lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -422,7 +416,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Delete lines from the active script within a specified range" }, name = "fiji_script_delete-lines")
+	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_delete-lines")
 	public String deleteLines(@P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
@@ -490,7 +484,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Insert content before a specific line in the active script." }, name = "fiji_script_insert-content")
+	@Tool(value = { "Insert content in the active script before the specified line number (1-indexed)" }, name = "fiji_script_insert-content")
 	public String insertAt(@P("content") final String content, @P("before_line") final Integer beforeLine)
 	{
 		try {
@@ -569,7 +563,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		}
 	}
 
-	@Tool(value = { "Completely replace the content of the active script." }, name = "fiji_script_replace-content")
+	@Tool(value = { "Completely replace the content of the active script" }, name = "fiji_script_replace-content")
 	public String replaceScript(@P("content") final String content)
 	{
 		try {
@@ -618,7 +612,7 @@ Script lines are 1-indexed and all line ranges are inclusive.
 		return stringProp("replaced_content", replaceState);
 	}
 
-	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line, extending the script if needed." }, name = "fiji_script_replace-lines")
+	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line (1-indexed), adding lines to extend the script if needed" }, name = "fiji_script_replace-lines")
 	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final Integer startLine)
 	{
 		try {
