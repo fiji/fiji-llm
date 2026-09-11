@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.Tool;
@@ -79,6 +80,16 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 			err.addProperty("recommended_tool", recommendedTool);
 		}
 		return err.toString();
+	}
+
+	protected String stringProp(String key, JsonElement element) {
+		return jsonProp(key, element).toString();
+	}
+
+	protected JsonObject jsonProp(String key, JsonElement element) {
+		JsonObject jsonObject = new JsonObject();
+		jsonObject.add(key, element);
+		return jsonObject;
 	}
 
 	private synchronized void buildTools() {

@@ -30,13 +30,13 @@
 package sc.fiji.llm.macro;
 
 import java.awt.Frame;
-import java.util.List;
 
 import javax.swing.SwingUtilities;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
@@ -47,11 +47,10 @@ import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
 
 /**
- * AI tool that provides macro recording capabilities for the LLM. Allows the
- * assistant to open the macro recorder and capture user actions.
+ * AI tool collection that provides macro recording capabilities for the LLM.
+ * Allows the assistant to open the macro recorder and capture user actions.
  */
-// TODO - currently removed from tools registry until a revision pass is made
-// @Plugin(type = AiToolPlugin.class)
+@Plugin(type = AiToolPlugin.class)
 public class ImageJMacroTool extends AbstractAiToolPlugin {
 
 	@Parameter
@@ -68,54 +67,59 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 
 	@Override
 	public String getName() {
-		// legacyService.getIJ1Helper().getIJ().getWindows();
 		return "Macro Writing Tools";
 	}
 
 	@Override
 	public String getUsage() {
-		return "We use ImageJ Macros to build reproducible workflows. These tools support macro creation and editing.\n" +
-			"To start recording a macro, use startRecorder.\n" +
-			"To find macro functions, use: 1) listMacroCategories(), 2) listMacroFunctionsByCategory(category).";
+		return """
+The fiji_macro_* tools support creation of ImageJ macros: a custom script format where a sequence of functions can be saved, adapted, and replayed.
+Macro creation follows an intuitive workflow: 1) open the macro recorder to start recording; 2) the user executes commands (or agent via fiji_command_* tools) which are recorded in the order they are run; 3) stop recording and create an .ijm script; 4) use fiji_script_* tools to edit the created macro
+""";
 	}
 
-	@Tool(value = { "Lists the built-in ImageJ macro function categories. Use fiji_macro_list_functions to list the functions for a particular category." }, name = "fiji_macro_list_categories")
+	@Tool(value = { "List the built-in ImageJ macro function categories. Use fiji_macro_list_functions with one of these categories to see its functions." }, name = "fiji_macro_list_categories")
 	public String listMacroCategories() {
-		List<String> categories = MacroFunctionRegistry.getCategories();
-		if (categories.isEmpty()) {
-			return "No categories found";
+		try {
+			JsonArray categories = new JsonArray();
+			for (String category : MacroFunctionRegistry.getCategories()) {
+				categories.add(category);
+			}
+			return jsonProp("categories", categories).toString();
 		}
-		StringBuilder sb = new StringBuilder();
-		sb.append("Available macro function categories:\n\n");
-		for (String category : categories) {
-			sb.append("• ").append(category).append("\n");
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_macro_list_categories: " + e.getMessage());
 		}
-		return sb.toString();
 	}
 
-	@Tool(value = { "Lists the built-in ImageJ macro functions for the given category. Use fiji_macro_list_categories first to find categories." }, name = "fiji_macro_list_functions")
+	@Tool(value = { "List the built-in ImageJ macro functions for a category. Use fiji_macro_list_categories first to find valid categories; each result includes the function signature and description" }, name = "fiji_macro_list_functions")
 	public String listMacroFunctionsByCategory(@P("category") String category) {
-		if (category == null || category.trim().isEmpty()) {
-			return jsonError("Category cannot be empty");
+		try {
+			if (category == null || category.trim().isEmpty()) {
+				return jsonError("Category cannot be empty");
+			}
+
+			JsonArray functions = new JsonArray();
+			for (MacroFunctionRegistry.MacroFunction function : MacroFunctionRegistry
+				.getByCategory(category))
+			{
+				JsonObject functionJson = new JsonObject();
+				functionJson.addProperty("name", function.getName());
+				functionJson.addProperty("description", function.getDescription());
+				functions.add(functionJson);
+			}
+
+			JsonObject result = new JsonObject();
+			result.addProperty("category", category);
+			result.add("functions", functions);
+			return result.toString();
 		}
-
-		List<MacroFunctionRegistry.MacroFunction> functions = MacroFunctionRegistry
-			.getByCategory(category);
-
-		if (functions.isEmpty()) {
-			return "No functions found in category: " + category;
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_macro_list_functions: " + e.getMessage());
 		}
-
-		StringBuilder sb = new StringBuilder();
-
-		for (MacroFunctionRegistry.MacroFunction func : functions) {
-			sb.append("• **").append(func.simpleString()).append("**\n");
-		}
-
-		return sb.toString();
 	}
 
-	@Tool(value = { "Start the macro recorder" }, name = "fiji_macro_start_recorder" )
+	@Tool(value = { "Start the ImageJ macro recorder, or bring the existing recorder to the front. When the recorder is open, ALL commands will be recorded, in the order they run" }, name = "fiji_macro_start_recorder" )
 	public String startRecorder() {
 		try {
 			// Run the macro recorder command through ImageJ
@@ -126,28 +130,35 @@ public class ImageJMacroTool extends AbstractAiToolPlugin {
 				legacyService.runLegacyCommand("ij.plugin.frame.Recorder", "");
 			}
 			else {
-				SwingUtilities.invokeLater(() -> {
+				SwingUtilities.invokeAndWait(() -> {
 					legacyService.runLegacyCommand("ij.plugin.frame.Recorder", "");
 				});
 			}
-			return "Macro recorder is now active.";
+			JsonObject result = new JsonObject();
+			result.addProperty("recorder_started", true);
+			return result.toString();
 		}
-		catch (RuntimeException e) {
-			return jsonError("Failed to open macro recorder");
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_macro_start_recorder: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Check whether the ImageJ macro recorder is currently open." }, name = "fiji_macro_recorder-state")
+	@Tool(value = { "Check whether the ImageJ macro recorder is currently open" }, name = "fiji_macro_recorder-state")
 	public String getMacroRecorderState() {
-		boolean recorderOpen = false;
-		for (Frame frame : Frame.getFrames()) {
-			if (frame.toString().startsWith("ij.plugin.frame.Recorder")) {
-				recorderOpen = frame.isVisible();
-				break;
+		try {
+			boolean recorderOpen = false;
+			for (Frame frame : Frame.getFrames()) {
+				if (frame.toString().startsWith("ij.plugin.frame.Recorder")) {
+					recorderOpen = frame.isVisible();
+					break;
+				}
 			}
+			JsonObject result = new JsonObject();
+			result.addProperty("recorder_is_open", recorderOpen);
+			return result.toString();
 		}
-		JsonObject result = new JsonObject();
-		result.addProperty("recorder_is_open", recorderOpen);
-		return result.toString();
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_macro_recorder-state: " + e.getMessage());
+		}
 	}
 }

@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +51,9 @@ import org.scijava.search.Searcher;
 import org.scijava.search.module.ModuleSearchResult;
 import org.scijava.search.module.ModuleSearcher;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
@@ -59,7 +61,7 @@ import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
 
 /**
- * AI tool for LLM agentic discovery and execution of available commands.
+ * AI tool collection for LLM discovery and execution of available commands.
  */
 @Plugin(type = AiToolPlugin.class)
 public class CommandInteractionTool extends AbstractAiToolPlugin {
@@ -92,13 +94,11 @@ public class CommandInteractionTool extends AbstractAiToolPlugin {
 	@Override
 	public String getUsage() {
 		return """
-Commands are reusable functions. They vary by runtime (e.g. installed plugins).
-To find available commands, use searchCommands. Always search for a command first to verify it exists before suggesting it to the user.
-To run a command, use: 1) searchCommands, then 2) runCommand with the desired menuPath.
+The fiji_command_* tools discover and execute ImageJ commands. Available commands vary by the installed plugins. Search for a command before running it.
 """;
 	}
 
-	@Tool(value = { "Execute a command using its full menu path (e.g., \"File > Open Samples > Blobs\"). Also records execution if the macro recorder is running. Can only run interactive commands, containing \"...\") or in the \"Open Samples\" menu. Non-interactive commands are disabled for agentic use. Use fiji_command_search to find available commands.", },
+	@Tool(value = { "Execute a command using its full menu path (e.g., \"File > Open Samples > Blobs\"). Only interactive commands, whose names end with \"...\", and commands in the \"Open Samples\" menu are allowed. Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
 	public String runCommand(@P("menu_path") String menuPath) {
 		try {
@@ -138,14 +138,18 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 			// Run the module - this goes through the same path as the search panel
 			// and includes automatic recorder integration
 			moduleService.run(moduleInfo, true);
-			return "Command executed: " + moduleInfo.getName();
+
+			JsonObject command = new JsonObject();
+			command.addProperty("name", moduleInfo.getName());
+			command.addProperty("menu_path", menuString);
+			return stringProp("executed_command", command);
 		}
 		catch (RuntimeException e) {
-			return jsonError(e.getMessage());
+			return jsonError("Failed to run fiji_command_run: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Lists available commands whose name matches the given search term, sorted by descending relevancy." },
+	@Tool(value = { "Search for available ImageJ commands whose name matches the given term, sorted by descending relevance. The returned menu_path can be used with fiji_command_run" },
 		name = "fiji_command_search" )
 	public String searchCommands(@P("search_name") String searchName) {
 		try {
@@ -199,64 +203,44 @@ To run a command, use: 1) searchCommands, then 2) runCommand with the desired me
 				}
 			}
 
-			if (results.isEmpty()) {
-				return "No commands found matching: " + searchName;
-			}
-
-			// Format results as JSON-like string for LLM consumption
-			StringJoiner sb = new StringJoiner(",\n", "[\n", "\n]");
+			JsonArray commands = new JsonArray();
 			for (SearchResult result : results) {
 				if (result instanceof ModuleSearchResult msr) {
-					sb.add(formatModuleResult(msr));
+					commands.add(formatModuleResult(msr));
 				}
-				// Ignore non-module results
 			}
-			return sb.toString();
+
+			JsonObject searchResult = new JsonObject();
+			searchResult.addProperty("search_name", searchName);
+			searchResult.add("commands", commands);
+			return searchResult.toString();
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return jsonError("Search interrupted");
 		}
 		catch (RuntimeException e) {
-			return jsonError("Search failed");
+			return jsonError("Failed to run fiji_command_search: " + e.getMessage());
 		}
 	}
 
-	/**
-	 * Formats a simplified single module search result as a JSON object string.
-	 * Includes: name, menu path, shortcut. Not included: identifier, description,
-	 * label, additional properties
-	 */
-	private String formatModuleResult(ModuleSearchResult msr) {
-		StringJoiner props = new StringJoiner(", ", "{", "}");
+	private JsonObject formatModuleResult(ModuleSearchResult msr) {
+		JsonObject command = new JsonObject();
 		ModuleInfo info = msr.info();
 
-		// Add name and basic info
-		props.add("\"name\": \"" + escapeJson(msr.name()) + "\"");
+		command.addProperty("name", msr.name());
 
-		// Include menu path if available
 		if (info.getMenuPath() != null && !info.getMenuPath().isEmpty()) {
-			props.add("\"menuPath\": \"" + escapeJson(info.getMenuPath()
-				.getMenuString(true)) + "\"");
+			command.addProperty("menu_path", info.getMenuPath().getMenuString(true));
 		}
 
-		// Include shortcut if available
 		if (info.getMenuPath() != null && info.getMenuPath().getLeaf() != null &&
 			info.getMenuPath().getLeaf().getAccelerator() != null)
 		{
-			props.add("\"shortcut\": \"" + escapeJson(info.getMenuPath().getLeaf()
-				.getAccelerator().toString()) + "\"");
+			command.addProperty("shortcut", info.getMenuPath().getLeaf()
+				.getAccelerator().toString());
 		}
 
-		return "  " + props;
-	}
-
-	/**
-	 * Escapes special characters for JSON string representation.
-	 */
-	private String escapeJson(String value) {
-		if (value == null) return "";
-		return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n",
-			"\\n").replace("\r", "\\r").replace("\t", "\\t");
+		return command;
 	}
 }

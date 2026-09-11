@@ -45,7 +45,6 @@ import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
@@ -56,8 +55,8 @@ import sc.fiji.llm.tools.ToolScope;
 import sc.fiji.llm.ui.TextEditorUtils;
 
 /**
- * AI tool that allows the LLM to interact with the Fiji script editor. Provides
- * capabilities to open the editor and create/update scripts.
+ * AI tool collection that allows the LLM to interact with the Fiji script editor.
+ * Provides capabilities to open the editor and create/update scripts.
  */
 @Plugin(type = AiToolPlugin.class)
 public class ScriptEditorTool extends AbstractAiToolPlugin {
@@ -726,14 +725,4 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		return activeTabJson.toString();
 	}
 
-	private String stringProp(String key, JsonElement element) {
-		return jsonProp(key, element).toString();
-	}
-
-	private JsonObject jsonProp(String key, JsonElement element) {
-		JsonObject jsonObject = new JsonObject();
-		jsonObject.add(key, element);
-		return jsonObject;
-
-	}
 }
