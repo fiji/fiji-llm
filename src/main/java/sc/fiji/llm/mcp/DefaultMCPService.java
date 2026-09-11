@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -77,6 +78,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.ServerCapabilities;
 import io.modelcontextprotocol.spec.McpSchema.Tool;
+import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -94,6 +96,16 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	private static final int STARTUP_WAIT = 3;
 	private static final int SHUTDOWN_WAIT = 3000;
 	private static final String FIJI_MCP_VERSION = "0.1.0";
+	private static final String MCP_INSTRUCTIONS =
+		"""
+This server exposes tools for inspecting and interacting with the current Fiji/ImageJ session.
+
+Tool calls may modify application state, scripts, images, or other workspace artifacts.
+
+State-query tools provide a current view of the application. Users may interact with Fiji between tool calls, so re-query state when accuracy matters.
+
+Prefer inspection before modification. Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
+""";
 
 	@Parameter
 	private LogService logService;
@@ -281,15 +293,10 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				.mcpEndpoint("/mcp")
 				.build();
 
-		final String instructions = "This server exposes tools for interacting with a separately " +
-			"running Fiji/ImageJ bioimage analysis application. Tool calls have real effects on the live app. " +
-			"Use fiji_context_* tools to query state. Note that state may change asynchronously by the human user " +
-			"and should be re-queried as needed.";
-
 		// Create MCP server with tools support
 		final McpSyncServer mcpServer = McpServer.sync(transportServlet)
 			.serverInfo("fiji-mcp-server", FIJI_MCP_VERSION)
-			.instructions(instructions)
+			.instructions(buildMCPInstructions())
 			.capabilities(ServerCapabilities.builder()
 				.tools(true)
 				.build())
@@ -354,6 +361,16 @@ public class DefaultMCPService extends AbstractService implements MCPService
 				logService.warn("Error stopping Jetty server", e);
 			}
 		}
+	}
+
+	private String buildMCPInstructions()
+	{
+		final StringJoiner sj = new StringJoiner("\n");
+		sj.add(MCP_INSTRUCTIONS);
+		for (AiToolPlugin toolPlugin : aiToolService.getInstances()) {
+			sj.add(toolPlugin.getUsage());
+		}
+		return sj.toString();
 	}
 
 	/**
