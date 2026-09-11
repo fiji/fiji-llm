@@ -813,7 +813,6 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 					attributes.put("context:from_user", userContextArray);
 				}
 
-
 				if (!attributes.isEmpty()) {
 					msgBuilder.attributes(attributes);
 				}
