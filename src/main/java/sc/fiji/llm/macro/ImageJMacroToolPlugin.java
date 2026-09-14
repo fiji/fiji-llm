@@ -34,6 +34,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
 
 import javax.swing.SwingUtilities;
 
@@ -154,7 +155,44 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		}
 	}
 
-	@Tool(value = { "Transfer the current macro recorder state to the script editor. See fiji_script_* tools for script interaction options" }, name = "fiji_macro_create_script")
+	@Tool(value = { "Close the ImageJ macro recorder and stop recording. Use fiji_macro_create_script first if the current macro should be transferred to the script editor." }, name = "fiji_macro_close_recorder")
+	public String closeRecorder() {
+		try {
+			String[] errors = new String[1];
+			Runnable closeAction = () -> {
+				Frame recorder = findRecorderFrame();
+				if (recorder == null) {
+					errors[0] = jsonError("ImageJ macro recorder is not open",
+						"fiji_macro_start_recorder");
+					return;
+				}
+
+				recorder.dispatchEvent(new WindowEvent(recorder,
+					WindowEvent.WINDOW_CLOSING));
+			};
+
+			if (SwingUtilities.isEventDispatchThread()) {
+				closeAction.run();
+			}
+			else {
+				SwingUtilities.invokeAndWait(closeAction);
+			}
+
+			if (errors[0] != null) {
+				return errors[0];
+			}
+
+			JsonObject result = new JsonObject();
+			result.addProperty("recorder_closed", true);
+			return result.toString();
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_macro_close_recorder: " + e
+				.getMessage());
+		}
+	}
+
+	@Tool(value = { "Transfer the current macro recorder state to the script editor. Use fiji_script_* tools for script interaction" }, name = "fiji_macro_create_script")
 	public String createScript() {
 		try {
 			String[] errors = new String[1];
@@ -205,7 +243,7 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 
 	private static Frame findRecorderFrame() {
 		for (Frame frame : Frame.getFrames()) {
-			if (frame.isVisible() && "ij.plugin.frame.Recorder".equals(frame
+			if (frame.isDisplayable() && "ij.plugin.frame.Recorder".equals(frame
 				.getClass().getName()))
 			{
 				return frame;
