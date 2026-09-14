@@ -102,14 +102,28 @@ You can connect your VS Code LLMs to the Fiji MCP server! This allows your agent
 		"fiji-mcp": {
 			"type": "http",
 			"url": "http://localhost:9090/mcp",
-			"startupMode": "onDemand"
 		},
 ```
 
-In the `Configure Tools` dialog, you should see a new `fiji-mcp-server` option that you can toggle on or off.
+In your chat `Configure Tools` dialog, you should see a new `fiji-mcp-server` option that you can toggle on or off.
+
+You may also want to update your `settings.json` and add:
+```json
+	"chat.mcp.autostart": "newAndOutdated"
+```
+
+Because the Fiji MCP server is dynamic, being tied to a running Fiji instance, your agent will receive errors trying to use Fiji tools when Fiji is closed. But this setting should allow it to reconnect when Fiji is running again. It also will restart its MCP connection after the tool definition cache is cleared. If you prefer to manually manage this connection, set `autostart` to `never`.
+
+You should run `MCP: Reset Tool Caches` any time deployed tools are revised.
+
+You can manually check and manage MCP server status with `MCP: List Servers`, as well.
 
 **NB**: Update the port in `mcp.json` as necessary
 **NB**: Your local Fiji application must be running first for the MCP server to be findable by VS Code. For best results, (re)start the server from `mcp.json` after launching Fiji.
+
+#### Custom Agent and Skill
+
+This repository includes a reference VS Code agent and a script-debugging skill in [`doc/agents/vscode`](doc/agents/vscode). To use them in a workspace, copy `fiji-mcp.agent.md` to `.github/agents/` and the `fiji-script-debugging` directory to `.github/skills/`. For personal use, copy the agent to `%APPDATA%\Code\User\prompts\` and the skill directory to `%USERPROFILE%\.copilot\skills\`. The skill guides an iterative create, run, diagnose, repair, and verify workflow for Fiji scripts.
 
 ## User Guide
 
