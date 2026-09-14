@@ -94,11 +94,11 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 	@Override
 	public String getUsage() {
 		return """
-The fiji_command_* tools discover and execute ImageJ commands. Available commands vary by the installed plugins. Search for a command before running it.
+The fiji_command_* tools discover and execute ImageJ commands. Available may commands vary based on installed plugins, so verify a command's presence before attempting to run it.
 """;
 	}
 
-	@Tool(value = { "Execute a command using its full menu path (e.g., \"File > Open Samples > Blobs\"). Only interactive commands, whose names end with \"...\", and commands in the \"Open Samples\" menu are allowed. Use fiji_command_search to find a command's menu path." },
+	@Tool(value = { "Execute a command using its full menu path (e.g., \"File > Open Samples > Blobs\"). Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
 	public String runCommand(@P("menu_path") String menuPath) {
 		try {
@@ -119,20 +119,6 @@ The fiji_command_* tools discover and execute ImageJ commands. Available command
 
 			if (moduleInfo == null) {
 				return jsonError("Command not found at path: " + menuPath);
-			}
-
-			// Validate that this command is allowed for agentic use
-			// Check for interactive commands (with "..." in the name)
-			boolean permittedCommand = false;
-
-			String leafName = path.getLeaf().getName();
-			permittedCommand = permittedCommand || leafName.contains("...");
-
-			permittedCommand = permittedCommand || menuString.contains(
-				"Open Samples") && !leafName.equals("Open Samples");
-
-			if (!permittedCommand) {
-				return jsonError("This command is not allowed for agentic use. Instruct user to run it.");
 			}
 
 			// Run the module - this goes through the same path as the search panel
