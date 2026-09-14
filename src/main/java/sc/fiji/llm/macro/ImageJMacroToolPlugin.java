@@ -29,10 +29,15 @@
 
 package sc.fiji.llm.macro;
 
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Frame;
+import java.awt.event.ActionEvent;
 
 import javax.swing.SwingUtilities;
 
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
@@ -42,9 +47,12 @@ import com.google.gson.JsonObject;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.script.ScriptContextItem;
+import sc.fiji.llm.script.ScriptID;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
+import sc.fiji.llm.ui.TextEditorUtils;
 
 /**
  * AI tool collection that provides macro recording capabilities for the LLM.
@@ -55,6 +63,9 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private LegacyService legacyService;
+
+	@Parameter
+	private LogService logService;
 
 	public ImageJMacroToolPlugin() {
 		super(ImageJMacroToolPlugin.class);
@@ -143,18 +154,88 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		}
 	}
 
+	@Tool(value = { "Transfer the current macro recorder state to the script editor. See fiji_script_* tools for script interaction options" }, name = "fiji_macro_create_script")
+	public String createScript() {
+		try {
+			String[] errors = new String[1];
+			Runnable createAction = () -> {
+				Frame recorder = findRecorderFrame();
+				if (recorder == null) {
+					errors[0] = jsonError("ImageJ macro recorder is not open", "fiji_macro_start_recorder");
+					return;
+				}
+
+				Button createButton = findButton(recorder, "Create");
+				if (createButton == null) {
+					logService.debug("fiji_macro_create_script failure: The macro recorder does not have a Create button");
+					errors[0] = jsonError("Could not locate the Macro Recorder's Create button. Please instruct user to click Create manually.");
+					return;
+				}
+
+				createButton.dispatchEvent(new ActionEvent(createButton,
+					ActionEvent.ACTION_PERFORMED, createButton.getActionCommand()));
+			};
+
+			if (SwingUtilities.isEventDispatchThread()) {
+				createAction.run();
+			}
+			else {
+				SwingUtilities.invokeAndWait(createAction);
+			}
+
+			if (errors[0] != null) {
+				return errors[0];
+			}
+
+			ScriptID scriptID = TextEditorUtils.getActiveScriptID();
+			if (scriptID == null) {
+				return jsonError( "Macro was created, but no script editor is active", "fiji_script_list");
+			}
+
+			JsonObject result = new JsonObject();
+			result.addProperty("macro_transferred", true);
+			result.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
+			return result.toString();
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_macro_create_script: " + e
+				.getMessage());
+		}
+	}
+
+	private static Frame findRecorderFrame() {
+		for (Frame frame : Frame.getFrames()) {
+			if (frame.isVisible() && "ij.plugin.frame.Recorder".equals(frame
+				.getClass().getName()))
+			{
+				return frame;
+			}
+		}
+		return null;
+	}
+
+	private static Button findButton(final Container container,
+		final String label)
+	{
+		for (Component component : container.getComponents()) {
+			if (component instanceof Button && label.equals(((Button) component)
+				.getLabel()))
+			{
+				return (Button) component;
+			}
+			if (component instanceof Container) {
+				Button button = findButton((Container) component, label);
+				if (button != null) return button;
+			}
+		}
+		return null;
+	}
+
 	@Tool(value = { "Check whether the ImageJ macro recorder is currently open" }, name = "fiji_macro_recorder-state")
 	public String getMacroRecorderState() {
 		try {
-			boolean recorderOpen = false;
-			for (Frame frame : Frame.getFrames()) {
-				if (frame.toString().startsWith("ij.plugin.frame.Recorder")) {
-					recorderOpen = frame.isVisible();
-					break;
-				}
-			}
 			JsonObject result = new JsonObject();
-			result.addProperty("recorder_is_open", recorderOpen);
+			result.addProperty("recorder_is_open", findRecorderFrame() != null);
 			return result.toString();
 		}
 		catch (RuntimeException e) {
