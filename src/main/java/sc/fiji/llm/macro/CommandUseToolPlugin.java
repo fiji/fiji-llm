@@ -217,7 +217,7 @@ The fiji_command_* tools discover and execute ImageJ commands. Available command
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			return jsonError("Search interrupted");
+			return jsonError("Failed to run fiji_command_search: Search interrupted");
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_command_search: " + e.getMessage());

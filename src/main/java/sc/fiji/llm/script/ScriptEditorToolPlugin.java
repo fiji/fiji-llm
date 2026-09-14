@@ -87,7 +87,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 """;
 	}
 
-	@Tool(value = { "Open a script editor UI with an active blank script, if no editor is currently open; no-op if an editor is open" }, name = "fiji_script_open-editor")
+	@Tool(value = { "Open a script editor UI with an active blank script, if no editor is currently open; no-op if an editor is open" }, name = "fiji_script_open_editor")
 	public String startEditor() {
 		try {
 			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
@@ -114,7 +114,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				}
 
 				if (textEditor == null) {
-					return jsonError("Failed to open script editor");
+					return jsonError("Failed to run fiji_script_open_editor");
 				}
 			}
 
@@ -126,7 +126,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return activeScriptString(editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_open-editor: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_open_editor: " + e.getMessage());
 		}
 	}
 
@@ -195,7 +195,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return activeScriptString(scriptID.editorIndex, scriptID.tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to perform set-active-script: " + e.getMessage());
+			return jsonError("Failed to perform fiji_script_activate: " + e.getMessage());
 		}
 	}
 
@@ -248,7 +248,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			final TextEditor textEditor = TextEditorUtils
 				.getMostRecentVisibleEditor();
 			if (textEditor == null) {
-				return jsonError("Script editor is not open", "fiji_script_open-editor");
+				return jsonError("Script editor is not open", "fiji_script_open_editor");
 			}
 
 			// Create new tab with default empty content
@@ -280,7 +280,8 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return activeScriptString(editorIndex, tabIndex);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to perform create: " + e.getMessage());
+			return jsonError("Failed to perform fiji_script_create: " + e
+				.getMessage());
 		}
 	}
 
@@ -333,11 +334,12 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("renamed_script", renameState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to perform rename: " + e.getMessage());
+			return jsonError("Failed to perform fiji_script_rename: " + e
+				.getMessage());
 		}
 	}
 
-	@Tool(value = { "Return the content of the active script" }, name = "fiji_script_read-content")
+	@Tool(value = { "Return the content of the active script" }, name = "fiji_script_read_content")
 	public String readScript() {
 		try {
 			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
@@ -350,11 +352,11 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("read_content", readScript);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_read-content: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_read_content: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Return lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_read-lines")
+	@Tool(value = { "Return lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_read_lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -394,11 +396,11 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("read_lines", readState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_read-lines: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_read_lines: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Return the content of the active script's error log" }, name = "fiji_script_read-errors")
+	@Tool(value = { "Return the content of the active script's error log" }, name = "fiji_script_read_errors")
 	public String readLog() {
 		try {
 			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
@@ -411,11 +413,11 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("read_errors", scriptLog);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_read-errors: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_read_errors: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_delete-lines")
+	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_delete_lines")
 	public String deleteLines(@P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
@@ -445,7 +447,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_delete-lines: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_delete_lines: " + e.getMessage());
 		}
 	}
 
@@ -479,11 +481,11 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("deleted_lines", deleteState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to perform delete-lines: " + e.getMessage());
+			return jsonError("Failed to perform fiji_script_delete_lines: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Insert content in the active script before the specified line number (1-indexed)" }, name = "fiji_script_insert-content")
+	@Tool(value = { "Insert content in the active script before the specified line number (1-indexed)" }, name = "fiji_script_insert_content")
 	public String insertAt(@P("content") final String content, @P("before_line") final Integer beforeLine)
 	{
 		try {
@@ -518,7 +520,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_insert-content: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_insert_content: " + e.getMessage());
 		}
 	}
 
@@ -558,11 +560,11 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("inserted_content", insertState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to perform insert-at: " + e.getMessage());
+			return jsonError("Failed to perform fiji_script_insert_content: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Completely replace the content of the active script" }, name = "fiji_script_replace-content")
+	@Tool(value = { "Completely replace the content of the active script" }, name = "fiji_script_replace_content")
 	public String replaceScript(@P("content") final String content)
 	{
 		try {
@@ -591,7 +593,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_replace-content: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_replace_content: " + e.getMessage());
 		}
 	}
 
@@ -611,7 +613,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		return stringProp("replaced_content", replaceState);
 	}
 
-	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line (1-indexed), adding lines to extend the script if needed" }, name = "fiji_script_replace-lines")
+	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line (1-indexed), adding lines to extend the script if needed" }, name = "fiji_script_replace_lines")
 	public String replaceLines(@P("new_content") final String newContent, @P("start_line") final Integer startLine)
 	{
 		try {
@@ -646,7 +648,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return result[0];
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_replace-lines: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_replace_lines: " + e.getMessage());
 		}
 	}
 
@@ -683,7 +685,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			return stringProp("replaced_lines", replaceState);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to perform replace-lines: " + e.getMessage());
+			return jsonError("Failed to perform fiji_script_replace_lines: " + e.getMessage());
 		}
 	}
 

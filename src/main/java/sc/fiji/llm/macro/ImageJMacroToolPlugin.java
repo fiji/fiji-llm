@@ -269,7 +269,7 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		return null;
 	}
 
-	@Tool(value = { "Check whether the ImageJ macro recorder is currently open" }, name = "fiji_macro_recorder-state")
+	@Tool(value = { "Check whether the ImageJ macro recorder is currently open" }, name = "fiji_macro_recorder_state")
 	public String getMacroRecorderState() {
 		try {
 			JsonObject result = new JsonObject();
@@ -277,7 +277,7 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 			return result.toString();
 		}
 		catch (RuntimeException e) {
-			return jsonError("Failed to run fiji_macro_recorder-state: " + e.getMessage());
+			return jsonError("Failed to run fiji_macro_recorder_state: " + e.getMessage());
 		}
 	}
 }
