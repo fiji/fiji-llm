@@ -285,6 +285,43 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
+	@Tool(value = { "Run the active script asynchronously" }, name = "fiji_script_run")
+	public String runScript() {
+		try {
+			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
+			if (scriptID == null) {
+				return jsonError("No active script found", "fiji_script_create");
+			}
+
+			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
+			final String[] result = new String[1];
+			if (SwingUtilities.isEventDispatchThread()) {
+				result[0] = performRunScript(textEditor, scriptID);
+			}
+			else {
+				SwingUtilities.invokeAndWait(() -> {
+					result[0] = performRunScript(textEditor, scriptID);
+				});
+			}
+			return result[0];
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_script_run: " + e.getMessage());
+		}
+	}
+
+	private String performRunScript(final TextEditor textEditor,
+		final ScriptID scriptID)
+	{
+		try {
+			textEditor.runText();
+			return stringProp("started_script", getTabJson(scriptID));
+		}
+		catch (Exception e) {
+			return jsonError("Failed to perform fiji_script_run: " + e.getMessage());
+		}
+	}
+
 	@Tool(value = { "Rename the active script. A script's programming language is determined by its name ending in a recognized extension (e.g., .py, .ijm, .groovy). Changing a script's extension will change its language" },
 		name = "fiji_script_rename")
 	public String renameScript(@P("script_name") final String scriptName)
