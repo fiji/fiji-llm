@@ -95,7 +95,7 @@ The fiji_image_* tools query images currently open in Fiji.
 		}
 	}
 
-	@Tool(value = { "Get metadata for an open image by its id, including its title, pixel type, and dimensions. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
+	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, and dimensions. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
 	public String getImageDetails(@P("image_id") int imageId) {
 		try {
 			List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
