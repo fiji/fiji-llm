@@ -29,11 +29,12 @@
 
 package sc.fiji.llm.mcp;
 
-import java.net.ServerSocket;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.net.ServerSocket;
+import java.util.prefs.Preferences;
 
 import org.junit.After;
 import org.junit.Before;
@@ -54,10 +55,18 @@ public class DefaultMCPServiceTest {
 	private AiToolService aiToolService;
 	private PrefService prefService;
 	private int originalPort;
+	private Preferences mcpPreferences;
+	private String originalLaunchOnStartup;
 	private int testPort;
 
 	@Before
 	public void setUp() throws Exception {
+		mcpPreferences = Preferences.userNodeForPackage(MCPService.class)
+			.node(MCPService.class.getSimpleName());
+		originalLaunchOnStartup = mcpPreferences.get(
+			MCPService.LAUNCH_ON_START_KEY, null);
+		mcpPreferences.putBoolean(MCPService.LAUNCH_ON_START_KEY, false);
+
 		context = new Context();
 		prefService = context.getService(PrefService.class);
 		originalPort = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
@@ -80,6 +89,15 @@ public class DefaultMCPServiceTest {
 		}
 		if (context != null) {
 			context.dispose();
+		}
+		if (mcpPreferences != null) {
+			if (originalLaunchOnStartup == null) {
+				mcpPreferences.remove(MCPService.LAUNCH_ON_START_KEY);
+			}
+			else {
+				mcpPreferences.put(MCPService.LAUNCH_ON_START_KEY,
+					originalLaunchOnStartup);
+			}
 		}
 	}
 
