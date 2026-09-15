@@ -128,4 +128,44 @@ public final class TextEditorUtils {
 		}
 		return -1;
 	}
+
+	/**
+	 * Read the persistent output and error logs for a script editor tab. This
+	 * method reads Swing components and should be called on the EDT.
+	 */
+	public static ScriptLogs getLogs(final TextEditor textEditor,
+		final TextEditorTab tab)
+	{
+		final String output = tab.getScreenInstance().getText();
+		final String errors = textEditor.getErrorScreen().getText();
+		return new ScriptLogs(output != null ? output : "", errors != null ? errors : "");
+	}
+
+	public static final class ScriptLogs {
+
+		private final String output;
+		private final String errors;
+
+		public ScriptLogs(final String output, final String errors) {
+			this.output = output;
+			this.errors = errors;
+		}
+
+		public String getOutput() {
+			return output;
+		}
+
+		public String getErrors() {
+			return errors;
+		}
+
+		public ScriptLogs deltaFrom(final ScriptLogs initial) {
+			return new ScriptLogs(getDelta(initial.output, output), getDelta(
+				initial.errors, errors));
+		}
+
+		private static String getDelta(final String initial, final String current) {
+			return current.startsWith(initial) ? current.substring(initial.length()) : current;
+		}
+	}
 }

@@ -135,13 +135,12 @@ public final class ScriptContextUtilities {
 		final String scriptName = getSanitizedTabName(tab);
 		final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 		final String scriptContent = editorPane.getText();
-		final String errorOutput = getErrorOutput(textEditor);
 		final int[] selectionLines = getSelectionLineNumbers(editorPane);
 		final ScriptLanguage currentLanguage = editorPane.getCurrentLanguage();
 		final String scriptLanguage = currentLanguage == null ? null : currentLanguage.getNames().get(0);
 
 		return new ScriptContextItem(scriptName, scriptContent, editorIndex,
-			tabIndex, selectionLines[0], selectionLines[1], scriptLanguage, errorOutput);
+			tabIndex, selectionLines[0], selectionLines[1], scriptLanguage);
 	}
 
 	/**
@@ -185,23 +184,6 @@ public final class ScriptContextUtilities {
 			}
 		}
 		return -1;
-	}
-
-	/**
-	 * Gets error output from a TextEditor.
-	 */
-	private static String getErrorOutput(final TextEditor textEditor) {
-		try {
-			final javax.swing.JTextArea errorScreen = textEditor.getErrorScreen();
-			if (errorScreen != null) {
-				final String text = errorScreen.getText();
-				return text != null ? text.trim() : "";
-			}
-		}
-		catch (Exception e) {
-			// If we can't access error output, just return empty string
-		}
-		return "";
 	}
 
 	/**

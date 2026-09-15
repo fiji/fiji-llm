@@ -42,6 +42,7 @@ import org.scijava.plugin.Plugin;
 import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
+import org.scijava.ui.swing.script.TextEditor.Executer;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import com.google.gson.JsonArray;
@@ -53,6 +54,7 @@ import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
 import sc.fiji.llm.ui.TextEditorUtils;
+import sc.fiji.llm.ui.TextEditorUtils.ScriptLogs;
 
 /**
  * AI tool collection that allows the LLM to interact with the Fiji script editor.
@@ -62,6 +64,11 @@ import sc.fiji.llm.ui.TextEditorUtils;
 public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 	private static final String IS_ACTIVE_KEY = "is_active";
+	private static final String ERROR_KEY = "errors";
+	private static final String OUTPUT_KEY = "output";
+	private static final long SCRIPT_TIMEOUT_MS = 30_000;
+	private static final long SCRIPT_POLL_INTERVAL_MS = 50;
+	private static final long SCRIPT_KILL_TIMEOUT_MS = 5_000;
 
 	@Parameter
 	private CommandService commandService;
@@ -285,7 +292,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Run the active script asynchronously" }, name = "fiji_script_run")
+	@Tool(value = { "Run the active script and return its output and errors. Scripts running longer than 30 seconds are interrupted" }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -294,16 +301,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-			final String[] result = new String[1];
-			if (SwingUtilities.isEventDispatchThread()) {
-				result[0] = performRunScript(textEditor, scriptID);
-			}
-			else {
-				SwingUtilities.invokeAndWait(() -> {
-					result[0] = performRunScript(textEditor, scriptID);
-				});
-			}
-			return result[0];
+			return performRunScript(textEditor, scriptID);
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_script_run: " + e.getMessage());
@@ -314,11 +312,81 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		final ScriptID scriptID)
 	{
 		try {
-			textEditor.runText();
-			return stringProp("started_script", getTabJson(scriptID));
+			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
+			final ScriptLogs[] initialLogs = new ScriptLogs[1];
+			final Executer[] executer = new Executer[1];
+			final Runnable startScript = () -> {
+				initialLogs[0] = TextEditorUtils.getLogs(textEditor, tab);
+				textEditor.runText();
+				executer[0] = tab.getExecuter();
+			};
+
+			if (SwingUtilities.isEventDispatchThread()) {
+				startScript.run();
+			}
+			else {
+				SwingUtilities.invokeAndWait(startScript);
+			}
+
+			boolean timedOut = false;
+			if (executer[0] != null) {
+				if (!waitForScript(textEditor, executer[0], SCRIPT_TIMEOUT_MS)) {
+					timedOut = true;
+					killScript(textEditor, executer[0]);
+					waitForScript(textEditor, executer[0], SCRIPT_KILL_TIMEOUT_MS);
+				}
+			}
+
+			final ScriptLogs[] finalLogs = new ScriptLogs[1];
+			final Runnable readLogs = () -> finalLogs[0] = TextEditorUtils.getLogs(textEditor,
+				tab);
+			if (SwingUtilities.isEventDispatchThread()) {
+				readLogs.run();
+			}
+			else {
+				SwingUtilities.invokeAndWait(readLogs);
+			}
+
+			final ScriptLogs logDelta = finalLogs[0].deltaFrom(initialLogs[0]);
+			final JsonObject runState = getTabJson(scriptID);
+			runState.addProperty(ERROR_KEY, logDelta.getErrors());
+			runState.addProperty(OUTPUT_KEY, logDelta.getOutput());
+			final String completionState = timedOut ? "timed_out" : executer[0] == null ||
+				!logDelta.getErrors().isEmpty() ? "finished_with_errors" : "success";
+			runState.addProperty("completion_state", completionState);
+			if (timedOut) {
+				runState.addProperty("recommended_action",
+					"Ask the user to run this script manually in the Fiji Script Editor; "
+					+ "fiji_script_run is limited to 30 seconds");
+			}
+			return stringProp("ran_script", runState);
 		}
 		catch (Exception e) {
 			return jsonError("Failed to perform fiji_script_run: " + e.getMessage());
+		}
+	}
+
+	private boolean waitForScript(final TextEditor textEditor,
+		final Executer executer, final long timeoutMs) throws InterruptedException
+	{
+		final long deadline = System.currentTimeMillis() + timeoutMs;
+		while (textEditor.getExecutingTasks().contains(executer)) {
+			final long remaining = deadline - System.currentTimeMillis();
+			if (remaining <= 0) return false;
+			Thread.sleep(Math.min(SCRIPT_POLL_INTERVAL_MS, remaining));
+		}
+		return true;
+	}
+
+	private void killScript(final TextEditor textEditor, final Executer executer)
+		throws Exception
+	{
+		final Runnable kill = () -> textEditor.kill(executer);
+		if (SwingUtilities.isEventDispatchThread()) {
+			kill.run();
+		}
+		else {
+			SwingUtilities.invokeAndWait(kill);
 		}
 	}
 
@@ -437,20 +505,32 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Return the content of the active script's error log" }, name = "fiji_script_read_errors")
-	public String readLog() {
+	@Tool(value = { "Return the content of the active script's output and error logs" }, name = "fiji_script_read_logs")
+	public String readLogs() {
 		try {
-			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
-			if (scriptContext == null) {
+			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
+			if (scriptID == null) {
 				return jsonError("No active script found", "fiji_script_create");
 			}
 
-			JsonObject scriptLog = getTabJson(scriptContext.getEditorIndex(), scriptContext.getTabIndex());
-			scriptLog.addProperty(ScriptContextItem.ERROR_KEY, scriptContext.getErrorOutput());
-			return stringProp("read_errors", scriptLog);
+			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
+			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
+			final ScriptLogs[] logs = new ScriptLogs[1];
+			final Runnable readLogs = () -> logs[0] = TextEditorUtils.getLogs(textEditor, tab);
+			if (SwingUtilities.isEventDispatchThread()) {
+				readLogs.run();
+			}
+			else {
+				SwingUtilities.invokeAndWait(readLogs);
+			}
+
+			JsonObject scriptLog = getTabJson(scriptID);
+			scriptLog.addProperty(ERROR_KEY, logs[0].getErrors());
+			scriptLog.addProperty(OUTPUT_KEY, logs[0].getOutput());
+			return stringProp("read_logs", scriptLog);
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_read_errors: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_read_logs: " + e.getMessage());
 		}
 	}
 
