@@ -58,6 +58,7 @@ public final class AWTDialogUtils {
 	}
 
 	/** Returns descriptions of all visible dialogs, reading their components on the EDT. */
+	@SuppressWarnings( "unchecked" )
 	public static List<DialogInfo> getVisibleDialogs() {
 		if (SwingUtilities.isEventDispatchThread()) return collectVisibleDialogs();
 
