@@ -1,0 +1,111 @@
+# Script and Macro Integration Tests
+
+This is the repeatable live regression checklist for script and ImageJ macro
+execution through Fiji-LLM. These are integration tests: run them against a
+live Fiji instance with the Script Editor and MCP tools available.
+
+## Test Setup
+
+- Start Fiji with the Fiji-LLM plugin installed and the MCP server available.
+- Open the Fiji Script Editor through `fiji_script_open_editor`.
+- Create or open one test script, then use `fiji_script_activate` before each
+  run as needed.
+- Run code through `fiji_script_run`; do not bypass the Script Editor with a
+  direct ImageJ macro execution path.
+- Before a diagnostic case, note or clear the current ImageJ Log and SciJava
+  log state so that new output can be distinguished from older output.
+- When a case may show a blocking dialog, inspect it with
+  `fiji_ui_dialogs_read` before taking any manual action.
+
+## Tool Sequence and Common Checks
+
+Keep these tool calls explicit so that a regression run can be repeated in the
+same order:
+
+1. `fiji_script_list` reports the expected editor, tab, and active script.
+2. `fiji_script_read_content` returns the code that is about to run.
+3. `fiji_script_run` returns the expected `output`, `errors`, and
+      `completion_state` fields.
+4. Output from an earlier run is not repeated in the next run's delta.
+5. `fiji_log_imagej_read` exposes ImageJ macro `print()` output when
+      applicable.
+6. SciJava messages are observable by starting a capture with
+      `fiji_log_scijava_start_capture` before the operation and stopping it with
+      `fiji_log_scijava_stop_capture` afterward.
+7. `fiji_ui_dialogs_read` reports visible error or confirmation dialogs,
+      including their titles, messages, buttons, and modal state.
+
+## Scripts
+
+Run these cases with at least one supported Script Editor language used by the
+project, such as Python. Repeat the language-independent cases for another
+available language when practical.
+
+For each script case, repeat this tool sequence:
+
+1. Call `fiji_script_open_editor` if no Script Editor is open.
+2. Call `fiji_script_create` or open the test script, then use
+      `fiji_script_rename` to give it the language-specific extension and
+      `fiji_script_activate` to select it.
+3. Call `fiji_script_list` and `fiji_script_read_content` to verify the active
+      editor tab and the exact source under test.
+4. For cases that should produce SciJava diagnostics, start a capture with
+      `fiji_log_scijava_start_capture`.
+5. Call `fiji_script_run` and check `output`, `errors`, and
+      `completion_state`.
+6. Read the final SciJava messages with
+      `fiji_log_scijava_stop_capture`, and inspect ImageJ Log or visible dialogs
+      when the case is expected to produce them.
+
+Keep the execution path through the Script Editor for every case, including
+syntax failures, runtime failures, and timeouts.
+
+- [ ] Successful image-processing script that creates or modifies an image.
+- [ ] Malformed syntax: verify a non-success result and useful error text.
+- [ ] Runtime exception after partial image processing: verify that output or
+      images produced before the exception remain observable and the error is
+      reported.
+- [ ] Console exception: write an exception to the language console or stderr
+      and verify that the diagnostic is captured in the returned errors or
+      relevant log.
+- [ ] Timeout: run a script longer than 30 seconds and verify
+      `completion_state: "timed_out"`, interruption, and the recommended
+      manual-run action.
+
+## ImageJ Macros
+
+Start each macro regression run by deriving the test macro from recorded Fiji
+commands:
+
+1. Call `fiji_macro_start_recorder` and verify the recorder is open with
+      `fiji_macro_recorder_state`.
+2. Run a small image-processing workflow through Fiji, using the normal Fiji
+      UI or `fiji_command_search` and `fiji_command_run`. Include commands that
+      create or modify an image so the recorded macro has a useful baseline.
+3. Call `fiji_macro_create_script` to transfer the recorder contents into an
+      `.ijm` tab in the Script Editor. Verify the new tab with
+      `fiji_script_list` and inspect its source with `fiji_script_read_content`.
+4. Stop the recorder with `fiji_macro_close_recorder`.
+5. Use the transferred macro as the successful baseline, then edit copies of
+      it to create the error, dialog, and timeout cases below. Run every case with
+      `fiji_script_run`; do not bypass the Script Editor with direct ImageJ macro
+      execution.
+
+This workflow keeps the recorded command syntax grounded in the Fiji instance
+under test while allowing the Script Editor, ImageJ Log, and UI dialogs to be
+inspected together.
+
+- [ ] Successful image-processing macro with `print()`.
+- [ ] No-image failure: run an image-dependent command without an open image
+      and verify the error and any blocking dialog.
+- [ ] Malformed macro syntax: verify the actual macro error rather than only a
+      generic Script Editor failure.
+- [ ] Macro error after partial image processing: verify that the partial
+      image state and the later error are both observable.
+- [ ] Command requiring `Close All` confirmation: verify the confirmation
+      dialog's title, message, buttons, and modal state with
+      `fiji_ui_dialogs_read`.
+- [ ] Console exception: trigger a macro exception or error after `print()`
+      output and compare the Script Editor, ImageJ Log, and SciJava results.
+- [ ] Timeout: run a macro longer than 30 seconds and verify interruption and
+      the `timed_out` result.

@@ -46,6 +46,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
   - [ContextItemSupplier](#contextitemsupplier)
   - [AiToolPlugin](#aitoolplugin)
     - [Tool Best Practices](#tool-best-practices)
+  - [Integration Testing](#integration-testing)
   - [ChatbotService](#chatbotservice)
 - [FAQ](#frequently-asked-questions)
 
@@ -234,6 +235,22 @@ When adding an `AiToolPlugin`:
 * **Keep descriptions at the right level.** Keep `getUsage()` as a short overview of the whole `fiji_<scope>_*` namespace and its basic workflow. Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description.
 
 * **Return valid JSON strings.** Tool methods return `String`, so serialize every success and error result as JSON. Use the shared helpers in [`AbstractAiToolPlugin`](src/main/java/sc/fiji/llm/tools/AbstractAiToolPlugin.java): `jsonProp("key", value).toString()` for a simple property, `stringProp("key", object)` for a named object result, and `jsonError(...)` for validation failures, unavailable state, and caught exceptions. Build larger responses with `JsonObject` and `JsonArray`; do not concatenate JSON by hand.
+
+### Integration Testing
+
+Live script and macro integration tests should be run by the developer as-needed, e.g. after major tool changes.
+
+For a live run, create a task-specific agent, i.e. via the [VS Code MCP agent
+definition](doc/agents/vscode/fiji-mcp.agent.md), then give it the checklist in
+[doc/INTEGRATION_TESTS.md](doc/INTEGRATION_TESTS.md). The agent should execute
+the workflow against a running Fiji instance through the Fiji MCP tools and
+report the observed results, failures, and any cases that require manual
+interaction.
+
+Keep this dedicated live-test session separate from the general
+coding agent so integration tests are run deliberately.
+
+Ensure the integration test document is updated as tools are added or names change.
 
 ### [ChatbotService](src/main/java/sc/fiji/llm/ui/ChatbotService.java)
 
