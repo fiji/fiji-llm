@@ -17,6 +17,9 @@ live Fiji instance with the Script Editor and MCP tools available.
   log state so that new output can be distinguished from older output.
 - When a case may show a blocking dialog, inspect it with
   `fiji_ui_dialogs_read` before taking any manual action.
+- `fiji_command_run` returns an `environment` object with before/after metadata
+      and a `changes` object; verify those fields for command cases that open,
+      close, or modify images or Results table metadata.
 
 ## Tool Sequence and Common Checks
 
@@ -120,3 +123,17 @@ inspected together.
       output and compare the Script Editor, ImageJ Log, and SciJava results.
 - [ ] Timeout: run a macro longer than 30 seconds and verify interruption and
       the `timed_out` result.
+
+## Commands
+
+- [ ] Use `fiji_command_search` to find a known command and run it with
+      `fiji_command_run`; verify `status: "success"`, command metadata, and
+      the `environment` before/after report.
+- [ ] Run a command that opens an image and verify `changes.images_opened` and
+      the active-image metadata.
+- [ ] Run a command that changes or closes an image and verify
+      `changes.images_changed` or `changes.images_closed`.
+- [ ] Run a measurement command and verify the Results table row/heading
+      metadata and `changes.results_table_changed`.
+- [ ] Run a command that emits ImageJ or SciJava log output and verify the
+      corresponding log delta in `environment`.

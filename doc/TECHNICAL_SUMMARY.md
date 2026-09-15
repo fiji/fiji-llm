@@ -64,7 +64,7 @@ Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensit
 
 Built-in tools include:
 - **`ImageJMacroToolPlugin`** — macro recorder integration, macro function discovery
-- **`CommandUseToolPlugin`** — ImageJ command discovery and execution
+- **`CommandUseToolPlugin`** — ImageJ command discovery and execution with a lightweight before/after environment report
 - **`ScriptEditorToolPlugin`** — script editor interaction
 - **`ImageToolPlugin`** — active image metadata access
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
@@ -72,6 +72,8 @@ Built-in tools include:
 - **`ScriptExecutionService`** — shared Script Editor execution, timeout handling, state snapshots, and dialog-aware run status for scripts and `.ijm` macros
 
 `.ijm` macros are executed only by calling `TextEditor.runText()` on the active tab in a visible Script Editor. `fiji_script_run` rejects active `.ijm` tabs and directs callers to `fiji_macro_run`. Macro runs return one of `success`, `finished_with_errors`, `blocked_by_dialog`, `timed_out`, or `infrastructure_error`; a blocked run remains addressable by its `run_id` through `fiji_macro_run_status`, which is read-only and directs callers to `fiji_ui_dialog_respond` for the intentional UI action.
+
+`fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags and ImageJ/SciJava log deltas. Image pixels are never copied into the report.
 
 ### MCP (Model Context Protocol) Bridge
 

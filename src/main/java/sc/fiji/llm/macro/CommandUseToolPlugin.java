@@ -56,6 +56,7 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
@@ -76,6 +77,9 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private PluginService pluginService;
+
+	@Parameter
+	private ExecutionEnvironmentSnapshotService environmentSnapshotService;
 
 	public CommandUseToolPlugin() {
 		super(CommandUseToolPlugin.class);
@@ -98,9 +102,10 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 """;
 	}
 
-	@Tool(value = { "Execute a command using its full menu path (e.g., \"File > Open Samples > Blobs\"). Use fiji_command_search to find a command's menu path." },
+	@Tool(value = { "Execute a command using its full menu path and return its status plus before/after environment impact. Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
 	public String runCommand(@P("menu_path") String menuPath) {
+		ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = null;
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
 				return jsonError("Menu path cannot be empty");
@@ -121,6 +126,7 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 				return jsonError("Command not found at path: " + menuPath);
 			}
 
+			capture = environmentSnapshotService.capture();
 			// Run the module - this goes through the same path as the search panel
 			// and includes automatic recorder integration
 			moduleService.run(moduleInfo, true);
@@ -128,11 +134,32 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 			JsonObject command = new JsonObject();
 			command.addProperty("name", moduleInfo.getName());
 			command.addProperty("menu_path", menuString);
-			return stringProp("executed_command", command);
+			JsonObject result = new JsonObject();
+			result.add("executed_command", command);
+			result.addProperty("status", "success");
+			result.add("environment", capture.finish().toJson());
+			return result.toString();
 		}
 		catch (RuntimeException e) {
+			if (capture != null) {
+				return commandError(menuPath, capture.finish(), e.getMessage());
+			}
 			return jsonError("Failed to run fiji_command_run: " + e.getMessage());
 		}
+	}
+
+	private String commandError(final String menuPath,
+		final ExecutionEnvironmentSnapshotService.EnvironmentImpact impact,
+		final String diagnostic)
+	{
+		final JsonObject command = new JsonObject();
+		command.addProperty("menu_path", menuPath);
+		final JsonObject result = new JsonObject();
+		result.add("executed_command", command);
+		result.addProperty("status", "infrastructure_error");
+		result.addProperty("diagnostic", diagnostic == null ? "" : diagnostic);
+		result.add("environment", impact.toJson());
+		return result.toString();
 	}
 
 	@Tool(value = { "Search for available ImageJ commands whose name matches the given term, sorted by descending relevance. The returned menu_path can be used with fiji_command_run" },

@@ -29,6 +29,10 @@ Use this agent to, when supported:
 	`blocked_by_dialog`, use its `run_id` with `fiji_macro_run_status` to inspect
 	the paused state, then use `fiji_ui_dialog_respond` only after confirming the
 	exact dialog title and button text.
+- Search for commands with `fiji_command_search` and execute them with
+	`fiji_command_run`. Inspect the returned `environment` report for opened,
+	closed, or changed images, active-image changes, Results table changes,
+	dialogs, and ImageJ/SciJava log deltas.
 
 ## Operating Instructions
 

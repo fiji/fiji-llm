@@ -29,7 +29,6 @@
 
 package sc.fiji.llm.script;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -53,8 +52,8 @@ import com.google.gson.JsonObject;
 
 import net.imagej.ImageJService;
 import net.imagej.legacy.LegacyService;
-import sc.fiji.llm.log.ImageJLogUtils;
-import sc.fiji.llm.log.SciJavaLogUtils;
+import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService;
+import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService.EnvironmentImpact;
 import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.ui.AWTDialogUtils;
 import sc.fiji.llm.ui.TextEditorUtils;
@@ -76,6 +75,9 @@ public final class ScriptExecutionService extends AbstractService implements
 
 	@Parameter
 	private LogService logService;
+
+	@Parameter
+	private ExecutionEnvironmentSnapshotService environmentSnapshotService;
 
 	private final Map<String, Execution> executions = new ConcurrentHashMap<>();
 
@@ -197,9 +199,7 @@ public final class ScriptExecutionService extends AbstractService implements
 				preparationFailure[0]);
 		}
 
-		execution.imageJLogBefore = ImageJLogUtils.getLog(legacyService);
-		execution.dialogsBefore = AWTDialogUtils.getVisibleDialogs();
-		execution.scijavaCapture = SciJavaLogUtils.capture(logService);
+		execution.environmentCapture = environmentSnapshotService.capture();
 
 		final Throwable[] startupFailure = new Throwable[1];
 		final Runnable startScript = () -> {
@@ -256,15 +256,14 @@ public final class ScriptExecutionService extends AbstractService implements
 			}
 
 			while (execution.executer != null && isExecuting(execution)) {
-				final List<AWTDialogUtils.DialogInfo> dialogs = newBlockingDialogs(
-					execution);
+				final EnvironmentImpact environment = refreshEnvironment(execution);
+				final List<AWTDialogUtils.DialogInfo> dialogs = environment == null ?
+					Collections.emptyList() : environment.getNewModalDialogs();
 				if (!dialogs.isEmpty()) {
-					execution.dialogs = dialogs;
 					execution.status = Status.BLOCKED_BY_DIALOG;
 				}
 				else if (execution.status == Status.BLOCKED_BY_DIALOG) {
 					execution.status = Status.RUNNING;
-					execution.dialogs = Collections.emptyList();
 				}
 
 				if (System.currentTimeMillis() - execution.startedAt >=
@@ -304,19 +303,21 @@ public final class ScriptExecutionService extends AbstractService implements
 				execution.diagnostic = e.toString();
 			}
 		}
-		execution.imageJLog = ImageJLogUtils.getLog(legacyService).deltaFrom(
-			execution.imageJLogBefore);
-		if (execution.scijavaCapture != null) execution.scijavaLog = execution
-			.scijavaCapture.getLogs().getText();
-		final List<AWTDialogUtils.DialogInfo> dialogs = newBlockingDialogs(execution);
+		final EnvironmentImpact environment = refreshEnvironment(execution);
+		final List<AWTDialogUtils.DialogInfo> dialogs = environment == null ?
+			Collections.emptyList() : environment.getNewModalDialogs();
 		if (!dialogs.isEmpty()) {
-			execution.dialogs = dialogs;
 			execution.status = Status.BLOCKED_BY_DIALOG;
 		}
 		else if (execution.status == Status.BLOCKED_BY_DIALOG) {
 			execution.status = Status.RUNNING;
-			execution.dialogs = Collections.emptyList();
 		}
+	}
+
+	private EnvironmentImpact refreshEnvironment(final Execution execution) {
+		if (execution.environmentCapture == null) return execution.environment;
+		execution.environment = execution.environmentCapture.current();
+		return execution.environment;
 	}
 
 	private void kill(final Execution execution) throws Exception {
@@ -328,30 +329,6 @@ public final class ScriptExecutionService extends AbstractService implements
 		while (isExecuting(execution) && System.currentTimeMillis() < deadline) {
 			Thread.sleep(POLL_INTERVAL_MS);
 		}
-	}
-
-	private List<AWTDialogUtils.DialogInfo> newBlockingDialogs(
-		final Execution execution)
-	{
-		final List<AWTDialogUtils.DialogInfo> current = AWTDialogUtils
-			.getVisibleDialogs();
-		final List<AWTDialogUtils.DialogInfo> result = new ArrayList<>();
-		for (final AWTDialogUtils.DialogInfo dialog : current) {
-			if (!dialog.isModal() || containsDialog(execution.dialogsBefore, dialog)) continue;
-			result.add(dialog);
-		}
-		return result;
-	}
-
-	private boolean containsDialog(final List<AWTDialogUtils.DialogInfo> dialogs,
-		final AWTDialogUtils.DialogInfo candidate)
-	{
-		for (final AWTDialogUtils.DialogInfo dialog : dialogs) {
-			if (dialog.getTitle().equals(candidate.getTitle()) && dialog.getClassName()
-				.equals(candidate.getClassName()) && dialog.getModalityType().equals(candidate
-					.getModalityType())) return true;
-		}
-		return false;
 	}
 
 	private void finishFromLogs(final Execution execution) {
@@ -405,12 +382,8 @@ public final class ScriptExecutionService extends AbstractService implements
 				execution.diagnostic = e.toString();
 			}
 		}
-		execution.imageJLog = ImageJLogUtils.getLog(legacyService).deltaFrom(
-			execution.imageJLogBefore);
-		if (execution.scijavaCapture != null) {
-			execution.scijavaLog = execution.scijavaCapture.getLogs().getText();
-			execution.scijavaCapture.close();
-		}
+		if (execution.environmentCapture != null) execution.environment = execution
+			.environmentCapture.finish();
 		execution.finishedAt = System.currentTimeMillis();
 		synchronized (execution) {
 			execution.notifyAll();
@@ -448,13 +421,16 @@ public final class ScriptExecutionService extends AbstractService implements
 				execution.logs;
 			result.addProperty("output", logs.getOutput());
 			result.addProperty("errors", logs.getErrors());
-			result.addProperty("imagej_log", execution.imageJLog == null ? "" :
-				execution.imageJLog.getText());
-			result.addProperty("scijava_log", execution.scijavaLog == null ? "" :
-				execution.scijavaLog);
+			final EnvironmentImpact environment = execution.environment;
+			result.addProperty("imagej_log", environment == null ? "" : environment
+				.getImageJLog());
+			result.addProperty("scijava_log", environment == null ? "" : environment
+				.getSciJavaLog());
 
 			final JsonArray dialogs = new JsonArray();
-			for (final AWTDialogUtils.DialogInfo dialog : execution.dialogs) {
+			final List<AWTDialogUtils.DialogInfo> blockingDialogs = environment == null ?
+				Collections.emptyList() : environment.getNewModalDialogs();
+			for (final AWTDialogUtils.DialogInfo dialog : blockingDialogs) {
 				final JsonObject dialogJson = new JsonObject();
 				dialogJson.addProperty("title", dialog.getTitle());
 				dialogJson.addProperty("class_name", dialog.getClassName());
@@ -479,6 +455,7 @@ public final class ScriptExecutionService extends AbstractService implements
 				dialogs.add(dialogJson);
 			}
 			result.add("dialogs", dialogs);
+			if (environment != null) result.add("environment", environment.toJson());
 			if (execution.diagnostic != null) result.addProperty("diagnostic",
 				execution.diagnostic);
 			if (execution.status == Status.BLOCKED_BY_DIALOG) result.addProperty(
@@ -505,13 +482,9 @@ public final class ScriptExecutionService extends AbstractService implements
 		private volatile long finishedAt;
 		private volatile String diagnostic;
 		private volatile TextLogs logs;
-		private volatile ImageJLogUtils.ImageJLog imageJLogBefore;
-		private volatile ImageJLogUtils.ImageJLog imageJLog;
 		private volatile TextLogs logsBefore;
-		private volatile String scijavaLog = "";
-		private volatile SciJavaLogUtils.LogCapture scijavaCapture;
-		private volatile List<AWTDialogUtils.DialogInfo> dialogsBefore = Collections.emptyList();
-		private volatile List<AWTDialogUtils.DialogInfo> dialogs = Collections.emptyList();
+		private volatile ExecutionEnvironmentSnapshotService.EnvironmentCapture environmentCapture;
+		private volatile EnvironmentImpact environment;
 		private volatile TextEditor textEditor;
 		private volatile TextEditorTab tab;
 		private volatile Executer executer;
@@ -534,6 +507,7 @@ public final class ScriptExecutionService extends AbstractService implements
 		{
 			this.status = status;
 			this.diagnostic = diagnostic;
+			if (environmentCapture != null) environment = environmentCapture.finish();
 			return snapshot();
 		}
 	}
