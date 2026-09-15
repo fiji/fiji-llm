@@ -43,6 +43,8 @@ import org.scijava.Context;
 import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.service.tool.ToolProvider;
+import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.image.ImagePlusHelper;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -173,5 +175,17 @@ public class DefaultMCPServiceTest {
 		// And: calling getToolProvider again should return the same provider
 		final ToolProvider toolProvider2 = mcpService.getToolProvider();
 		assertNotNull(toolProvider2);
+	}
+
+	@Test
+	public void testImageToolsHaveLegacyDependencies() {
+		LegacyService legacyService = context.getService(LegacyService.class);
+		assertNotNull(legacyService);
+		assertTrue(legacyService.isActive());
+		assertNotNull(legacyService.getIJ1Helper());
+		assertNotNull(context.getService(ImagePlusHelper.class));
+
+		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
+			.anyMatch(specification -> "fiji_image_list".equals(specification.name())));
 	}
 }

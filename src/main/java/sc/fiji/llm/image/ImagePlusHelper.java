@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -44,7 +45,7 @@ import net.imagej.display.ImageDisplay;
 import net.imagej.legacy.IJ1Helper;
 import net.imagej.legacy.LegacyService;
 
-@Plugin(type = Service.class)
+@Plugin(type = Service.class, priority = Priority.HIGH)
 public final class ImagePlusHelper extends AbstractService implements ImageJService {
 
 	@Parameter
