@@ -23,6 +23,10 @@ architecture.
 ## Implementation choices
 - Before implementing new infrastructure, check whether SciJava, ImageJ, Fiji,
   langchain4j, MCP, or another well-maintained library already provides it.
+- When an external dependency API matters, check for a project- or
+  developer-defined convention for local source checkouts before using remote
+  artifacts. Treat a useful local checkout and an exact dependency version as
+  separate findings, and never inspect ~/.m2 or other dependency caches.
 - Prefer established APIs and extension points over de novo implementations.
 - Avoid adding a dependency when a small, clear local implementation would be
   easier to maintain.
