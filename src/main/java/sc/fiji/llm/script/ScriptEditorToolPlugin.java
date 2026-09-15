@@ -44,7 +44,6 @@ import org.scijava.script.ScriptService;
 import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
-import org.scijava.ui.swing.script.TextEditor.Executer;
 import org.scijava.ui.swing.script.TextEditorTab;
 
 import com.google.gson.JsonArray;
@@ -68,15 +67,15 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 	private static final String IS_ACTIVE_KEY = "is_active";
 	private static final String ERROR_KEY = "errors";
 	private static final String OUTPUT_KEY = "output";
-	private static final long SCRIPT_TIMEOUT_MS = 30_000;
-	private static final long SCRIPT_POLL_INTERVAL_MS = 50;
-	private static final long SCRIPT_KILL_TIMEOUT_MS = 5_000;
 
 	@Parameter
 	private CommandService commandService;
 
 	@Parameter
 	private ScriptService scriptService;
+
+	@Parameter
+	private ScriptExecutionService scriptExecutionService;
 
 	@Override
 	public String getName() {
@@ -331,94 +330,19 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				return jsonError("No active script found", "fiji_script_create");
 			}
 
-			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
-			return performRunScript(textEditor, scriptID);
+			final String scriptName = ScriptContextUtilities.buildScriptContextItem(
+				scriptID.editorIndex, scriptID.tabIndex).getScriptName();
+			if (ScriptExecutionService.isMacroScript(scriptName)) {
+				return jsonError("The active script is an ImageJ macro (.ijm) and must be run with fiji_macro_run",
+					"fiji_macro_run");
+			}
+
+			final ScriptExecutionService.ExecutionResult execution = scriptExecutionService
+				.run(scriptID, ScriptExecutionService.RunKind.SCRIPT, false);
+			return stringProp("ran_script", execution.toJson());
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_script_run: " + e.getMessage());
-		}
-	}
-
-	private String performRunScript(final TextEditor textEditor,
-		final ScriptID scriptID)
-	{
-		try {
-			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-			final TextLogs[] initialLogs = new TextLogs[1];
-			final Executer[] executer = new Executer[1];
-			final Runnable startScript = () -> {
-				initialLogs[0] = TextEditorUtils.getLogs(textEditor, tab);
-				textEditor.runText();
-				executer[0] = tab.getExecuter();
-			};
-
-			if (SwingUtilities.isEventDispatchThread()) {
-				startScript.run();
-			}
-			else {
-				SwingUtilities.invokeAndWait(startScript);
-			}
-
-			boolean timedOut = false;
-			if (executer[0] != null) {
-				if (!waitForScript(textEditor, executer[0], SCRIPT_TIMEOUT_MS)) {
-					timedOut = true;
-					killScript(textEditor, executer[0]);
-					waitForScript(textEditor, executer[0], SCRIPT_KILL_TIMEOUT_MS);
-				}
-			}
-
-			final TextLogs[] finalLogs = new TextLogs[1];
-			final Runnable readLogs = () -> finalLogs[0] = TextEditorUtils.getLogs(textEditor,
-				tab);
-			if (SwingUtilities.isEventDispatchThread()) {
-				readLogs.run();
-			}
-			else {
-				SwingUtilities.invokeAndWait(readLogs);
-			}
-
-			final TextLogs logDelta = finalLogs[0].deltaFrom(initialLogs[0])
-				.withoutStartedBanners();
-			final JsonObject runState = getTabJson(scriptID);
-			runState.addProperty(ERROR_KEY, logDelta.getErrors());
-			runState.addProperty(OUTPUT_KEY, logDelta.getOutput());
-			final String completionState = timedOut ? "timed_out" : !logDelta.getErrors()
-				.trim().isEmpty() ? "finished_with_errors" : "success";
-			runState.addProperty("completion_state", completionState);
-			if (timedOut) {
-				runState.addProperty("recommended_action",
-					"Ask the user to run this script manually in the Fiji Script Editor; "
-					+ "fiji_script_run is limited to 30 seconds");
-			}
-			return stringProp("ran_script", runState);
-		}
-		catch (Exception e) {
-			return jsonError("Failed to perform fiji_script_run: " + e.getMessage());
-		}
-	}
-
-	private boolean waitForScript(final TextEditor textEditor,
-		final Executer executer, final long timeoutMs) throws InterruptedException
-	{
-		final long deadline = System.currentTimeMillis() + timeoutMs;
-		while (textEditor.getExecutingTasks().contains(executer)) {
-			final long remaining = deadline - System.currentTimeMillis();
-			if (remaining <= 0) return false;
-			Thread.sleep(Math.min(SCRIPT_POLL_INTERVAL_MS, remaining));
-		}
-		return true;
-	}
-
-	private void killScript(final TextEditor textEditor, final Executer executer)
-		throws Exception
-	{
-		final Runnable kill = () -> textEditor.kill(executer);
-		if (SwingUtilities.isEventDispatchThread()) {
-			kill.run();
-		}
-		else {
-			SwingUtilities.invokeAndWait(kill);
 		}
 	}
 

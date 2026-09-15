@@ -10,8 +10,9 @@ live Fiji instance with the Script Editor and MCP tools available.
 - Open the Fiji Script Editor through `fiji_script_open_editor`.
 - Create or open one test script, then use `fiji_script_activate` before each
   run as needed.
-- Run code through `fiji_script_run`; do not bypass the Script Editor with a
-  direct ImageJ macro execution path.
+- Run non-`.ijm` code through `fiji_script_run`; run `.ijm` macros through
+      `fiji_macro_run`. Never bypass the Script Editor with a direct ImageJ macro
+      execution path.
 - Before a diagnostic case, note or clear the current ImageJ Log and SciJava
   log state so that new output can be distinguished from older output.
 - When a case may show a blocking dialog, inspect it with
@@ -55,7 +56,8 @@ For each script case, repeat this tool sequence:
 4. For cases that should produce SciJava diagnostics, start a capture with
       `fiji_log_scijava_start_capture`.
 5. Call `fiji_script_run` and check `output`, `errors`, and
-      `completion_state`.
+      `completion_state`. Do not use it for `.ijm` tabs; it must direct the
+      caller to `fiji_macro_run`.
 6. Read the final SciJava messages with
       `fiji_log_scijava_stop_capture`, and inspect ImageJ Log or visible dialogs
       when the case is expected to produce them.
@@ -91,7 +93,7 @@ commands:
 4. Stop the recorder with `fiji_macro_close_recorder`.
 5. Use the transferred macro as the successful baseline, then edit copies of
       it to create the error, dialog, and timeout cases below. Run every case with
-      `fiji_script_run`; do not bypass the Script Editor with direct ImageJ macro
+      `fiji_macro_run`; do not bypass the Script Editor with direct ImageJ macro
       execution.
 
 This workflow keeps the recorded command syntax grounded in the Fiji instance
@@ -99,6 +101,10 @@ under test while allowing the Script Editor, ImageJ Log, and UI dialogs to be
 inspected together.
 
 - [ ] Successful image-processing macro with `print()`.
+- [ ] A dialog-paused macro returns `blocked_by_dialog`, a `run_id`, and dialog
+      details. `fiji_macro_run_status` reports the same paused run without
+      clicking; after `fiji_ui_dialog_respond`, status eventually becomes a
+      completed result.
 - [ ] No-image failure: run an image-dependent command without an open image
       and verify the error and any blocking dialog.
 - [ ] Malformed macro syntax: verify the actual macro error rather than only a

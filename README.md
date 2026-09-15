@@ -194,6 +194,8 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 
 **Macro Recording** - Ask the assistant for help creating ImageJ macros for guidance to relevant commands and plugins.
 
+**Script and Macro Execution** - Run non-`.ijm` scripts with `fiji_script_run`. Run an active `.ijm` script with `fiji_macro_run`, which executes it through the visible Script Editor and returns output, errors, ImageJ and SciJava logs, and a status. If a macro pauses for a visible dialog, inspect the returned `run_id` with `fiji_macro_run_status`, then respond only through `fiji_ui_dialog_respond` using the exact dialog title and button text.
+
 **General Information** - Describe your image analysis goals and discuss options available in your Fiji environment.
 
 ### Tips for Better Results

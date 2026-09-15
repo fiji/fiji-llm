@@ -49,6 +49,8 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.script.ScriptContextItem;
+import sc.fiji.llm.script.ScriptContextUtilities;
+import sc.fiji.llm.script.ScriptExecutionService;
 import sc.fiji.llm.script.ScriptID;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -67,6 +69,9 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private LogService logService;
+
+	@Parameter
+	private ScriptExecutionService scriptExecutionService;
 
 	public ImageJMacroToolPlugin() {
 		super(ImageJMacroToolPlugin.class);
@@ -238,6 +243,50 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_macro_create_script: " + e
 				.getMessage());
+		}
+	}
+
+	@Tool(value = { "Start the active .ijm macro through the visible Script Editor. Execution runs asynchronously; this call returns when it finishes or pauses on a new modal dialog. Use the run_id with fiji_macro_run_status to poll, then fiji_ui_dialog_respond to continue." }, name = "fiji_macro_run")
+	public String runMacro() {
+		try {
+			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
+			if (scriptID == null) {
+				return jsonError(
+					"A visible Script Editor with an active .ijm script is required",
+					"fiji_script_open_editor");
+			}
+
+			final String scriptName = ScriptContextUtilities.buildScriptContextItem(
+				scriptID.editorIndex, scriptID.tabIndex).getScriptName();
+			if (!ScriptExecutionService.isMacroScript(scriptName)) {
+				return jsonError("The active script is not an ImageJ macro (.ijm) and must be run with fiji_script_run",
+					"fiji_script_run");
+			}
+
+			return scriptExecutionService.run(scriptID,
+				ScriptExecutionService.RunKind.MACRO, true).toJson().toString();
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_macro_run: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Poll an asynchronous macro run by run_id. This action is read-only, returning its status, output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button, then poll again." }, name = "fiji_macro_run_status")
+	public String macroRunStatus(@P("run_id") final String runID) {
+		if (runID == null || runID.isBlank()) {
+			return jsonError("run_id cannot be null or blank");
+		}
+
+		try {
+			final ScriptExecutionService.ExecutionResult execution = scriptExecutionService
+				.status(runID, ScriptExecutionService.RunKind.MACRO);
+			if (execution == null) {
+				return jsonError("No macro run found for run_id: " + runID);
+			}
+			return execution.toJson().toString();
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_macro_run_status: " + e.getMessage());
 		}
 	}
 
