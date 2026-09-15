@@ -164,8 +164,17 @@ public final class TextEditorUtils {
 				initial.errors, errors));
 		}
 
+		public ScriptLogs withoutStartedBanners() {
+			return new ScriptLogs(stripStartedBanners(output), stripStartedBanners(
+				errors));
+		}
+
 		private static String getDelta(final String initial, final String current) {
 			return current.startsWith(initial) ? current.substring(initial.length()) : current;
+		}
+
+		private static String stripStartedBanners(final String logs) {
+			return logs.replaceAll("(?m)^Started .* at .*\\r?\\n?", "");
 		}
 	}
 }

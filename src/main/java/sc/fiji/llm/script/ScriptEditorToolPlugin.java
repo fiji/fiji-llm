@@ -378,12 +378,13 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				SwingUtilities.invokeAndWait(readLogs);
 			}
 
-			final ScriptLogs logDelta = finalLogs[0].deltaFrom(initialLogs[0]);
+			final ScriptLogs logDelta = finalLogs[0].deltaFrom(initialLogs[0])
+				.withoutStartedBanners();
 			final JsonObject runState = getTabJson(scriptID);
 			runState.addProperty(ERROR_KEY, logDelta.getErrors());
 			runState.addProperty(OUTPUT_KEY, logDelta.getOutput());
-			final String completionState = timedOut ? "timed_out" : executer[0] == null ||
-				!logDelta.getErrors().isEmpty() ? "finished_with_errors" : "success";
+			final String completionState = timedOut ? "timed_out" : !logDelta.getErrors()
+				.trim().isEmpty() ? "finished_with_errors" : "success";
 			runState.addProperty("completion_state", completionState);
 			if (timedOut) {
 				runState.addProperty("recommended_action",
@@ -555,9 +556,10 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				SwingUtilities.invokeAndWait(readLogs);
 			}
 
+			final ScriptLogs cleanedLogs = logs[0].withoutStartedBanners();
 			JsonObject scriptLog = getTabJson(scriptID);
-			scriptLog.addProperty(ERROR_KEY, logs[0].getErrors());
-			scriptLog.addProperty(OUTPUT_KEY, logs[0].getOutput());
+			scriptLog.addProperty(ERROR_KEY, cleanedLogs.getErrors());
+			scriptLog.addProperty(OUTPUT_KEY, cleanedLogs.getOutput());
 			return stringProp("read_logs", scriptLog);
 		}
 		catch (Exception e) {
