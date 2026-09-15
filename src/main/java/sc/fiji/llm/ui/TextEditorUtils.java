@@ -34,6 +34,7 @@ import java.util.List;
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
 
+import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.script.ScriptID;
 
 /**
@@ -133,48 +134,11 @@ public final class TextEditorUtils {
 	 * Read the persistent output and error logs for a script editor tab. This
 	 * method reads Swing components and should be called on the EDT.
 	 */
-	public static ScriptLogs getLogs(final TextEditor textEditor,
+	public static TextLogs getLogs(final TextEditor textEditor,
 		final TextEditorTab tab)
 	{
 		final String output = tab.getScreenInstance().getText();
 		final String errors = textEditor.getErrorScreen().getText();
-		return new ScriptLogs(output != null ? output : "", errors != null ? errors : "");
-	}
-
-	public static final class ScriptLogs {
-
-		private final String output;
-		private final String errors;
-
-		public ScriptLogs(final String output, final String errors) {
-			this.output = output;
-			this.errors = errors;
-		}
-
-		public String getOutput() {
-			return output;
-		}
-
-		public String getErrors() {
-			return errors;
-		}
-
-		public ScriptLogs deltaFrom(final ScriptLogs initial) {
-			return new ScriptLogs(getDelta(initial.output, output), getDelta(
-				initial.errors, errors));
-		}
-
-		public ScriptLogs withoutStartedBanners() {
-			return new ScriptLogs(stripStartedBanners(output), stripStartedBanners(
-				errors));
-		}
-
-		private static String getDelta(final String initial, final String current) {
-			return current.startsWith(initial) ? current.substring(initial.length()) : current;
-		}
-
-		private static String stripStartedBanners(final String logs) {
-			return logs.replaceAll("(?m)^Started .* at .*\\r?\\n?", "");
-		}
+		return new TextLogs(output, errors);
 	}
 }

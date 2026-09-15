@@ -52,11 +52,11 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
 import sc.fiji.llm.ui.TextEditorUtils;
-import sc.fiji.llm.ui.TextEditorUtils.ScriptLogs;
 
 /**
  * AI tool collection that allows the LLM to interact with the Fiji script editor.
@@ -344,7 +344,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 	{
 		try {
 			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-			final ScriptLogs[] initialLogs = new ScriptLogs[1];
+			final TextLogs[] initialLogs = new TextLogs[1];
 			final Executer[] executer = new Executer[1];
 			final Runnable startScript = () -> {
 				initialLogs[0] = TextEditorUtils.getLogs(textEditor, tab);
@@ -368,7 +368,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				}
 			}
 
-			final ScriptLogs[] finalLogs = new ScriptLogs[1];
+			final TextLogs[] finalLogs = new TextLogs[1];
 			final Runnable readLogs = () -> finalLogs[0] = TextEditorUtils.getLogs(textEditor,
 				tab);
 			if (SwingUtilities.isEventDispatchThread()) {
@@ -378,7 +378,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				SwingUtilities.invokeAndWait(readLogs);
 			}
 
-			final ScriptLogs logDelta = finalLogs[0].deltaFrom(initialLogs[0])
+			final TextLogs logDelta = finalLogs[0].deltaFrom(initialLogs[0])
 				.withoutStartedBanners();
 			final JsonObject runState = getTabJson(scriptID);
 			runState.addProperty(ERROR_KEY, logDelta.getErrors());
@@ -547,7 +547,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
 			final TextEditorTab tab = textEditor.getTab(scriptID.tabIndex);
-			final ScriptLogs[] logs = new ScriptLogs[1];
+			final TextLogs[] logs = new TextLogs[1];
 			final Runnable readLogs = () -> logs[0] = TextEditorUtils.getLogs(textEditor, tab);
 			if (SwingUtilities.isEventDispatchThread()) {
 				readLogs.run();
@@ -556,7 +556,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 				SwingUtilities.invokeAndWait(readLogs);
 			}
 
-			final ScriptLogs cleanedLogs = logs[0].withoutStartedBanners();
+			final TextLogs cleanedLogs = logs[0].withoutStartedBanners();
 			JsonObject scriptLog = getTabJson(scriptID);
 			scriptLog.addProperty(ERROR_KEY, cleanedLogs.getErrors());
 			scriptLog.addProperty(OUTPUT_KEY, cleanedLogs.getOutput());
