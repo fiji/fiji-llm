@@ -210,15 +210,15 @@ For questions, bug reports, and feature requests, visit the [Image.sc Forum](htt
 
 ## Developers: Adding Functionality
 
-This project brings provides [langchain4j](https://docs.langchain4j.dev/) integration to the SciJava's plugin framework. There are several key points of extension:
+This project provides [langchain4j](https://docs.langchain4j.dev/) integration to the SciJava plugin framework. There are several key points of extension:
 
 ### [LLMProvider](src/main/java/sc/fiji/llm/provider/LLMProvider.java)
 
 Determine which AI Services are available in chat.
 
-### [ContextItemSupplier](src/main/java/sc/fiji/llm/chat/ContextItemSupplier.java)
+### [ContextItemSupplier](src/main/java/sc/fiji/llm/ui/ContextItemSupplier.java)
 
-Provide a mapping from the Fiji application environment to [`ContextItems`](src/main/java/sc/fiji/llm/chat/ContextItem.java), facilitating deeper understanding by the LLM.
+Provide a mapping from the Fiji application environment to [`ContextItems`](src/main/java/sc/fiji/llm/context/ContextItem.java), facilitating deeper understanding by the LLM.
 
 ### [AiToolPlugin](src/main/java/sc/fiji/llm/tools/AiToolPlugin.java)
 
@@ -228,7 +228,7 @@ These plugins contain methods annotated with `langchain4j`'s [`@Tool`](https://g
 
 When adding an `AiToolPlugin`:
 
-* **Use scoped tool names.** Give every `@Tool` an explicit name following the `fiji_<scope>_<operation>` pattern. Use lower-case names and kebab case (also called cigar case) for multiword operations, such as `fiji_script_read-content`. The scope prevents collisions between plugins. Existing tools use both underscores and hyphens in operation names, so preserve an existing name when modifying a tool and use the exact name consistently in descriptions, errors, and recommendations.
+* **Use scoped tool names.** Give every `@Tool` an explicit lower-case `snake_case` name following the `fiji_<scope>_<operation>` pattern, such as `fiji_script_read_content`. The scope prevents collisions between plugins. Preserve an existing name when modifying a tool and use the exact name consistently in descriptions, errors, and recommendations.
 
 * **Choose useful parameter names.** Use `@P` to provide descriptive, stable names to the LLM, usually in `snake_case`, even when the Java parameter uses `camelCase`: `@P("image_id")`, `@P("menu_path")`, or `@P("start_line")`. Include units, indexing conventions, and other constraints in the tool description when they matter.
 
@@ -250,7 +250,9 @@ interaction.
 Keep this dedicated live-test session separate from the general
 coding agent so integration tests are run deliberately.
 
-Ensure the integration test document is updated as tools are added or names change.
+Keep the integration test document, technical summary, README, and relevant VS
+Code agent files in sync when public tools or APIs are added, removed, renamed,
+or behavior changes.
 
 ### [ChatbotService](src/main/java/sc/fiji/llm/ui/ChatbotService.java)
 

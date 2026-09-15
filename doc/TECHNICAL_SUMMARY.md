@@ -64,9 +64,11 @@ Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensit
 
 Built-in tools include:
 - **`ImageJMacroToolPlugin`** — macro recorder integration, macro function discovery
-- **`CommandInteractionToolPlugin`** — ImageJ command execution
+- **`CommandUseToolPlugin`** — ImageJ command discovery and execution
 - **`ScriptEditorToolPlugin`** — script editor interaction
 - **`ImageToolPlugin`** — active image metadata access
+- **`LogToolPlugin`** — ImageJ and SciJava log inspection
+- **`UiToolPlugin`** — visible AWT and Swing dialog inspection
 
 ### MCP (Model Context Protocol) Bridge
 
@@ -128,6 +130,7 @@ Markdown responses are rendered in the chat UI via **flexmark** (`0.64.8`).
 | `langchain4j-mcp` | 1.13.1-beta23 | MCP client + `McpToolProvider` |
 | `scijava-common` | (pom-scijava) | Plugin system, services, DI |
 | `imagej-legacy` | (pom-scijava) | ImageJ1 macro/command interop |
+| `jsoup` | 1.21.2 | HTML parsing |
 | `jackson` (2 + 3) | 2.19.2 / 3.0.3 | JSON serialization |
 | `jetty-server` | 11.0.20 | Embedded MCP HTTP server |
 | `flexmark` | 0.64.8 | Markdown rendering |
