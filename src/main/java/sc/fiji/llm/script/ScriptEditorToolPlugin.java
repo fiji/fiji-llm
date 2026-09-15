@@ -39,6 +39,8 @@ import javax.swing.event.ChangeEvent;
 import org.scijava.command.CommandService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.script.ScriptLanguage;
+import org.scijava.script.ScriptService;
 import org.scijava.ui.swing.script.EditorPane;
 import org.scijava.ui.swing.script.ScriptEditor;
 import org.scijava.ui.swing.script.TextEditor;
@@ -72,6 +74,9 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private CommandService commandService;
+
+	@Parameter
+	private ScriptService scriptService;
 
 	@Override
 	public String getName() {
@@ -245,6 +250,32 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_script_list: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Return all available script languages and their file extensions" }, name = "fiji_script_list_languages")
+	public String listScriptLanguages() {
+		try {
+			final JsonArray languages = new JsonArray();
+			for (final ScriptLanguage language : scriptService.getLanguages()) {
+				final JsonObject languageJson = new JsonObject();
+				languageJson.addProperty("name", language.getLanguageName());
+
+				final JsonArray extensions = new JsonArray();
+				for (final String extension : language.getExtensions()) {
+					extensions.add(extension);
+				}
+				languageJson.add("extensions", extensions);
+				languages.add(languageJson);
+			}
+
+			final JsonObject result = new JsonObject();
+			result.add("languages", languages);
+			return result.toString();
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_script_list_languages: " + e
+				.getMessage());
 		}
 	}
 
