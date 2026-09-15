@@ -33,6 +33,7 @@ import org.scijava.plugin.Plugin;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -73,6 +74,35 @@ The fiji_ui_* tools provide information about visible UI components.
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_ui_dialogs_read: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Click an exact enabled button in one visible dialog with the exact title. Call fiji_ui_dialogs_read first; this tool rejects missing or ambiguous dialogs and never chooses a button implicitly" }, name = "fiji_ui_dialog_respond")
+	public String respondToDialog(@P("dialog_title") final String dialogTitle,
+		@P("button_text") final String buttonText)
+	{
+		if (dialogTitle == null || dialogTitle.isBlank()) {
+			return jsonError("dialog_title cannot be null or blank");
+		}
+		if (buttonText == null || buttonText.isBlank()) {
+			return jsonError("button_text cannot be null or blank");
+		}
+
+		try {
+			final AWTDialogUtils.DialogResponse response = AWTDialogUtils
+				.respondToDialog(dialogTitle, buttonText);
+			final JsonObject result = new JsonObject();
+			result.addProperty("acted", true);
+			result.addProperty("dialog_title", response.getDialogTitle());
+			result.addProperty("dialog_class_name", response.getDialogClassName());
+			result.addProperty("button_text", response.getButtonText());
+			result.addProperty("action_command", response.getActionCommand());
+			result.addProperty("dialog_visible_after", response
+				.isDialogVisibleAfter());
+			return result.toString();
+		}
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_ui_dialog_respond: " + e.getMessage());
 		}
 	}
 

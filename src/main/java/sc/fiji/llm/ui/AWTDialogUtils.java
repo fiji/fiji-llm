@@ -36,7 +36,9 @@ import java.awt.Dialog;
 import java.awt.Label;
 import java.awt.TextArea;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -48,7 +50,7 @@ import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
-/** Utilities for inspecting visible AWT and Swing dialogs. */
+/** Utilities for inspecting and responding to visible AWT and Swing dialogs. */
 public final class AWTDialogUtils {
 
 	private AWTDialogUtils() {
@@ -67,6 +69,117 @@ public final class AWTDialogUtils {
 			throw new IllegalStateException("Could not inspect AWT dialogs", e);
 		}
 		return result[0];
+	}
+
+	/**
+	 * Clicks an exact, visible button in the unique visible dialog with the given
+	 * title.
+	 *
+	 * @throws IllegalArgumentException if either argument is {@code null}
+	 * @throws IllegalStateException if the dialog or button is missing, ambiguous,
+	 *         or disabled
+	 */
+	public static DialogResponse respondToDialog(final String dialogTitle,
+		final String buttonText)
+	{
+		if (dialogTitle == null || buttonText == null) {
+			throw new IllegalArgumentException("Dialog title and button text are required");
+		}
+
+		if (SwingUtilities.isEventDispatchThread()) return respondOnEdt(dialogTitle,
+			buttonText);
+
+		final DialogResponse[] result = new DialogResponse[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> result[0] = respondOnEdt(dialogTitle,
+				buttonText));
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrupted while responding to dialog", e);
+		}
+		catch (InvocationTargetException e) {
+			if (e.getCause() instanceof RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			throw new IllegalStateException("Could not respond to dialog", e.getCause());
+		}
+		return result[0];
+	}
+
+	private static DialogResponse respondOnEdt(final String dialogTitle,
+		final String buttonText)
+	{
+		final List<Dialog> matchingDialogs = new ArrayList<>();
+		for (final Window window : Window.getWindows()) {
+			if (window instanceof Dialog dialog && dialog.isVisible() && dialogTitle
+				.equals(dialog.getTitle())) matchingDialogs.add(dialog);
+		}
+
+		if (matchingDialogs.isEmpty()) {
+			throw new IllegalStateException("No visible dialog has title: " + dialogTitle);
+		}
+		if (matchingDialogs.size() > 1) {
+			throw new IllegalStateException("Multiple visible dialogs have title: " +
+				dialogTitle);
+		}
+
+		final Dialog dialog = matchingDialogs.get(0);
+		final List<Component> matchingButtons = new ArrayList<>();
+		collectMatchingButtons(dialog, buttonText, matchingButtons, Collections
+			.newSetFromMap(new IdentityHashMap<>()));
+		if (matchingButtons.isEmpty()) {
+			throw new IllegalStateException("No button has text '" + buttonText +
+				"' in dialog: " + dialogTitle);
+		}
+		if (matchingButtons.size() > 1) {
+			throw new IllegalStateException("Multiple buttons have text '" + buttonText +
+				"' in dialog: " + dialogTitle);
+		}
+
+		final Component button = matchingButtons.get(0);
+		if (!button.isShowing()) {
+			throw new IllegalStateException("Button is not showing: " + buttonText);
+		}
+		if (!button.isEnabled()) {
+			throw new IllegalStateException("Button is disabled: " + buttonText);
+		}
+
+		final ButtonInfo buttonInfo = buttonInfo(button);
+		clickButton(button);
+		return new DialogResponse(dialog.getTitle(), dialog.getClass().getName(),
+			buttonInfo.getText(), buttonInfo.getActionCommand(), dialog.isVisible());
+	}
+
+	private static void collectMatchingButtons(final Component component,
+		final String buttonText, final List<Component> matchingButtons,
+		final Set<Component> visited)
+	{
+		if (!visited.add(component)) return;
+
+		final ButtonInfo button = buttonInfo(component);
+		if (button != null && buttonText.equals(button.getText())) matchingButtons.add(
+			component);
+
+		if (component instanceof Container container) {
+			for (final Component child : container.getComponents()) {
+				collectMatchingButtons(child, buttonText, matchingButtons, visited);
+			}
+		}
+	}
+
+	private static void clickButton(final Component component) {
+		if (component instanceof Button button) {
+			button.dispatchEvent(new ActionEvent(button, ActionEvent.ACTION_PERFORMED,
+				button.getActionCommand()));
+		}
+		else if (component instanceof AbstractButton button) {
+			button.doClick();
+		}
+		else {
+			throw new IllegalStateException("Unsupported dialog button component: " +
+				component.getClass().getName());
+		}
 	}
 
 	private static List<DialogInfo> collectVisibleDialogs() {
@@ -254,6 +367,46 @@ public final class AWTDialogUtils {
 
 		public boolean isVisible() {
 			return visible;
+		}
+	}
+
+	public static final class DialogResponse {
+
+		private final String dialogTitle;
+		private final String dialogClassName;
+		private final String buttonText;
+		private final String actionCommand;
+		private final boolean dialogVisibleAfter;
+
+		private DialogResponse(final String dialogTitle, final String dialogClassName,
+			final String buttonText, final String actionCommand,
+			final boolean dialogVisibleAfter)
+		{
+			this.dialogTitle = dialogTitle == null ? "" : dialogTitle;
+			this.dialogClassName = dialogClassName == null ? "" : dialogClassName;
+			this.buttonText = buttonText == null ? "" : buttonText;
+			this.actionCommand = actionCommand == null ? "" : actionCommand;
+			this.dialogVisibleAfter = dialogVisibleAfter;
+		}
+
+		public String getDialogTitle() {
+			return dialogTitle;
+		}
+
+		public String getDialogClassName() {
+			return dialogClassName;
+		}
+
+		public String getButtonText() {
+			return buttonText;
+		}
+
+		public String getActionCommand() {
+			return actionCommand;
+		}
+
+		public boolean isDialogVisibleAfter() {
+			return dialogVisibleAfter;
 		}
 	}
 }

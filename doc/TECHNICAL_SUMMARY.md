@@ -68,7 +68,7 @@ Built-in tools include:
 - **`ScriptEditorToolPlugin`** — script editor interaction
 - **`ImageToolPlugin`** — active image metadata access
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
-- **`UiToolPlugin`** — visible AWT and Swing dialog inspection
+- **`UiToolPlugin`** — visible AWT and Swing dialog inspection and exact button responses
 
 ### MCP (Model Context Protocol) Bridge
 

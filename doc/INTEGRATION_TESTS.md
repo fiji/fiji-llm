@@ -34,6 +34,9 @@ same order:
       `fiji_log_scijava_stop_capture` afterward.
 7. `fiji_ui_dialogs_read` reports visible error or confirmation dialogs,
       including their titles, messages, buttons, and modal state.
+8. When a test intentionally proceeds through a dialog, call
+      `fiji_ui_dialog_respond` with the exact observed title and button, then
+      call `fiji_ui_dialogs_read` again to verify the resulting state.
 
 ## Scripts
 
@@ -104,7 +107,9 @@ inspected together.
       image state and the later error are both observable.
 - [ ] Command requiring `Close All` confirmation: verify the confirmation
       dialog's title, message, buttons, and modal state with
-      `fiji_ui_dialogs_read`.
+      `fiji_ui_dialogs_read`; when proceeding is intentional, respond with
+      `fiji_ui_dialog_respond` using the exact title and button, then verify
+      that the dialog state changed.
 - [ ] Console exception: trigger a macro exception or error after `print()`
       output and compare the Script Editor, ImageJ Log, and SciJava results.
 - [ ] Timeout: run a macro longer than 30 seconds and verify interruption and
