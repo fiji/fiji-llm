@@ -45,6 +45,13 @@ architecture.
 - Treat persisted conversations, preferences, MCP interoperability, and
   update-site users as externally visible behavior. Call out changes affecting
   them even when Java API compatibility is not required.
+- When changing a public API or agent-facing tool contract, update the relevant
+  files under `doc/agents/vscode/`, `doc/INTEGRATION_TESTS.md`, and `README.md`
+  in the same change.
+- When changing extension points, provider/tool/context/MCP architecture,
+  conversation persistence, or dependency versions described in the technical
+  summary, update `doc/TECHNICAL_SUMMARY.md` and the relevant README sections
+  in the same change.
 
 ## Validation
 - Much of the project requires a running Fiji installation and may depend on
