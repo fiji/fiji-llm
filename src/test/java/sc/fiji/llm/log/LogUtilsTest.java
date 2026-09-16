@@ -56,6 +56,21 @@ public class LogUtilsTest {
 	}
 
 	@Test
+	public void testTextLogsDeltaBeforeRemovingKnownNoise() {
+		final TextLogs initial = new TextLogs("Started first at now\noutput\n",
+			"Started first at now\nerror\n[INFO] Execution errors handled by the Macro Interpreter.\n");
+		final TextLogs current = new TextLogs(
+			"Started first at now\noutput\nStarted second at later\nnew\n",
+			"Started first at now\nerror\n[INFO] Execution errors handled by the Macro Interpreter.\n" +
+				"Started second at later\nnew\n");
+		final TextLogs delta = current.deltaFrom(initial)
+			.withoutGenericMacroInterpreterMessages();
+
+		assertEquals("new\n", delta.getOutput());
+		assertEquals("new\n", delta.getErrors());
+	}
+
+	@Test
 	public void testTextLogsRemoveStartedBanners() {
 		final TextLogs logs = new TextLogs("Started script at now\noutput\n",
 			"Started script at now\nerror\n");

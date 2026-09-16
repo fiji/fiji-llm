@@ -407,7 +407,7 @@ public final class ScriptExecutionService extends AbstractService implements
 			execution.textEditor, execution.tab);
 		if (SwingUtilities.isEventDispatchThread()) read.run();
 		else SwingUtilities.invokeAndWait(read);
-		return result[0].withoutGenericMacroInterpreterMessages();
+		return result[0];
 	}
 
 	private void finishWithInfrastructureError(final Execution execution,
