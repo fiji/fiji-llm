@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.log;
 
+import java.util.Locale;
+
 /** A pair of text channels captured from an execution surface. */
 public final class TextLogs {
 
@@ -54,10 +56,41 @@ public final class TextLogs {
 	}
 
 	public TextLogs withoutStartedBanners() {
-		return new TextLogs(stripStartedBanners(output), stripStartedBanners(errors));
+		return withoutKnownNoise();
+	}
+
+	public TextLogs withoutGenericMacroInterpreterMessages() {
+		return withoutKnownNoise();
+	}
+
+	private TextLogs withoutKnownNoise() {
+		return new TextLogs(stripKnownNoise(output), stripKnownNoise(errors));
+	}
+
+	private static String stripKnownNoise(final String logs) {
+		String cleaned = stripStartedBanners(logs);
+		return stripGenericMacroInterpreterMessages(cleaned);
 	}
 
 	private static String stripStartedBanners(final String logs) {
 		return logs.replaceAll("(?m)^Started .* at .*\\r?\\n?", "");
+	}
+
+	private static String stripGenericMacroInterpreterMessages(final String logs) {
+		if (logs == null || logs.isBlank()) return "";
+		final StringBuilder result = new StringBuilder();
+		for (final String line : logs.split("\\R")) {
+			if (isGenericMacroInterpreterMessage(line)) continue;
+			if (result.length() > 0) result.append(System.lineSeparator());
+			result.append(line);
+		}
+		return result.toString();
+	}
+
+	private static boolean isGenericMacroInterpreterMessage(final String line) {
+		if (line == null) return false;
+		final String normalized = line.replaceAll("\\s+", " ").trim();
+		return normalized.toLowerCase(Locale.ROOT).contains(
+			"execution errors handled by the macro interpreter");
 	}
 }

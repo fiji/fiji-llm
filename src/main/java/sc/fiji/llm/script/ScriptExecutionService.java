@@ -407,7 +407,7 @@ public final class ScriptExecutionService extends AbstractService implements
 			execution.textEditor, execution.tab);
 		if (SwingUtilities.isEventDispatchThread()) read.run();
 		else SwingUtilities.invokeAndWait(read);
-		return result[0];
+		return result[0].withoutGenericMacroInterpreterMessages();
 	}
 
 	private void finishWithInfrastructureError(final Execution execution,
@@ -486,7 +486,7 @@ public final class ScriptExecutionService extends AbstractService implements
 				execution.finishedAt);
 
 			final TextLogs logs = execution.logs == null ? new TextLogs("", "") :
-				execution.logs;
+				execution.logs.withoutGenericMacroInterpreterMessages();
 			result.addProperty("output", logs.getOutput());
 			result.addProperty("errors", logs.getErrors());
 			if (execution.primaryError != null && !execution.primaryError.isBlank()) {

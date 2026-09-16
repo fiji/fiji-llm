@@ -41,6 +41,8 @@ import org.junit.Test;
 
 import com.google.gson.JsonObject;
 
+import sc.fiji.llm.log.TextLogs;
+
 public class ScriptExecutionServiceTest {
 
 	@Test
@@ -68,6 +70,14 @@ public class ScriptExecutionServiceTest {
 			.getAsString());
 		assertEquals("Macro Error: Number expected", json.get("error_dialog")
 			.getAsString());
+	}
+
+	@Test
+	public void testGenericMacroInterpreterMessageIsIgnoredAsError() {
+		final TextLogs logs = new TextLogs("",
+			"[INFO] Execution errors handled by the Macro Interpreter.");
+		final TextLogs cleaned = logs.withoutGenericMacroInterpreterMessages();
+		assertEquals("", cleaned.getErrors());
 	}
 
 	private static ScriptExecutionService.ExecutionResult createExecutionResult(
