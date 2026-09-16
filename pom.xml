@@ -127,6 +127,10 @@
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej-common</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-updater</artifactId>
+		</dependency>
 
 		<!-- Third-party dependencies -->
 		<!-- Jackson 2 core -->

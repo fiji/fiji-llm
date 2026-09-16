@@ -69,6 +69,7 @@ Built-in tools include:
 - **`ImageToolPlugin`** — active image metadata access
 - **`ResultsTableToolPlugin`** — read-only Results Table inspection
 - **`RoiManagerToolPlugin`** — read-only ROI Manager inspection
+- **`SystemInfoToolPlugin`** — read-only host, JVM, application version, and update-site inspection
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
 - **`UiToolPlugin`** — visible AWT and Swing dialog inspection and exact button responses
 - **`ScriptExecutionService`** — shared Script Editor execution, timeout handling, state snapshots, and dialog-aware run status for scripts and `.ijm` macros
@@ -83,6 +84,14 @@ rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and
 ROI summaries including index, name, selection state, and type. Both tools are
 read-only. ImageJ 1.x access for these tools and image compatibility helpers is
 centralized in the high-priority `ImageJ1HelperService`.
+
+`fiji_system_read` returns ImageJ 1.x and application versions, the Java
+version, operating system details, JVM memory values in bytes, and active update
+sites with their names and URLs. Its
+`available_jvm_memory_bytes` value is the estimated remaining JVM heap based on
+the configured maximum heap, not a measurement of physical system RAM.
+`fiji_system_list_update_sites` lists all available update sites with their active
+status, names, and URLs.
 
 ### MCP (Model Context Protocol) Bridge
 

@@ -60,6 +60,10 @@ public final class ImageJ1HelperService extends AbstractService implements
 		return Optional.ofNullable(legacyService.getIJ1Helper());
 	}
 
+	public String getImageJ1Version() {
+		return getIJ1Helper().map(IJ1Helper::getVersion).orElse("Unknown");
+	}
+
 	public List<Integer> getImageIds() {
 		final List<Integer> ids = new ArrayList<>();
 		getIJ1Helper().ifPresent(helper -> {

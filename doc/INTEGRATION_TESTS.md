@@ -160,3 +160,13 @@ Fiji instance with the ImageJ legacy layer active.
 - [ ] ROI Manager unavailable state: close the ROI Manager, call
       `fiji_rois_read`, and verify it reports `present: false` without
       throwing an error.
+
+## System Information
+
+- [ ] Call `fiji_system_read` and verify it returns ImageJ 1.x and application
+      versions, the Java version, JVM memory values in bytes, and operating
+      system name, version, and architecture. Verify `active_update_sites`
+      contains the enabled sites with their names and URLs.
+- [ ] Call `fiji_system_list_update_sites` and verify every returned entry contains
+      `active`, `name`, and `url`, including both active and inactive sites when
+      the update-site configuration contains both.
