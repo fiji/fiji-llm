@@ -76,6 +76,10 @@ Built-in tools include:
 
 `.ijm` macros are executed only by calling `TextEditor.runText()` on the active tab in a visible Script Editor. `fiji_script_run` rejects active `.ijm` tabs and directs callers to `fiji_macro_run`. Macro runs return one of `success`, `finished_with_errors`, `blocked_by_dialog`, `timed_out`, or `infrastructure_error`; the timeout result distinguishes the requested timeout from the actual termination state via `timeout_requested`, `execution_terminated`, `termination_status`, and `termination_failure`, so callers can detect when the Script Editor refused or failed to terminate the task. A blocked run remains addressable by its `run_id` through `fiji_macro_run_status`, which is read-only and directs callers to `fiji_ui_dialog_respond` for the intentional UI action.
 
+`fiji_macro_recorder_read` is a read-only snapshot of the current recorder,
+including whether it is open, whether it is recording, its script mode, and the
+current buffer text.
+
 `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags and ImageJ/SciJava log deltas. Image pixels are never copied into the report.
 
 `fiji_results_read` returns structured Results Table metadata and numeric

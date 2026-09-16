@@ -89,9 +89,14 @@ commands:
 
 1. Call `fiji_macro_start_recorder` and verify the recorder is open with
       `fiji_macro_recorder_state`.
+   Call `fiji_macro_recorder_read` and verify the recorder state and current
+      buffer are returned, including an empty buffer when no commands have
+      been recorded yet.
 2. Run a small image-processing workflow through Fiji, using the normal Fiji
       UI or `fiji_command_search` and `fiji_command_run`. Include commands that
       create or modify an image so the recorded macro has a useful baseline.
+      Call `fiji_macro_recorder_read` again and verify the recorded buffer has
+            changed.
 3. Call `fiji_macro_create_script` to transfer the recorder contents into an
       `.ijm` tab in the Script Editor. Verify the new tab with
       `fiji_script_list` and inspect its source with `fiji_script_read_content`.

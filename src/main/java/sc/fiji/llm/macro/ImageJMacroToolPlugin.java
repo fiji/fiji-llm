@@ -48,6 +48,7 @@ import com.google.gson.JsonObject;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.script.ScriptContextItem;
 import sc.fiji.llm.script.ScriptContextUtilities;
 import sc.fiji.llm.script.ScriptExecutionService;
@@ -66,6 +67,9 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private LegacyService legacyService;
+
+	@Parameter
+	private ImageJ1HelperService imageJ1HelperService;
 
 	@Parameter
 	private LogService logService;
@@ -157,6 +161,24 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_macro_start_recorder: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Read the current ImageJ macro recorder state and buffer." }, name = "fiji_macro_recorder_read")
+	public String readRecorder() {
+		try {
+			final ImageJ1HelperService.MacroRecorderState state =
+				imageJ1HelperService == null ? ImageJ1HelperService.MacroRecorderState
+					.closed() : imageJ1HelperService.getMacroRecorderState();
+			final JsonObject result = new JsonObject();
+			result.addProperty("recorder_open", state.isOpen());
+			result.addProperty("recording", state.isRecording());
+			result.addProperty("script_mode", state.isScriptMode());
+			result.addProperty("buffer", state.getBuffer());
+			return result.toString();
+		}
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_macro_recorder_read: " + e.getMessage());
 		}
 	}
 

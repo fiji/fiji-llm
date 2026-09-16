@@ -132,6 +132,17 @@ public final class ImageJ1HelperService extends AbstractService implements
 		return invokeStatic("ij.plugin.frame.RoiManager", "getInstance");
 	}
 
+	public MacroRecorderState getMacroRecorderState() {
+		if (getIJ1Helper().isEmpty()) return MacroRecorderState.closed();
+
+		final Object recorder = invokeStatic("ij.plugin.frame.Recorder", "getInstance");
+		if (recorder == null) return MacroRecorderState.closed();
+
+		return new MacroRecorderState(true, getStaticBoolean("ij.plugin.frame.Recorder",
+			"record"), asBoolean(invokeStatic("ij.plugin.frame.Recorder", "scriptMode")),
+			asString(invoke(recorder, "getText")));
+	}
+
 	private static Object invokeStatic(final String className,
 		final String methodName, final Object... args)
 	{
@@ -170,6 +181,21 @@ public final class ImageJ1HelperService extends AbstractService implements
 		return value == null ? "" : String.valueOf(value);
 	}
 
+	private static boolean asBoolean(final Object value) {
+		return value instanceof Boolean && (Boolean) value;
+	}
+
+	private static boolean getStaticBoolean(final String className,
+		final String fieldName)
+	{
+		try {
+			return Class.forName(className).getField(fieldName).getBoolean(null);
+		}
+		catch (final ReflectiveOperationException | LinkageError e) {
+			return false;
+		}
+	}
+
 	public static final class ResultsTableState {
 
 		private final boolean present;
@@ -198,6 +224,43 @@ public final class ImageJ1HelperService extends AbstractService implements
 
 		public String getColumnHeadings() {
 			return columnHeadings;
+		}
+	}
+
+	public static final class MacroRecorderState {
+
+		private final boolean open;
+		private final boolean recording;
+		private final boolean scriptMode;
+		private final String buffer;
+
+		private MacroRecorderState(final boolean open, final boolean recording,
+			final boolean scriptMode, final String buffer)
+		{
+			this.open = open;
+			this.recording = recording;
+			this.scriptMode = scriptMode;
+			this.buffer = buffer == null ? "" : buffer;
+		}
+
+		public static MacroRecorderState closed() {
+			return new MacroRecorderState(false, false, false, "");
+		}
+
+		public boolean isOpen() {
+			return open;
+		}
+
+		public boolean isRecording() {
+			return recording;
+		}
+
+		public boolean isScriptMode() {
+			return scriptMode;
+		}
+
+		public String getBuffer() {
+			return buffer;
 		}
 	}
 }
