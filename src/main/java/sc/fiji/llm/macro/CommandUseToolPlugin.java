@@ -68,6 +68,7 @@ import sc.fiji.llm.tools.ToolScope;
 public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	private static final int MAX_RESULTS = 10;
+	private static final long UI_SETTLE_DELAY_MS = 250;
 
 	@Parameter
 	private SearchService searchService;
@@ -128,8 +129,9 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 
 			capture = environmentSnapshotService.capture();
 			// Run the module - this goes through the same path as the search panel
-			// and includes automatic recorder integration
+			// and includes automatic recorder integration.
 			moduleService.run(moduleInfo, true);
+			waitForUiToSettle();
 
 			JsonObject command = new JsonObject();
 			command.addProperty("name", moduleInfo.getTitle());
@@ -145,6 +147,16 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 				return commandError(menuPath, capture.finish(), e.getMessage());
 			}
 			return jsonError("Failed to run fiji_command_run: " + e.getMessage());
+		}
+	}
+
+	private void waitForUiToSettle() {
+		try {
+			Thread.sleep(UI_SETTLE_DELAY_MS);
+		}
+		catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrupted while waiting for UI to settle", e);
 		}
 	}
 

@@ -47,7 +47,7 @@ public class ScriptExecutionServiceTest {
 	public void testTimedOutResultReportsTimeoutRequestedAndTerminationFailure() throws Exception {
 		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
 			ScriptExecutionService.Status.TIMED_OUT, true, false,
-			"UnsupportedOperationException: Thread.stop");
+			"UnsupportedOperationException: Thread.stop", null, null);
 		final JsonObject json = result.toJson();
 		assertEquals("timed_out", json.get("status").getAsString());
 		assertTrue(json.get("timeout_requested").getAsBoolean());
@@ -58,11 +58,25 @@ public class ScriptExecutionServiceTest {
 		assertFalse(json.get("completed").getAsBoolean());
 	}
 
+	@Test
+	public void testResultPreservesPrimaryErrorAndErrorDialog() throws Exception {
+		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
+			ScriptExecutionService.Status.FINISHED_WITH_ERRORS, false, true, null,
+			"Type mismatch in macro call", "Macro Error: Number expected");
+		final JsonObject json = result.toJson();
+		assertEquals("Type mismatch in macro call", json.get("primary_error")
+			.getAsString());
+		assertEquals("Macro Error: Number expected", json.get("error_dialog")
+			.getAsString());
+	}
+
 	private static ScriptExecutionService.ExecutionResult createExecutionResult(
 		final ScriptExecutionService.Status status,
 		final boolean timeoutRequested,
 		final boolean executionTerminated,
-		final String terminationFailure) throws Exception
+		final String terminationFailure,
+		final String primaryError,
+		final String errorDialog) throws Exception
 	{
 		final Constructor<?> executionCtor = Class.forName(
 			"sc.fiji.llm.script.ScriptExecutionService$Execution")
@@ -91,8 +105,25 @@ public class ScriptExecutionServiceTest {
 		terminationFailureField.setAccessible(true);
 		terminationFailureField.set(execution, terminationFailure);
 
+		setOptionalField(execution, "primaryError", primaryError);
+		setOptionalField(execution, "errorDialog", errorDialog);
+
 		final Method snapshot = execution.getClass().getDeclaredMethod("snapshot");
 		snapshot.setAccessible(true);
 		return (ScriptExecutionService.ExecutionResult) snapshot.invoke(execution);
+	}
+
+	private static void setOptionalField(final Object execution,
+		final String fieldName, final String value) throws Exception
+	{
+		try {
+			final Field field = execution.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			field.set(execution, value);
+		}
+		catch (final NoSuchFieldException e) {
+			// Ignore when running against older code; the regression itself asserts on JSON
+			// output, so the test still fails if the production fields are absent.
+		}
 	}
 }

@@ -323,6 +323,7 @@ public final class ScriptExecutionService extends AbstractService implements
 			Collections.emptyList() : environment.getNewModalDialogs();
 		if (!dialogs.isEmpty()) {
 			execution.status = Status.BLOCKED_BY_DIALOG;
+			captureErrorDialog(execution, environment);
 		}
 		else if (execution.status == Status.BLOCKED_BY_DIALOG) {
 			execution.status = Status.RUNNING;
@@ -364,12 +365,40 @@ public final class ScriptExecutionService extends AbstractService implements
 			final TextLogs delta = finalLogs.deltaFrom(execution.logsBefore)
 				.withoutStartedBanners();
 			final String diagnostic = delta.getErrors().trim();
+			if (!diagnostic.isEmpty() && (execution.primaryError == null ||
+				execution.primaryError.isBlank())) execution.primaryError = diagnostic;
 			finish(execution, diagnostic.isEmpty() ? Status.SUCCESS :
 				Status.FINISHED_WITH_ERRORS, null, delta);
 		}
 		catch (final Throwable t) {
 			finishWithInfrastructureError(execution, t);
 		}
+	}
+
+	private static void captureErrorDialog(final Execution execution,
+		final EnvironmentImpact environment)
+	{
+		if (environment == null) return;
+		final String dialogError = extractDialogError(environment);
+		if (dialogError == null || dialogError.isBlank()) return;
+		execution.errorDialog = dialogError;
+		if (execution.primaryError == null || execution.primaryError.isBlank()) {
+			execution.primaryError = dialogError.lines().findFirst().orElse(dialogError);
+		}
+	}
+
+	private static String extractDialogError(final EnvironmentImpact environment) {
+		final List<AWTDialogUtils.DialogInfo> dialogs = environment == null ?
+			Collections.emptyList() : environment.getNewModalDialogs();
+		final StringBuilder messages = new StringBuilder();
+		for (final AWTDialogUtils.DialogInfo dialog : dialogs) {
+			for (final String message : dialog.getMessages()) {
+				if (message == null || message.isBlank()) continue;
+				if (messages.length() > 0) messages.append(System.lineSeparator());
+				messages.append(message);
+			}
+		}
+		return messages.length() == 0 ? null : messages.toString();
 	}
 
 	private TextLogs readLogs(final Execution execution) throws Exception {
@@ -460,6 +489,12 @@ public final class ScriptExecutionService extends AbstractService implements
 				execution.logs;
 			result.addProperty("output", logs.getOutput());
 			result.addProperty("errors", logs.getErrors());
+			if (execution.primaryError != null && !execution.primaryError.isBlank()) {
+				result.addProperty("primary_error", execution.primaryError);
+			}
+			if (execution.errorDialog != null && !execution.errorDialog.isBlank()) {
+				result.addProperty("error_dialog", execution.errorDialog);
+			}
 			final EnvironmentImpact environment = execution.environment;
 			result.addProperty("imagej_log", environment == null ? "" : environment
 				.getImageJLog());
@@ -533,6 +568,8 @@ public final class ScriptExecutionService extends AbstractService implements
 		private volatile boolean timeoutRequested;
 		private volatile boolean executionTerminated;
 		private volatile String terminationFailure;
+		private volatile String primaryError;
+		private volatile String errorDialog;
 
 		private Execution(final String runID, final ScriptID scriptID,
 			final RunKind kind)
