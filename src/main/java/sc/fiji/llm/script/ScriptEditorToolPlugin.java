@@ -201,6 +201,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 
 			// Switch to the specified tab
 			textEditor.switchTo(scriptID.tabIndex);
+			TextEditorUtils.recordLastFocusedEditor(textEditor);
 			textEditor.toFront();
 			textEditor.requestFocus();
 
@@ -285,7 +286,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		try {
 			// Check if editor is open
 			final TextEditor textEditor = TextEditorUtils
-				.getFocusedVisibleEditor();
+				.getLastFocusedVisibleEditor();
 			if (textEditor == null) {
 				return jsonError("Script editor is not open", "fiji_script_open_editor");
 			}
@@ -311,6 +312,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		try {
 			// Create new tab with default empty content and no extension
 			final TextEditorTab tab = textEditor.newTab("", "");
+			TextEditorUtils.recordLastFocusedEditor(textEditor);
 
 			// Get the editor and tab indices
 			int editorIndex = TextEditor.instances.indexOf(textEditor);

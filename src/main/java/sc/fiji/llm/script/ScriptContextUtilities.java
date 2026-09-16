@@ -47,36 +47,11 @@ public final class ScriptContextUtilities {
 
 	public static ScriptContextItem getActiveScriptContext() {
 		try {
-			TextEditor textEditor = TextEditorUtils.getFocusedVisibleEditor();
-			if (textEditor == null) {
+			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
+			if (scriptID == null) {
 				return null;
 			}
-
-			// Get the active tab
-			TextEditorTab tab;
-			try {
-				tab = textEditor.getTab();
-			}
-			catch (Throwable t) {
-				try {
-					tab = textEditor.getTab(0);
-				}
-				catch (Throwable t2) {
-					return null;
-				}
-			}
-
-			if (tab == null) {
-				return null;
-			}
-
-			final int tabIndex = findTabIndex(textEditor, tab);
-			if (tabIndex < 0) {
-				return null;
-			}
-
-			final int editorIndex = TextEditor.instances.indexOf(textEditor);
-			return buildScriptContextItem(editorIndex, tabIndex);
+			return buildScriptContextItem(scriptID.editorIndex, scriptID.tabIndex);
 		}
 		catch (RuntimeException e) {
 			return null;
@@ -161,29 +136,6 @@ public final class ScriptContextUtilities {
 		}
 
 		return title;
-	}
-
-	/**
-	 * Finds the tab index of a given tab within a TextEditor.
-	 */
-	private static int findTabIndex(final TextEditor textEditor,
-		final TextEditorTab targetTab)
-	{
-		for (int i = 0;; i++) {
-			try {
-				final TextEditorTab currentTab = textEditor.getTab(i);
-				if (currentTab == null) {
-					break;
-				}
-				if (currentTab == targetTab) {
-					return i;
-				}
-			}
-			catch (Exception e) {
-				break;
-			}
-		}
-		return -1;
 	}
 
 	/**

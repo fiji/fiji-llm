@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.ui;
 
+import java.awt.KeyboardFocusManager;
+import java.beans.PropertyChangeEvent;
 import java.util.List;
 
 import org.scijava.ui.swing.script.TextEditor;
@@ -42,8 +44,48 @@ import sc.fiji.llm.script.ScriptID;
  */
 public final class TextEditorUtils {
 
+	private static volatile FocusedScript lastFocusedScript;
+
+	static {
+		KeyboardFocusManager.getCurrentKeyboardFocusManager()
+			.addPropertyChangeListener("focusedWindow",
+				TextEditorUtils::handleFocusedWindowChange);
+	}
+
 	private TextEditorUtils() {
 		// utility
+	}
+
+	private static void handleFocusedWindowChange(final PropertyChangeEvent event) {
+		final Object oldValue = event.getOldValue();
+		if (oldValue instanceof TextEditor) {
+			rememberFocusedEditor((TextEditor) oldValue);
+		}
+
+		final Object newValue = event.getNewValue();
+		if (newValue instanceof TextEditor) {
+			rememberFocusedEditor((TextEditor) newValue);
+		}
+	}
+
+	private static void rememberFocusedEditor(final TextEditor textEditor) {
+		if (textEditor == null || !textEditor.isVisible()) return;
+
+		final TextEditorTab tab;
+		try {
+			tab = textEditor.getTab();
+		}
+		catch (final RuntimeException e) {
+			return;
+		}
+		if (tab != null) lastFocusedScript = new FocusedScript(textEditor, tab);
+	}
+
+	/**
+	 * Record an editor as the last focused editor after a programmatic activation.
+	 */
+	public static void recordLastFocusedEditor(final TextEditor textEditor) {
+		rememberFocusedEditor(textEditor);
 	}
 
 	/**
@@ -96,32 +138,67 @@ public final class TextEditorUtils {
 	}
 
 	/**
-	 * Get the active script ID from the focused visible editor's currently selected tab.
+	 * Get the active script ID from the currently focused editor, or the last
+	 * focused visible editor if focus has moved elsewhere.
 	 *
-	 * @return ScriptID of the active script, or null if no editor is visible or no tab is selected
+	 * @return ScriptID of the active script, or null if no script is available
 	 */
 	public static ScriptID getActiveScriptID() {
 		final TextEditor textEditor = getFocusedVisibleEditor();
 		if (textEditor == null) {
-			return null;
+			return getLastFocusedScriptID();
 		}
 
 		final int editorIndex = getFocusedVisibleEditorIndex();
 		if (editorIndex == -1) {
-			return null;
+			return getLastFocusedScriptID();
 		}
 
 		final TextEditorTab activeTab = textEditor.getTab();
 		if (activeTab == null) {
-			return null;
+			return getLastFocusedScriptID();
 		}
 
 		final int tabIndex = getTabIndex(textEditor, activeTab);
 		if (tabIndex == -1) {
-			return null;
+			return getLastFocusedScriptID();
 		}
 
+		lastFocusedScript = new FocusedScript(textEditor, activeTab);
 		return new ScriptID(editorIndex, tabIndex);
+	}
+
+	/**
+	 * Return the editor containing the active script, including when focus has
+	 * moved away from all Script Editor windows.
+	 */
+	public static TextEditor getLastFocusedVisibleEditor() {
+		final ScriptID scriptID = getActiveScriptID();
+		if (scriptID == null || TextEditor.instances == null || scriptID.editorIndex < 0 ||
+			scriptID.editorIndex >= TextEditor.instances.size()) return null;
+		return TextEditor.instances.get(scriptID.editorIndex);
+	}
+
+	private static ScriptID getLastFocusedScriptID() {
+		final FocusedScript focusedScript = lastFocusedScript;
+		if (focusedScript == null || focusedScript.editor == null ||
+			!focusedScript.editor.isVisible()) return null;
+
+		final int editorIndex = TextEditor.instances.indexOf(focusedScript.editor);
+		final int tabIndex = getTabIndex(focusedScript.editor, focusedScript.tab);
+		if (editorIndex == -1 || tabIndex == -1) return null;
+		return new ScriptID(editorIndex, tabIndex);
+	}
+
+	private static final class FocusedScript {
+
+		private final TextEditor editor;
+		private final TextEditorTab tab;
+
+		FocusedScript(final TextEditor editor, final TextEditorTab tab) {
+			this.editor = editor;
+			this.tab = tab;
+		}
 	}
 
 	/**
