@@ -132,7 +132,7 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 			moduleService.run(moduleInfo, true);
 
 			JsonObject command = new JsonObject();
-			command.addProperty("name", moduleInfo.getName());
+			command.addProperty("name", moduleInfo.getTitle());
 			command.addProperty("menu_path", menuString);
 			JsonObject result = new JsonObject();
 			result.add("executed_command", command);
