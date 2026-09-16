@@ -73,17 +73,40 @@ public final class TextEditorUtils {
 	}
 
 	/**
-	 * Get the active script ID from the most recently visible editor's currently selected tab.
+	 * Return the index of the visible TextEditor instance that currently has
+	 * focus, or -1 if no visible editor has focus.
+	 */
+	public static int getFocusedVisibleEditorIndex() {
+		final List<TextEditor> instances = TextEditor.instances;
+		if (instances == null || instances.isEmpty()) return -1;
+		for (int i = 0; i < instances.size(); i++) {
+			final TextEditor editor = instances.get(i);
+			if (editor != null && editor.isVisible() && editor.isFocused()) return i;
+		}
+		return -1;
+	}
+
+	/**
+	 * Return the visible TextEditor instance that currently has focus, or null
+	 * if no visible editor has focus.
+	 */
+	public static TextEditor getFocusedVisibleEditor() {
+		final int editorIndex = getFocusedVisibleEditorIndex();
+		return (editorIndex == -1) ? null : TextEditor.instances.get(editorIndex);
+	}
+
+	/**
+	 * Get the active script ID from the focused visible editor's currently selected tab.
 	 *
 	 * @return ScriptID of the active script, or null if no editor is visible or no tab is selected
 	 */
 	public static ScriptID getActiveScriptID() {
-		final TextEditor textEditor = getMostRecentVisibleEditor();
+		final TextEditor textEditor = getFocusedVisibleEditor();
 		if (textEditor == null) {
 			return null;
 		}
 
-		final int editorIndex = getMostRecentVisibleEditorIndex();
+		final int editorIndex = getFocusedVisibleEditorIndex();
 		if (editorIndex == -1) {
 			return null;
 		}

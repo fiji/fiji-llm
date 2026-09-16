@@ -201,6 +201,8 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 
 			// Switch to the specified tab
 			textEditor.switchTo(scriptID.tabIndex);
+			textEditor.toFront();
+			textEditor.requestFocus();
 
 			// Return indication of active tab
 			return activeScriptString(scriptID.editorIndex, scriptID.tabIndex);
@@ -228,7 +230,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 					try {
 						while (true) {
 							JsonObject tabJson = getTabJson(editorIndex, tabIndex);
-							tabJson.addProperty(IS_ACTIVE_KEY, editorIndex == activeScriptID.editorIndex && tabIndex == activeScriptID.tabIndex);
+							tabJson.addProperty(IS_ACTIVE_KEY, activeScriptID != null && editorIndex == activeScriptID.editorIndex && tabIndex == activeScriptID.tabIndex);
 							tabs.add(tabJson);
 							tabIndex++;
 						}
@@ -238,7 +240,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 					}
 					editorJson.add("scripts", tabs);
 
-					editorJson.addProperty(IS_ACTIVE_KEY, editorIndex == activeScriptID.editorIndex);
+					editorJson.addProperty(IS_ACTIVE_KEY, activeScriptID != null && editorIndex == activeScriptID.editorIndex);
 
 					editors.add(editorJson);
 				}
@@ -283,7 +285,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		try {
 			// Check if editor is open
 			final TextEditor textEditor = TextEditorUtils
-				.getMostRecentVisibleEditor();
+				.getFocusedVisibleEditor();
 			if (textEditor == null) {
 				return jsonError("Script editor is not open", "fiji_script_open_editor");
 			}

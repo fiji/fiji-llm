@@ -47,7 +47,7 @@ public final class ScriptContextUtilities {
 
 	public static ScriptContextItem getActiveScriptContext() {
 		try {
-			TextEditor textEditor = TextEditorUtils.getMostRecentVisibleEditor();
+			TextEditor textEditor = TextEditorUtils.getFocusedVisibleEditor();
 			if (textEditor == null) {
 				return null;
 			}
