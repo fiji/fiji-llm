@@ -124,7 +124,26 @@ You can manually check and manage MCP server status with `MCP: List Servers`, as
 
 #### Custom Agent and Skill
 
-This repository includes a reference VS Code agent and a script-debugging skill in [`doc/agents/vscode`](doc/agents/vscode). To use them in a workspace, copy `fiji-mcp.agent.md` to `.github/agents/` and the `fiji-script-debugging` directory to `.github/skills/`. For personal use, copy the agent to `%APPDATA%\Code\User\prompts\` and the skill directory to `%USERPROFILE%\.copilot\skills\`. The skill guides an iterative create, run, diagnose, repair, and verify workflow for Fiji scripts.
+This repository includes a VS Code agent and a script-debugging skill in
+`.github`, where VS Code can discover project-scoped customizations when this
+repository is opened:
+
+- [`.github/agents/fiji-mcp.agent.md`](.github/agents/fiji-mcp.agent.md)
+- [`.github/skills/fiji-script-debugging/`](.github/skills/fiji-script-debugging/)
+
+Discovery makes the agent and skill available to this workspace; it does not
+automatically select the agent or load the skill for every conversation.
+
+For personal use across workspaces, prefer symlinking these project files into
+the VS Code user-level discovery paths:
+
+- `.github/agents/fiji-mcp.agent.md` -> `<VS Code user profile>/prompts/fiji-mcp.agent.md`
+- `.github/skills/fiji-script-debugging/` -> `~/.copilot/skills/fiji-script-debugging/`
+
+Prefer symlinking these destinations to the files in this checkout when the
+platform supports it, so updates are picked up immediately. Copy the files when
+symlinking is unavailable. The skill guides an iterative create, run, diagnose,
+repair, and verify workflow for Fiji scripts.
 
 ## User Guide
 
@@ -245,7 +264,7 @@ When adding an `AiToolPlugin`:
 Live script and macro integration tests should be run by the developer as-needed, e.g. after major tool changes.
 
 For a live run, create a task-specific agent, i.e. via the [VS Code MCP agent
-definition](doc/agents/vscode/fiji-mcp.agent.md), then give it the checklist in
+definition](.github/agents/fiji-mcp.agent.md), then give it the checklist in
 [doc/INTEGRATION_TESTS.md](doc/INTEGRATION_TESTS.md). The agent should execute
 the workflow against a running Fiji instance through the Fiji MCP tools and
 report the observed results, failures, and any cases that require manual

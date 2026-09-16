@@ -50,7 +50,8 @@ architecture.
   update-site users as externally visible behavior. Call out changes affecting
   them even when Java API compatibility is not required.
 - When changing a public API or agent-facing tool contract, update the relevant
-  files under `doc/agents/vscode/`, `doc/INTEGRATION_TESTS.md`, and `README.md`
+  files under `.github/agents/`, `.github/skills/`, `doc/INTEGRATION_TESTS.md`,
+  and `README.md`
   in the same change.
 - When changing extension points, provider/tool/context/MCP architecture,
   conversation persistence, or dependency versions described in the technical
