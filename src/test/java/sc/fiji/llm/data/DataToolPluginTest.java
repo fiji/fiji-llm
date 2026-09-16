@@ -86,6 +86,34 @@ public class DataToolPluginTest {
 		assertTrue(json.has("count"));
 	}
 
+	@Test
+	public void testRoiManagerToolReadsPopulatedState() throws Exception {
+		final Object manager = invokeStatic("ij.plugin.frame.RoiManager", "getInstance");
+		if (manager == null) return;
+
+		try {
+			invokeMethod(manager, "reset");
+			final Class<?> roiClass = Class.forName("ij.gui.Roi");
+			final Object rectangle = roiClass.getConstructor(int.class, int.class,
+				int.class, int.class).newInstance(10, 20, 30, 40);
+			invokeMethod(rectangle, "setName", new Object[] { "named rectangle" });
+			invokeMethod(manager, "addRoi", new Object[] { rectangle });
+
+			final RoiManagerToolPlugin plugin = new RoiManagerToolPlugin();
+			setImageJ1HelperService(plugin, context.getService(ImageJ1HelperService.class));
+			final JsonObject json = JsonParser.parseString(plugin.readRoiManager())
+				.getAsJsonObject();
+
+			assertEquals(1, json.get("count").getAsInt());
+			final JsonObject roi = json.getAsJsonArray("rois").get(0).getAsJsonObject();
+			assertEquals("named rectangle", roi.get("name").getAsString());
+			assertEquals("0", roi.get("type").getAsString());
+		}
+		finally {
+			invokeMethod(manager, "reset");
+		}
+	}
+
 	private static void setImageJ1HelperService(final Object target,
 		final ImageJ1HelperService helperService) throws Exception
 	{

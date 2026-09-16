@@ -76,7 +76,7 @@ The fiji_rois_* tools enable interaction with the ImageJ ROI Manager.
 				return result.toString();
 			}
 
-			final int count = (int) invoke(manager, "size");
+			final int count = (int) invoke(manager, "getCount");
 			result.addProperty("count", count);
 
 			final JsonArray rois = new JsonArray();
@@ -85,7 +85,8 @@ The fiji_rois_* tools enable interaction with the ImageJ ROI Manager.
 				roi.addProperty("index", i);
 				roi.addProperty("name", safeString(invoke(manager, "getName", i)));
 				roi.addProperty("selected", isSelected(manager, i));
-				roi.addProperty("type", safeString(invoke(manager, "getRoi", i, "getType")));
+				final Object roiObject = invoke(manager, "getRoi", i);
+				roi.addProperty("type", roiObject == null ? "" : safeString(invoke(roiObject, "getType")));
 				rois.add(roi);
 			}
 			result.add("rois", rois);
@@ -109,9 +110,7 @@ The fiji_rois_* tools enable interaction with the ImageJ ROI Manager.
 	private static boolean isSelected(final Object manager, final int index)
 		throws ReflectiveOperationException
 	{
-		final Object roi = invoke(manager, "getRoi", index);
-		if (roi == null) return false;
-		return (boolean) invoke(roi, "isSelected");
+		return (boolean) invoke(manager, "isSelected", index);
 	}
 
 	private static Object invoke(final Object target, final String methodName,
