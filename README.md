@@ -29,6 +29,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 * **Extensible Model Engine:** Separates model connectivity from agentic functionality, allowing new local or remote model providers to be added through plugins.
 
 * **Context-Aware Analysis Tools:** Give agents structured access to Fiji’s environment, including installed commands, open images, analysis metadata, the Script Editor, and macro recorder.
+* **ImageJ Data Inspection:** Provide read-only access to common ImageJ data objects, including Results Tables and the ROI Manager.
 
 ## Table of Contents
 - [Fiji Chat Quick Start](#fiji-chat-quick-start)
@@ -216,6 +217,8 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 **Script and Macro Execution** - Run non-`.ijm` scripts with `fiji_script_run`. Run an active `.ijm` script with `fiji_macro_run`, which executes it through the visible Script Editor and returns output, errors, ImageJ and SciJava logs, environment impact, and a status. Timeout results remain `timed_out` at the top level, but they now include `timeout_requested`, `execution_terminated`, `termination_status`, and `termination_failure` so a caller can distinguish a requested timeout from an actual termination failure. If a macro pauses for a visible dialog, inspect the returned `run_id` with `fiji_macro_run_status`, then respond only through `fiji_ui_dialog_respond` using the exact dialog title and button text.
 
 **Command Execution** - Use `fiji_command_search` to find a menu path, then call `fiji_command_run`. The result includes the command status and a lightweight before/after environment report covering open images, active-image changes, Results table metadata, visible dialogs, and ImageJ and SciJava log deltas.
+
+**ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability and ROI summaries. These tools are read-only.
 
 **General Information** - Describe your image analysis goals and discuss options available in your Fiji environment.
 

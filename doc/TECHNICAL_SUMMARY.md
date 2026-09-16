@@ -67,6 +67,8 @@ Built-in tools include:
 - **`CommandUseToolPlugin`** — ImageJ command discovery and execution with a lightweight before/after environment report
 - **`ScriptEditorToolPlugin`** — script editor interaction
 - **`ImageToolPlugin`** — active image metadata access
+- **`ResultsTableToolPlugin`** — read-only Results Table inspection
+- **`RoiManagerToolPlugin`** — read-only ROI Manager inspection
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
 - **`UiToolPlugin`** — visible AWT and Swing dialog inspection and exact button responses
 - **`ScriptExecutionService`** — shared Script Editor execution, timeout handling, state snapshots, and dialog-aware run status for scripts and `.ijm` macros
@@ -74,6 +76,13 @@ Built-in tools include:
 `.ijm` macros are executed only by calling `TextEditor.runText()` on the active tab in a visible Script Editor. `fiji_script_run` rejects active `.ijm` tabs and directs callers to `fiji_macro_run`. Macro runs return one of `success`, `finished_with_errors`, `blocked_by_dialog`, `timed_out`, or `infrastructure_error`; the timeout result distinguishes the requested timeout from the actual termination state via `timeout_requested`, `execution_terminated`, `termination_status`, and `termination_failure`, so callers can detect when the Script Editor refused or failed to terminate the task. A blocked run remains addressable by its `run_id` through `fiji_macro_run_status`, which is read-only and directs callers to `fiji_ui_dialog_respond` for the intentional UI action.
 
 `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags and ImageJ/SciJava log deltas. Image pixels are never copied into the report.
+
+`fiji_results_read` returns structured Results Table metadata and numeric
+rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and
+`rows`. `fiji_rois_read` returns the current manager availability and
+ROI summaries including index, name, selection state, and type. Both tools are
+read-only. ImageJ 1.x access for these tools and image compatibility helpers is
+centralized in the high-priority `ImageJ1HelperService`.
 
 ### MCP (Model Context Protocol) Bridge
 

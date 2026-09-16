@@ -45,15 +45,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
-import ij.WindowManager;
-import ij.measure.ResultsTable;
 import net.imagej.Dataset;
 import net.imagej.ImageJService;
 import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.ImageDisplayService;
 import net.imagej.legacy.LegacyService;
-import sc.fiji.llm.image.ImagePlusHelper;
+import sc.fiji.llm.data.ImageJ1HelperService;
+import sc.fiji.llm.data.ImageJ1HelperService.ResultsTableState;
 import sc.fiji.llm.log.ImageJLogUtils;
 import sc.fiji.llm.log.SciJavaLogUtils;
 import sc.fiji.llm.ui.AWTDialogUtils;
@@ -74,7 +73,7 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 	private ImageDisplayService imageDisplayService;
 
 	@Parameter
-	private ImagePlusHelper imagePlusHelper;
+	private ImageJ1HelperService imageJ1HelperService;
 
 	/** Starts a capture without changing Fiji state. */
 	public EnvironmentCapture capture() {
@@ -110,8 +109,9 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			final Dataset dataset = view == null ? null : view.getData();
 			if (dataset == null) return null;
 
-			final int id = imagePlusHelper.getId(display);
-			final String title = id >= 0 ? imagePlusHelper.getTitle(id) : dataset.getName();
+			final int id = imageJ1HelperService.getImageId(display);
+			final String title = id >= 0 ? imageJ1HelperService.getImageTitle(id) : dataset
+				.getName();
 			final List<Long> dimensions = new ArrayList<>();
 			for (int i = 0; i < dataset.numDimensions(); i++) {
 				dimensions.add(dataset.dimension(i));
@@ -126,13 +126,9 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 	}
 
 	private ResultsState snapshotResultsTable() {
-		final ResultsTable table = ResultsTable.getResultsTable();
-		if (table == null) return ResultsState.empty();
-		final int rows = table.getCounter();
-		final String headings = table.getColumnHeadings();
-		final boolean present = WindowManager.getFrame("Results") != null || rows > 0 ||
-			!headings.trim().isEmpty();
-		return new ResultsState(present, rows, headings);
+		final ResultsTableState table = imageJ1HelperService.getResultsTableState();
+		return new ResultsState(table.isPresent(), table.getRowCount(), table
+			.getColumnHeadings());
 	}
 
 	public final class EnvironmentCapture implements AutoCloseable {
@@ -330,10 +326,6 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			this.present = present;
 			this.rows = rows;
 			this.headings = headings == null ? "" : headings;
-		}
-
-		private static ResultsState empty() {
-			return new ResultsState(false, 0, "");
 		}
 
 		private JsonObject toJson() {

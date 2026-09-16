@@ -44,7 +44,7 @@ import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.service.tool.ToolProvider;
 import net.imagej.legacy.LegacyService;
-import sc.fiji.llm.image.ImagePlusHelper;
+import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -183,7 +183,7 @@ public class DefaultMCPServiceTest {
 		assertNotNull(legacyService);
 		assertTrue(legacyService.isActive());
 		assertNotNull(legacyService.getIJ1Helper());
-		assertNotNull(context.getService(ImagePlusHelper.class));
+		assertNotNull(context.getService(ImageJ1HelperService.class));
 
 		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
 			.anyMatch(specification -> "fiji_image_list".equals(specification.name())));

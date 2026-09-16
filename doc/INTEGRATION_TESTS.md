@@ -141,3 +141,22 @@ inspected together.
       metadata and `changes.results_table_changed`.
 - [ ] Run a command that emits ImageJ or SciJava log output and verify the
       corresponding log delta in `environment`.
+
+## ImageJ Data Objects
+
+These read-only tools inspect common ImageJ data objects directly. Use a live
+Fiji instance with the ImageJ legacy layer active.
+
+- [ ] Results Table: create at least one measurement row, call
+      `fiji_results_read`, and verify `present`, `row_count`,
+      `column_count`, `columns`, and `rows`. Confirm the returned row values
+      and headings match the visible Results Table.
+- [ ] Results Table empty state: clear or reset the table, call
+      `fiji_results_read`, and verify the returned row and column arrays
+      reflect the cleared state.
+- [ ] ROI Manager: open the ROI Manager, add at least two named ROIs, and call
+      `fiji_rois_read`. Verify `present`, `count`, and each ROI's
+      `index`, `name`, `selected`, and `type` fields.
+- [ ] ROI Manager unavailable state: close the ROI Manager, call
+      `fiji_rois_read`, and verify it reports `present: false` without
+      throwing an error.

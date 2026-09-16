@@ -47,6 +47,7 @@ import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.ImageDisplayService;
 import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.ui.ContextItemSupplier;
 
 /**
@@ -59,7 +60,7 @@ import sc.fiji.llm.ui.ContextItemSupplier;
 public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Parameter
-	private ImagePlusHelper iPlusHelper;
+	private ImageJ1HelperService imageJ1HelperService;
 
 	@Parameter
 	private ImageDisplayService imageDisplayService;
@@ -104,7 +105,7 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 						continue;
 					}
 
-					int id = iPlusHelper.getId(imageDisplay);
+					int id = imageJ1HelperService.getImageId(imageDisplay);
 					items.add(createImageContextItem(dataset, id));
 			} catch (Exception e) {
 			}
@@ -131,7 +132,7 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 				return null;
 		}
 
-		int id = iPlusHelper.getId(display);
+		int id = imageJ1HelperService.getImageId(display);
 		return createImageContextItem(dataset, id);
 	}
 
@@ -144,7 +145,7 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			return null;
 		}
 
-		String imageTitle = iPlusHelper.getTitle(id);
+		String imageTitle = imageJ1HelperService.getImageTitle(id);
 
 		// Extract all dimensions with their types and lengths
 		final List<ImageMetaContextItem.Dimension> dimensions = extractDimensions(

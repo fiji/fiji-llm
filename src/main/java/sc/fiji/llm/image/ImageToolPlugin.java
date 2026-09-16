@@ -44,6 +44,7 @@ import net.imagej.axis.AxisType;
 import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.ImageDisplayService;
+import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
@@ -54,7 +55,7 @@ import sc.fiji.llm.tools.AiToolPlugin;
 public class ImageToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
-	private ImagePlusHelper iPlusHelper;
+	private ImageJ1HelperService imageJ1HelperService;
 
 	@Parameter
 	private ImageDisplayService imageDisplayService;
@@ -79,12 +80,12 @@ The fiji_image_* tools query images currently open in Fiji.
 	public String listImages() {
 		try {
 			JsonArray images = new JsonArray();
-			List<Integer> ids = iPlusHelper.getIds();
+			List<Integer> ids = imageJ1HelperService.getImageIds();
 			for (Integer id : ids) {
-				if (iPlusHelper.isVisible(id)) {
+				if (imageJ1HelperService.isImageVisible(id)) {
 					JsonObject imageJson = new JsonObject();
 					imageJson.addProperty("id", id);
-					imageJson.addProperty("title", iPlusHelper.getTitle(id));
+					imageJson.addProperty("title", imageJ1HelperService.getImageTitle(id));
 					images.add(imageJson);
 				}
 			}
@@ -103,7 +104,7 @@ The fiji_image_* tools query images currently open in Fiji.
 				return jsonError("No images are currently open");
 				}
 			for (ImageDisplay display : displays) {
-				if (iPlusHelper.getId(display) != imageId) continue;
+				if (imageJ1HelperService.getImageId(display) != imageId) continue;
 				DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
 				if (datasetView == null) continue;
 				Dataset dataset = datasetView.getData();
@@ -111,7 +112,7 @@ The fiji_image_* tools query images currently open in Fiji.
 
 				JsonObject result = new JsonObject();
 				result.addProperty("id", imageId);
-				result.addProperty("title", iPlusHelper.getTitle(imageId));
+				result.addProperty("title", imageJ1HelperService.getImageTitle(imageId));
 				result.addProperty("pixel_type", dataset.getType().getClass().getSimpleName());
 
 				JsonArray dims = new JsonArray();
