@@ -246,7 +246,7 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		}
 	}
 
-	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. Execution runs asynchronously; this call returns when it finishes or pauses on a new modal dialog. Use the run_id with fiji_macro_run_status to poll, then fiji_ui_dialog_respond to continue." }, name = "fiji_macro_run")
+	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. Execution runs asynchronously; this call returns when it finishes or pauses on a new modal dialog. Use the run_id with fiji_macro_run_status to poll, then fiji_ui_dialog_respond to continue. Timeouts are requested, but not guaranteed, if runtime exceeds 30 seconds" }, name = "fiji_macro_run")
 	public String runMacro() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();

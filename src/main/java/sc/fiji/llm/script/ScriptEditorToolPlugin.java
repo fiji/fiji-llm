@@ -324,7 +324,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Run the active script and return the output, errors, and ImageJ/SciJava logs produced by this run. Scripts running longer than 30 seconds are interrupted" }, name = "fiji_script_run")
+	@Tool(value = { "Run the active script and return the output, errors, and ImageJ/SciJava logs produced by this run. Timeouts are requested, but not guaranteed, if runtime exceeds 30 seconds" }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();

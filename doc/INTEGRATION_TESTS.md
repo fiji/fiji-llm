@@ -77,8 +77,10 @@ syntax failures, runtime failures, and timeouts.
       and verify that the diagnostic is captured in the returned errors or
       relevant log.
 - [ ] Timeout: run a script longer than 30 seconds and verify
-      `completion_state: "timed_out"`, interruption, and the recommended
-      manual-run action.
+      `completion_state: "timed_out"`, a true `timeout_requested`, the actual
+      `execution_terminated`/`termination_status`, and any `termination_failure`
+      from the Script Editor; if termination fails, the recommended action must
+      mention that manual inspection is required.
 
 ## ImageJ Macros
 
@@ -121,8 +123,10 @@ inspected together.
       that the dialog state changed.
 - [ ] Console exception: trigger a macro exception or error after `print()`
       output and compare the Script Editor, ImageJ Log, and SciJava results.
-- [ ] Timeout: run a macro longer than 30 seconds and verify interruption and
-      the `timed_out` result.
+- [ ] Timeout: run a macro longer than 30 seconds and verify interruption,
+      `timeout_requested`, the corresponding `execution_terminated`/
+      `termination_status`, and any `termination_failure` surfaced by the
+      timed-out result.
 
 ## Commands
 

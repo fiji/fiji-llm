@@ -269,8 +269,23 @@ public final class ScriptExecutionService extends AbstractService implements
 				if (System.currentTimeMillis() - execution.startedAt >=
 					DEFAULT_TIMEOUT_MS)
 				{
-					kill(execution);
-					finish(execution, Status.TIMED_OUT, null);
+					execution.timeoutRequested = true;
+					try {
+						kill(execution);
+						execution.executionTerminated = !isExecuting(execution);
+						if (!execution.executionTerminated) {
+							execution.terminationFailure = "Timeout requested but script execution is still running";
+						}
+					}
+					catch (final Throwable t) {
+						execution.executionTerminated = false;
+						execution.terminationFailure = t.toString();
+					}
+
+					final String diagnostic = execution.terminationFailure == null ? null :
+						"Timeout requested, but execution did not terminate: " +
+							execution.terminationFailure;
+					finish(execution, Status.TIMED_OUT, diagnostic);
 					return;
 				}
 				Thread.sleep(POLL_INTERVAL_MS);
@@ -321,13 +336,25 @@ public final class ScriptExecutionService extends AbstractService implements
 	}
 
 	private void kill(final Execution execution) throws Exception {
-		final Runnable kill = () -> execution.textEditor.kill(execution.executer);
-		if (SwingUtilities.isEventDispatchThread()) kill.run();
-		else SwingUtilities.invokeAndWait(kill);
+		execution.timeoutRequested = true;
+		try {
+			final Runnable kill = () -> execution.textEditor.kill(execution.executer);
+			if (SwingUtilities.isEventDispatchThread()) kill.run();
+			else SwingUtilities.invokeAndWait(kill);
+		}
+		catch (final Throwable t) {
+			execution.executionTerminated = false;
+			execution.terminationFailure = t.toString();
+			throw t;
+		}
 
 		final long deadline = System.currentTimeMillis() + KILL_TIMEOUT_MS;
 		while (isExecuting(execution) && System.currentTimeMillis() < deadline) {
 			Thread.sleep(POLL_INTERVAL_MS);
+		}
+		execution.executionTerminated = !isExecuting(execution);
+		if (!execution.executionTerminated) {
+			execution.terminationFailure = "Timeout requested but script execution is still running";
 		}
 	}
 
@@ -371,6 +398,11 @@ public final class ScriptExecutionService extends AbstractService implements
 	{
 		if (isTerminal(execution.status)) return;
 		execution.status = status;
+		if (status != Status.RUNNING && status != Status.BLOCKED_BY_DIALOG &&
+			status != Status.TIMED_OUT)
+		{
+			execution.executionTerminated = true;
+		}
 		execution.diagnostic = diagnostic;
 		if (logs != null) execution.logs = logs;
 		else if (execution.logs == null && execution.textEditor != null) {
@@ -387,8 +419,8 @@ public final class ScriptExecutionService extends AbstractService implements
 		execution.finishedAt = System.currentTimeMillis();
 		synchronized (execution) {
 			execution.notifyAll();
+		}
 	}
-}
 
 	private static boolean isTerminal(final Status status) {
 		return status == Status.SUCCESS || status == Status.FINISHED_WITH_ERRORS ||
@@ -408,8 +440,15 @@ public final class ScriptExecutionService extends AbstractService implements
 			result.addProperty("run_id", execution.runID);
 			result.addProperty("status", execution.status.toString());
 			result.addProperty("completion_state", execution.status.toString());
+			result.addProperty("timeout_requested", execution.timeoutRequested);
+			result.addProperty("execution_terminated", execution.executionTerminated);
+			result.addProperty("termination_status", execution.getTerminationStatus());
+			if (execution.terminationFailure != null) result.addProperty(
+				"termination_failure", execution.terminationFailure);
 			result.addProperty("paused", execution.status == Status.BLOCKED_BY_DIALOG);
-			result.addProperty("completed", isTerminal(execution.status));
+			result.addProperty("completed",
+				isTerminal(execution.status) && (execution.status != Status.TIMED_OUT ||
+					execution.executionTerminated));
 			result.addProperty("script_id", execution.scriptID.toString());
 			result.addProperty("script_name", execution.scriptName == null ? "" :
 				execution.scriptName);
@@ -463,10 +502,12 @@ public final class ScriptExecutionService extends AbstractService implements
 				"Inspect the dialog with fiji_ui_dialogs_read, then use " +
 					"fiji_ui_dialog_respond with its exact title and button text. " +
 					"This run remains active.");
-			if (execution.status == Status.TIMED_OUT) result.addProperty(
-				"recommended_action",
-				"Ask the user to run this script manually in the Fiji Script Editor; " +
-					"execution is limited to 30 seconds");
+			if (execution.status == Status.TIMED_OUT) {
+				result.addProperty("recommended_action",
+					execution.executionTerminated ?
+						"Ask the user to run this script manually in the Fiji Script Editor; execution is limited to 30 seconds" :
+						"Timeout was requested, but the Script Editor reported the execution did not terminate. Inspect the script and logs before retrying.");
+			}
 			return result;
 		}
 	}
@@ -489,6 +530,9 @@ public final class ScriptExecutionService extends AbstractService implements
 		private volatile TextEditorTab tab;
 		private volatile Executer executer;
 		private volatile Thread monitorThread;
+		private volatile boolean timeoutRequested;
+		private volatile boolean executionTerminated;
+		private volatile String terminationFailure;
 
 		private Execution(final String runID, final ScriptID scriptID,
 			final RunKind kind)
@@ -496,6 +540,15 @@ public final class ScriptExecutionService extends AbstractService implements
 			this.runID = runID;
 			this.scriptID = scriptID;
 			this.kind = kind;
+		}
+
+		private String getTerminationStatus() {
+			if (status == Status.TIMED_OUT) {
+				if (timeoutRequested && !executionTerminated) return "failed_to_terminate";
+				if (timeoutRequested) return "terminated";
+				return "timeout_requested";
+			}
+			return executionTerminated ? "terminated" : "not_terminated";
 		}
 
 		private ExecutionResult snapshot() {
