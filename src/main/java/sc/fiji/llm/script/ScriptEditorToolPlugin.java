@@ -322,7 +322,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Run the active script and return its output and errors. Scripts running longer than 30 seconds are interrupted" }, name = "fiji_script_run")
+	@Tool(value = { "Run the active script and return the output, errors, and ImageJ/SciJava logs produced by this run. Scripts running longer than 30 seconds are interrupted" }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -461,7 +461,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Return the content of the active script's output and error logs" }, name = "fiji_script_read_logs")
+	@Tool(value = { "Return the currently retained, cumulative output and error logs from the active Script Editor" }, name = "fiji_script_read_logs")
 	public String readLogs() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
