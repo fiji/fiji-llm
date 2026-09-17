@@ -420,7 +420,7 @@ public final class ScriptExecutionService extends AbstractService implements
 		final EnvironmentImpact environment)
 	{
 		if (environment == null) return;
-		final String dialogError = extractDialogError(environment);
+		final String dialogError = extractErrorDialog(environment);
 		if (dialogError == null || dialogError.isBlank()) return;
 		execution.errorDialog = dialogError;
 		if (execution.primaryError == null || execution.primaryError.isBlank()) {
@@ -428,11 +428,19 @@ public final class ScriptExecutionService extends AbstractService implements
 		}
 	}
 
-	private static String extractDialogError(final EnvironmentImpact environment) {
+	static boolean isMacroErrorDialog(final String className,
+		final String title)
+	{
+		if (className == null || !className.endsWith("GenericDialog")) return false;
+		return "Macro Error".equals(title) || "No Image".equals(title);
+	}
+
+	private static String extractErrorDialog(final EnvironmentImpact environment) {
 		final List<AWTDialogUtils.DialogInfo> dialogs = environment == null ?
 			Collections.emptyList() : environment.getNewModalDialogs();
 		final StringBuilder messages = new StringBuilder();
 		for (final AWTDialogUtils.DialogInfo dialog : dialogs) {
+			if (!isMacroErrorDialog(dialog.getClassName(), dialog.getTitle())) continue;
 			for (final String message : dialog.getMessages()) {
 				if (message == null || message.isBlank()) continue;
 				if (messages.length() > 0) messages.append(System.lineSeparator());

@@ -68,6 +68,18 @@ public class ScriptExecutionServiceTest {
 	}
 
 	@Test
+	public void testOnlyKnownMacroErrorDialogsAreClassifiedAsErrors() {
+		assertTrue(ScriptExecutionService.isMacroErrorDialog(
+			"ij.gui.GenericDialog", "Macro Error"));
+		assertTrue(ScriptExecutionService.isMacroErrorDialog(
+			"ij.gui.GenericDialog", "No Image"));
+		assertFalse(ScriptExecutionService.isMacroErrorDialog(
+			"ij.gui.MessageDialog", "Message"));
+		assertFalse(ScriptExecutionService.isMacroErrorDialog(
+			"ij.gui.GenericDialog", "Message"));
+	}
+
+	@Test
 	public void testTimedOutResultReportsTimeoutRequestedAndTerminationFailure() throws Exception {
 		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
 			ScriptExecutionService.Status.TIMED_OUT, true, false,
