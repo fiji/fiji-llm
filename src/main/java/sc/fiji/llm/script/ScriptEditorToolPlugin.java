@@ -213,7 +213,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Return a list all open scripts, including their script_id's, grouped by their parent script editor" }, name = "fiji_script_list")
+	@Tool(value = { "List all scripts in visible Script Editor windows, including their script_id values, grouped by editor" }, name = "fiji_script_list")
 	public String listOpenScripts() {
 		try {
 			JsonArray editors = new JsonArray();
