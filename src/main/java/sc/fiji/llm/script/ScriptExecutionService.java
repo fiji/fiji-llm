@@ -381,6 +381,19 @@ public final class ScriptExecutionService extends AbstractService implements
 		}
 	}
 
+	static Status classifyFinishedStatus(final String logErrors,
+		final String consoleStderr, final String primaryError,
+		final String errorDialog)
+	{
+		return hasText(logErrors) || hasText(consoleStderr) ||
+			hasText(primaryError) || hasText(errorDialog) ?
+			Status.FINISHED_WITH_ERRORS : Status.SUCCESS;
+	}
+
+	private static boolean hasText(final String value) {
+		return value != null && !value.isBlank();
+	}
+
 	private void finishFromLogs(final Execution execution) {
 		try {
 			final TextLogs finalLogs = readLogs(execution);
@@ -395,8 +408,8 @@ public final class ScriptExecutionService extends AbstractService implements
 			if (!consoleStderr.isEmpty() && (execution.primaryError == null ||
 				execution.primaryError.isBlank())) execution.primaryError = consoleStderr.lines()
 				.findFirst().orElse(consoleStderr);
-			finish(execution, diagnostic.isEmpty() && consoleStderr.isEmpty() ? Status.SUCCESS :
-				Status.FINISHED_WITH_ERRORS, null, delta);
+			finish(execution, classifyFinishedStatus(diagnostic, consoleStderr,
+				execution.primaryError, execution.errorDialog), null, delta);
 		}
 		catch (final Throwable t) {
 			finishWithInfrastructureError(execution, t);

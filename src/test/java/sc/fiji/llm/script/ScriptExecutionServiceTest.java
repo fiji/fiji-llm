@@ -57,6 +57,17 @@ public class ScriptExecutionServiceTest {
 	}
 
 	@Test
+	public void testStructuredErrorControlsFinalStatusAfterDialogDismissal() {
+		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
+			ScriptExecutionService.classifyFinishedStatus("", "", "Type mismatch", null));
+		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
+			ScriptExecutionService.classifyFinishedStatus("", "", null,
+				"Macro Error: Number expected"));
+		assertEquals(ScriptExecutionService.Status.SUCCESS,
+			ScriptExecutionService.classifyFinishedStatus("", "", null, null));
+	}
+
+	@Test
 	public void testTimedOutResultReportsTimeoutRequestedAndTerminationFailure() throws Exception {
 		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
 			ScriptExecutionService.Status.TIMED_OUT, true, false,
