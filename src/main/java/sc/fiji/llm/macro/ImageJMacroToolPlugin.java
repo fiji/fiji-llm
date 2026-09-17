@@ -94,8 +94,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 	@Override
 	public String getUsage() {
 		return """
-The fiji_macro_* tools support creation of ImageJ macros: a custom script format where a sequence of functions can be saved, adapted, and replayed.
-Macro creation follows an intuitive workflow: 1) open the macro recorder to start recording; 2) the user executes commands (or agent via fiji_command_* tools) which are recorded in the order they are run; 3) stop recording and create an .ijm script; 4) use fiji_script_* tools to edit the created macro
+The fiji_macro_* tools support creating ImageJ macros: a custom script format for capturing recordable commands for later editing, distribution and reuse.
 """;
 	}
 
