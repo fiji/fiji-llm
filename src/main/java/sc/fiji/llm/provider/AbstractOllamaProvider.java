@@ -74,7 +74,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 
 	private static final Double DEFAULT_TEMPERATURE = 0.1;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
-	private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
+	private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(5);
 	private static final String REMOTE_STRING = "* (remote)";
 
 	private OllamaProcessManager processManager;
