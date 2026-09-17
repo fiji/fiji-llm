@@ -421,7 +421,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Return lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_read_lines")
+	@Tool(value = { "Return lines from the active script between (inclusive) the given start_line and end_line indices (1-indexed)" }, name = "fiji_script_read_lines")
 	public String readLines(@P("start_line") final int startLine, @P("end_line") final int endLine)
 	{
 		try {
@@ -495,7 +495,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_ and end_ line indices (1-indexed)" }, name = "fiji_script_delete_lines")
+	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_line and end_line indices (1-indexed)" }, name = "fiji_script_delete_lines")
 	public String deleteLines(@P("start_line") final Integer startLine, @P("end_line") final Integer endLine)
 	{
 		try {
