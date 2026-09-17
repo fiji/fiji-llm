@@ -37,28 +37,28 @@ import org.scijava.plugin.Plugin;
  * LLM provider plugin for Ollama gemma4:12b model.
  * See: https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf
  */
-@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:12B)")
-public class Gemma4Provider12b extends AbstractSingletonOllamaProvider {
+@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:E4B)")
+public class Gemma4ProviderE4b extends AbstractSingletonOllamaProvider {
 
-	private static final String MODEL_NAME = "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest";
+	private static final String MODEL_NAME = "hf.co/google/gemma-4-E4B-it-qat-q4_0-gguf:latest";
 
-	public Gemma4Provider12b() {
+	public Gemma4ProviderE4b() {
 		super(MODEL_NAME);
 	}
 
 	@Override
 	public String getName() {
-		return "*Gemma4 - small (Ollama)";
+		return "*Gemma4 - extra small (Ollama)";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Local Gemma4 model - small parameter count and memory footprint.";
+		return "Local Gemma4 model - absolute smallest parameter count and memory footprint.";
 	}
 
 	@Override
 	protected int getContextSize() {
-		return 32 * 1024;
+		return 24 * 1024;
 	}
 
 	@Override
