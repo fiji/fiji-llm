@@ -465,7 +465,7 @@ The fiji_script_* tools interact with Fiji scripts: user-facing, single-file pro
 		}
 	}
 
-	@Tool(value = { "Return the currently retained, cumulative output and error logs from the active Script Editor" }, name = "fiji_script_read_logs")
+	@Tool(value = { "Return the cumulative output and error logs retained by the active Script Editor across runs" }, name = "fiji_script_read_logs")
 	public String readLogs() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
