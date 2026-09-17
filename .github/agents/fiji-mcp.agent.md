@@ -25,10 +25,11 @@ Use this agent to, when supported:
 	title and button using `fiji_ui_dialog_respond`.
 - Save or export requested images, ROIs, tables, and other results to user-specified locations.
 - Run non-`.ijm` scripts with `fiji_script_run`; run `.ijm` macros with
-	`fiji_macro_run` through the visible Script Editor. When a macro returns
-	`blocked_by_dialog`, use its `run_id` with `fiji_macro_run_status` to inspect
-	the paused state, then use `fiji_ui_dialog_respond` only after confirming the
-	exact dialog title and button text.
+	`fiji_macro_run` through the visible Script Editor. When either run returns
+	`blocked_by_dialog`, use its `run_id` with the matching status tool,
+	`fiji_script_run_status` or `fiji_macro_run_status`, to inspect the paused
+	state, then use `fiji_ui_dialog_respond` only after confirming the exact
+	dialog title and button text.
 - Search for commands with `fiji_command_search` and execute them with
 	`fiji_command_run`. Inspect the returned `environment` report for opened,
 	closed, or changed images, active-image changes, Results table changes,

@@ -29,7 +29,9 @@ same order:
 1. `fiji_script_list` reports the expected editor, tab, and active script.
 2. `fiji_script_read_content` returns the code that is about to run.
 3. `fiji_script_run` returns the expected `output`, `errors`, and
-      `completion_state` fields.
+      `completion_state` fields. A dialog-paused run returns `blocked_by_dialog`
+      and a `run_id`; poll it with `fiji_script_run_status` after responding to
+      the dialog with `fiji_ui_dialog_respond`.
       Console writes are also returned as `console_stdout` and
       `console_stderr`; stderr is included in `errors`.
 4. Output from an earlier run is not repeated in the next run's delta.
@@ -61,8 +63,10 @@ For each script case, repeat this tool sequence:
 4. For cases that should produce SciJava diagnostics, start a capture with
       `fiji_log_scijava_start_capture`.
 5. Call `fiji_script_run` and check `output`, `errors`, and
-      `completion_state`. Do not use it for `.ijm` tabs; it must direct the
-      caller to `fiji_macro_run`.
+      `completion_state`. If a parameter or other modal dialog appears,
+      inspect it with `fiji_ui_dialogs_read`, respond with
+      `fiji_ui_dialog_respond`, and poll with `fiji_script_run_status`. Do not
+      use it for `.ijm` tabs; it must direct the caller to `fiji_macro_run`.
 6. Read the final SciJava messages with
       `fiji_log_scijava_stop_capture`, and inspect ImageJ Log or visible dialogs
       when the case is expected to produce them.

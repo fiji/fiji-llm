@@ -17,7 +17,7 @@ Use this skill for a complete edit-run-diagnose-repair-verify loop for scripts e
 3. Choose the script language from the requested language and filename extension. If the language is uncertain, use a minimal probe and report whether the engine appears available.
 4. Write or replace the script content with `fiji_script_replace_content`.
 5. Run the script with `fiji_script_run`.
-6. Treat `fiji_script_run` as returning after the run completes or reaches its timeout. Still verify an observable Fiji result rather than relying on the tool response alone.
+6. Treat `fiji_script_run` as returning after the run completes or pauses on a new modal dialog. If it returns `blocked_by_dialog`, inspect the dialog with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title and button text, and poll with `fiji_script_run_status` using the returned `run_id` until the run reaches a terminal state. Still verify an observable Fiji result rather than relying on the tool response alone.
 7. Read script logs with `fiji_script_read_logs` and classify the `errors` field:
    - Syntax or compilation failure: parser, compiler, expected-token, or source-location messages.
    - Runtime failure: an exception raised after parsing, usually with a script path and line number.
@@ -33,6 +33,7 @@ Use this skill for a complete edit-run-diagnose-repair-verify loop for scripts e
 - Keep the script body minimal when testing the scripting engine so engine failures are distinguishable from script failures.
 - Error output may be cumulative across runs or scripts. Identify the current run by its script name and start timestamp, and do not attribute older entries to the current attempt.
 - Normal `print` or console output may appear in `output` rather than `errors`; absence from `errors` is not by itself a runtime failure.
+- Parameter dialogs and other modal dialogs can pause a script. Treat `blocked_by_dialog` as an interaction point, not a completed run.
 - A useful runtime diagnostic should include the exception message and, when available, the script path and source location.
 - If a diagnostic is truncated by the file reader, report the visible portion and avoid inventing omitted details.
 
