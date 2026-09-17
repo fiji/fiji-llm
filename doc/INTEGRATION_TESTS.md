@@ -30,6 +30,8 @@ same order:
 2. `fiji_script_read_content` returns the code that is about to run.
 3. `fiji_script_run` returns the expected `output`, `errors`, and
       `completion_state` fields.
+      Console writes are also returned as `console_stdout` and
+      `console_stderr`; stderr is included in `errors`.
 4. Output from an earlier run is not repeated in the next run's delta.
 5. `fiji_log_imagej_read` exposes ImageJ macro `print()` output when
       applicable.
@@ -74,8 +76,8 @@ syntax failures, runtime failures, and timeouts.
       images produced before the exception remain observable and the error is
       reported.
 - [ ] Console exception: write an exception to the language console or stderr
-      and verify that the diagnostic is captured in the returned errors or
-      relevant log.
+      and verify that the diagnostic is captured in `errors` and
+      `console_stderr` or another relevant log.
 - [ ] Timeout: run a script longer than 30 seconds and verify
       `completion_state: "timed_out"`, a true `timeout_requested`, the actual
       `execution_terminated`/`termination_status`, and any `termination_failure`

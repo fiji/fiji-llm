@@ -364,10 +364,16 @@ public final class ScriptExecutionService extends AbstractService implements
 			final TextLogs finalLogs = readLogs(execution);
 			final TextLogs delta = finalLogs.deltaFrom(execution.logsBefore)
 				.withoutStartedBanners();
+			refreshEnvironment(execution);
+			final String consoleStderr = execution.environment == null ? "" : execution
+				.environment.getConsoleStderr().trim();
 			final String diagnostic = delta.getErrors().trim();
 			if (!diagnostic.isEmpty() && (execution.primaryError == null ||
 				execution.primaryError.isBlank())) execution.primaryError = diagnostic;
-			finish(execution, diagnostic.isEmpty() ? Status.SUCCESS :
+			if (!consoleStderr.isEmpty() && (execution.primaryError == null ||
+				execution.primaryError.isBlank())) execution.primaryError = consoleStderr.lines()
+				.findFirst().orElse(consoleStderr);
+			finish(execution, diagnostic.isEmpty() && consoleStderr.isEmpty() ? Status.SUCCESS :
 				Status.FINISHED_WITH_ERRORS, null, delta);
 		}
 		catch (final Throwable t) {
@@ -488,14 +494,19 @@ public final class ScriptExecutionService extends AbstractService implements
 			final TextLogs logs = execution.logs == null ? new TextLogs("", "") :
 				execution.logs.withoutGenericMacroInterpreterMessages();
 			result.addProperty("output", logs.getOutput());
-			result.addProperty("errors", logs.getErrors());
+			final EnvironmentImpact environment = execution.environment;
+			final String consoleStderr = environment == null ? "" : environment
+				.getConsoleStderr();
+			result.addProperty("errors", appendDiagnostic(logs.getErrors(), consoleStderr));
+			result.addProperty("console_stdout", environment == null ? "" : environment
+				.getConsoleStdout());
+			result.addProperty("console_stderr", consoleStderr);
 			if (execution.primaryError != null && !execution.primaryError.isBlank()) {
 				result.addProperty("primary_error", execution.primaryError);
 			}
 			if (execution.errorDialog != null && !execution.errorDialog.isBlank()) {
 				result.addProperty("error_dialog", execution.errorDialog);
 			}
-			final EnvironmentImpact environment = execution.environment;
 			result.addProperty("imagej_log", environment == null ? "" : environment
 				.getImageJLog());
 			result.addProperty("scijava_log", environment == null ? "" : environment
@@ -544,6 +555,15 @@ public final class ScriptExecutionService extends AbstractService implements
 						"Timeout was requested, but the Script Editor reported the execution did not terminate. Inspect the script and logs before retrying.");
 			}
 			return result;
+		}
+
+		private static String appendDiagnostic(final String errors,
+			final String consoleStderr)
+		{
+			if (consoleStderr == null || consoleStderr.isBlank()) return errors;
+			if (errors == null || errors.isBlank()) return consoleStderr;
+			if (errors.contains(consoleStderr)) return errors;
+			return errors + System.lineSeparator() + consoleStderr;
 		}
 	}
 

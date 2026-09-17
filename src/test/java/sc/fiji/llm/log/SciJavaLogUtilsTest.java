@@ -36,6 +36,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.console.ConsoleService;
+import org.scijava.console.OutputEvent;
+import org.scijava.console.OutputEvent.Source;
 import org.scijava.log.LogService;
 
 import sc.fiji.llm.log.SciJavaLogUtils.LogCapture;
@@ -58,14 +61,18 @@ public class SciJavaLogUtilsTest {
 	@Test
 	public void testCaptureDeltaAndClose() {
 		final LogService logService = context.getService(LogService.class);
-		final LogCapture capture = SciJavaLogUtils.capture(logService);
+		final ConsoleService consoleService = context.getService(ConsoleService.class);
+		final LogCapture capture = SciJavaLogUtils.capture(logService, consoleService);
 		try {
 			final LogMessages initial = capture.getLogs();
 			logService.info("captured message");
+			consoleService.notifyListeners(new OutputEvent(context, Source.STDERR,
+				"captured stderr\n", true));
 
 			final LogMessages delta = capture.getLogs().deltaFrom(initial);
 			assertEquals(1, delta.getMessages().size());
 			assertTrue(delta.getText().contains("captured message"));
+			assertEquals("captured stderr\n", delta.getStderr());
 
 			final int capturedCount = capture.getLogs().getMessages().size();
 			capture.close();

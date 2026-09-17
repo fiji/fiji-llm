@@ -80,7 +80,7 @@ Built-in tools include:
 including whether it is open, whether it is recording, its script mode, and the
 current buffer text.
 
-`fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags and ImageJ/SciJava log deltas. Image pixels are never copied into the report.
+`fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags, ImageJ/SciJava log deltas, and run-scoped ConsoleService stdout/stderr. Script execution also includes captured stderr in its `errors` field. Image pixels are never copied into the report.
 
 `fiji_results_read` returns structured Results Table metadata and numeric
 rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and

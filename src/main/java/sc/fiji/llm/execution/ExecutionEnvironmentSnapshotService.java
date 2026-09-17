@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.scijava.Priority;
+import org.scijava.console.ConsoleService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -70,6 +71,9 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 	private LogService logService;
 
 	@Parameter
+	private ConsoleService consoleService;
+
+	@Parameter
 	private ImageDisplayService imageDisplayService;
 
 	@Parameter
@@ -77,7 +81,8 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 
 	/** Starts a capture without changing Fiji state. */
 	public EnvironmentCapture capture() {
-		return new EnvironmentCapture(snapshot(), SciJavaLogUtils.capture(logService));
+		return new EnvironmentCapture(snapshot(), SciJavaLogUtils.capture(logService,
+			consoleService));
 	}
 
 	private EnvironmentSnapshot snapshot() {
@@ -146,7 +151,8 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 
 		/** Returns the current impact without stopping log capture. */
 		public synchronized EnvironmentImpact current() {
-			return impact(snapshot(), scijavaCapture.getLogs().getText());
+			final SciJavaLogUtils.LogMessages logs = scijavaCapture.getLogs();
+			return impact(snapshot(), logs.getText(), logs.getStdout(), logs.getStderr());
 		}
 
 		/** Returns the final impact and stops SciJava log capture. */
@@ -168,9 +174,11 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 		}
 
 		private EnvironmentImpact impact(final EnvironmentSnapshot after,
-			final String scijavaLog)
+			final String scijavaLog, final String consoleStdout,
+			final String consoleStderr)
 		{
-			return new EnvironmentImpact(before, after, scijavaLog);
+			return new EnvironmentImpact(before, after, scijavaLog, consoleStdout,
+				consoleStderr);
 		}
 	}
 
@@ -213,13 +221,18 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 		private final EnvironmentSnapshot before;
 		private final EnvironmentSnapshot after;
 		private final String scijavaLog;
+		private final String consoleStdout;
+		private final String consoleStderr;
 
 		private EnvironmentImpact(final EnvironmentSnapshot before,
-			final EnvironmentSnapshot after, final String scijavaLog)
+			final EnvironmentSnapshot after, final String scijavaLog,
+			final String consoleStdout, final String consoleStderr)
 		{
 			this.before = before;
 			this.after = after;
 			this.scijavaLog = scijavaLog == null ? "" : scijavaLog;
+			this.consoleStdout = consoleStdout == null ? "" : consoleStdout;
+			this.consoleStderr = consoleStderr == null ? "" : consoleStderr;
 		}
 
 		public List<AWTDialogUtils.DialogInfo> getNewModalDialogs() {
@@ -239,6 +252,14 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			return scijavaLog;
 		}
 
+		public String getConsoleStdout() {
+			return consoleStdout;
+		}
+
+		public String getConsoleStderr() {
+			return consoleStderr;
+		}
+
 		public JsonObject toJson() {
 			final JsonObject result = new JsonObject();
 			result.add("before", before.toJson());
@@ -246,6 +267,8 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			result.add("changes", changesJson());
 			result.addProperty("imagej_log", getImageJLog());
 			result.addProperty("scijava_log", scijavaLog);
+			result.addProperty("console_stdout", consoleStdout);
+			result.addProperty("console_stderr", consoleStderr);
 			return result;
 		}
 

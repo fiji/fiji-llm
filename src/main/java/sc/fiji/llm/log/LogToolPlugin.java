@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.log;
 
+import org.scijava.console.ConsoleService;
 import org.scijava.log.LogLevel;
 import org.scijava.log.LogMessage;
 import org.scijava.log.LogService;
@@ -51,6 +52,9 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 	private LogService logService;
 
 	@Parameter
+	private ConsoleService consoleService;
+
+	@Parameter
 	private LegacyService legacyService;
 
 	private final Object captureStateLock = new Object();
@@ -68,7 +72,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 	@Override
 	public String getUsage() {
 		return """
-The fiji_log_* tools inspect ImageJ and SciJava diagnostic logs. ImageJ's Log window can be read at any time. SciJava logging is event-based, so use fiji_log_scijava_start_capture before an operation, fiji_log_scijava_read while it runs, and fiji_log_scijava_stop_capture when finished.
+The fiji_log_* tools inspect ImageJ and SciJava diagnostic logs. ImageJ's Log window can be read at any time. SciJava capture includes structured log messages and ConsoleService stdout/stderr, so use fiji_log_scijava_start_capture before an operation, fiji_log_scijava_read while it runs, and fiji_log_scijava_stop_capture when finished.
 """;
 	}
 
@@ -95,7 +99,7 @@ The fiji_log_* tools inspect ImageJ and SciJava diagnostic logs. ImageJ's Log wi
 					return jsonError("A SciJava log capture is already active",
 						"fiji_log_scijava_read");
 				}
-				scijavaCapture = SciJavaLogUtils.capture(logService);
+				scijavaCapture = SciJavaLogUtils.capture(logService, consoleService);
 			}
 			final JsonObject result = new JsonObject();
 			result.addProperty("capture_started", true);
@@ -174,6 +178,8 @@ The fiji_log_* tools inspect ImageJ and SciJava diagnostic logs. ImageJ's Log wi
 		result.addProperty("source", "scijava");
 		result.addProperty("capture_active", captureActive);
 		result.addProperty("text", logs.getText());
+		result.addProperty("console_stdout", logs.getStdout());
+		result.addProperty("console_stderr", logs.getStderr());
 		result.add("messages", messages);
 		return result;
 	}

@@ -37,6 +37,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.console.ConsoleService;
+import org.scijava.console.OutputEvent;
+import org.scijava.console.OutputEvent.Source;
 import org.scijava.log.LogService;
 
 import com.google.gson.JsonObject;
@@ -70,6 +73,8 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 		assertTrue(environment.has("changes"));
 		assertTrue(environment.has("imagej_log"));
 		assertTrue(environment.has("scijava_log"));
+		assertTrue(environment.has("console_stdout"));
+		assertTrue(environment.has("console_stderr"));
 		assertTrue(environment.getAsJsonObject("before").has("images"));
 		assertTrue(environment.getAsJsonObject("before").has("active_image"));
 		assertTrue(environment.getAsJsonObject("before").has("results_table"));
@@ -82,10 +87,13 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 	@Test
 	public void testCaptureReportsResultsTableAndSciJavaChanges() {
 		final LogService logService = context.getService(LogService.class);
+		final ConsoleService consoleService = context.getService(ConsoleService.class);
 		final ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
 			.capture();
 		try {
 			logService.info("environment snapshot test message");
+			consoleService.notifyListeners(new OutputEvent(context, Source.STDERR,
+				"environment snapshot stderr\n", true));
 			final ResultsTable table = ResultsTable.getResultsTable();
 			table.incrementCounter();
 			table.addValue("area", 42);
@@ -100,6 +108,8 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 			assertTrue(changes.get("results_table_changed").getAsBoolean());
 			assertTrue(environment.get("scijava_log").getAsString().contains(
 				"environment snapshot test message"));
+			assertEquals("environment snapshot stderr\n", environment.get("console_stderr")
+				.getAsString());
 			assertTrue(changes.get("images_opened").isJsonArray());
 		}
 		finally {
