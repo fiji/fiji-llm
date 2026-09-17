@@ -31,6 +31,7 @@ package sc.fiji.llm.script;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -272,10 +273,6 @@ public final class ScriptExecutionService extends AbstractService implements
 					execution.timeoutRequested = true;
 					try {
 						kill(execution);
-						execution.executionTerminated = !isExecuting(execution);
-						if (!execution.executionTerminated) {
-							execution.terminationFailure = "Timeout requested but script execution is still running";
-						}
 					}
 					catch (final Throwable t) {
 						execution.executionTerminated = false;
@@ -336,6 +333,19 @@ public final class ScriptExecutionService extends AbstractService implements
 		return execution.environment;
 	}
 
+	static String findTerminationFailure(final String... diagnostics) {
+		for (final String diagnostic : diagnostics) {
+			if (diagnostic == null || diagnostic.isBlank()) continue;
+			for (final String line : diagnostic.split("\\R")) {
+				final String normalized = line.toLowerCase(Locale.ROOT);
+				if (normalized.contains("thread.stop") ||
+					normalized.contains("thread stop") ||
+					normalized.contains("stop failure")) return line.trim();
+			}
+		}
+		return null;
+	}
+
 	private void kill(final Execution execution) throws Exception {
 		execution.timeoutRequested = true;
 		try {
@@ -353,9 +363,21 @@ public final class ScriptExecutionService extends AbstractService implements
 		while (isExecuting(execution) && System.currentTimeMillis() < deadline) {
 			Thread.sleep(POLL_INTERVAL_MS);
 		}
-		execution.executionTerminated = !isExecuting(execution);
-		if (!execution.executionTerminated) {
-			execution.terminationFailure = "Timeout requested but script execution is still running";
+		final boolean stillExecuting = isExecuting(execution);
+		final EnvironmentImpact environment = refreshEnvironment(execution);
+		final String loggedFailure = findTerminationFailure(environment == null ? null :
+			environment.getSciJavaLog(), environment == null ? null : environment
+			.getConsoleStderr());
+		if (loggedFailure != null) {
+			execution.executionTerminated = false;
+			execution.terminationFailure = loggedFailure;
+		}
+		else {
+			execution.executionTerminated = !stillExecuting;
+			if (!execution.executionTerminated) {
+				execution.terminationFailure =
+					"Timeout requested but script execution is still running";
+			}
 		}
 	}
 

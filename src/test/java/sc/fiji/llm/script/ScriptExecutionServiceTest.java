@@ -46,6 +46,17 @@ import sc.fiji.llm.log.TextLogs;
 public class ScriptExecutionServiceTest {
 
 	@Test
+	public void testFindTerminationFailureFromSciJavaLog() {
+		assertEquals("[ERROR] UnsupportedOperationException: Thread.stop",
+			ScriptExecutionService.findTerminationFailure(
+				"[ERROR] UnsupportedOperationException: Thread.stop"));
+		assertEquals("Thread stop failure",
+			ScriptExecutionService.findTerminationFailure("Thread stop failure"));
+		assertEquals(null, ScriptExecutionService.findTerminationFailure(
+			"[INFO] Script completed"));
+	}
+
+	@Test
 	public void testTimedOutResultReportsTimeoutRequestedAndTerminationFailure() throws Exception {
 		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
 			ScriptExecutionService.Status.TIMED_OUT, true, false,
