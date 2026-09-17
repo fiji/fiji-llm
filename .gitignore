@@ -12,6 +12,7 @@ buildNumber.properties
 
 # IDE
 .idea/
+.serena/
 *.iml
 .project
 .editorconfig
