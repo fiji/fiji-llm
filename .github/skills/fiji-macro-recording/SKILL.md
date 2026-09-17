@@ -12,12 +12,12 @@ Use this skill for a complete macro-recording workflow through Fiji-MCP.
 
 ## Workflow
 
-1. Inspect the current recorder and script state with `fiji_macro_recorder_read` and `fiji_script_list`. Preserve existing recorder contents and scripts; do not overwrite user content unless asked.
+1. Inspect the current recorder and script state with `fiji_macro_recorder_state` and `fiji_script_list`. Preserve existing recorder contents and scripts; do not overwrite user content unless asked.
 2. Start the recorder with `fiji_macro_start_recorder`, or bring the existing recorder to the front. While the recorder is open, each recordable command produces a parameterized macro invocation.
 3. Run the requested commands. Commands may be executed by the user or through `fiji_command_*` tools. Only commands supported by the ImageJ recorder produce macro invocations; verify the buffer rather than assuming every command was recorded.
-4. Read the recorder buffer with `fiji_macro_recorder_read` and check that the expected invocations were captured.
+4. Read the recorder buffer with `fiji_macro_recorder_state` and check that the expected invocations were captured.
 5. Transfer the recorded macro to the Script Editor with `fiji_macro_create_script` while the recorder is still open. Do not close the recorder first; this tool requires the recorder window and its Create button.
-6. Close the recorder with `fiji_macro_close_recorder` after the script has been created. Use `fiji_macro_recorder_read` or `fiji_macro_recorder_state` to confirm the recorder state when needed.
+6. Close the recorder with `fiji_macro_close_recorder` after the script has been created. Use `fiji_macro_recorder_state` to confirm the recorder state when needed.
 7. Use the `fiji_script_*` tools to inspect or edit the created `.ijm` script. Keep the macro extension so that Fiji identifies it as an ImageJ macro.
 8. Run the active macro with `fiji_macro_run`. If execution pauses on a modal dialog, inspect it with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title and button text, and poll with `fiji_macro_run_status` until the run reaches a terminal state.
 9. Verify the result using an observable Fiji state appropriate to the macro, such as an image, ROI, Results Table, dialog outcome, recorder buffer, or script content. Do not claim success from a started or transferred response alone.

@@ -212,7 +212,7 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 
 **Script Editing** - Attach scripts as context and ask the assistant to improve, debug, or adapt them for your specific needs.
 
-**Macro Recording** - Ask the assistant for help creating ImageJ macros for guidance to relevant commands and plugins. The assistant can inspect the current recorder state and buffer with `fiji_macro_recorder_read`.
+**Macro Recording** - Ask the assistant for help creating ImageJ macros for guidance to relevant commands and plugins. The assistant can inspect the current recorder state and buffer with `fiji_macro_recorder_state`.
 
 **Script and Macro Execution** - Run non-`.ijm` scripts with `fiji_script_run`. Run an active `.ijm` script with `fiji_macro_run`, which executes it through the visible Script Editor and returns output, errors, ImageJ and SciJava logs, environment impact, and a status. Timeout results remain `timed_out` at the top level, but they now include `timeout_requested`, `execution_terminated`, `termination_status`, and `termination_failure` so a caller can distinguish a requested timeout from an actual termination failure. If a macro pauses for a visible dialog, inspect the returned `run_id` with `fiji_macro_run_status`, then respond only through `fiji_ui_dialog_respond` using the exact dialog title and button text.
 

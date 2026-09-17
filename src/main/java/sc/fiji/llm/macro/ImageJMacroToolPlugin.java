@@ -163,8 +163,8 @@ The fiji_macro_* tools support creating ImageJ macros: a custom script format fo
 		}
 	}
 
-	@Tool(value = { "Read the current ImageJ macro recorder state and buffer." }, name = "fiji_macro_recorder_read")
-	public String readRecorder() {
+	@Tool(value = { "Check if the ImageJ macro recorder is currently open (recording in progress). If so, metadata and buffer content are included." }, name = "fiji_macro_recorder_state")
+	public String getMacroRecorderState() {
 		try {
 			final ImageJ1HelperService.MacroRecorderState state =
 				imageJ1HelperService == null ? ImageJ1HelperService.MacroRecorderState
@@ -177,7 +177,7 @@ The fiji_macro_* tools support creating ImageJ macros: a custom script format fo
 			return result.toString();
 		}
 		catch (RuntimeException e) {
-			return jsonError("Failed to run fiji_macro_recorder_read: " + e.getMessage());
+			return jsonError("Failed to run fiji_macro_recorder_state: " + e.getMessage());
 		}
 	}
 
@@ -339,15 +339,4 @@ The fiji_macro_* tools support creating ImageJ macros: a custom script format fo
 		return null;
 	}
 
-	@Tool(value = { "Check whether the ImageJ macro recorder is currently open" }, name = "fiji_macro_recorder_state")
-	public String getMacroRecorderState() {
-		try {
-			JsonObject result = new JsonObject();
-			result.addProperty("recorder_is_open", findRecorderFrame() != null);
-			return result.toString();
-		}
-		catch (RuntimeException e) {
-			return jsonError("Failed to run fiji_macro_recorder_state: " + e.getMessage());
-		}
-	}
 }

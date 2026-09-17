@@ -64,7 +64,7 @@ public class ImageJMacroToolPluginTest {
 		setField(plugin, "imageJ1HelperService", context.getService(
 			ImageJ1HelperService.class));
 
-		final JsonObject json = JsonParser.parseString(plugin.readRecorder())
+		final JsonObject json = JsonParser.parseString(plugin.getMacroRecorderState())
 			.getAsJsonObject();
 
 		assertTrue(json.has("recorder_open"));
