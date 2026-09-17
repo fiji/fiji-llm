@@ -1,12 +1,12 @@
 ---
-name: fiji-script-debugging
-description: 'Create, run, diagnose, repair, and verify Fiji scripts through fiji-mcp. Use for script syntax errors, runtime errors, missing scripting engines, asynchronous execution, and iterative script debugging.'
+name: fiji-script-workflow
+description: 'Create, inspect, edit, run, diagnose, repair, and verify Fiji scripts through fiji-mcp. Use for script authoring, execution, dialogs, runtime errors, missing scripting engines, asynchronous execution, and iterative repair.'
 argument-hint: 'Describe the Fiji script, language, intended behavior, and any error to investigate'
 user-invocable: true
 disable-model-invocation: false
 ---
 
-# Fiji Script Debugging
+# Fiji Script Workflow
 
 Use this skill for a complete edit-run-diagnose-repair-verify loop for scripts executed through Fiji-MCP.
 

@@ -1,12 +1,12 @@
 ---
-name: fiji-macro-recording
-description: 'Create, inspect, transfer, edit, run, and verify ImageJ macros through fiji-mcp. Use for macro recorder workflows, recording Fiji commands, creating .ijm scripts, macro dialogs, and macro execution diagnostics.'
+name: fiji-macro-workflow
+description: 'Create, inspect, transfer, edit, run, diagnose, and verify ImageJ macros through fiji-mcp. Use for macro recording, built-in function discovery, .ijm authoring, dialogs, and macro execution diagnostics.'
 argument-hint: 'Describe the macro workflow, commands to record, or macro behavior to verify'
 user-invocable: true
 disable-model-invocation: false
 ---
 
-# Fiji Macro Recording
+# Fiji Macro Workflow
 
 Use this skill for a complete macro-recording workflow through Fiji-MCP.
 
@@ -18,9 +18,10 @@ Use this skill for a complete macro-recording workflow through Fiji-MCP.
 4. Read the recorder buffer with `fiji_macro_recorder_state` and check that the expected invocations were captured.
 5. Transfer the recorded macro to the Script Editor with `fiji_macro_create_script` while the recorder is still open. Do not close the recorder first; this tool requires the recorder window and its Create button.
 6. Close the recorder with `fiji_macro_close_recorder` after the script has been created. Use `fiji_macro_recorder_state` to confirm the recorder state when needed.
-7. Use the `fiji_script_*` tools to inspect or edit the created `.ijm` script. Keep the macro extension so that Fiji identifies it as an ImageJ macro.
-8. Run the active macro with `fiji_macro_run`. If execution pauses on a modal dialog, inspect it with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title and button text, and poll with `fiji_macro_run_status` until the run reaches a terminal state.
-9. Verify the result using an observable Fiji state appropriate to the macro, such as an image, ROI, Results Table, dialog outcome, recorder buffer, or script content. Do not claim success from a started or transferred response alone.
+7. Before manually adding macro functionality, use `fiji_macro_list_categories` to discover the built-in function categories, then `fiji_macro_list_functions` with a category to inspect available function signatures and descriptions. Use these results to guide edits in the Script Editor; they document built-in macro functions, not every recordable ImageJ command.
+8. Use the `fiji_script_*` tools to inspect or edit the created `.ijm` script. Keep the macro extension so that Fiji identifies it as an ImageJ macro.
+9. Run the active macro with `fiji_macro_run`. If execution pauses on a modal dialog, inspect it with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title and button text, and poll with `fiji_macro_run_status` until the run reaches a terminal state.
+10. Verify the result using an observable Fiji state appropriate to the macro, such as an image, ROI, Results Table, dialog outcome, recorder buffer, or script content. Do not claim success from a started or transferred response alone.
 
 ## Diagnostic Guidance
 

@@ -125,12 +125,13 @@ You can manually check and manage MCP server status with `MCP: List Servers`, as
 
 #### Custom Agent and Skill
 
-This repository includes a VS Code agent and a script-debugging skill in
+This repository includes a VS Code agent and Fiji workflow skills in
 `.github`, where VS Code can discover project-scoped customizations when this
 repository is opened:
 
 - [`.github/agents/fiji-mcp.agent.md`](.github/agents/fiji-mcp.agent.md)
-- [`.github/skills/fiji-script-debugging/`](.github/skills/fiji-script-debugging/)
+- [`.github/skills/fiji-script-workflow/`](.github/skills/fiji-script-workflow/)
+- [`.github/skills/fiji-macro-workflow/`](.github/skills/fiji-macro-workflow/)
 
 Discovery makes the agent and skill available to this workspace; it does not
 automatically select the agent or load the skill for every conversation.
@@ -139,12 +140,13 @@ For personal use across workspaces, prefer symlinking these project files into
 the VS Code user-level discovery paths:
 
 - `.github/agents/fiji-mcp.agent.md` -> `<VS Code user profile>/prompts/fiji-mcp.agent.md`
-- `.github/skills/fiji-script-debugging/` -> `~/.copilot/skills/fiji-script-debugging/`
+- `.github/skills/fiji-script-workflow/` -> `~/.copilot/skills/fiji-script-workflow/`
+- `.github/skills/fiji-macro-workflow/` -> `~/.copilot/skills/fiji-macro-workflow/`
 
 Prefer symlinking these destinations to the files in this checkout when the
 platform supports it, so updates are picked up immediately. Copy the files when
-symlinking is unavailable. The skill guides an iterative create, run, diagnose,
-repair, and verify workflow for Fiji scripts.
+symlinking is unavailable. The skills guide Fiji script and macro authoring,
+execution, diagnosis, repair, and verification workflows.
 
 ## User Guide
 
