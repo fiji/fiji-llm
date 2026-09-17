@@ -140,7 +140,7 @@ Macro creation follows an intuitive workflow: 1) open the macro recorder to star
 		}
 	}
 
-	@Tool(value = { "Start the ImageJ macro recorder, or bring the existing recorder to the front. When the recorder is open, ALL commands will be recorded, in the order they run" }, name = "fiji_macro_start_recorder" )
+	@Tool(value = { "Start the ImageJ macro recorder, or bring the existing recorder to the front. For each recordable command run while the recorder is open, a parameterized macro invocation is recorded." }, name = "fiji_macro_start_recorder" )
 	public String startRecorder() {
 		try {
 			// Run the macro recorder command through ImageJ
