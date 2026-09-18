@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.scijava.log.LogService;
@@ -99,6 +100,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	private static final Duration RESTART_DELAY = Duration.ofSeconds(1);
 	private static final Duration SERVER_POLL_INTERVAL = Duration.ofMillis(100);
 	private static final int MAX_RESTART_ATTEMPTS = 3;
+	private static final String LOOPBACK_HOST = "127.0.0.1";
 	private static final String FIJI_MCP_VERSION = "0.1.0";
 	private static final String MCP_INSTRUCTIONS =
 		"""
@@ -295,7 +297,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 
 		logService.debug("Creating Fiji MCP client and tool provider");
 		final McpTransport transport = StreamableHttpMcpTransport.builder()
-			.url("http://localhost:" + port + "/mcp")
+			.url("http://" + LOOPBACK_HOST + ":" + port + "/mcp")
 			.logRequests(true) // if you want to see the traffic in the log
 			.logResponses(true)
 			.build();
@@ -383,7 +385,11 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			.build();
 
 		// Create and start Jetty server
-		final Server jettyServer = new Server(port);
+		final Server jettyServer = new Server();
+		final ServerConnector connector = new ServerConnector(jettyServer);
+		connector.setHost(LOOPBACK_HOST);
+		connector.setPort(port);
+		jettyServer.addConnector(connector);
 		this.jettyServer = jettyServer;
 		final ServletContextHandler context = new ServletContextHandler(
 			ServletContextHandler.SESSIONS);
