@@ -310,8 +310,8 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 		logService.debug("Creating Fiji MCP client and tool provider");
 		final McpTransport transport = StreamableHttpMcpTransport.builder()
 			.url("http://" + LOOPBACK_HOST + ":" + port + "/mcp")
-			.logRequests(true) // if you want to see the traffic in the log
-			.logResponses(true)
+			.logRequests(false) // if you want to see the traffic in the log
+			.logResponses(false)
 			.build();
 		mcpClient = DefaultMcpClient.builder()
 			.key("FijiMCPClient")
