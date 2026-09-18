@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.mcp;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,8 +94,8 @@ import sc.fiji.llm.tools.AiToolService;
 public class DefaultMCPService extends AbstractService implements MCPService
 {
 
-	private static final int STARTUP_WAIT = 3;
-	private static final int SHUTDOWN_WAIT = 3000;
+	private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(3);
+	private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(3);
 	private static final String FIJI_MCP_VERSION = "0.1.0";
 	private static final String MCP_INSTRUCTIONS =
 		"""
@@ -186,7 +187,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			if (serverThread != null && serverThread.isAlive()) {
 				logService.info("Shutting down MCP server thread");
 				stopServer.set(true);
-				serverThread.join(SHUTDOWN_WAIT); // Wait up to 3 seconds
+				serverThread.join(SHUTDOWN_TIMEOUT.toMillis()); // Wait up to 3 seconds
 				if (serverThread.isAlive()) {
 					logService.warn("MCP server thread did not shut down gracefully");
 				}
@@ -229,7 +230,8 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 
 			// Wait for server to be ready before creating client (with timeout)
 			logService.debug("Waiting for Fiji MCP server to be ready...");
-			final boolean serverStarted = serverReady.await(STARTUP_WAIT, TimeUnit.SECONDS);
+			final boolean serverStarted = serverReady.await(STARTUP_TIMEOUT.toMillis(),
+				TimeUnit.MILLISECONDS);
 
 			if (startupException[0] != null && startupException[0].getMessage().contains("Failed to bind")) {
 				logService.error("Fiji MCP server failed to startup: another instance of the server may be running");
