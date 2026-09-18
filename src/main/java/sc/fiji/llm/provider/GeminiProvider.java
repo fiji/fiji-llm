@@ -31,6 +31,7 @@ package sc.fiji.llm.provider;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.scijava.plugin.Plugin;
 
@@ -47,6 +48,11 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
 @Plugin(type = LLMProvider.class, name = "Gemini")
 public class GeminiProvider extends AbstractLLMProvider {
 
+	private static final Set<String> VISION_MODELS = Set.of("gemini-3.8-flash",
+		"gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
+		"gemini-3.5-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash",
+		"gemini-2.5-flash-lite");
+
 	@Override
 	public String getName() {
 		return "Gemini";
@@ -55,6 +61,12 @@ public class GeminiProvider extends AbstractLLMProvider {
 	@Override
 	public String getDescription() {
 		return "Gemini models by Google";
+	}
+
+	@Override
+	public VisionSupport getVisionSupport(final String modelName) {
+		return modelName != null && VISION_MODELS.contains(modelName) ?
+			VisionSupport.SUPPORTED : VisionSupport.UNKNOWN;
 	}
 
 	@Override

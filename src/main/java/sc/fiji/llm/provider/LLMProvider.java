@@ -61,6 +61,31 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	public static final String VALIDATION_FAILED =
 		"sc.fiji.llm.provider.validation_failed";
 
+	/** The provider's knowledge of a model's image-input support. */
+	public enum VisionSupport {
+		SUPPORTED, UNSUPPORTED, UNKNOWN
+	}
+
+	/**
+	 * Reports whether a model accepts image content in chat messages.
+	 *
+	 * @param modelName the model name
+	 * @return the known vision capability, or {@link VisionSupport#UNKNOWN}
+	 */
+	default VisionSupport getVisionSupport(final String modelName) {
+		return VisionSupport.UNKNOWN;
+	}
+
+	/**
+	 * Reports whether a model is known to accept image content.
+	 *
+	 * @param modelName the model name
+	 * @return true only when image support is known
+	 */
+	default boolean supportsVision(final String modelName) {
+		return getVisionSupport(modelName) == VisionSupport.SUPPORTED;
+	}
+
 	/**
 	 * @return True if this model requires an API key (i.e. cloud-based models)
 	 */

@@ -80,6 +80,8 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	private OllamaProcessManager processManager;
 	private final Map<String, CompletableFuture<Void>> preparationFutures =
 		new ConcurrentHashMap<>();
+	private final Map<String, VisionSupport> visionSupportByModel =
+		new ConcurrentHashMap<>();
 	private final ExecutorService preparationExecutor = Executors
 		.newSingleThreadExecutor();
 
@@ -179,6 +181,11 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 					if (!processManager.isModelPrepared(name)) {
 						processManager.prepareModel(name);
 					}
+					final VisionSupport visionSupport = processManager
+						.getModelCapabilities(name).map(capabilities -> capabilities.contains(
+							"vision") ? VisionSupport.SUPPORTED : VisionSupport.UNSUPPORTED)
+						.orElse(VisionSupport.UNKNOWN);
+					visionSupportByModel.put(name, visionSupport);
 				}
 				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
@@ -193,6 +200,12 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 			});
 			return preparation;
 		});
+	}
+
+	@Override
+	public VisionSupport getVisionSupport(final String modelName) {
+		if (modelName == null || modelName.isBlank()) return VisionSupport.UNKNOWN;
+		return visionSupportByModel.getOrDefault(modelName, VisionSupport.UNKNOWN);
 	}
 
 	@Override

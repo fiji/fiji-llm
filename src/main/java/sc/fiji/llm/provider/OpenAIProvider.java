@@ -30,6 +30,7 @@
 package sc.fiji.llm.provider;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,6 +50,15 @@ import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 @Plugin(type = LLMProvider.class, name = "ChatGPT")
 public class OpenAIProvider extends AbstractLLMProvider {
 
+	private static final Set<String> VISION_MODELS = Set.of("gpt-4-turbo",
+		"gpt-4-turbo-2024-04-09", "gpt-4o", "gpt-4o-2024-05-13",
+		"gpt-4o-2024-08-06", "gpt-4o-2024-11-20", "gpt-4o-mini",
+		"gpt-4o-mini-2024-07-18", "o1", "o1-2024-12-17", "o3",
+		"o3-2025-04-16", "o4-mini", "o4-mini-2025-04-16", "gpt-4.1",
+		"gpt-4.1-2025-04-14", "gpt-4.1-mini", "gpt-4.1-mini-2025-04-14",
+		"gpt-4.1-nano", "gpt-4.1-nano-2025-04-14", "gpt-5", "gpt-5-mini",
+		"gpt-5-nano", "gpt-5.1");
+
 	@Override
 	public String getName() {
 		return "ChatGPT";
@@ -57,6 +67,15 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	@Override
 	public String getDescription() {
 		return "ChatGPT models by OpenAI";
+	}
+
+	@Override
+	public VisionSupport getVisionSupport(final String modelName) {
+		if (modelName == null || modelName.isBlank()) return VisionSupport.UNKNOWN;
+		if (VISION_MODELS.contains(modelName)) return VisionSupport.SUPPORTED;
+		final boolean knownModel = Stream.of(OpenAiChatModelName.values()).map(
+			OpenAiChatModelName::toString).anyMatch(modelName::equals);
+		return knownModel ? VisionSupport.UNSUPPORTED : VisionSupport.UNKNOWN;
 	}
 
 	@Override

@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.scijava.task.TaskService;
@@ -69,6 +70,8 @@ public class OllamaProcessManager {
 		LOCAL_SERVER_URL + "/api/generate");
 	private static final URI OLLAMA_RUNNING_MODELS_URI = URI.create(
 		LOCAL_SERVER_URL + "/api/ps");
+	private static final URI OLLAMA_SHOW_URI = URI.create(LOCAL_SERVER_URL +
+		"/api/show");
 	private static final Duration SERVER_TIMEOUT = Duration.ofSeconds(2);
 	private static final Duration MODEL_PREPARATION_TIMEOUT = Duration.ofMinutes(10);
 	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
@@ -144,6 +147,57 @@ public class OllamaProcessManager {
 			// Treat an unavailable or malformed status response as not prepared.
 		}
 		return false;
+	}
+
+	/**
+	 * Gets the capabilities reported by Ollama for a model.
+	 *
+	 * @param modelName the model name
+	 * @return the reported capabilities, or empty when the server response cannot
+	 *         be obtained or does not contain a capabilities array
+	 */
+	public Optional<Set<String>> getModelCapabilities(final String modelName) {
+		if (modelName == null || modelName.isBlank()) return Optional.empty();
+
+		try {
+			final JsonObject requestBody = new JsonObject();
+			requestBody.addProperty("model", modelName);
+			final HttpRequest request = HttpRequest.newBuilder(OLLAMA_SHOW_URI)
+				.timeout(SERVER_TIMEOUT).header("Content-Type", "application/json")
+				.POST(HttpRequest.BodyPublishers.ofString(requestBody.toString())).build();
+			final HttpResponse<String> response = HTTP_CLIENT.send(request,
+				HttpResponse.BodyHandlers.ofString());
+			if (response.statusCode() != 200) return Optional.empty();
+			return parseModelCapabilities(response.body());
+		}
+		catch (IOException e) {
+			return Optional.empty();
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return Optional.empty();
+		}
+		catch (RuntimeException e) {
+			return Optional.empty();
+		}
+	}
+
+	static Optional<Set<String>> parseModelCapabilities(final String responseBody) {
+		try {
+			final JsonObject response = JsonParser.parseString(responseBody)
+				.getAsJsonObject();
+			if (!response.has("capabilities") || !response.get("capabilities")
+				.isJsonArray()) return Optional.empty();
+
+			final Set<String> capabilities = new HashSet<>();
+			for (final var capability : response.getAsJsonArray("capabilities")) {
+				if (capability.isJsonPrimitive()) capabilities.add(capability.getAsString());
+			}
+			return Optional.of(Collections.unmodifiableSet(capabilities));
+		}
+		catch (RuntimeException e) {
+			return Optional.empty();
+		}
 	}
 
 	/**

@@ -66,6 +66,12 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	}
 
 	@Override
+	public VisionSupport getVisionSupport(final String modelName) {
+		return getModel(modelName) == null ? VisionSupport.UNKNOWN :
+			VisionSupport.SUPPORTED;
+	}
+
+	@Override
 	public ChatRequestParameters defaultChatRequestParameters() {
 		return ChatRequestParameters.builder().temperature(0.1).build();
 	}

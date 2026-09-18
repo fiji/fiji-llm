@@ -177,6 +177,7 @@ execution, diagnosis, repair, and verification workflows.
 - **Note:** Ollama is a general gateway to pretrained models. Using local models bypasses the need for API keys or token considerations. *However*, running a local LLM can require significant resources (RAM, GPU, hard drive, power).
 - Models typically come in varieants (`7b`, `20b`, etc...), indicating the number of model parameters (in billions). More parameters means a better ability to conceptualize solutions, but also more resource use.-
 - Fiji-chat is intended for use with models that support [Tool Use](https://ollama.com/search?c=tools).
+- Vision support is reported for the selected model when Ollama provides it; use a model whose capabilities include `vision` to attach images.
 - **Installation**:
   1. Download and install [Ollama](https://ollama.com/download)
   2. (Optionally) Use the ollama UI or command line tool to download a model of interest.

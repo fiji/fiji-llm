@@ -36,6 +36,8 @@ Ollama providers optionally manage the Ollama process lifecycle via `OllamaProce
 
 Cloud providers extend `AbstractLLMProvider`, which retrieves API keys from `APIKeyService` (stored via SciJava `PrefService`).
 
+Providers report model image-input support through `LLMProvider.VisionSupport`. Hosted providers maintain this classification for their fixed model lists. Ollama queries `/api/show` after preparing a model and caches the reported capabilities; unavailable capability metadata is represented as `UNKNOWN`.
+
 ### Assistant Construction
 
 `DefaultAssistantService.createAssistant()` wires together a typed assistant using LangChain4j's `AiServices` builder:
