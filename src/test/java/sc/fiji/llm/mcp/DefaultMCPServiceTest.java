@@ -31,11 +31,15 @@ package sc.fiji.llm.mcp;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.net.ServerSocket;
+import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
+import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -128,6 +132,22 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test
+	public void testServerRecoversAfterJettyStops() throws Exception {
+		final ToolProvider toolProvider = mcpService.getToolProvider();
+		final Field jettyServerField = DefaultMCPService.class
+			.getDeclaredField("jettyServer");
+		jettyServerField.setAccessible(true);
+		final Server jettyServer = (Server) jettyServerField.get(mcpService);
+		assertNotNull(jettyServer);
+
+		jettyServer.stop();
+		waitForServerState(false);
+		waitForServerState(true);
+
+		assertSame(toolProvider, mcpService.getToolProvider());
+	}
+
+	@Test
 	public void testServerPort() {
 		// When: we get the server port
 		final int port = mcpService.getServerPort();
@@ -187,5 +207,19 @@ public class DefaultMCPServiceTest {
 
 		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
 			.anyMatch(specification -> "fiji_image_list".equals(specification.name())));
+	}
+
+	private void waitForServerState(final boolean expected)
+		throws InterruptedException
+	{
+		final long deadline = System.nanoTime() +
+			TimeUnit.SECONDS.toNanos(5);
+		while (mcpService.isServerRunning() != expected &&
+			System.nanoTime() < deadline)
+		{
+			Thread.sleep(50);
+		}
+		assertTrue("Unexpected MCP server running state",
+			mcpService.isServerRunning() == expected);
 	}
 }

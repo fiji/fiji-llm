@@ -96,6 +96,9 @@ public class DefaultMCPService extends AbstractService implements MCPService
 
 	private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(3);
 	private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(3);
+	private static final Duration RESTART_DELAY = Duration.ofSeconds(1);
+	private static final Duration SERVER_POLL_INTERVAL = Duration.ofMillis(100);
+	private static final int MAX_RESTART_ATTEMPTS = 3;
 	private static final String FIJI_MCP_VERSION = "0.1.0";
 	private static final String MCP_INSTRUCTIONS =
 		"""
@@ -117,9 +120,11 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 	@Parameter
 	private AiToolService aiToolService;
 
-	private ToolProvider toolProvider;
-	private Thread serverThread;
-	private int toolCount = 0;
+	private volatile ToolProvider toolProvider;
+	private volatile McpClient mcpClient;
+	private volatile Server jettyServer;
+	private volatile Thread serverThread;
+	private volatile int toolCount = 0;
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean disposed = new AtomicBoolean(false);
 	private final AtomicBoolean stopServer = new AtomicBoolean(false);
@@ -132,8 +137,14 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 				"MCPService has been disposed and cannot be reused");
 		}
 
-		if (!initialized.get()) {
+		if (!isServerRunning() &&
+			(serverThread == null || !serverThread.isAlive()))
+		{
 			initializeServer();
+		}
+
+		if (toolProvider == null) {
+			throw new IllegalStateException("MCP server is not available");
 		}
 
 		return toolProvider;
@@ -141,7 +152,10 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 
 	@Override
 	public boolean isServerRunning() {
-		return initialized.get() && toolProvider != null;
+		final Server currentJettyServer = jettyServer;
+		return initialized.get() && toolProvider != null &&
+			serverThread != null && serverThread.isAlive() &&
+			currentJettyServer != null && currentJettyServer.isRunning();
 	}
 
 	@Override
@@ -178,31 +192,48 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 	}
 
 	@Override
-	public void dispose() {
+	public synchronized void dispose() {
 		if (!disposed.compareAndSet(false, true)) {
 			return; // Already disposed
 		}
 
 		try {
-			if (serverThread != null && serverThread.isAlive()) {
+			stopServer.set(true);
+			final Thread currentServerThread = serverThread;
+			if (currentServerThread != null && currentServerThread.isAlive()) {
 				logService.info("Shutting down MCP server thread");
-				stopServer.set(true);
-				serverThread.join(SHUTDOWN_TIMEOUT.toMillis()); // Wait up to 3 seconds
-				if (serverThread.isAlive()) {
+				currentServerThread.join(SHUTDOWN_TIMEOUT.toMillis());
+				if (currentServerThread.isAlive()) {
 					logService.warn("MCP server thread did not shut down gracefully");
+					currentServerThread.interrupt();
+				}
+			}
+		} catch (final InterruptedException e) {
+			logService.error("Error while disposing MCPService", e);
+			Thread.currentThread().interrupt();
+		} finally {
+			final McpClient currentMcpClient = mcpClient;
+			mcpClient = null;
+			if (currentMcpClient != null) {
+				try {
+					currentMcpClient.close();
+				} catch (final Exception e) {
+					logService.warn("Error closing MCP client", e);
 				}
 			}
 
 			toolProvider = null;
+			initialized.set(false);
+			toolCount = 0;
+			jettyServer = null;
 			logService.info("MCPService disposed successfully");
-		} catch (final InterruptedException e) {
-			logService.error("Error while disposing MCPService", e);
-			Thread.currentThread().interrupt();
 		}
 	}
 
 	private synchronized void initializeServer() {
-		if (initialized.get() || disposed.get()) {
+		if (isServerRunning() || disposed.get() ||
+			(serverThread != null && serverThread.isAlive()))
+		{
 			return;
 		}
 
@@ -216,14 +247,8 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			stopServer.set(false);
 
 			// Start MCP server in a daemon thread
-			serverThread = new Thread(() -> {
-				try {
-					runMcpServer(aiToolService.getToolsWithExecutors(), port);
-				} catch (final Exception e) {
-					startupException[0] = e;
-					serverReady.countDown(); // Signal failure to unblock waiting thread
-				}
-			});
+			serverThread = new Thread(() -> runMcpServerWithRecovery(
+				aiToolService.getToolsWithExecutors(), port, startupException));
 			serverThread.setDaemon(true);
 			serverThread.setName("MCP-Server-Thread");
 			serverThread.start();
@@ -233,7 +258,9 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			final boolean serverStarted = serverReady.await(STARTUP_TIMEOUT.toMillis(),
 				TimeUnit.MILLISECONDS);
 
-			if (startupException[0] != null && startupException[0].getMessage().contains("Failed to bind")) {
+			final String startupMessage = startupException[0] == null ? null :
+				startupException[0].getMessage();
+			if (startupMessage != null && startupMessage.contains("Failed to bind")) {
 				logService.error("Fiji MCP server failed to startup: another instance of the server may be running");
 				return;
 			}
@@ -255,6 +282,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			initialized.set(true);
 			logService.info("Fiji MCP server initialized successfully");
 		} catch (final Exception e) {
+			initialized.set(false);
 			logService.error("Failed to initialize Fiji MCP server", e);
 			throw new RuntimeException("Failed to initialize Fiji MCP server", e);
 		}
@@ -271,7 +299,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			.logRequests(true) // if you want to see the traffic in the log
 			.logResponses(true)
 			.build();
-		final McpClient mcpClient = DefaultMcpClient.builder()
+		mcpClient = DefaultMcpClient.builder()
 			.key("FijiMCPClient")
 			.transport(transport)
 			.build();
@@ -285,6 +313,56 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 	/**
 	 * Runs the MCP server with the given tools.
 	 */
+	private void runMcpServerWithRecovery(
+		final Map<ToolSpecification, ToolExecutor> tools, final int port,
+		final Exception[] startupException)
+	{
+		boolean serverHasStarted = false;
+		int restartAttempts = 0;
+		while (!stopServer.get()) {
+			try {
+				runMcpServer(tools, port);
+			} catch (final Exception e) {
+				if (!serverHasStarted && serverReady.getCount() > 0) {
+					startupException[0] = e;
+					serverReady.countDown();
+					return;
+				}
+				logService.error("MCP server failed unexpectedly", e);
+			}
+
+			if (serverReady.getCount() > 0) {
+				if (stopServer.get()) {
+					serverReady.countDown();
+					return;
+				}
+				startupException[0] = new RuntimeException(
+					"MCP server stopped before startup completed");
+				serverReady.countDown();
+				return;
+			}
+
+			serverHasStarted = true;
+			if (stopServer.get()) return;
+
+			initialized.set(false);
+			toolCount = 0;
+			if (++restartAttempts > MAX_RESTART_ATTEMPTS) {
+				logService.error("MCP server exceeded the maximum number of restart attempts");
+				return;
+			}
+
+			logService.warn("MCP server stopped unexpectedly; restarting (attempt " +
+				restartAttempts + " of " + MAX_RESTART_ATTEMPTS + ")");
+			try {
+				Thread.sleep(RESTART_DELAY.toMillis());
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+		}
+	}
+
 	private void runMcpServer(
 		final Map<ToolSpecification, ToolExecutor> tools, final int port) throws Exception
 	{
@@ -306,6 +384,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 
 		// Create and start Jetty server
 		final Server jettyServer = new Server(port);
+		this.jettyServer = jettyServer;
 		final ServletContextHandler context = new ServletContextHandler(
 			ServletContextHandler.SESSIONS);
 		context.setContextPath("/");
@@ -338,15 +417,21 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			if (serverReady != null) {
 				serverReady.countDown();
 			}
+			if (toolProvider != null && !disposed.get()) {
+				initialized.set(true);
+			}
 
 			// Keep server running until stop is requested
-			while (!stopServer.get()) {
+			while (!stopServer.get() && jettyServer.isRunning()) {
 				try {
-					Thread.sleep(100);
+					Thread.sleep(SERVER_POLL_INTERVAL.toMillis());
 				} catch (final InterruptedException e) {
 					logService.debug("Server thread interrupted, shutting down gracefully");
 					break;
 				}
+			}
+			if (!stopServer.get() && !jettyServer.isRunning()) {
+				logService.warn("Jetty server stopped unexpectedly");
 			}
 		} finally {
 			logService.debug("Shutting down MCP server");
@@ -358,9 +443,12 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			try {
 				jettyServer.stop();
 				toolCount = 0;
-			logService.debug("Jetty server stopped");
+				logService.debug("Jetty server stopped");
 			} catch (final Exception e) {
 				logService.warn("Error stopping Jetty server", e);
+			}
+			if (this.jettyServer == jettyServer) {
+				this.jettyServer = null;
 			}
 		}
 	}
