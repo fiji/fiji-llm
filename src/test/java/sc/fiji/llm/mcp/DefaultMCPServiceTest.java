@@ -29,13 +29,20 @@
 
 package sc.fiji.llm.mcp;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
@@ -148,6 +155,20 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test
+	public void testRejectsExternalOrigin() throws Exception {
+		mcpService.getToolProvider();
+
+		assertEquals(403, getMcpResponseCode("https://attacker.example"));
+	}
+
+	@Test
+	public void testAllowsLoopbackOrigin() throws Exception {
+		mcpService.getToolProvider();
+
+		assertTrue(getMcpResponseCode("http://127.0.0.1:" + testPort) != 403);
+	}
+
+	@Test
 	public void testServerPort() {
 		// When: we get the server port
 		final int port = mcpService.getServerPort();
@@ -221,5 +242,27 @@ public class DefaultMCPServiceTest {
 		}
 		assertTrue("Unexpected MCP server running state",
 			mcpService.isServerRunning() == expected);
+	}
+
+	private int getMcpResponseCode(final String origin)
+		throws Exception
+	{
+		try (Socket socket = new Socket("127.0.0.1", testPort)) {
+			final PrintWriter writer = new PrintWriter(new OutputStreamWriter(
+				socket.getOutputStream(), StandardCharsets.US_ASCII));
+			writer.print("GET /mcp HTTP/1.1\r\n");
+			writer.print("Host: 127.0.0.1:" + testPort + "\r\n");
+			writer.print("Origin: " + origin + "\r\n");
+			writer.print("Accept: application/json, text/event-stream\r\n");
+			writer.print("Connection: close\r\n\r\n");
+			writer.flush();
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+				socket.getInputStream(), StandardCharsets.US_ASCII)))
+			{
+				final String statusLine = reader.readLine();
+				return Integer.parseInt(statusLine.split(" ")[1]);
+			}
+		}
 	}
 }

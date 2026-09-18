@@ -29,8 +29,11 @@
 
 package sc.fiji.llm.mcp;
 
+import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.scijava.log.LogService;
@@ -80,6 +84,14 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.ServerCapabilities;
 import io.modelcontextprotocol.spec.McpSchema.Tool;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
@@ -399,6 +411,8 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 		// Register the MCP servlet
 		final ServletHolder holder = new ServletHolder(transportServlet);
 		context.addServlet(holder, "/mcp/*");
+		context.addFilter(new FilterHolder(new OriginValidationFilter()), "/*",
+			EnumSet.of(DispatcherType.REQUEST));
 
 		try {
 			jettyServer.start();
@@ -467,6 +481,40 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			sj.add(toolPlugin.getUsage());
 		}
 		return sj.toString();
+	}
+
+	private static class OriginValidationFilter implements Filter
+	{
+
+		@Override
+		public void doFilter(final ServletRequest request,
+			final ServletResponse response, final FilterChain chain)
+			throws IOException, ServletException
+		{
+			final HttpServletRequest httpRequest = (HttpServletRequest) request;
+			final String origin = httpRequest.getHeader("Origin");
+			if (origin != null && !isAllowedOrigin(origin)) {
+				((HttpServletResponse) response).sendError(
+					HttpServletResponse.SC_FORBIDDEN, "Invalid Origin");
+				return;
+			}
+			chain.doFilter(request, response);
+		}
+
+		private static boolean isAllowedOrigin(final String origin)
+		{
+			try {
+				final URI uri = URI.create(origin);
+				final String host = uri.getHost();
+				return "http".equalsIgnoreCase(uri.getScheme()) &&
+					host != null && (LOOPBACK_HOST.equalsIgnoreCase(host) ||
+						"localhost".equalsIgnoreCase(host)) &&
+					uri.getRawUserInfo() == null && uri.getRawPath().isEmpty() &&
+					uri.getRawQuery() == null && uri.getRawFragment() == null;
+			} catch (final IllegalArgumentException e) {
+				return false;
+			}
+		}
 	}
 
 	/**
