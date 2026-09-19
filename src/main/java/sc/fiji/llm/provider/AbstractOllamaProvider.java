@@ -54,6 +54,7 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
@@ -355,6 +356,10 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 				if (content instanceof TextContent) {
 					tokenCount += estimateTokenCountInText(((TextContent) content)
 						.text());
+				}
+				else if (content instanceof ImageContent) {
+					// Image token costs vary by model and are not represented by this
+					// text-based estimator.
 				}
 				else {
 					throw new IllegalArgumentException("Unknown content type: " +

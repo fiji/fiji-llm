@@ -37,6 +37,10 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.UserMessage;
+
 public class ProviderVisionSupportTest {
 
 	@Test
@@ -71,5 +75,17 @@ public class ProviderVisionSupportTest {
 		assertTrue(capabilities.get().contains("vision"));
 		assertEquals(Optional.empty(), OllamaProcessManager.parseModelCapabilities(
 			"{\"model\":\"text-only\"}"));
+	}
+
+	@Test
+	public void testOllamaTokenEstimatorSupportsImageContent() {
+		final UserMessage message = UserMessage.builder().addContent(new TextContent(
+			"Describe this image")).addContent(ImageContent.from("AQID",
+				"image/png")).build();
+
+		final int tokenCount = new AbstractOllamaProvider.OllamaTokenCountEstimator()
+			.estimateTokenCountInMessage(message);
+
+		assertTrue(tokenCount > 0);
 	}
 }

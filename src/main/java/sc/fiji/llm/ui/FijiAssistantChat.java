@@ -86,13 +86,13 @@ import org.scijava.thread.ThreadService;
 import com.google.gson.JsonArray;
 
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.exception.RateLimitException;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.AssistantService;
@@ -102,6 +102,7 @@ import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.image.ImageMetaContextItem;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
@@ -803,8 +804,18 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 
 				final long[] lastScrollTime = {System.currentTimeMillis()};
 				// Build user message with context items as attributes
+				final List<Content> userContents = new ArrayList<>();
+				userContents.add(new TextContent(userText));
 				final UserMessage.Builder msgBuilder = UserMessage.builder()
 						.addContent(new TextContent(userText));
+				for (final ContextItem item : mergedContextItems) {
+					if (item instanceof ImageMetaContextItem imageItem) {
+						imageItem.getImageContent().ifPresent(imageContent -> {
+							userContents.add(imageContent);
+							msgBuilder.addContent(imageContent);
+						});
+					}
+				}
 
 				Map<String, Object> attributes = new HashMap<>();
 
@@ -822,13 +833,9 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 				// Save user message to conversation history
 				currentConversation.addMessage(displayMessage.toString(), userMsg);
 
-				// Build a chat request for the LLM
-				final ChatRequest chatRequest = ChatRequest.builder()
-						.messages(userMsg)
-						.build();
-
-				// Send user message to the LLM to initiate chat
-				assistant.chatStreaming(chatRequest)
+				// Send structured contents to the AI service. Passing ChatRequest as the
+				// sole service argument would stringify it as user text.
+				assistant.chatStreaming(userContents)
 					.beforeToolExecution(aiToolService::processToolRequest)
 					.onToolExecuted(aiToolService::processToolExecution)
 					.onPartialThinkingWithContext((thinking, context) -> {
@@ -1660,10 +1667,8 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 				"with ONLY a 3-5 word summary of this message, suitable for a " +
 				"conversation title: \"" +
 					userMessage + "\"";
-			final ChatRequest nameRequest = ChatRequest.builder().messages(
-				new UserMessage(namingPrompt)).build();
-
-			final AiMessage response = assistant.chat(nameRequest);
+			final AiMessage response = assistant.chat(List.of(new TextContent(
+				namingPrompt)));
 			chatMemory.clear();
 			textToTruncate = response.text();
 		}

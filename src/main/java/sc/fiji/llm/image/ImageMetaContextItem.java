@@ -32,11 +32,13 @@ package sc.fiji.llm.image;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import dev.langchain4j.data.message.ImageContent;
 import sc.fiji.llm.context.AbstractContextItem;
 
 /**
@@ -51,6 +53,7 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	private final int imageId;
 	private final List<Dimension> dimensions;
 	private final String pixelType;
+	private final ImageContent imageContent;
 
 	/**
 	 * Creates an image context item with detailed metadata.
@@ -64,12 +67,29 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	public ImageMetaContextItem(String imageName, int imageId, List<Dimension> dimensions,
 		String pixelType)
 	{
+		this(imageName, imageId, dimensions, pixelType, null);
+	}
+
+	/**
+	 * Creates an image context item with metadata and optional multimodal content.
+	 *
+	 * @param imageName the name of the image/dataset
+	 * @param imageId the id of this image
+	 * @param dimensions list of dimensions with their types, lengths, and
+	 *          ordering
+	 * @param pixelType the pixel type (e.g., "uint8", "uint16", "float32")
+	 * @param imageContent the rendered image content, or null when unavailable
+	 */
+	public ImageMetaContextItem(String imageName, int imageId,
+		List<Dimension> dimensions, String pixelType, ImageContent imageContent)
+	{
 		super("Image", imageName);
 		this.imageTitle = imageName;
 		this.imageId = imageId;
 		this.dimensions = dimensions != null ? Collections.unmodifiableList(dimensions)
 			: Collections.emptyList();
 		this.pixelType = pixelType != null ? pixelType : "";
+		this.imageContent = imageContent;
 	}
 
 	public String getTitle() {
@@ -86,6 +106,10 @@ public class ImageMetaContextItem extends AbstractContextItem {
 
 	public String getPixelType() {
 		return pixelType;
+	}
+
+	public Optional<ImageContent> getImageContent() {
+		return Optional.ofNullable(imageContent);
 	}
 
 	@Override

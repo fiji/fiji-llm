@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.image;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -41,6 +42,7 @@ import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import dev.langchain4j.data.message.ImageContent;
 import net.imagej.Dataset;
 import net.imagej.axis.AxisType;
 import net.imagej.display.DatasetView;
@@ -64,6 +66,9 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Parameter
 	private ImageDisplayService imageDisplayService;
+
+	@Parameter
+	private ImageRenderingService imageRenderingService;
 
 	@Override
 	public String getDisplayName() {
@@ -93,20 +98,8 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 		for (final ImageDisplay imageDisplay : imageDisplays) {
 			try {
-					// Get the active DatasetView from the ImageDisplay
-					final DatasetView datasetView = imageDisplayService
-							.getActiveDatasetView(imageDisplay);
-					if (datasetView == null) {
-						continue;
-					}
-
-					final Dataset dataset = datasetView.getData();
-					if (dataset == null) {
-						continue;
-					}
-
-					int id = imageJ1HelperService.getImageId(imageDisplay);
-					items.add(createImageContextItem(dataset, id));
+				final ImageMetaContextItem item = createImageContextItem(imageDisplay);
+				if (item != null) items.add(item);
 			} catch (Exception e) {
 			}
 		}
@@ -122,28 +115,20 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			return null;
 		}
 
-		final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
-		if (datasetView == null) {
-				return null;
-		}
-
-		final Dataset dataset = datasetView.getData();
-		if (dataset == null) {
-				return null;
-		}
-
-		int id = imageJ1HelperService.getImageId(display);
-		return createImageContextItem(dataset, id);
+		return createImageContextItem(display);
 	}
 
 	/**
 	 * Creates an {@link ImageMetaContextItem} from a Dataset. Extracts metadata
 	 * and creates a descriptive text for the LLM.
 	 */
-	private ImageMetaContextItem createImageContextItem(final Dataset dataset, final int id) {
-		if (dataset == null) {
-			return null;
-		}
+	private ImageMetaContextItem createImageContextItem(final ImageDisplay display) {
+		final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
+		if (datasetView == null) return null;
+		final Dataset dataset = datasetView.getData();
+		if (dataset == null) return null;
+
+		final int id = imageJ1HelperService.getImageId(display);
 
 		String imageTitle = imageJ1HelperService.getImageTitle(id);
 
@@ -152,7 +137,19 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			dataset);
 		final String pixelType = dataset.getType().getClass().getSimpleName();
 
-		return new ImageMetaContextItem(imageTitle, id, dimensions, pixelType);
+		return new ImageMetaContextItem(imageTitle, id, dimensions, pixelType,
+			renderImage(display));
+	}
+
+	private ImageContent renderImage(final ImageDisplay display) {
+		if (imageRenderingService == null) return null;
+		try {
+			return imageRenderingService.render(display, new ImageRenderOptions()).map(
+				RenderedImageResult::getImageContent).orElse(null);
+		}
+		catch (final IOException e) {
+			return null;
+		}
 	}
 
 	/**

@@ -27,35 +27,28 @@
  * #L%
  */
 
-package sc.fiji.llm.assistant;
+package sc.fiji.llm.image;
 
-import java.util.List;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.Content;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.service.TokenStream;
+import java.util.Collections;
 
-/**
- * The main Fiji/ImageJ assistant interface powered by LangChain4j. This
- * interface defines the capabilities of the LLM assistant. LangChain4j
- * automatically generates an implementation of this interface.
- */
-public interface FijiAssistant {
+import org.junit.Test;
 
-	/**
-	 * General chat interaction with structured messages.
-	 *
-	 * @param contents structured user message contents
-	 * @return a {@link ChatResponse} with the assistant's response
-	 */
-	AiMessage chat(List<Content> contents);
+import dev.langchain4j.data.message.ImageContent;
 
-	/**
-	 * Streaming chat interaction for real-time responses.
-	 *
-	 * @param contents structured user message contents
-	 * @return a token stream for progressive response rendering
-	 */
-	TokenStream chatStreaming(List<Content> contents);
+public class ImageMetaContextItemTest {
+
+	@Test
+	public void testJsonRemainsMetadataOnly() {
+		final ImageContent imageContent = ImageContent.from("AQID", "image/png");
+		final ImageMetaContextItem item = new ImageMetaContextItem("image", 7,
+			Collections.singletonList(new ImageMetaContextItem.Dimension("X", 2)),
+			"UnsignedByteType", imageContent);
+
+		assertTrue(item.getImageContent().isPresent());
+		assertFalse(item.toJson().toString().contains("AQID"));
+		assertFalse(item.toJson().getAsJsonObject().has("image_content"));
+	}
 }

@@ -27,35 +27,27 @@
  * #L%
  */
 
-package sc.fiji.llm.assistant;
+package sc.fiji.llm.chat;
 
-import java.util.List;
+import static org.junit.Assert.assertEquals;
 
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.Content;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.service.TokenStream;
+import org.junit.Test;
 
-/**
- * The main Fiji/ImageJ assistant interface powered by LangChain4j. This
- * interface defines the capabilities of the LLM assistant. LangChain4j
- * automatically generates an implementation of this interface.
- */
-public interface FijiAssistant {
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.UserMessage;
 
-	/**
-	 * General chat interaction with structured messages.
-	 *
-	 * @param contents structured user message contents
-	 * @return a {@link ChatResponse} with the assistant's response
-	 */
-	AiMessage chat(List<Content> contents);
+public class ChatMessageConverterTest {
 
-	/**
-	 * Streaming chat interaction for real-time responses.
-	 *
-	 * @param contents structured user message contents
-	 * @return a token stream for progressive response rendering
-	 */
-	TokenStream chatStreaming(List<Content> contents);
+	@Test
+	public void testMixedUserMessageSerializesTextOnly() {
+		final UserMessage message = UserMessage.builder().addContent(new TextContent(
+			"Describe this image")).addContent(ImageContent.from("AQID",
+				"image/png")).build();
+
+		final SerializedMessage serialized = ChatMessageConverter.toSerialized(message);
+
+		assertEquals("USER", serialized.getType());
+		assertEquals("Describe this image", serialized.getContent());
+	}
 }

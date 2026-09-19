@@ -32,6 +32,7 @@ package sc.fiji.llm.chat;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 
@@ -48,8 +49,11 @@ public class ChatMessageConverter {
 			return new SerializedMessage("SYSTEM", ((SystemMessage) message).text());
 		}
 		else if (message instanceof UserMessage) {
-			return new SerializedMessage("USER", ((UserMessage) message)
-				.singleText());
+			final UserMessage userMessage = (UserMessage) message;
+			final String text = userMessage.contents().stream().filter(
+				TextContent.class::isInstance).map(TextContent.class::cast).map(
+					TextContent::text).findFirst().orElse("");
+			return new SerializedMessage("USER", text);
 		}
 		else if (message instanceof AiMessage) {
 			return new SerializedMessage("AI", ((AiMessage) message).text());
