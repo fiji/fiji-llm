@@ -113,6 +113,22 @@ public final class ImageJ1HelperService extends AbstractService implements
 		}
 	}
 
+	public Optional<Object> getRoi(final ImageDisplay display) {
+		if (display == null || legacyService == null || !legacyService.isActive()) {
+			return Optional.empty();
+		}
+		try {
+			final var imageMap = legacyService.getImageMap();
+			if (imageMap == null) return Optional.empty();
+			final var imagePlus = imageMap.lookupImagePlus(display);
+			return imagePlus == null ? Optional.empty() : Optional.ofNullable(invoke(
+				imagePlus, "getRoi"));
+		}
+		catch (final RuntimeException e) {
+			return Optional.empty();
+		}
+	}
+
 	public Object getResultsTable() {
 		return invokeStatic("ij.measure.ResultsTable", "getResultsTable");
 	}

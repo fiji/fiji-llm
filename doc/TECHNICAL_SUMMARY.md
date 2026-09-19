@@ -116,6 +116,13 @@ This self-loopback MCP pattern allows the same tools to be accessed by external 
 
 `ContextItem` supports merging (multiple items of the same type collapse into one) before being serialized into the user message payload.
 
+`ImageRenderingService` is the separate transient image payload layer. It copies the
+currently rendered `DatasetView` plane, preserving the active display LUT,
+channel ranges, color mode, and non-XY position, then bounds and encodes it as a
+PNG-backed LangChain4j `ImageContent`. `RenderedImageResult` keeps that payload
+separate from `ImageRenderMetadata`; optional ROI drawing uses the active legacy
+ImageJ ROI when the legacy bridge is available.
+
 ---
 
 ## Conversation Management

@@ -164,6 +164,12 @@ execution, diagnosis, repair, and verification workflows.
 
 **Context Items** - Information you can attach to chat message that helps the assistant understand your Fiji environment. For example, you could attach an open image or script.
 
+Image rendering is kept separate from persisted context metadata. The reusable
+`ImageRenderingService` captures the current displayed plane and display state,
+creates a bounded PNG `ImageContent` payload, and returns its image metadata
+separately. Optional ROI drawing uses the active legacy ImageJ ROI when that
+bridge is available.
+
 ### Supported AI Providers
 
 #### Google (Gemini)
