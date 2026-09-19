@@ -303,6 +303,11 @@ For developing chatbots in particular UI environments.
 
 An MCP (Model Context Protocol) server exposes all registered `AiToolPlugin` implementations via local HTTP, making them accessible to external clients.
 
+## Development Philosophy
+
+This repository is developed with assistance from AI coding tools; all changes
+are reviewed by human contributors.
+
 ## Frequently Asked Questions
 
 ### Q: How does Fiji LLM get its information?
