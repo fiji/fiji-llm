@@ -78,6 +78,10 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(5);
 	private static final String REMOTE_STRING = "* (remote)";
 
+	// Flip these for debugging the http sent to/from ollama
+	private static final boolean LOG_REQUESTS = false;
+	private static final boolean LOG_RESPONSES = false;
+
 	private OllamaProcessManager processManager;
 	private final Map<String, CompletableFuture<Void>> preparationFutures =
 		new ConcurrentHashMap<>();
@@ -143,14 +147,15 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	@Override
 	public ChatModel createChatModel(final String modelName) {
 		return OllamaChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL).modelName(
-			modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT).build();
+			modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
+			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OllamaStreamingChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL)
 			.modelName(modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
-			.build();
+			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES).build();
 	}
 
 	@Override
