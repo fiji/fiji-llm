@@ -86,6 +86,7 @@ import org.scijava.thread.ThreadService;
 import com.google.gson.JsonArray;
 
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
@@ -174,6 +175,7 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 
 	// -- Non-Contextual fields --
 	private FijiAssistant assistant;
+	private ChatMemory chatMemory;
 	private final JFrame frame;
 	private final JPanel chatPanel;
 	private final JScrollPane chatScrollPane;
@@ -801,6 +803,8 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 					removeChatBubble(currentStreamingPanel);
 					return;
 				}
+				final Conversation requestConversation = currentConversation;
+				final ChatMemory requestMemory = chatMemory;
 
 				final long[] lastScrollTime = {System.currentTimeMillis()};
 				// Build user message with context items as attributes
@@ -831,11 +835,12 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 				final UserMessage userMsg = msgBuilder.build();
 
 				// Save user message to conversation history
-				currentConversation.addMessage(displayMessage.toString(), userMsg);
+				requestConversation.addMessage(displayMessage.toString(), userMsg);
 
 				// Send structured contents to the AI service. Passing ChatRequest as the
 				// sole service argument would stringify it as user text.
-				assistant.chatStreaming(userContents)
+				try {
+					assistant.chatStreaming(userContents)
 					.beforeToolExecution(aiToolService::processToolRequest)
 					.onToolExecuted(aiToolService::processToolExecution)
 					.onPartialThinkingWithContext((thinking, context) -> {
@@ -870,12 +875,8 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 					.onCompleteResponse(response -> {
 						aiMessageStarted.set(true);
 						try {
-							if (currentConversation != null) {
-								currentConversation.addMessage(
-										currentStreamingPanel.getText(),
-										response.aiMessage()
-									);
-							}
+							requestConversation.addMessage(currentStreamingPanel.getText(),
+								response.aiMessage());
 
 							SwingUtilities.invokeLater(() -> {
 								final JScrollBar vertical = chatScrollPane
@@ -891,10 +892,16 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 						}
 					})
 					.onError(error -> {
+						recoverFailedRequest(requestConversation, userMsg, requestMemory);
 						handleAssistantFailure(error, currentStreamingPanel,
 							aiMessageStarted);
 					})
 					.start();
+				}
+				catch (Exception e) {
+					recoverFailedRequest(requestConversation, userMsg, requestMemory);
+					handleAssistantFailure(e, currentStreamingPanel, aiMessageStarted);
+				}
 			} catch (Exception e) {
 				handleAssistantFailure(e, currentStreamingPanel, aiMessageStarted);
 			}
@@ -1012,6 +1019,37 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 		logService.debug(context, error);
 		if (!recovered) {
 			appendToChat(Sender.SYSTEM, buildAssistantFailureMessage(error, context));
+		}
+	}
+
+	private void recoverFailedRequest(final Conversation conversation,
+		final UserMessage userMessage, final ChatMemory failedMemory)
+	{
+		if (conversation == null) return;
+		if (userMessage != null) {
+			conversation.removeLastMessageIf(userMessage);
+		}
+		else if (!conversation.messages().isEmpty()) {
+			final ChatMessage lastMessage = conversation.messages().get(conversation
+				.messages().size() - 1).memory();
+			if (lastMessage instanceof UserMessage) {
+				conversation.removeLastMessageIf(lastMessage);
+			}
+		}
+
+		try {
+			final ChatMemory recoveredMemory = buildAssistant(conversation
+				.systemMessage());
+			for (Conversation.Message message : conversation.messages()) {
+				recoveredMemory.add(message.memory());
+			}
+			if (failedMemory != null && failedMemory != recoveredMemory) {
+				failedMemory.clear();
+			}
+		}
+		catch (Exception recoveryError) {
+			logService.error("Unable to recover assistant state after request failure",
+				recoveryError);
 		}
 	}
 
@@ -1628,6 +1666,7 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 		// Recreate the assistant with the chat memory for proper tool tracking
 		assistant = assistantService.createAssistant(FijiAssistant.class,
 			llmProvider.getName(), modelName, chatMemory, requestParameters);
+		this.chatMemory = chatMemory;
 		return chatMemory;
 	}
 
@@ -1673,6 +1712,8 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 			textToTruncate = response.text();
 		}
 		catch (Exception e) {
+			chatMemory.clear();
+			chatMemory.add(systemMessage);
 			handleAssistantFailure(e,
 				"Unable to generate a conversation name; using the first message instead",
 				true);

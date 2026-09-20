@@ -57,6 +57,22 @@ public class Conversation {
 	}
 
 	/**
+	 * Removes the last message when it is the expected memory message.
+	 *
+	 * @param expectedMemoryMessage the message that may be rolled back
+	 * @return true when the last message was removed
+	 */
+	public boolean removeLastMessageIf(ChatMessage expectedMemoryMessage) {
+		if (messages.isEmpty() || messages.get(messages.size() - 1).memory() !=
+			expectedMemoryMessage)
+		{
+			return false;
+		}
+		messages.remove(messages.size() - 1);
+		return true;
+	}
+
+	/**
 	 * @return The {@link SystemMessage} for this conversation.
 	 */
 	public SystemMessage systemMessage() {

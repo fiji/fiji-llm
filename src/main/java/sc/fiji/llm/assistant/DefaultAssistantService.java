@@ -35,10 +35,11 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ChatRequest.Builder;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
-import sc.fiji.llm.mcp.MCPService;
+import sc.fiji.llm.chat.ImageToolResultNormalizer;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
@@ -53,9 +54,6 @@ public class DefaultAssistantService extends AbstractService implements
 
 	@Parameter
 	private ProviderService providerService;
-
-	@Parameter
-	private MCPService mcpService;
 
 	@Parameter
 	private AiToolService aiToolService;
@@ -73,20 +71,26 @@ public class DefaultAssistantService extends AbstractService implements
 
 		final var builder = AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(modelName))
-			.toolProvider(mcpService.getToolProvider())
+			.tools(aiToolService.getToolsWithExecutors())
 			.toolExecutionErrorHandler(aiToolService::handleExecutionError)
 			.toolArgumentsErrorHandler(aiToolService::handleArgumentError)
 			.chatModel(provider.createChatModel(modelName));
 
-		// Apply request parameters at AiServices level where they'll be used
-		if (defaultChatParameters != null) {
-			builder.chatRequestTransformer(chatRequest -> {
+		builder.chatRequestTransformer(chatRequest -> {
+			ChatRequest transformedRequest = chatRequest;
+			// Apply request parameters at AiServices level where they'll be used
+			if (defaultChatParameters != null) {
 				Builder chatTransformBuilder = chatRequest.toBuilder();
 				chatTransformBuilder.parameters(defaultChatParameters.overrideWith(
 					chatRequest.parameters()));
-				return chatTransformBuilder.build();
-			});
-		}
+				transformedRequest = chatTransformBuilder.build();
+			}
+			if (!provider.supportsImageToolResults(modelName)) {
+				transformedRequest = ImageToolResultNormalizer.normalize(
+					transformedRequest);
+			}
+			return transformedRequest;
+		});
 		if (chatMemory != null) {
 			builder.chatMemory(chatMemory);
 		}

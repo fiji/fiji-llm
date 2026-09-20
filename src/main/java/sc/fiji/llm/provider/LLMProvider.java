@@ -87,6 +87,17 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
+	 * Reports whether a model transport accepts image content in tool-result
+	 * messages.
+	 *
+	 * @param modelName the model name
+	 * @return true when image-bearing tool results can be sent natively
+	 */
+	default boolean supportsImageToolResults(final String modelName) {
+		return false;
+	}
+
+	/**
 	 * @return True if this model requires an API key (i.e. cloud-based models)
 	 */
 	default boolean requiresApiKey() {

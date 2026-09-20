@@ -32,6 +32,7 @@ package sc.fiji.llm.provider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -39,6 +40,7 @@ import org.junit.Test;
 
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 
 public class ProviderVisionSupportTest {
@@ -91,5 +93,13 @@ public class ProviderVisionSupportTest {
 			.estimateTokenCountInMessage(textOnlyMessage);
 
 		assertTrue(tokenCount > textOnlyTokenCount);
+
+		final ToolExecutionResultMessage toolResult = ToolExecutionResultMessage
+			.builder().id("result-1").toolName("fiji_image_view").contents(List.of(
+				new TextContent("image rendered"), ImageContent.from("AQID",
+					"image/png"))).build();
+		final int toolResultTokenCount = new AbstractOllamaProvider
+			.OllamaTokenCountEstimator().estimateTokenCountInMessage(toolResult);
+		assertTrue(toolResultTokenCount > 0);
 	}
 }

@@ -437,7 +437,20 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 		private int estimateTokenCountIn(
 			ToolExecutionResultMessage toolExecutionResultMessage)
 		{
-			return estimateTokenCountInText(toolExecutionResultMessage.text());
+			int tokenCount = 0;
+			for (Content content : toolExecutionResultMessage.contents()) {
+				if (content instanceof TextContent) {
+					tokenCount += estimateTokenCountInText(((TextContent) content).text());
+				}
+				else if (content instanceof ImageContent) {
+					tokenCount += IMAGE_TOKEN_ESTIMATE;
+				}
+				else {
+					throw new IllegalArgumentException("Unknown content type: " +
+						content);
+				}
+			}
+			return tokenCount;
 		}
 	}
 }
