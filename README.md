@@ -265,6 +265,8 @@ Determine which AI Services are available in chat.
 ### [ContextItemSupplier](src/main/java/sc/fiji/llm/ui/ContextItemSupplier.java)
 
 Provide a mapping from the Fiji application environment to [`ContextItems`](src/main/java/sc/fiji/llm/context/ContextItem.java), facilitating deeper understanding by the LLM.
+Context items can override `getTooltipText()` to explain what the attachment
+menu's active-item action will attach.
 
 ### [AiToolPlugin](src/main/java/sc/fiji/llm/tools/AiToolPlugin.java)
 

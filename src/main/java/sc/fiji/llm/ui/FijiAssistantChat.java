@@ -679,14 +679,18 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 				final String displayName = supplier.getDisplayName();
 				final JMenuItem currentItem = new JMenuItem("Attach current " +
 					displayName, supplier.getIcon());
-				boolean currentItemAvailable = false;
+				ContextItem activeContextItem = null;
 				try {
-					currentItemAvailable = supplier.createActiveContextItem() != null;
+					activeContextItem = supplier.createActiveContextItem();
 				}
 				catch (Exception e) {
 				}
+				final boolean currentItemAvailable = activeContextItem != null;
 				currentItem.setEnabled(currentItemAvailable);
 				if (currentItemAvailable) {
+					currentItem.setToolTipText(
+						"Attach the most recently selected " + activeContextItem
+							.getTooltipText());
 					currentItem.addActionListener(e -> addCurrentContextItem(supplier));
 				}
 				else {
@@ -705,11 +709,15 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 				try {
 					final Set<ContextItem> available = supplier.listAvailable();
 					if (available == null || available.isEmpty()) {
+						chooseMenu.setToolTipText("No " + displayName +
+							" is currently available");
 						final JMenuItem none = new JMenuItem("(none)");
 						none.setEnabled(false);
 						chooseMenu.add(none);
 					}
 					else {
+						chooseMenu.setToolTipText("Attach the selected " + available
+							.iterator().next().getTooltipText());
 						for (final ContextItem item : available) {
 							final JMenuItem itemMenu = new JMenuItem(item.getLabel());
 							itemMenu.addActionListener(e -> addContextItem(item,
@@ -719,6 +727,8 @@ Be concise, patient, humble, and collaborative. Expect iteration and troubleshoo
 					}
 				}
 				catch (Exception e) {
+					chooseMenu.setToolTipText("Unable to list " + displayName +
+						" context items");
 					final JMenuItem unavailable = new JMenuItem("(not available)");
 					unavailable.setEnabled(false);
 					chooseMenu.add(unavailable);

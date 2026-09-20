@@ -127,6 +127,11 @@ public class ScriptContextItem extends AbstractContextItem {
 	}
 
 	@Override
+	public String getTooltipText() {
+		return "active script tab in the most recently selected editor window";
+	}
+
+	@Override
 	public JsonElement toJson() {
 		final JsonObject obj = new JsonObject();
 		obj.addProperty(ContextItem.TYPE_KEY, getType());

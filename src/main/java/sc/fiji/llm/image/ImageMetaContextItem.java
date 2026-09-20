@@ -133,6 +133,12 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	}
 
 	@Override
+	public String getTooltipText() {
+		return includesOverlays ?
+			"image, including its ROIs and overlays" : "image";
+	}
+
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;

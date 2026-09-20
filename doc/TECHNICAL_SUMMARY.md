@@ -115,6 +115,7 @@ This self-loopback MCP pattern allows the same tools to be accessed by external 
 - **`ScriptContextItem`** — script editor content with line range selection
 
 `ContextItem` supports merging (multiple items of the same type collapse into one) before being serialized into the user message payload.
+Context items may also provide tooltip text for the chat attachment menu.
 
 `ImageRenderingService` is the separate transient image payload layer. It copies the
 currently rendered `DatasetView` plane, preserving the active display LUT,

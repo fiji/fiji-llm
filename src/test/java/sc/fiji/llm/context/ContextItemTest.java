@@ -29,13 +29,14 @@
 
 package sc.fiji.llm.context;
 
-import java.util.Collections;
-import java.util.Objects;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.Objects;
+
 import org.junit.Test;
 
 import com.google.gson.JsonElement;
@@ -122,6 +123,23 @@ public class ContextItemTest {
 
 		// Then: it should be constructed from instance and tab indices
 		assertEquals("script:[0:1]", mergeKey);
+	}
+
+	@Test
+	public void testScriptContextItemTooltipText() {
+		final ScriptContextItem item = new ScriptContextItem("test.py", "content", 0,
+			1, "Python");
+
+		assertEquals("active script tab in the most recently selected editor window",
+			item.getTooltipText());
+	}
+
+	@Test
+	public void testDefaultContextItemTooltipTextUsesType() {
+		final ContextItem item = new TestContextItem("Script", "test.py",
+			"print('hello')");
+
+		assertEquals("script", item.getTooltipText());
 	}
 
 	@Test

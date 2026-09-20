@@ -30,6 +30,7 @@
 package sc.fiji.llm.context;
 
 import java.util.List;
+import java.util.Locale;
 
 import com.google.gson.JsonElement;
 
@@ -42,6 +43,15 @@ public interface ContextItem {
 	public String getType();
 
 	public String getLabel();
+
+	/**
+	 * Returns the target description used to build attachment menu tooltips.
+	 *
+	 * @return the target to attach, defaulting to the lower-case context type
+	 */
+	default String getTooltipText() {
+		return getType().toLowerCase(Locale.ROOT);
+	}
 
 	public JsonElement toJson();
 

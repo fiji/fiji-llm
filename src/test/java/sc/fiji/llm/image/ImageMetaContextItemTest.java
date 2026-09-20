@@ -69,6 +69,18 @@ public class ImageMetaContextItemTest {
 	}
 
 	@Test
+	public void testTooltipTextDescribesImageAnnotations() {
+		final ImageMetaContextItem plain = new ImageMetaContextItem("image", 7,
+			Collections.emptyList(), "UnsignedByteType", null, null, false);
+		final ImageMetaContextItem annotated = new ImageMetaContextItem("image", 7,
+			Collections.emptyList(), "UnsignedByteType", null, null, true);
+
+		assertEquals("image", plain.getTooltipText());
+		assertEquals("image, including its ROIs and overlays", annotated
+			.getTooltipText());
+	}
+
+	@Test
 	public void testRenderMetadataReportsAnnotations() {
 		final ImageRenderMetadata metadata = new ImageRenderMetadata("image", 7, 10,
 			20, 10, 20, Map.of("Z", 2L), 0, 1, "COMPOSITE", Collections.emptyList(),
