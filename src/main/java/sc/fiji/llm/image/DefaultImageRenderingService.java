@@ -45,6 +45,7 @@ import java.util.Optional;
 
 import javax.imageio.ImageIO;
 
+import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -62,7 +63,7 @@ import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import sc.fiji.llm.data.ImageJ1HelperService;
 
 /** Default ImageJ-backed implementation of {@link ImageRenderingService}. */
-@Plugin(type = Service.class)
+@Plugin(type = Service.class, priority = Priority.VERY_HIGH)
 public final class DefaultImageRenderingService extends AbstractService implements
 	ImageRenderingService
 {

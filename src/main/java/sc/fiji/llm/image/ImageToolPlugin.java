@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.image;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.scijava.plugin.Parameter;
@@ -39,6 +40,8 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.TextContent;
 import net.imagej.Dataset;
 import net.imagej.axis.AxisType;
 import net.imagej.display.DatasetView;
@@ -60,6 +63,9 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 	@Parameter
 	private ImageDisplayService imageDisplayService;
 
+	@Parameter
+	private ImageRenderingService imageRenderingService;
+
 	public ImageToolPlugin() {
 		super(ImageToolPlugin.class);
 	}
@@ -72,7 +78,8 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 	@Override
 	public String getUsage() {
 		return """
-The fiji_image_* tools query images currently open in Fiji.
+The fiji_image_* tools query images currently open in Fiji and can return a
+rendered image when requested.
 """;
 	}
 
@@ -135,6 +142,33 @@ The fiji_image_* tools query images currently open in Fiji.
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_image_details: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "For an open image specified by image id, return its rendered image content. fiji_image_list can be used to find image ids." }, name = "fiji_image_view")
+	public Content viewImage(@P("image_id") int imageId) {
+		try {
+			List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
+			if (displays == null || displays.isEmpty()) {
+				return TextContent.from(jsonError("No images are currently open"));
+			}
+			for (ImageDisplay display : displays) {
+				if (imageJ1HelperService.getImageId(display) != imageId) continue;
+				if (imageRenderingService == null) {
+					return TextContent.from(jsonError(
+						"Image rendering is not available"));
+				}
+				return imageRenderingService.render(display, new ImageRenderOptions())
+					.<Content>map(RenderedImageResult::getImageContent)
+					.orElseGet(() -> TextContent.from(jsonError(
+						"Could not render image with id: " + imageId)));
+			}
+			return TextContent.from(jsonError("No open image found with id: " +
+				imageId));
+		}
+		catch (IOException | RuntimeException e) {
+			return TextContent.from(jsonError("Failed to run fiji_image_view: " +
+				e.getMessage()));
 		}
 	}
 }

@@ -2,7 +2,7 @@
 name: fiji-mcp
 description: A dedicated assistant for interacting with a local Fiji/ImageJ installation through the available `fiji-mcp` tools.
 argument-hint: Describe your Fiji task, parameters, and desired output
-tools: [read/readFile, read/viewImage, web, 'fiji-mcp/*', todo]
+tools: [read/readFile, web, 'fiji-mcp/*', todo]
 ---
 
 ## Behavior
@@ -20,6 +20,9 @@ Use this agent to, when supported:
 - Open, select, inspect, and navigate images, windows, slices, channels, and frames.
 - Apply Fiji/ImageJ commands and workflows such as preprocessing, thresholding, segmentation, measurements, and ROI operations.
 - Inspect image properties, results, and analysis output.
+- Use `fiji_image_list` and `fiji_image_details` to identify an image, then
+	`fiji_image_view` when the client supports MCP image content and a rendered
+	image is needed.
 - Inspect visible AWT and Swing dialogs. When a UI action is explicitly
 	requested, read the dialog first and respond only with the exact observed
 	title and button using `fiji_ui_dialog_respond`.

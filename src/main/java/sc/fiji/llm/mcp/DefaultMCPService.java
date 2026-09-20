@@ -57,6 +57,10 @@ import org.scijava.service.Service;
 
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
@@ -73,6 +77,7 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonReferenceSchema;
 import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import io.modelcontextprotocol.json.McpJsonDefaults;
@@ -710,9 +715,11 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 						.arguments(args)
 						.build();
 					// Execute the tool and capture result
-					final String result = toolExecutor.execute(toolRequest, null);
+					final ToolExecutionResult result = toolExecutor.executeWithContext(
+						toolRequest, InvocationContext.builder().build());
 					return CallToolResult.builder()
-						.content(List.of(new McpSchema.TextContent(result)))
+						.content(convertToolResult(result))
+						.isError(result.isError())
 						.build();
 				} catch (final Exception e) {
 					logService.error("Error executing tool " + toolSpec.name(), e);
@@ -724,5 +731,26 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 				}
 			})
 			.build();
+	}
+
+	static List<McpSchema.Content> convertToolResult(
+		final ToolExecutionResult result)
+	{
+		final List<McpSchema.Content> contents = new ArrayList<>();
+		for (final Content content : result.resultContents()) {
+			if (content instanceof TextContent) {
+				contents.add(new McpSchema.TextContent(((TextContent) content).text()));
+			}
+			else if (content instanceof ImageContent) {
+				final ImageContent image = (ImageContent) content;
+				contents.add(new McpSchema.ImageContent(null, image.image().base64Data(),
+					image.image().mimeType()));
+			}
+			else {
+				throw new IllegalArgumentException("Unsupported tool result content: " +
+					content.getClass().getName());
+			}
+		}
+		return contents;
 	}
 }

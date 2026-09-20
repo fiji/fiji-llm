@@ -43,6 +43,7 @@ import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
@@ -53,7 +54,11 @@ import org.junit.Test;
 import org.scijava.Context;
 import org.scijava.prefs.PrefService;
 
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolProvider;
+import io.modelcontextprotocol.spec.McpSchema;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AiToolService;
@@ -228,6 +233,26 @@ public class DefaultMCPServiceTest {
 
 		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
 			.anyMatch(specification -> "fiji_image_list".equals(specification.name())));
+		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
+			.anyMatch(specification -> "fiji_image_view".equals(specification.name())));
+	}
+
+	@Test
+	public void testConvertsMultimodalToolResult() {
+		final ToolExecutionResult result = ToolExecutionResult.builder()
+			.resultContents(List.of(TextContent.from("image result"), ImageContent.from(
+				"AQID", "image/png")))
+			.build();
+
+		final List<McpSchema.Content> contents = DefaultMCPService
+			.convertToolResult(result);
+
+		assertEquals(2, contents.size());
+		assertTrue(contents.get(0) instanceof McpSchema.TextContent);
+		assertTrue(contents.get(1) instanceof McpSchema.ImageContent);
+		final McpSchema.ImageContent image = (McpSchema.ImageContent) contents.get(1);
+		assertEquals("AQID", image.data());
+		assertEquals("image/png", image.mimeType());
 	}
 
 	private void waitForServerState(final boolean expected)

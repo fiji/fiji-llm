@@ -21,6 +21,18 @@ live Fiji instance with the Script Editor and MCP tools available.
       and a `changes` object; verify those fields for command cases that open,
       close, or modify images or Results table metadata.
 
+## Image Content
+
+With at least one visible image open, use the MCP server as an external client
+would:
+
+1. Call `fiji_image_list` and select a returned `id`.
+2. Call `fiji_image_view` with that `image_id`.
+3. Verify that the result contains an MCP `image` content block with MIME type
+      `image/png` and non-empty base64 data.
+4. Verify that an unknown image id returns a useful text error instead of an
+      image block or a server failure.
+
 ## Tool Sequence and Common Checks
 
 Keep these tool calls explicit so that a regression run can be repeated in the

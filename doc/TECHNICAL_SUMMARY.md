@@ -68,7 +68,7 @@ Built-in tools include:
 - **`ImageJMacroToolPlugin`** — macro recorder integration, macro function discovery
 - **`CommandUseToolPlugin`** — ImageJ command discovery and execution with a lightweight before/after environment report
 - **`ScriptEditorToolPlugin`** — script editor interaction
-- **`ImageToolPlugin`** — active image metadata access
+- **`ImageToolPlugin`** — open image listing, metadata, and rendered image content
 - **`ResultsTableToolPlugin`** — read-only Results Table inspection
 - **`RoiManagerToolPlugin`** — read-only ROI Manager inspection
 - **`SystemInfoToolPlugin`** — read-only host, JVM, application version, and update-site inspection
@@ -103,7 +103,7 @@ status, names, and URLs.
 
 `DefaultMCPService` runs an **embedded Jetty HTTP server** (default port 9090) that exposes `AiToolPlugin` tools as a MCP server using `io.modelcontextprotocol.sdk` (`1.1.2`). A LangChain4j `McpClient` then connects back to this server over `StreamableHttpMcpTransport`, and the resulting `McpToolProvider` is injected into `AiServices`.
 
-This self-loopback MCP pattern allows the same tools to be accessed by external MCP-compatible clients (e.g., Claude Desktop) as well as the internal LangChain4j assistant.
+This self-loopback MCP pattern allows the same tools to be accessed by external MCP-compatible clients (e.g., Claude Desktop) as well as the internal LangChain4j assistant. The bridge preserves text and base64-backed image tool results as MCP content blocks; `fiji_image_view` returns PNG image content for external clients.
 
 ---
 

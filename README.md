@@ -91,6 +91,11 @@ All LLM tools in Fiji are accessed via an [MCP Server](https://en.wikipedia.org/
 
 Currently, the MCP server is tied to a running Fiji application - which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (note the default port 9090)
 
+The image namespace includes `fiji_image_list`, `fiji_image_details`, and
+`fiji_image_view`. The view tool accepts an `image_id` and returns the rendered
+image as an MCP `image` content block with PNG data, allowing compatible
+external clients to inspect the image directly.
+
 **Available Configuration**
 - **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`
 - **Start Manually**: Click "Start Server" in the Manage MCP Server dialog
@@ -271,7 +276,7 @@ When adding an `AiToolPlugin`:
 
 * **Keep descriptions at the right level.** Keep `getUsage()` as a short overview of the whole `fiji_<scope>_*` namespace and its basic workflow. Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description.
 
-* **Return valid JSON strings.** Tool methods return `String`, so serialize every success and error result as JSON. Use the shared helpers in [`AbstractAiToolPlugin`](src/main/java/sc/fiji/llm/tools/AbstractAiToolPlugin.java): `jsonProp("key", value).toString()` for a simple property, `stringProp("key", object)` for a named object result, and `jsonError(...)` for validation failures, unavailable state, and caught exceptions. Build larger responses with `JsonObject` and `JsonArray`; do not concatenate JSON by hand.
+* **Return structured results.** Text tools should return valid JSON strings for every success and error result, using the shared helpers in [`AbstractAiToolPlugin`](src/main/java/sc/fiji/llm/tools/AbstractAiToolPlugin.java). A multimodal tool may instead return LangChain4j `Content`, such as `ImageContent`; the MCP bridge preserves supported text and image content blocks for external clients.
 
 ### Integration Testing
 
