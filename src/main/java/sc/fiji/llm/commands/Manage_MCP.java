@@ -185,7 +185,7 @@ public class Manage_MCP extends DynamicCommand {
 		}
 
 		try {
-			mcpService.getToolProvider(); // This initializes the server
+			mcpService.startServer();
 			updateServerStatus();
 			uiService.showDialog("MCP Server started successfully on port " + port);
 		} catch (final Exception e) {

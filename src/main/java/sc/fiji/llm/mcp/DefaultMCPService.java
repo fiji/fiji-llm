@@ -61,11 +61,6 @@ import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.invocation.InvocationContext;
-import dev.langchain4j.mcp.McpToolProvider;
-import dev.langchain4j.mcp.client.DefaultMcpClient;
-import dev.langchain4j.mcp.client.McpClient;
-import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.model.chat.request.json.JsonAnyOfSchema;
 import dev.langchain4j.model.chat.request.json.JsonArraySchema;
 import dev.langchain4j.model.chat.request.json.JsonBooleanSchema;
@@ -79,7 +74,6 @@ import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
-import dev.langchain4j.service.tool.ToolProvider;
 import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
@@ -104,8 +98,7 @@ import sc.fiji.llm.tools.AiToolService;
  * Default implementation of MCPService.
  * <p>
  * Manages an MCP server running on localhost that exposes tools discovered by
- * AiToolService. Provides a ToolProvider wrapping the MCP client connection
- * for use with LangChain4j AiServices.
+ * AiToolService and makes them available to external MCP clients.
  * </p>
  */
 @Plugin(type = Service.class)
@@ -139,8 +132,6 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 	@Parameter
 	private AiToolService aiToolService;
 
-	private volatile ToolProvider toolProvider;
-	private volatile McpClient mcpClient;
 	private volatile Server jettyServer;
 	private volatile Thread serverThread;
 	private volatile int toolCount = 0;
@@ -150,7 +141,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 	private CountDownLatch serverReady;
 
 	@Override
-	public synchronized ToolProvider getToolProvider() {
+	public synchronized void startServer() {
 		if (disposed.get()) {
 			throw new IllegalStateException(
 				"MCPService has been disposed and cannot be reused");
@@ -162,17 +153,15 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			initializeServer();
 		}
 
-		if (toolProvider == null) {
+		if (!isServerRunning()) {
 			throw new IllegalStateException("MCP server is not available");
 		}
-
-		return toolProvider;
 	}
 
 	@Override
 	public boolean isServerRunning() {
 		final Server currentJettyServer = jettyServer;
-		return initialized.get() && toolProvider != null &&
+		return initialized.get() &&
 			serverThread != null && serverThread.isAlive() &&
 			currentJettyServer != null && currentJettyServer.isRunning();
 	}
@@ -231,17 +220,6 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			logService.error("Error while disposing MCPService", e);
 			Thread.currentThread().interrupt();
 		} finally {
-			final McpClient currentMcpClient = mcpClient;
-			mcpClient = null;
-			if (currentMcpClient != null) {
-				try {
-					currentMcpClient.close();
-				} catch (final Exception e) {
-					logService.warn("Error closing MCP client", e);
-				}
-			}
-
-			toolProvider = null;
 			initialized.set(false);
 			toolCount = 0;
 			jettyServer = null;
@@ -272,7 +250,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			serverThread.setName("MCP-Server-Thread");
 			serverThread.start();
 
-			// Wait for server to be ready before creating client (with timeout)
+			// Wait for server to be ready (with timeout)
 			logService.debug("Waiting for Fiji MCP server to be ready...");
 			final boolean serverStarted = serverReady.await(STARTUP_TIMEOUT.toMillis(),
 				TimeUnit.MILLISECONDS);
@@ -293,10 +271,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 					"Fiji MCP server failed to start for unknown reasons");
 			}
 
-			logService.debug("Fiji MCP server is ready, creating client...");
-
-			// Now that server is running, create the client and tool provider
-			createClientAndProvider(port);
+			logService.debug("Fiji MCP server is ready");
 
 			initialized.set(true);
 			logService.info("Fiji MCP server initialized successfully");
@@ -305,28 +280,6 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			logService.error("Failed to initialize Fiji MCP server", e);
 			throw new RuntimeException("Failed to initialize Fiji MCP server", e);
 		}
-	}
-
-	private void createClientAndProvider(final int port) {
-		if (toolProvider != null) {
-			return; // Already created
-		}
-
-		logService.debug("Creating Fiji MCP client and tool provider");
-		final McpTransport transport = StreamableHttpMcpTransport.builder()
-			.url("http://" + LOOPBACK_HOST + ":" + port + "/mcp")
-			.logRequests(false) // if you want to see the traffic in the log
-			.logResponses(false)
-			.build();
-		mcpClient = DefaultMcpClient.builder()
-			.key("FijiMCPClient")
-			.transport(transport)
-			.build();
-
-		toolProvider = McpToolProvider.builder()
-			.mcpClients(mcpClient)
-			.build();
-		logService.debug("Tool provider created successfully");
 	}
 
 	/**
@@ -442,7 +395,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 			if (serverReady != null) {
 				serverReady.countDown();
 			}
-			if (toolProvider != null && !disposed.get()) {
+			if (!disposed.get()) {
 				initialized.set(true);
 			}
 

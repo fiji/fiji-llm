@@ -32,7 +32,6 @@ package sc.fiji.llm.mcp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -57,7 +56,6 @@ import org.scijava.prefs.PrefService;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.service.tool.ToolExecutionResult;
-import dev.langchain4j.service.tool.ToolProvider;
 import io.modelcontextprotocol.spec.McpSchema;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.data.ImageJ1HelperService;
@@ -129,15 +127,12 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test
-	public void testGetToolProvider() {
+	public void testStartServer() {
 		// Given: a fresh MCPService
 		assertNotNull(mcpService);
 
-		// When: we request a ToolProvider
-		final ToolProvider toolProvider = mcpService.getToolProvider();
-
-		// Then: we should get a non-null ToolProvider
-		assertNotNull(toolProvider);
+		// When: we start the server
+		mcpService.startServer();
 
 		// And: the server should be running after initialization
 		assertTrue(mcpService.isServerRunning());
@@ -145,7 +140,7 @@ public class DefaultMCPServiceTest {
 
 	@Test
 	public void testServerRecoversAfterJettyStops() throws Exception {
-		final ToolProvider toolProvider = mcpService.getToolProvider();
+		mcpService.startServer();
 		final Field jettyServerField = DefaultMCPService.class
 			.getDeclaredField("jettyServer");
 		jettyServerField.setAccessible(true);
@@ -156,19 +151,19 @@ public class DefaultMCPServiceTest {
 		waitForServerState(false);
 		waitForServerState(true);
 
-		assertSame(toolProvider, mcpService.getToolProvider());
+		assertTrue(mcpService.isServerRunning());
 	}
 
 	@Test
 	public void testRejectsExternalOrigin() throws Exception {
-		mcpService.getToolProvider();
+		mcpService.startServer();
 
 		assertEquals(403, getMcpResponseCode("https://attacker.example"));
 	}
 
 	@Test
 	public void testAllowsLoopbackOrigin() throws Exception {
-		mcpService.getToolProvider();
+		mcpService.startServer();
 
 		assertTrue(getMcpResponseCode("http://127.0.0.1:" + testPort) != 403);
 	}
@@ -186,8 +181,7 @@ public class DefaultMCPServiceTest {
 	@Test
 	public void testDispose() {
 		// Given: a running MCPService
-		final ToolProvider toolProvider = mcpService.getToolProvider();
-		assertNotNull(toolProvider);
+		mcpService.startServer();
 		assertTrue(mcpService.isServerRunning());
 
 		// When: we dispose the service
@@ -198,29 +192,26 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test(expected = IllegalStateException.class)
-	public void testGetToolProviderAfterDispose() {
+	public void testStartServerAfterDispose() {
 		// Given: a disposed MCPService
-		mcpService.getToolProvider();
+		mcpService.startServer();
 		mcpService.dispose();
 
 		// When/Then: requesting a ToolProvider should throw an exception
-		mcpService.getToolProvider();
+		mcpService.startServer();
 	}
 
 	@Test
-	public void testToolProviderWithTools() {
+	public void testServerWithTools() {
 		// Given: an MCPService with available tools
 		assertNotNull(aiToolService);
 
-		// When: we get the ToolProvider
-		final ToolProvider toolProvider = mcpService.getToolProvider();
+		// When: we start the server
+		mcpService.startServer();
 
-		// Then: it should be non-null
-		assertNotNull(toolProvider);
-
-		// And: calling getToolProvider again should return the same provider
-		final ToolProvider toolProvider2 = mcpService.getToolProvider();
-		assertNotNull(toolProvider2);
+		// Then: the server should expose the discovered tools
+		assertTrue(mcpService.isServerRunning());
+		assertTrue(mcpService.getToolCount() > 0);
 	}
 
 	@Test

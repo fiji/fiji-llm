@@ -216,12 +216,6 @@
 			<version>${mcp-sdk.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>dev.langchain4j</groupId>
-			<artifactId>langchain4j-mcp</artifactId>
-			<version>${langchain4j.version}-beta23</version>
-		</dependency>
-
 		<!-- Jsoup for reading html -->
 		<dependency>
 			<groupId>org.jsoup</groupId>

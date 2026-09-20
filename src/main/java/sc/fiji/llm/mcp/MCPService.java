@@ -29,15 +29,13 @@
 
 package sc.fiji.llm.mcp;
 
-import dev.langchain4j.service.tool.ToolProvider;
 import net.imagej.ImageJService;
 
 /**
  * Service for managing MCP (Model Context Protocol) server integration.
  * <p>
  * This service exposes tools discovered by AiToolService through an MCP server
- * running on localhost, making them available to LangChain4j AiServices via a
- * ToolProvider interface.
+ * running on localhost, making them available to external MCP clients.
  * </p>
  */
 public interface MCPService extends ImageJService {
@@ -63,15 +61,12 @@ public interface MCPService extends ImageJService {
 	boolean DEFAULT_LAUNCH_ON_START = false;
 
 	/**
-	 * Gets the ToolProvider wrapping the MCP server connection.
+	 * Starts the MCP server if it is not already running.
 	 * <p>
-	 * This method lazy-initializes the MCP server on first call and returns a
-	 * ToolProvider that integrates with LangChain4j's AiServices.
+	 * This method lazy-initializes the MCP server on first call.
 	 * </p>
-	 *
-	 * @return a ToolProvider connected to the MCP server
 	 */
-	ToolProvider getToolProvider();
+	void startServer();
 
 	/**
 	 * Checks if the MCP server is currently running.
