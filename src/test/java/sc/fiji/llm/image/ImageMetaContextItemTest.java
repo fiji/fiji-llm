@@ -29,10 +29,12 @@
 
 package sc.fiji.llm.image;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -50,5 +52,30 @@ public class ImageMetaContextItemTest {
 		assertTrue(item.getImageContent().isPresent());
 		assertFalse(item.toJson().toString().contains("AQID"));
 		assertFalse(item.toJson().getAsJsonObject().has("image_content"));
+	}
+
+	@Test
+	public void testPlainAndAnnotatedItemsAreDistinct() {
+		final ImageMetaContextItem plain = new ImageMetaContextItem("image", 7,
+			Collections.emptyList(), "UnsignedByteType", null, null, false);
+		final ImageMetaContextItem annotated = new ImageMetaContextItem("image", 7,
+			Collections.emptyList(), "UnsignedByteType", null, null, true);
+
+		assertFalse(plain.equals(annotated));
+		assertEquals("plain", plain.toJson().getAsJsonObject().get("render_mode")
+			.getAsString());
+		assertEquals("annotated", annotated.toJson().getAsJsonObject().get(
+			"render_mode").getAsString());
+	}
+
+	@Test
+	public void testRenderMetadataReportsAnnotations() {
+		final ImageRenderMetadata metadata = new ImageRenderMetadata("image", 7, 10,
+			20, 10, 20, Map.of("Z", 2L), 0, 1, "COMPOSITE", Collections.emptyList(),
+			true, "ij.gui.Roi", true, 3, "annotated");
+
+		assertTrue(metadata.toJson().get("roi_included").getAsBoolean());
+		assertTrue(metadata.toJson().get("overlay_included").getAsBoolean());
+		assertEquals(3, metadata.toJson().get("overlay_count").getAsInt());
 	}
 }

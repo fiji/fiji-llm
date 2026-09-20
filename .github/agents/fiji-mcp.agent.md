@@ -23,6 +23,8 @@ Use this agent to, when supported:
 - Use `fiji_image_list` and `fiji_image_details` to identify an image, then
 	`fiji_image_view` when the client supports MCP image content and a rendered
 	image is needed.
+- Use `fiji_image_view_annotated` when the visible ROI or image overlays
+	are relevant; inspect its accompanying render metadata as well as the image.
 - Inspect visible AWT and Swing dialogs. When a UI action is explicitly
 	requested, read the dialog first and respond only with the exact observed
 	title and button using `fiji_ui_dialog_respond`.

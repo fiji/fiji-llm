@@ -42,7 +42,6 @@ import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import dev.langchain4j.data.message.ImageContent;
 import net.imagej.Dataset;
 import net.imagej.axis.AxisType;
 import net.imagej.display.DatasetView;
@@ -73,6 +72,10 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	@Override
 	public String getDisplayName() {
 		return "Image";
+	}
+
+	protected boolean includesOverlays() {
+		return false;
 	}
 
 	@Override
@@ -122,7 +125,7 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	 * Creates an {@link ImageMetaContextItem} from a Dataset. Extracts metadata
 	 * and creates a descriptive text for the LLM.
 	 */
-	private ImageMetaContextItem createImageContextItem(final ImageDisplay display) {
+	protected ImageMetaContextItem createImageContextItem(final ImageDisplay display) {
 		final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
 		if (datasetView == null) return null;
 		final Dataset dataset = datasetView.getData();
@@ -137,15 +140,19 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 			dataset);
 		final String pixelType = dataset.getType().getClass().getSimpleName();
 
+		final RenderedImageResult rendered = renderImage(display);
 		return new ImageMetaContextItem(imageTitle, id, dimensions, pixelType,
-			renderImage(display));
+			rendered == null ? null : rendered.getImageContent(), rendered == null ? null :
+			rendered.getMetadata(), includesOverlays());
 	}
 
-	private ImageContent renderImage(final ImageDisplay display) {
+	private RenderedImageResult renderImage(final ImageDisplay display) {
 		if (imageRenderingService == null) return null;
 		try {
-			return imageRenderingService.render(display, new ImageRenderOptions()).map(
-				RenderedImageResult::getImageContent).orElse(null);
+			final ImageRenderOptions options = includesOverlays() ? new ImageRenderOptions(
+				ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true) :
+				new ImageRenderOptions();
+			return imageRenderingService.render(display, options).orElse(null);
 		}
 		catch (final IOException e) {
 			return null;

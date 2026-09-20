@@ -31,6 +31,7 @@ package sc.fiji.llm.image;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -79,7 +80,8 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 	public String getUsage() {
 		return """
 The fiji_image_* tools query images currently open in Fiji and can return a
-rendered image when requested.
+rendered image when requested. The fiji_image_view_annotated tool includes
+the visible active ROI and image overlays in the rendered image when available.
 """;
 	}
 
@@ -147,28 +149,48 @@ rendered image when requested.
 
 	@Tool(value = { "For an open image specified by image id, return its rendered image content. fiji_image_list can be used to find image ids." }, name = "fiji_image_view")
 	public Content viewImage(@P("image_id") int imageId) {
+		return renderImage(imageId, new ImageRenderOptions(), false,
+			"fiji_image_view").get(0);
+	}
+
+	@Tool(value = { "For an open image specified by image id, return its rendered image content with any visible annotations (e.g. ROIs) included. fiji_image_list can be used to find image ids." }, name = "fiji_image_view_annotated")
+	public List<Content> viewImageAnnotated(@P("image_id") int imageId) {
+		return renderImage(imageId, new ImageRenderOptions(
+			ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true), true,
+			"fiji_image_view_annotated");
+	}
+
+	private List<Content> renderImage(final int imageId,
+		final ImageRenderOptions options, final boolean includeMetadata,
+		final String toolName)
+	{
 		try {
-			List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-			if (displays == null || displays.isEmpty()) {
-				return TextContent.from(jsonError("No images are currently open"));
-			}
+			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
+			if (displays == null || displays.isEmpty()) return textContents(
+				jsonError("No images are currently open"));
 			for (ImageDisplay display : displays) {
 				if (imageJ1HelperService.getImageId(display) != imageId) continue;
-				if (imageRenderingService == null) {
-					return TextContent.from(jsonError(
-						"Image rendering is not available"));
-				}
-				return imageRenderingService.render(display, new ImageRenderOptions())
-					.<Content>map(RenderedImageResult::getImageContent)
-					.orElseGet(() -> TextContent.from(jsonError(
-						"Could not render image with id: " + imageId)));
+				if (imageRenderingService == null) return textContents(
+					jsonError("Image rendering is not available"));
+				final Optional<RenderedImageResult> rendered = imageRenderingService
+					.render(display, options);
+				if (rendered.isEmpty()) return textContents(jsonError(
+					"Could not render image with id: " + imageId));
+				if (!includeMetadata) return List.of(rendered.get().getImageContent());
+				final JsonObject metadata = new JsonObject();
+				metadata.add("render_metadata", rendered.get().getMetadata().toJson());
+				return List.of(TextContent.from(metadata.toString()), rendered.get()
+					.getImageContent());
 			}
-			return TextContent.from(jsonError("No open image found with id: " +
-				imageId));
+			return textContents(jsonError("No open image found with id: " + imageId));
 		}
 		catch (IOException | RuntimeException e) {
-			return TextContent.from(jsonError("Failed to run fiji_image_view: " +
-				e.getMessage()));
+			return textContents(jsonError("Failed to run " + toolName + ": " + e
+				.getMessage()));
 		}
+	}
+
+	private static List<Content> textContents(final String text) {
+		return List.of(TextContent.from(text));
 	}
 }

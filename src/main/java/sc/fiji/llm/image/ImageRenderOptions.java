@@ -36,6 +36,7 @@ public final class ImageRenderOptions {
 
 	private final int maxDimension;
 	private final boolean includeRoi;
+	private final boolean includeOverlays;
 
 	/** Creates options using the default bound and without an ROI. */
 	public ImageRenderOptions() {
@@ -49,11 +50,25 @@ public final class ImageRenderOptions {
 	 * @param includeRoi whether the active ImageJ ROI should be drawn into it
 	 */
 	public ImageRenderOptions(final int maxDimension, final boolean includeRoi) {
+		this(maxDimension, includeRoi, false);
+	}
+
+	/**
+	 * Creates rendering options.
+	 *
+	 * @param maxDimension the maximum width or height of the PNG
+	 * @param includeRoi whether the active ImageJ ROI should be drawn into it
+	 * @param includeOverlays whether visible image overlays should be included
+	 */
+	public ImageRenderOptions(final int maxDimension, final boolean includeRoi,
+		final boolean includeOverlays)
+	{
 		if (maxDimension < 1) {
 			throw new IllegalArgumentException("maxDimension must be positive");
 		}
 		this.maxDimension = maxDimension;
 		this.includeRoi = includeRoi;
+		this.includeOverlays = includeOverlays;
 	}
 
 	public int getMaxDimension() {
@@ -62,5 +77,9 @@ public final class ImageRenderOptions {
 
 	public boolean isIncludeRoi() {
 		return includeRoi;
+	}
+
+	public boolean isIncludeOverlays() {
+		return includeOverlays;
 	}
 }

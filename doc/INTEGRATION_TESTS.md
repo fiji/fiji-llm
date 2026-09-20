@@ -30,7 +30,12 @@ would:
 2. Call `fiji_image_view` with that `image_id`.
 3. Verify that the result contains an MCP `image` content block with MIME type
       `image/png` and non-empty base64 data.
-4. Verify that an unknown image id returns a useful text error instead of an
+4. Add a visible ROI or image overlay, then call
+      `fiji_image_view_annotated` with the same `image_id`.
+5. Verify that the annotated result contains a text metadata content block with
+      `render_mode`, `roi_included`, and `overlay_included`, as well as the MCP
+      `image` content block.
+6. Verify that an unknown image id returns a useful text error instead of an
       image block or a server failure.
 
 ## Tool Sequence and Common Checks

@@ -35,6 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.JsonObject;
+
 import net.imglib2.display.ColorTable;
 
 /** Metadata describing the display state used to render an image. */
@@ -53,6 +55,9 @@ public final class ImageRenderMetadata {
 	private final List<ChannelMetadata> channels;
 	private final boolean roiIncluded;
 	private final String roiType;
+	private final boolean overlayIncluded;
+	private final int overlayCount;
+	private final String renderMode;
 
 	public ImageRenderMetadata(final String title, final int imageId,
 		final int sourceWidth, final int sourceHeight, final int renderedWidth,
@@ -60,6 +65,19 @@ public final class ImageRenderMetadata {
 		final long channelIndex, final int channelCount, final String colorMode,
 		final List<ChannelMetadata> channels, final boolean roiIncluded,
 		final String roiType)
+	{
+		this(title, imageId, sourceWidth, sourceHeight, renderedWidth,
+			renderedHeight, planePosition, channelIndex, channelCount, colorMode,
+			channels, roiIncluded, roiType, false, 0, "plain");
+	}
+
+	public ImageRenderMetadata(final String title, final int imageId,
+		final int sourceWidth, final int sourceHeight, final int renderedWidth,
+		final int renderedHeight, final Map<String, Long> planePosition,
+		final long channelIndex, final int channelCount, final String colorMode,
+		final List<ChannelMetadata> channels, final boolean roiIncluded,
+		final String roiType, final boolean overlayIncluded, final int overlayCount,
+		final String renderMode)
 	{
 		this.title = title == null ? "" : title;
 		this.imageId = imageId;
@@ -75,6 +93,9 @@ public final class ImageRenderMetadata {
 		this.channels = Collections.unmodifiableList(new ArrayList<>(channels));
 		this.roiIncluded = roiIncluded;
 		this.roiType = roiType == null ? "" : roiType;
+		this.overlayIncluded = overlayIncluded;
+		this.overlayCount = overlayCount;
+		this.renderMode = renderMode == null ? "plain" : renderMode;
 	}
 
 	public String getTitle() {
@@ -127,6 +148,43 @@ public final class ImageRenderMetadata {
 
 	public String getRoiType() {
 		return roiType;
+	}
+
+	public boolean isOverlayIncluded() {
+		return overlayIncluded;
+	}
+
+	public int getOverlayCount() {
+		return overlayCount;
+	}
+
+	public String getRenderMode() {
+		return renderMode;
+	}
+
+	/** Returns a concise JSON description of the rendered display state. */
+	public JsonObject toJson() {
+		final JsonObject result = new JsonObject();
+		result.addProperty("title", title);
+		result.addProperty("image_id", imageId);
+		result.addProperty("render_mode", renderMode);
+		result.addProperty("source_width", sourceWidth);
+		result.addProperty("source_height", sourceHeight);
+		result.addProperty("rendered_width", renderedWidth);
+		result.addProperty("rendered_height", renderedHeight);
+		final JsonObject position = new JsonObject();
+		for (final Map.Entry<String, Long> entry : planePosition.entrySet()) {
+			position.addProperty(entry.getKey(), entry.getValue());
+		}
+		result.add("plane_position", position);
+		result.addProperty("channel_index", channelIndex);
+		result.addProperty("channel_count", channelCount);
+		result.addProperty("color_mode", colorMode);
+		result.addProperty("roi_included", roiIncluded);
+		if (!roiType.isEmpty()) result.addProperty("roi_type", roiType);
+		result.addProperty("overlay_included", overlayIncluded);
+		result.addProperty("overlay_count", overlayCount);
+		return result;
 	}
 
 	/** Display range and LUT metadata for one displayed channel. */

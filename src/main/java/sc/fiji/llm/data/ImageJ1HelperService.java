@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.data;
 
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -129,6 +130,35 @@ public final class ImageJ1HelperService extends AbstractService implements
 		}
 	}
 
+	public Optional<BufferedImage> getFlattenedImage(final ImageDisplay display) {
+		if (display == null || legacyService == null || !legacyService.isActive()) {
+			return Optional.empty();
+		}
+		try {
+			final var imageMap = legacyService.getImageMap();
+			if (imageMap == null) return Optional.empty();
+			final var imagePlus = imageMap.lookupImagePlus(display);
+			if (imagePlus == null) return Optional.empty();
+			final Object flattened = invoke(imagePlus, "flatten");
+			final Object bufferedImage = invoke(flattened, "getBufferedImage");
+			return bufferedImage instanceof BufferedImage ? Optional.of((BufferedImage)
+				bufferedImage) : Optional.empty();
+		}
+		catch (final RuntimeException e) {
+			return Optional.empty();
+		}
+	}
+
+	public int getOverlayCount(final ImageDisplay display) {
+		final Object overlay = getLegacyImageValue(display, "getOverlay");
+		final Object size = invoke(overlay, "size");
+		return size instanceof Number ? ((Number) size).intValue() : 0;
+	}
+
+	public boolean isOverlayHidden(final ImageDisplay display) {
+		return Boolean.TRUE.equals(getLegacyImageValue(display, "getHideOverlay"));
+	}
+
 	public Object getResultsTable() {
 		return invokeStatic("ij.measure.ResultsTable", "getResultsTable");
 	}
@@ -178,6 +208,7 @@ public final class ImageJ1HelperService extends AbstractService implements
 	private static Object invoke(final Object target, final String methodName,
 		final Object... args)
 	{
+		if (target == null) return null;
 		try {
 			final Class<?>[] parameterTypes = new Class<?>[args.length];
 			for (int i = 0; i < args.length; i++) parameterTypes[i] = args[i].getClass();
@@ -185,6 +216,22 @@ public final class ImageJ1HelperService extends AbstractService implements
 			return method.invoke(target, args);
 		}
 		catch (final ReflectiveOperationException | LinkageError e) {
+			return null;
+		}
+	}
+
+	private Object getLegacyImageValue(final ImageDisplay display,
+		final String methodName)
+	{
+		if (display == null || legacyService == null || !legacyService.isActive()) {
+			return null;
+		}
+		try {
+			final var imageMap = legacyService.getImageMap();
+			if (imageMap == null) return null;
+			return invoke(imageMap.lookupImagePlus(display), methodName);
+		}
+		catch (final RuntimeException e) {
 			return null;
 		}
 	}

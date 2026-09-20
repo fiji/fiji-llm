@@ -91,10 +91,14 @@ All LLM tools in Fiji are accessed via an [MCP Server](https://en.wikipedia.org/
 
 Currently, the MCP server is tied to a running Fiji application - which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (note the default port 9090)
 
-The image namespace includes `fiji_image_list`, `fiji_image_details`, and
-`fiji_image_view`. The view tool accepts an `image_id` and returns the rendered
-image as an MCP `image` content block with PNG data, allowing compatible
-external clients to inspect the image directly.
+The image namespace includes `fiji_image_list`, `fiji_image_details`,
+`fiji_image_view`, and `fiji_image_view_annotated`. The view tools accept an
+`image_id` and return the rendered image as an MCP `image` content block with
+PNG data, allowing compatible external clients to inspect the image directly.
+`fiji_image_view_annotated` also includes visible ROIs and image overlays
+when available, plus a text content block describing the rendered display
+state. The Fiji chat attachment menu provides matching plain-image and image-
+with-overlays choices.
 
 **Available Configuration**
 - **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`

@@ -54,6 +54,8 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	private final List<Dimension> dimensions;
 	private final String pixelType;
 	private final ImageContent imageContent;
+	private final ImageRenderMetadata renderMetadata;
+	private final boolean includesOverlays;
 
 	/**
 	 * Creates an image context item with detailed metadata.
@@ -83,13 +85,23 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	public ImageMetaContextItem(String imageName, int imageId,
 		List<Dimension> dimensions, String pixelType, ImageContent imageContent)
 	{
-		super("Image", imageName);
+		this(imageName, imageId, dimensions, pixelType, imageContent, null, false);
+	}
+
+	/** Creates an image context item with render provenance. */
+	public ImageMetaContextItem(String imageName, int imageId,
+		List<Dimension> dimensions, String pixelType, ImageContent imageContent,
+		ImageRenderMetadata renderMetadata, boolean includesOverlays)
+	{
+		super("Image", includesOverlays ? imageName + " + overlays" : imageName);
 		this.imageTitle = imageName;
 		this.imageId = imageId;
 		this.dimensions = dimensions != null ? Collections.unmodifiableList(dimensions)
 			: Collections.emptyList();
 		this.pixelType = pixelType != null ? pixelType : "";
 		this.imageContent = imageContent;
+		this.renderMetadata = renderMetadata;
+		this.includesOverlays = includesOverlays;
 	}
 
 	public String getTitle() {
@@ -112,6 +124,14 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		return Optional.ofNullable(imageContent);
 	}
 
+	public Optional<ImageRenderMetadata> getRenderMetadata() {
+		return Optional.ofNullable(renderMetadata);
+	}
+
+	public boolean includesOverlays() {
+		return includesOverlays;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -122,12 +142,13 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		}
 		final ImageMetaContextItem other = (ImageMetaContextItem) obj;
 		return Objects.equals(imageTitle, other.imageTitle) && (imageId == other.imageId)
-			&& Objects.equals( getType(), other.getType());
+			&& Objects.equals(getType(), other.getType()) && includesOverlays == other
+				.includesOverlays;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getType(), imageTitle);
+		return Objects.hash(getType(), imageTitle, imageId, includesOverlays);
 	}
 
 	@Override
@@ -136,6 +157,7 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		obj.addProperty("type", getType());
 		obj.addProperty("title", imageTitle);
 		obj.addProperty("id", imageId);
+		obj.addProperty("render_mode", includesOverlays ? "annotated" : "plain");
 
 		if (!dimensions.isEmpty()) {
 			final JsonArray dimensionsArray = new JsonArray();
@@ -151,6 +173,8 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		if (!pixelType.isEmpty()) {
 			obj.addProperty("pixel_type", pixelType);
 		}
+
+		if (renderMetadata != null) obj.add("render_metadata", renderMetadata.toJson());
 
 		return obj;
 	}

@@ -103,7 +103,7 @@ status, names, and URLs.
 
 `DefaultMCPService` runs an **embedded Jetty HTTP server** (default port 9090) that exposes `AiToolPlugin` tools as a MCP server using `io.modelcontextprotocol.sdk` (`1.1.2`). A LangChain4j `McpClient` then connects back to this server over `StreamableHttpMcpTransport`, and the resulting `McpToolProvider` is injected into `AiServices`.
 
-This self-loopback MCP pattern allows the same tools to be accessed by external MCP-compatible clients (e.g., Claude Desktop) as well as the internal LangChain4j assistant. The bridge preserves text and base64-backed image tool results as MCP content blocks; `fiji_image_view` returns PNG image content for external clients.
+This self-loopback MCP pattern allows the same tools to be accessed by external MCP-compatible clients (e.g., Claude Desktop) as well as the internal LangChain4j assistant. The bridge preserves text and base64-backed image tool results as MCP content blocks; `fiji_image_view` returns plain PNG image content, while `fiji_image_view_annotated` returns PNG image content plus structured render metadata for visible ROI and overlay state.
 
 ---
 
