@@ -30,8 +30,13 @@
 package sc.fiji.llm.chat;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.util.List;
 
 import org.junit.Test;
+
+import com.google.gson.Gson;
 
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
@@ -49,5 +54,15 @@ public class ChatMessageConverterTest {
 
 		assertEquals("USER", serialized.getType());
 		assertEquals("Describe this image", serialized.getContent());
+		final SerializedConversation conversation = new SerializedConversation();
+		conversation.setName("test");
+		conversation.setSystemMessage("system");
+		final SerializedConversation.SerializedConversationMessage serializedMessage =
+			new SerializedConversation.SerializedConversationMessage();
+		serializedMessage.setDisplayMessage("Describe this image");
+		serializedMessage.setMemoryMessage(serialized);
+		conversation.setMessages(List.of(serializedMessage));
+
+		assertFalse(new Gson().toJson(conversation).contains("AQID"));
 	}
 }

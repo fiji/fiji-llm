@@ -320,6 +320,8 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 		TokenCountEstimator
 	{
 
+		private static final int IMAGE_TOKEN_ESTIMATE = 85;
+
 		@Override
 		public int estimateTokenCountInText(String text) {
 			return text.length() / 4;
@@ -363,8 +365,9 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 						.text());
 				}
 				else if (content instanceof ImageContent) {
-					// Image token costs vary by model and are not represented by this
-					// text-based estimator.
+					// Ollama does not expose a generic image-token estimator. Reserve a
+					// fixed allowance without treating the base64 transport as text.
+					tokenCount += IMAGE_TOKEN_ESTIMATE;
 				}
 				else {
 					throw new IllegalArgumentException("Unknown content type: " +

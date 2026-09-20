@@ -79,13 +79,17 @@ public class ProviderVisionSupportTest {
 
 	@Test
 	public void testOllamaTokenEstimatorSupportsImageContent() {
+		final UserMessage textOnlyMessage = UserMessage.builder().addContent(
+			new TextContent("Describe this image")).build();
 		final UserMessage message = UserMessage.builder().addContent(new TextContent(
 			"Describe this image")).addContent(ImageContent.from("AQID",
 				"image/png")).build();
 
 		final int tokenCount = new AbstractOllamaProvider.OllamaTokenCountEstimator()
 			.estimateTokenCountInMessage(message);
+		final int textOnlyTokenCount = new AbstractOllamaProvider.OllamaTokenCountEstimator()
+			.estimateTokenCountInMessage(textOnlyMessage);
 
-		assertTrue(tokenCount > 0);
+		assertTrue(tokenCount > textOnlyTokenCount);
 	}
 }
