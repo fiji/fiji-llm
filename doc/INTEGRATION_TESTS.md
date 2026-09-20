@@ -63,6 +63,28 @@ same order:
       `fiji_ui_dialog_respond` with the exact observed title and button, then
       call `fiji_ui_dialogs_read` again to verify the resulting state.
 
+## UI Inspection and Screenshots
+
+With Fiji showing at least one ordinary AWT or Swing window:
+
+1. Call `fiji_ui_windows_read` and verify visible windows include their title,
+      class, type, bounds, active state, and modality metadata.
+2. Call `fiji_ui_controls_read` with one exact window title and verify that
+      supported labels, buttons, text fields, checkboxes, choices, combo boxes, and
+      menu entries include roles and state metadata.
+3. Call `fiji_ui_screenshot` with `activate_and_restore: false` and verify the
+      result contains JSON metadata plus an MCP `image` content block with PNG
+      data. Screenshots use the current screen pixels, so another visible window
+      may overlap or occlude the requested window or component.
+4. Call it again with `activate_and_restore: true` for a non-destructive window
+      and verify that the metadata reports the requested activation and whether
+      focus restoration succeeded. Activation and focus restoration are best
+      effort and do not guarantee an unobstructed capture or successful focus
+      restoration.
+5. Use a returned showing component path to capture a component crop, and
+      verify that a hidden or ambiguous target returns a text error rather than an
+      image block.
+
 ## Scripts
 
 Run these cases with at least one supported Script Editor language used by the

@@ -73,7 +73,7 @@ Built-in tools include:
 - **`RoiManagerToolPlugin`** — read-only ROI Manager inspection
 - **`SystemInfoToolPlugin`** — read-only host, JVM, application version, and update-site inspection
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
-- **`UiToolPlugin`** — visible AWT and Swing dialog inspection and exact button responses
+- **`UiToolPlugin`** — visible AWT and Swing window/control inspection, screenshots, dialog inspection, and exact button responses
 - **`ScriptExecutionService`** — shared Script Editor execution, timeout handling, state snapshots, and dialog-aware run status for scripts and `.ijm` macros
 
 `.ijm` macros are executed only by calling `TextEditor.runText()` on the active tab in a visible Script Editor. `fiji_script_run` rejects active `.ijm` tabs and directs callers to `fiji_macro_run`. Script and macro runs return one of `success`, `finished_with_errors`, `blocked_by_dialog`, `timed_out`, or `infrastructure_error`; the timeout result distinguishes the requested timeout from the actual termination state via `timeout_requested`, `execution_terminated`, `termination_status`, and `termination_failure`, so callers can detect when the Script Editor refused or failed to terminate the task. A blocked script or macro run remains addressable by its `run_id` through the matching status tool, `fiji_script_run_status` or `fiji_macro_run_status`, which are read-only and direct callers to `fiji_ui_dialog_respond` for the intentional UI action.
@@ -81,6 +81,16 @@ Built-in tools include:
 `fiji_macro_recorder_state` is a read-only snapshot of the current recorder,
 including whether it is open, whether it is recording, its script mode, and the
 current buffer text.
+
+`fiji_ui_windows_read` and `fiji_ui_controls_read` inspect visible Java-owned
+AWT and Swing UI state on the event-dispatch thread. Control paths are snapshot
+selectors and should be re-read before any future state-changing UI action.
+`fiji_ui_screenshot` captures the current screen pixels for a visible window or
+showing component as an MCP image content block. Another window may overlap or
+occlude the target, and native UI is not guaranteed to be captured semantically
+or visually. `activate_and_restore` requests activation and focus restoration,
+but both are best effort and do not guarantee an unobstructed capture or
+successful restoration; inspect the returned metadata for the actual result.
 
 `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags, ImageJ/SciJava log deltas, and run-scoped ConsoleService stdout/stderr. Script execution also includes captured stderr in its `errors` field. Image pixels are never copied into the report.
 

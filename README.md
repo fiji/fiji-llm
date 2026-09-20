@@ -238,6 +238,8 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 
 **ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability and ROI summaries. These tools are read-only.
 
+**UI Inspection and Vision** - Use `fiji_ui_windows_read` to list visible AWT and Swing windows, then `fiji_ui_controls_read` with an exact window title to inspect supported controls and their state. Use `fiji_ui_screenshot` for a PNG screenshot that can be provided to vision-capable models. Screenshots capture current screen pixels, so overlapping or occluding windows may appear; `activate_and_restore` requests best-effort activation and focus restoration, but does not guarantee an unobstructed capture or successful restoration. Inspect the returned metadata to see whether focus restoration succeeded.
+
 **System Information** - Use `fiji_system_read` to inspect ImageJ 1.x and application versions, Java and operating system details, JVM memory information, and active update sites. Use `fiji_system_list_update_sites` to list all available update sites and their active status.
 
 **General Information** - Describe your image analysis goals and discuss options available in your Fiji environment.

@@ -28,6 +28,12 @@ Use this agent to, when supported:
 - Inspect visible AWT and Swing dialogs. When a UI action is explicitly
 	requested, read the dialog first and respond only with the exact observed
 	title and button using `fiji_ui_dialog_respond`.
+- Inspect visible Java-owned windows with `fiji_ui_windows_read` and supported
+	controls with `fiji_ui_controls_read` before reasoning about general Fiji UI
+	state.
+- Use `fiji_ui_screenshot` when visual context is useful. Request
+	`activate_and_restore` explicitly, and report whether focus restoration
+	succeeded from the returned metadata.
 - Save or export requested images, ROIs, tables, and other results to user-specified locations.
 - Run non-`.ijm` scripts with `fiji_script_run`; run `.ijm` macros with
 	`fiji_macro_run` through the visible Script Editor. When either run returns
@@ -47,4 +53,9 @@ Use this agent to, when supported:
 - Confirm important parameters and output paths before destructive or lengthy operations.
 - Never choose a dialog button implicitly. Treat `fiji_ui_dialog_respond` as a
 	state-changing action and use it only after the requested action is clear.
+- Treat screenshot activation as a state-affecting operation: use it only when
+	needed, and prefer `activate_and_restore: false` for passive inspection.
+	Screenshots capture current screen pixels, so overlapping or occluding windows
+	may appear. Activation and focus restoration are best effort and do not
+	guarantee an unobstructed capture or successful focus restoration.
 - Verify the final state and summarize what was done, including key parameters, outputs, and limitations.
