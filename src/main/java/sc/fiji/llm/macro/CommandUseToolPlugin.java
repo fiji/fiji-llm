@@ -104,7 +104,7 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 """;
 	}
 
-	@Tool(value = { "Execute a command using its full menu path and return its status, before/after environment impact, and ImageJ/SciJava logs produced by this command. Use fiji_command_search to find a command's menu path." },
+	@Tool(value = { "Execute a command using its full menu path. This tool does not select a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and produced log output. Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
 	public String runCommand(@P("menu_path") String menuPath) {
 		ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = null;
