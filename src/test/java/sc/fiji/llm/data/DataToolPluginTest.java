@@ -68,6 +68,37 @@ public class DataToolPluginTest {
 		assertTrue(json.get("present").getAsBoolean());
 		assertEquals(1, json.get("row_count").getAsInt());
 		assertTrue(json.get("columns").getAsJsonArray().size() >= 2);
+		assertEquals(42.0, json.getAsJsonArray("rows").get(0).getAsJsonObject()
+			.get("Area").getAsDouble(), 0.0);
+	}
+
+	@Test
+	public void testResultsTableToolPreservesLabelsAndStringValues() throws Exception {
+		createResultsTableWithLabelAndText();
+		final ResultsTableToolPlugin plugin = new ResultsTableToolPlugin();
+		setImageJ1HelperService(plugin, context.getService(ImageJ1HelperService.class));
+		final JsonObject json = JsonParser.parseString(plugin.readResultsTable())
+			.getAsJsonObject();
+
+		final JsonObject row = json.getAsJsonArray("rows").get(0).getAsJsonObject();
+		assertEquals("sample-1", row.get("Label").getAsString());
+		assertEquals(42.0, row.get("Mean Intensity").getAsDouble(), 0.0);
+		assertEquals("ok", row.get("Comment").getAsString());
+	}
+
+	@Test
+	public void testResultsTableToolReportsEmptyTableAsAbsent() throws Exception {
+		final Object table = invokeStatic("ij.measure.ResultsTable", "getResultsTable");
+		if (table == null) return;
+		invokeMethod(table, "reset");
+
+		final ResultsTableToolPlugin plugin = new ResultsTableToolPlugin();
+		setImageJ1HelperService(plugin, context.getService(ImageJ1HelperService.class));
+		final JsonObject json = JsonParser.parseString(plugin.readResultsTable())
+			.getAsJsonObject();
+
+		assertTrue(!json.get("present").getAsBoolean());
+		assertEquals(0, json.get("row_count").getAsInt());
 	}
 
 	@Test
@@ -138,7 +169,18 @@ public class DataToolPluginTest {
 		invokeMethod(table, "reset");
 		invokeMethod(table, "incrementCounter");
 		invokeMethod(table, "addValue", new Object[] { "Area", 42.0 });
-		invokeMethod(table, "addValue", new Object[] { "Mean", 11.0 });
+		invokeMethod(table, "addValue", new Object[] { "Mean Intensity", 11.0 });
+		return table;
+	}
+
+	private static Object createResultsTableWithLabelAndText() throws Exception {
+		final Object table = invokeStatic("ij.measure.ResultsTable", "getResultsTable");
+		if (table == null) return null;
+		invokeMethod(table, "reset");
+		invokeMethod(table, "incrementCounter");
+		invokeMethod(table, "addLabel", new Object[] { "sample-1" });
+		invokeMethod(table, "addValue", new Object[] { "Mean Intensity", 42.0 });
+		invokeMethod(table, "addValue", new Object[] { "Comment", "ok" });
 		return table;
 	}
 

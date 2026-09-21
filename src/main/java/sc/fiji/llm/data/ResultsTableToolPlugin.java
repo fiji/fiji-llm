@@ -29,13 +29,17 @@
 
 package sc.fiji.llm.data;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
@@ -64,11 +68,11 @@ The fiji_results_* tools enable interaction with the ImageJ Results Table.
 """;
 	}
 
-	@Tool(value = { "Read the current Results Table state, including whether a table is present, and if so the headers, row count, and row values." }, name = "fiji_results_read")
+	@Tool(value = { "Read the current Results Table state, including whether a table is present, its actual headings, row count, row labels, numeric values, and text values." }, name = "fiji_results_read")
 	public String readResultsTable() {
 		try {
 			final Object table = imageJ1HelperService == null ? null : imageJ1HelperService.getResultsTable();
-			if (table == null) {
+			if (table == null || !imageJ1HelperService.getResultsTableState().isPresent()) {
 				final JsonObject empty = new JsonObject();
 				empty.addProperty("present", false);
 				empty.addProperty("row_count", 0);
@@ -83,12 +87,10 @@ The fiji_results_* tools enable interaction with the ImageJ Results Table.
 			result.addProperty("title", "Results");
 			result.addProperty("row_count", asInt(invoke(table, "getCounter")));
 
-			final String headings = asString(invoke(table, "getColumnHeadings"));
+			final String[] headings = asStringArray(invoke(table, "getHeadings"));
 			final JsonArray columns = new JsonArray();
-			if (headings != null && !headings.isBlank()) {
-				for (final String heading : headings.split("\\s+")) {
-					if (!heading.isBlank()) columns.add(heading);
-				}
+			for (final String heading : headings) {
+				if (heading != null && !heading.isBlank()) columns.add(heading);
 			}
 			result.add("columns", columns);
 			result.addProperty("column_count", columns.size());
@@ -99,8 +101,7 @@ The fiji_results_* tools enable interaction with the ImageJ Results Table.
 				final JsonObject row = new JsonObject();
 				for (int i = 0; i < columns.size(); i++) {
 					final String key = columns.get(i).getAsString();
-					final double value = asDouble(invoke(table, "getValue", key, rowIndex));
-					row.addProperty(key, value);
+					row.add(key, readCell(table, key, rowIndex));
 				}
 				rows.add(row);
 			}
@@ -146,12 +147,33 @@ The fiji_results_* tools enable interaction with the ImageJ Results Table.
 		return method.invoke(target, args);
 	}
 
-	private static int asInt(final Object value) {
-		return value instanceof Number ? ((Number) value).intValue() : 0;
+	private static JsonElement readCell(final Object table, final String column,
+		final int row) throws ReflectiveOperationException
+	{
+		try {
+			final Object numeric = invoke(table, "getValue", column, row);
+			if (numeric instanceof Number) {
+				final double value = ((Number) numeric).doubleValue();
+				if (Double.isFinite(value)) return new JsonPrimitive(value);
+			}
+			return asJsonString(invoke(table, "getStringValue", column, row));
+		}
+		catch (InvocationTargetException e) {
+			return asJsonString(invoke(table, "getLabel", row));
+		}
 	}
 
-	private static double asDouble(final Object value) {
-		return value instanceof Number ? ((Number) value).doubleValue() : Double.NaN;
+	private static String[] asStringArray(final Object value) {
+		return value instanceof String[] ? (String[]) value : new String[0];
+	}
+
+	private static JsonElement asJsonString(final Object value) {
+		final String string = asString(value);
+		return string == null ? JsonNull.INSTANCE : new JsonPrimitive(string);
+	}
+
+	private static int asInt(final Object value) {
+		return value instanceof Number ? ((Number) value).intValue() : 0;
 	}
 
 	private static String asString(final Object value) {
