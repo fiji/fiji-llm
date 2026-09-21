@@ -184,7 +184,10 @@ inspected together.
 - [ ] Run a command that opens an image and verify `changes.images_opened` and
       the active-image metadata.
 - [ ] Run a command that changes or closes an image and verify
-      `changes.images_changed` or `changes.images_closed`.
+      `changes.images_changed` or `changes.images_closed`; for in-place pixel
+      edits, verify final `changes.pixel_changes: "changed"` and captured
+      `pixel_hash_status` values. For large or lazy images, verify sampled or
+      skipped hashes produce `pixel_changes: "inconclusive"`.
 - [ ] Run a measurement command and verify the Results table row/heading
       metadata and `changes.results_table_changed`.
 - [ ] Run a command that emits ImageJ or SciJava log output and verify the

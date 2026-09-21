@@ -55,6 +55,7 @@ import net.imagej.ImageJService;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService;
 import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService.EnvironmentImpact;
+import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.ui.AWTDialogUtils;
 import sc.fiji.llm.ui.TextEditorUtils;
@@ -200,7 +201,8 @@ public final class ScriptExecutionService extends AbstractService implements
 				preparationFailure[0]);
 		}
 
-		execution.environmentCapture = environmentSnapshotService.capture();
+		execution.environmentCapture = environmentSnapshotService.capture(
+			PixelChangeTracking.FINAL_SHA256);
 
 		final Throwable[] startupFailure = new Throwable[1];
 		final Runnable startScript = () -> {

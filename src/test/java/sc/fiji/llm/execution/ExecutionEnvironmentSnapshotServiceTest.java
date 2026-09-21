@@ -40,11 +40,19 @@ import org.scijava.Context;
 import org.scijava.console.ConsoleService;
 import org.scijava.console.OutputEvent;
 import org.scijava.console.OutputEvent.Source;
+import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 
 import com.google.gson.JsonObject;
 
 import ij.measure.ResultsTable;
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imagej.axis.Axes;
+import net.imagej.axis.AxisType;
+import net.imagej.display.ImageDisplay;
+import net.imglib2.Cursor;
+import net.imglib2.type.numeric.RealType;
 
 public class ExecutionEnvironmentSnapshotServiceTest {
 
@@ -114,6 +122,66 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 		}
 		finally {
 			capture.close();
+		}
+	}
+
+	@Test
+	public void testFinalPixelTrackingReportsInPlaceChanges() {
+		final DatasetService datasetService = context.getService(DatasetService.class);
+		final DisplayService displayService = context.getService(DisplayService.class);
+		final Dataset dataset = datasetService.create(new long[] { 2, 2 }, "pixel test",
+			new AxisType[] { Axes.X, Axes.Y }, 8, false, false);
+		final ImageDisplay display = (ImageDisplay) displayService.createDisplay(dataset);
+		final ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+			.capture(ExecutionEnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
+		try {
+			final Cursor<? extends RealType<?>> cursor = dataset.cursor();
+			while (cursor.hasNext()) cursor.next().setReal(255);
+
+			final JsonObject liveChanges = capture.current().toJson().getAsJsonObject(
+				"changes");
+			assertEquals("deferred", liveChanges.get("pixel_changes").getAsString());
+			assertEquals(0, liveChanges.get("images_changed").getAsJsonArray().size());
+
+			final JsonObject environment = capture.finish().toJson();
+			final JsonObject changes = environment.getAsJsonObject("changes");
+			assertEquals("changed", changes.get("pixel_changes").getAsString());
+			assertEquals(1, changes.get("images_changed").getAsJsonArray().size());
+			final JsonObject afterImage = environment.getAsJsonObject("after").get(
+				"images").getAsJsonArray().get(0).getAsJsonObject();
+			assertEquals("captured", afterImage.get("pixel_hash_status").getAsString());
+			assertEquals("SHA-256", afterImage.get("pixel_hash_algorithm").getAsString());
+			assertEquals("imglib2-native-storage-v1", afterImage.get("pixel_hash_encoding")
+				.getAsString());
+			assertTrue(afterImage.has("pixel_hash"));
+		}
+		finally {
+			capture.close();
+			display.close();
+		}
+	}
+
+	@Test
+	public void testFinalPixelTrackingSkipsCellImages() {
+		final DatasetService datasetService = context.getService(DatasetService.class);
+		final DisplayService displayService = context.getService(DisplayService.class);
+		final Dataset dataset = datasetService.create(new long[] { 2, 2 }, "cell test",
+			new AxisType[] { Axes.X, Axes.Y }, 8, false, false, true);
+		final ImageDisplay display = (ImageDisplay) displayService.createDisplay(dataset);
+		final ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+			.capture(ExecutionEnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
+		try {
+			final JsonObject environment = capture.finish().toJson();
+			final JsonObject changes = environment.getAsJsonObject("changes");
+			final JsonObject afterImage = environment.getAsJsonObject("after").get(
+				"images").getAsJsonArray().get(0).getAsJsonObject();
+			assertEquals("inconclusive", changes.get("pixel_changes").getAsString());
+			assertEquals("skipped", afterImage.get("pixel_hash_status").getAsString());
+			assertEquals("lazy_container", afterImage.get("pixel_hash_reason").getAsString());
+		}
+		finally {
+			capture.close();
+			display.close();
 		}
 	}
 }

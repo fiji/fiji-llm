@@ -92,7 +92,7 @@ or visually. `activate_and_restore` requests activation and focus restoration,
 but both are best effort and do not guarantee an unobstructed capture or
 successful restoration; inspect the returned metadata for the actual result.
 
-`fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags, ImageJ/SciJava log deltas, and run-scoped ConsoleService stdout/stderr. Script execution also includes captured stderr in its `errors` field. Image pixels are never copied into the report.
+`fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `ExecutionEnvironmentSnapshotService` for lightweight operation-impact reporting. The report contains `before` and `after` metadata for open images, the active image, the Results table, and visible dialogs, plus `changes` arrays/flags, ImageJ/SciJava log deltas, and run-scoped ConsoleService stdout/stderr. Audited command and script captures also include bounded SHA-256 fingerprints of ImgLib2 native storage or pixel values; live snapshots defer pixel hashing and report `pixel_changes: "deferred"`. Large samples report `pixel_changes: "inconclusive"` when their sampled prefix matches, and lazy cell-backed images are skipped. No image pixels are copied into the report. Script execution also includes captured stderr in its `errors` field.
 
 `fiji_results_read` returns structured Results Table metadata and numeric
 rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and

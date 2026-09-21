@@ -57,6 +57,7 @@ import com.google.gson.JsonObject;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService;
+import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
@@ -127,7 +128,7 @@ The fiji_command_* tools discover and execute ImageJ commands. Available may com
 				return jsonError("Command not found at path: " + menuPath);
 			}
 
-			capture = environmentSnapshotService.capture();
+			capture = environmentSnapshotService.capture(PixelChangeTracking.FINAL_SHA256);
 			// Run the module - this goes through the same path as the search panel
 			// and includes automatic recorder integration.
 			moduleService.run(moduleInfo, true);
