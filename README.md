@@ -304,10 +304,6 @@ Keep the integration test document, technical summary, README, and relevant VS
 Code agent files in sync when public tools or APIs are added, removed, renamed,
 or behavior changes.
 
-For dialog tests, use `fiji_ui_dialog_respond` only after inspecting the
-current dialog with `fiji_ui_dialogs_read`; provide the exact dialog title and
-button text and treat the action as an intentional UI mutation.
-
 ### [ChatbotService](src/main/java/sc/fiji/llm/ui/ChatbotService.java)
 
 For developing chatbots in particular UI environments.
