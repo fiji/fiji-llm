@@ -108,16 +108,16 @@ the visible active ROI and image overlays in the rendered image when available.
 	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, and dimensions. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
 	public String getImageDetails(@P("image_id") int imageId) {
 		try {
-			List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-			if (displays == null || displays.isEmpty()) {
-				return jsonError("No images are currently open");
-				}
-			for (ImageDisplay display : displays) {
-				if (imageJ1HelperService.getImageId(display) != imageId) continue;
-				DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
-				if (datasetView == null) continue;
-				Dataset dataset = datasetView.getData();
-				if (dataset == null) continue;
+			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
+			final Optional<ImageDisplay> display = findImageDisplay(displays, imageId);
+			if (display.isPresent()) {
+				final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display
+					.get());
+				if (datasetView == null) return jsonError("No open image found with id: " +
+					imageId);
+				final Dataset dataset = datasetView.getData();
+				if (dataset == null) return jsonError("No open image found with id: " +
+					imageId);
 
 				JsonObject result = new JsonObject();
 				result.addProperty("id", imageId);
@@ -140,6 +140,8 @@ the visible active ROI and image overlays in the rendered image when available.
 				result.add("dimensions", dims);
 				return result.toString();
 			}
+			if (displays == null || displays.isEmpty()) return jsonError(
+				"No images are currently open");
 			return jsonError("No open image found with id: " + imageId);
 		}
 		catch (RuntimeException e) {
@@ -166,14 +168,12 @@ the visible active ROI and image overlays in the rendered image when available.
 	{
 		try {
 			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-			if (displays == null || displays.isEmpty()) return textContents(
-				jsonError("No images are currently open"));
-			for (ImageDisplay display : displays) {
-				if (imageJ1HelperService.getImageId(display) != imageId) continue;
+			final Optional<ImageDisplay> display = findImageDisplay(displays, imageId);
+			if (display.isPresent()) {
 				if (imageRenderingService == null) return textContents(
 					jsonError("Image rendering is not available"));
 				final Optional<RenderedImageResult> rendered = imageRenderingService
-					.render(display, options);
+					.render(display.get(), options);
 				if (rendered.isEmpty()) return textContents(jsonError(
 					"Could not render image with id: " + imageId));
 				if (!includeMetadata) return List.of(rendered.get().getImageContent());
@@ -182,12 +182,24 @@ the visible active ROI and image overlays in the rendered image when available.
 				return List.of(TextContent.from(metadata.toString()), rendered.get()
 					.getImageContent());
 			}
+			if (displays == null || displays.isEmpty()) return textContents(
+				jsonError("No images are currently open"));
 			return textContents(jsonError("No open image found with id: " + imageId));
 		}
 		catch (IOException | RuntimeException e) {
 			return textContents(jsonError("Failed to run " + toolName + ": " + e
 				.getMessage()));
 		}
+	}
+
+	private Optional<ImageDisplay> findImageDisplay(final List<ImageDisplay> displays,
+		final int imageId)
+	{
+		if (displays != null) for (final ImageDisplay display : displays) {
+			if (imageJ1HelperService.getImageId(display) == imageId) return Optional.of(
+				display);
+		}
+		return imageJ1HelperService.getOrCreateImageDisplay(imageId);
 	}
 
 	private static List<Content> textContents(final String text) {

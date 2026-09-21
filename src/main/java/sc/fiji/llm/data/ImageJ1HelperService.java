@@ -79,6 +79,22 @@ public final class ImageJ1HelperService extends AbstractService implements
 		return Collections.unmodifiableList(ids);
 	}
 
+	public Optional<ImageDisplay> getOrCreateImageDisplay(final int imageId) {
+		if (legacyService == null || !legacyService.isActive()) return Optional.empty();
+		try {
+			final Optional<IJ1Helper> helper = getIJ1Helper();
+			if (helper.isEmpty()) return Optional.empty();
+			final var image = helper.get().getImage(imageId);
+			if (image == null) return Optional.empty();
+			final var imageMap = legacyService.getImageMap();
+			return imageMap == null ? Optional.empty() : Optional.ofNullable(imageMap
+				.registerLegacyImage(image));
+		}
+		catch (final RuntimeException e) {
+			return Optional.empty();
+		}
+	}
+
 	public boolean isImageVisible(final int id) {
 		try {
 			return getIJ1Helper().map(helper -> helper.getImage(id)).map(image -> image
