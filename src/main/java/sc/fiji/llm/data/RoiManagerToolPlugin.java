@@ -29,14 +29,17 @@
 
 package sc.fiji.llm.data;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
+import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -81,12 +84,10 @@ The fiji_rois_* tools enable interaction with the ImageJ ROI Manager.
 
 			final JsonArray rois = new JsonArray();
 			for (int i = 0; i < count; i++) {
-				final JsonObject roi = new JsonObject();
-				roi.addProperty("index", i);
-				roi.addProperty("name", safeString(invoke(manager, "getName", i)));
-				roi.addProperty("selected", isSelected(manager, i));
 				final Object roiObject = invoke(manager, "getRoi", i);
-				roi.addProperty("type", roiObject == null ? "" : safeString(invoke(roiObject, "getType")));
+				final JsonObject roi = roiSummary(manager, i, roiObject);
+				if (roiObject == null) roi.add("bounds", JsonNull.INSTANCE);
+				else roi.add("bounds", boundsJson(invoke(roiObject, "getBounds")));
 				rois.add(roi);
 			}
 			result.add("rois", rois);
@@ -98,6 +99,94 @@ The fiji_rois_* tools enable interaction with the ImageJ ROI Manager.
 		catch (ReflectiveOperationException e) {
 			return jsonError("Failed to run fiji_rois_read: " + e.getMessage());
 		}
+	}
+
+	@Tool(value = { "Read the exact geometry for one ROI Manager entry, including its shape, bounding box, and polygon coordinates. Use fiji_rois_read first to identify the ROI index." }, name = "fiji_rois_read_details")
+	public String readRoiDetails(@P("index") final int index) {
+		try {
+			final Object manager = invokeLegacyRoiManager();
+			if (manager == null) return jsonError("ROI Manager is not open",
+				"fiji_rois_read");
+
+			final int count = (int) invoke(manager, "getCount");
+			if (index < 0 || index >= count) return jsonError("ROI index must be between 0 and " +
+				(count - 1) + ": " + index, "fiji_rois_read");
+
+			final Object roiObject = invoke(manager, "getRoi", index);
+			if (roiObject == null) return jsonError("ROI Manager entry has no ROI object: " +
+				index);
+
+			final JsonObject result = roiSummary(manager, index, roiObject);
+			result.addProperty("shape", roiObject.getClass().getSimpleName());
+			result.add("bounds", boundsJson(invoke(roiObject, "getBounds")));
+			result.add("coordinates", coordinatesJson(invoke(roiObject,
+				"getFloatPolygon")));
+			return result.toString();
+		}
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_rois_read_details: " + e.getMessage());
+		}
+		catch (ReflectiveOperationException e) {
+			return jsonError("Failed to run fiji_rois_read_details: " + e.getMessage());
+		}
+	}
+
+	private static JsonObject roiSummary(final Object manager, final int index,
+		final Object roiObject) throws ReflectiveOperationException
+	{
+		final JsonObject roi = new JsonObject();
+		roi.addProperty("index", index);
+		roi.addProperty("name", safeString(invoke(manager, "getName", index)));
+		roi.addProperty("selected", isSelected(manager, index));
+		roi.addProperty("type", roiObject == null ? "" : safeString(invoke(roiObject,
+			"getType")));
+		return roi;
+	}
+
+	private static JsonObject boundsJson(final Object bounds)
+		throws ReflectiveOperationException
+	{
+		if (bounds == null) return null;
+
+		final JsonObject result = new JsonObject();
+		result.addProperty("x", ((Number) readField(bounds, "x")).intValue());
+		result.addProperty("y", ((Number) readField(bounds, "y")).intValue());
+		result.addProperty("width", ((Number) readField(bounds, "width"))
+			.intValue());
+		result.addProperty("height", ((Number) readField(bounds, "height"))
+			.intValue());
+		return result;
+	}
+
+	private static JsonArray coordinatesJson(final Object floatPolygon)
+		throws ReflectiveOperationException
+	{
+		final JsonArray coordinates = new JsonArray();
+		if (floatPolygon == null) return coordinates;
+
+		final int pointCount = ((Number) readField(floatPolygon, "npoints"))
+			.intValue();
+		final float[] xPoints = (float[]) readField(floatPolygon, "xpoints");
+		final float[] yPoints = (float[]) readField(floatPolygon, "ypoints");
+		for (int i = 0; i < pointCount; i++) {
+			if (!Float.isFinite(xPoints[i]) || !Float.isFinite(yPoints[i])) {
+				coordinates.add(JsonNull.INSTANCE);
+				continue;
+			}
+
+			final JsonObject point = new JsonObject();
+			point.addProperty("x", xPoints[i]);
+			point.addProperty("y", yPoints[i]);
+			coordinates.add(point);
+		}
+		return coordinates;
+	}
+
+	private static Object readField(final Object target, final String fieldName)
+		throws ReflectiveOperationException
+	{
+		final Field field = target.getClass().getField(fieldName);
+		return field.get(target);
 	}
 
 	private Object invokeLegacyRoiManager() {

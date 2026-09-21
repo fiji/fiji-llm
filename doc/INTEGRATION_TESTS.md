@@ -204,7 +204,11 @@ Fiji instance with the ImageJ legacy layer active.
       reflect the cleared state.
 - [ ] ROI Manager: open the ROI Manager, add at least two named ROIs, and call
       `fiji_rois_read`. Verify `present`, `count`, and each ROI's
-      `index`, `name`, `selected`, and `type` fields.
+      `index`, `name`, `selected`, `type`, and `bounds` fields. Verify each
+      bounding box contains `x`, `y`, `width`, and `height`.
+- [ ] ROI Manager details: call `fiji_rois_read_details` with a valid ROI
+      index and verify the returned `shape`, `bounds`, and `coordinates`.
+      Call it with an invalid index and verify that it returns a useful error.
 - [ ] ROI Manager unavailable state: close the ROI Manager, call
       `fiji_rois_read`, and verify it reports `present: false` without
       throwing an error.

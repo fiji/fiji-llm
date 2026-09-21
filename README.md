@@ -236,7 +236,7 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 
 **Command Execution** - Use `fiji_command_search` to find a menu path, then call `fiji_command_run`. The result includes the command status and a lightweight before/after environment report covering open images, active-image changes, Results table metadata, visible dialogs, and ImageJ and SciJava log deltas.
 
-**ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability and ROI summaries. These tools are read-only.
+**ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability, ROI summaries, and bounding boxes. Use `fiji_rois_read_details` with an ROI index when exact shape and polygon coordinates are needed. These tools are read-only.
 
 **UI Inspection and Vision** - Use `fiji_ui_windows_read` to list visible AWT and Swing windows, then `fiji_ui_controls_read` with an exact window title to inspect supported controls and their state. Use `fiji_ui_screenshot` for a PNG screenshot that can be provided to vision-capable models. Screenshots capture current screen pixels, so overlapping or occluding windows may appear; `activate_and_restore` requests best-effort activation and focus restoration, but does not guarantee an unobstructed capture or successful restoration. Inspect the returned metadata to see whether focus restoration succeeded.
 
