@@ -55,13 +55,6 @@ public interface AiToolPlugin extends SingletonPlugin {
 	String getName();
 
 	/**
-	 * Get a description of this tool's capabilities.
-	 *
-	 * @return a description of how this tool should be used by an LLM
-	 */
-	String getUsage();
-
-	/**
 	 * @return The tools provided by this plugin with their executors
 	 */
 	Map<ToolSpecification, ToolExecutor> getTools();

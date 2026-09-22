@@ -76,15 +76,6 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		return "Image Tools";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_image_* tools query images currently open in Fiji and can return a
-rendered image when requested. The fiji_image_view_annotated tool includes
-the visible active ROI and image overlays in the rendered image when available.
-""";
-	}
-
 	@Tool(value = { "List all currently open and visible images, including each image's id and title." }, name = "fiji_image_list")
 	public String listImages() {
 		try {

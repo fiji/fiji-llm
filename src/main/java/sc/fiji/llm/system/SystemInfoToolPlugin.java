@@ -65,13 +65,6 @@ public class SystemInfoToolPlugin extends AbstractAiToolPlugin {
 		return "System Information";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_system_* tools provide information about the Fiji installation and its host environment.
-""";
-	}
-
 	@Tool(value = { "Read information about the Fiji installation and its host environment." }, name = "fiji_system_read")
 	public String readSystemInfo() {
 		try {

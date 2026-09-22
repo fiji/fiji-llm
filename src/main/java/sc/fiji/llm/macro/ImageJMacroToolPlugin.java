@@ -91,13 +91,6 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		return "Macro Writing Tools";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_macro_* tools support creating ImageJ macros: a custom script format for capturing recordable commands for later editing, distribution and reuse.
-""";
-	}
-
 	@Tool(value = { "List the built-in ImageJ macro function categories. Use fiji_macro_list_functions with one of these categories to see its functions." }, name = "fiji_macro_list_categories")
 	public String listMacroCategories() {
 		try {

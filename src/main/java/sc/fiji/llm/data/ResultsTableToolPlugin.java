@@ -61,13 +61,6 @@ public class ResultsTableToolPlugin extends AbstractAiToolPlugin {
 		return "Results Tools";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_results_* tools enable interaction with the ImageJ Results Table.
-""";
-	}
-
 	@Tool(value = { "Read the current Results Table state, including whether a table is present, its actual headings, row count, row labels, numeric values, and text values." }, name = "fiji_results_read")
 	public String readResultsTable() {
 		try {

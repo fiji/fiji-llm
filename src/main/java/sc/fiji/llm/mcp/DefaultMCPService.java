@@ -37,7 +37,6 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -91,7 +90,6 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -114,13 +112,16 @@ public class DefaultMCPService extends AbstractService implements MCPService
 	private static final String FIJI_MCP_VERSION = "0.1.0";
 	private static final String MCP_INSTRUCTIONS =
 		"""
-This server exposes tools for inspecting and interacting with the current Fiji/ImageJ session.
+This server exposes tools for inspecting and interacting with a live Fiji/ImageJ image analysis application.
+
+Before using other Fiji tools for an unfamiliar Fiji-specific workflow, read
+the onboarding document with the fiji_guidance_read tool, using ID="onboarding".
 
 Tool calls may modify application state, scripts, images, or other workspace artifacts.
 
 State-query tools provide a current view of the application. Users may interact with Fiji between tool calls, so re-query state when accuracy matters.
 
-Prefer inspection before modification. Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
+Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
 """;
 
 	@Parameter
@@ -433,12 +434,7 @@ Prefer inspection before modification. Use the narrowest applicable tool, and av
 
 	private String buildMCPInstructions()
 	{
-		final StringJoiner sj = new StringJoiner("\n");
-		sj.add(MCP_INSTRUCTIONS);
-		for (AiToolPlugin toolPlugin : aiToolService.getInstances()) {
-			sj.add(toolPlugin.getUsage());
-		}
-		return sj.toString();
+		return MCP_INSTRUCTIONS;
 	}
 
 	private static class OriginValidationFilter implements Filter

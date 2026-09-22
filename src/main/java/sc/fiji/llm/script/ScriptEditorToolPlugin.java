@@ -91,13 +91,6 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		return ToolScope.SCRIPT;
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_script_* tools interact with Fiji scripts: user-facing, single-file programs used to build reproducible workflows. Multiple scripts may be open across multiple editor windows. Many tools operate on the active script; use fiji_script_activate to set the active script first, as needed.
-""";
-	}
-
 	@Tool(value = { "Open a script editor UI with an active blank script, if no editor is currently open; no-op if an editor is open" }, name = "fiji_script_open_editor")
 	public String startEditor() {
 		try {

@@ -60,13 +60,6 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		return "ROI Tools";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_rois_* tools enable interaction with the ImageJ ROI Manager.
-""";
-	}
-
 	@Tool(value = { "Read the current ROI Manager state, including whether it is open, and if so how many ROIs are present, and summary data for each ROI." }, name = "fiji_rois_read")
 	public String readRoiManager() {
 		try {

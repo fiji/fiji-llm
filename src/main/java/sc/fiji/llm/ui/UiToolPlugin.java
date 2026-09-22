@@ -59,13 +59,6 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		return "UI Tools";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_ui_* tools provide structured information about visible Fiji UI components and optional screenshots for vision-capable models.
-""";
-	}
-
 	@Tool(value = { "List visible AWT and Swing windows, including titles, classes, bounds, active state, and modality" }, name = "fiji_ui_windows_read")
 	public String readWindows() {
 		try {

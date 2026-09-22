@@ -69,13 +69,6 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		return "Log Tools";
 	}
 
-	@Override
-	public String getUsage() {
-		return """
-The fiji_log_* tools inspect ImageJ and SciJava diagnostic logs. ImageJ's Log window can be read at any time. SciJava capture includes structured log messages and ConsoleService stdout/stderr, so use fiji_log_scijava_start_capture before an operation, fiji_log_scijava_read while it runs, and fiji_log_scijava_stop_capture when finished.
-""";
-	}
-
 	@Tool(value = { "Read the current contents of ImageJ's Log window, including whether the window is open" }, name = "fiji_log_imagej_read")
 	public String readImageJLog() {
 		try {
