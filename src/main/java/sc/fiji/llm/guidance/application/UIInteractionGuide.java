@@ -1,0 +1,90 @@
+/*-
+ * #%L
+ * Fiji software for LLM integration.
+ * %%
+ * Copyright (C) 2025 - 2026 ImageJ2 Developers
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
+package sc.fiji.llm.guidance.application;
+
+import java.util.List;
+
+import org.scijava.plugin.Plugin;
+
+import sc.fiji.llm.guidance.AbstractAgentGuide;
+import sc.fiji.llm.guidance.AgentGuide;
+import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+
+/** Guidance for interacting with the Fiji UI. */
+@Plugin(type = AgentGuide.class)
+public class UIInteractionGuide extends AbstractAgentGuide {
+
+	private static final String CONTENT = """
+			# Fiji UI Interaction
+
+			The `fiji_ui_*` tools inspect and, in limited cases, interact with visible Fiji
+			windows and dialogs. Use them when application state or a blocked workflow is
+			exposed only through the UI; they are not a substitute for Fiji's image-analysis
+			tools or a durable analysis pipeline.
+
+			## Choose the UI tool
+
+			- Use `fiji_ui_windows_read` to discover visible windows when the target or its
+			  exact title is unknown.
+			- Use `fiji_ui_controls_read` to inspect the controls in one identified window.
+			  Select the window using its exact title and, when needed, its class name.
+			- Use `fiji_ui_dialogs_read` when a dialog may be blocking an operation or when
+			  its message and available buttons must be identified.
+			- Use `fiji_ui_dialog_respond` only after reading the dialogs. Provide the exact
+			  dialog title and button text; never guess which dialog or button to use. Check
+			  post-action state afterward.
+			- Use `fiji_ui_screenshot` when visual context is useful for a vision-capable
+			  client. Treat the result as a screen capture: another window may occlude it,
+			  and focus activation or restoration is not guaranteed.
+
+			## Reproducible workflows
+
+			Prefer `fiji_command_search` and `fiji_command_run`, or the script and macro
+			tools, for substantive image analysis and state-changing workflows. A script or
+			macro can be saved, reviewed, rerun, shared, and adapted; a sequence of clicks
+			through a transient UI is harder to reproduce and may depend on window focus,
+			layout, timing, and hidden application state.
+
+			Use UI interaction to inspect a workflow, handle a dialog that pauses an existing
+			script or macro, or perform a small necessary UI-only action. When a UI action is
+			unavoidable, record the relevant command, settings, target, and resulting state
+			in the workflow rather than treating the click itself as the analysis.
+			""".trim();
+
+	public UIInteractionGuide() {
+		super("ui-interaction", "UI Interaction", List.of(
+			"application", "ui", "dialogs", "input", "errors"), Authority.PROJECT_AUTHORED,
+			List.of("running-commands", "onboarding"));
+	}
+
+	@Override
+	public String content() {
+		return CONTENT;
+	}
+}
