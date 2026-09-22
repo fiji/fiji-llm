@@ -30,6 +30,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 
 * **Context-Aware Analysis Tools:** Give agents structured access to Fiji’s environment, including installed commands, open images, analysis metadata, the Script Editor, and macro recorder.
 * **ImageJ Data Inspection:** Provide read-only access to common ImageJ data objects, including Results Tables and the ROI Manager.
+* **Shared Fiji Guidance:** Provide bounded, curated onboarding and workflow guidance to both integrated chat and external MCP clients without injecting the full documentation corpus into every request.
 
 ## Table of Contents
 - [Fiji Chat Quick Start](#fiji-chat-quick-start)
@@ -53,6 +54,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 
 ## See Also
 - [Technical Summary](doc/TECHNICAL_SUMMARY.md)
+- [Shared Guidance Architecture](doc/GUIDANCE_ARCHITECTURE.md)
 
 <a id="quick-start"></a>
 
@@ -99,6 +101,11 @@ PNG data, allowing compatible external clients to inspect the image directly.
 when available, plus a text content block describing the rendered display
 state. The Fiji chat attachment menu provides matching plain-image and image-
 with-overlays choices.
+
+The same server exposes the read-only `fiji_guidance_topics`,
+`fiji_guidance_search`, and `fiji_guidance_read` tools. For an unfamiliar
+Fiji-specific workflow, start by reading the `onboarding` guidance document,
+then retrieve only the additional topic guidance needed for the task.
 
 **Available Configuration**
 - **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`
@@ -282,7 +289,7 @@ When adding an `AiToolPlugin`:
 
 * **Choose useful parameter names.** Use `@P` to provide descriptive, stable names to the LLM, usually in `snake_case`, even when the Java parameter uses `camelCase`: `@P("image_id")`, `@P("menu_path")`, or `@P("start_line")`. Include units, indexing conventions, and other constraints in the tool description when they matter.
 
-* **Keep descriptions at the right level.** Keep `getUsage()` as a short overview of the whole `fiji_<scope>_*` namespace and its basic workflow. Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description.
+* **Keep descriptions at the right level.** Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description. Shared Fiji workflow guidance belongs in the curated `AgentGuide` plugins and should be exposed through guidance tools rather than duplicated in each plugin.
 
 * **Return structured results.** Text tools should return valid JSON strings for every success and error result, using the shared helpers in [`AbstractAiToolPlugin`](src/main/java/sc/fiji/llm/tools/AbstractAiToolPlugin.java). A multimodal tool may instead return LangChain4j `Content`, such as `ImageContent`; the MCP bridge preserves supported text and image content blocks for external clients.
 

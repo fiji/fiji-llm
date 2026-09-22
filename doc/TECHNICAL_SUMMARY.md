@@ -10,6 +10,22 @@ A Fiji/ImageJ plugin that integrates large language models into the bioimage ana
 
 ---
 
+## Guidance and Knowledge
+
+The planned shared guidance architecture defines how Fiji-specific knowledge
+is made available to the integrated chatbot and external MCP clients without
+loading the full documentation corpus into every request. A compact baseline
+is used by both routes, while detailed guidance is retrieved on demand through
+read-only tools. Both routes direct unfamiliar Fiji-specific workflows to the
+curated `onboarding` document before other Fiji tools are used. Current
+installation and session facts remain the responsibility of live Fiji tools
+and application context.
+
+The knowledge boundary, document metadata, authority rules, retrieval contract,
+and future directions are described in the [Shared Guidance Architecture](GUIDANCE_ARCHITECTURE.md).
+
+---
+
 ## Core LLM Integration
 
 ### Abstraction Layer
@@ -61,6 +77,10 @@ AiServices.builder(FijiAssistant.class)
 ### AiToolPlugin
 
 `AiToolPlugin` is a SciJava `SingletonPlugin` interface. Implementations annotate methods with LangChain4j's `@Tool` to define callable tools. `AiToolService` aggregates all discovered `AiToolPlugin` instances and exposes their `ToolSpecification` / `ToolExecutor` maps.
+
+Tool behavior and usage guidance are declared in each `@Tool` description.
+The plugin contract does not include a separate namespace-level usage string;
+shared Fiji workflow guidance is maintained in the packaged guidance catalog.
 
 Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensitive filtering.
 
@@ -114,6 +134,11 @@ status, names, and URLs.
 `DefaultMCPService` runs an **embedded Jetty HTTP server** (default port 9090) that exposes `AiToolPlugin` tools as a MCP server using `io.modelcontextprotocol.sdk` (`1.1.2`). A LangChain4j `McpClient` then connects back to this server over `StreamableHttpMcpTransport`, and the resulting `McpToolProvider` is injected into `AiServices`.
 
 This self-loopback MCP pattern allows the same tools to be accessed by external MCP-compatible clients (e.g., Claude Desktop) as well as the internal LangChain4j assistant. The bridge preserves text and base64-backed image tool results as MCP content blocks; `fiji_image_view` returns plain PNG image content, while `fiji_image_view_annotated` returns PNG image content plus structured render metadata for visible ROI and overlay state.
+
+The MCP server instructions retain only MCP and live-session behavior and
+direct clients to read the shared `onboarding` guidance document for
+unfamiliar Fiji workflows. The integrated chat system message uses the same
+onboarding entry point while retaining chat role and context framing.
 
 ---
 
