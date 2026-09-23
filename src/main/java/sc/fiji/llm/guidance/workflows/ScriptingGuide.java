@@ -115,7 +115,7 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			## Script development workflow
 
 			1. Inspect the current Fiji script state with `fiji_script_list`.
-			2. Preserve existing user scripts. Create a new editor or script when appropriate; do not overwrite an existing script unless the user asks for it.
+			2. Do not overwrite an existing script unless the user asks for it; create a new editor or script otherwise.
 			3. Use `fiji_script_rename` to set the filename extension to the requested language; if the user did not specify a language, this document provides selection
 			4. Use the appropriate `fiji_script_*` tools to replace, edit, delete or read the complete script or selected line ranges, as needed.
 			5. Start a script run with `fiji_script_run`. Poll with `fiji_script_run_status` using the returned `run_id` until the run reaches a terminal state. If it returns `blocked_by_dialog`, inspect the dialog with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title and button text.
