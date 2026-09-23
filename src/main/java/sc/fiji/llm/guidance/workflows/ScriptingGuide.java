@@ -52,9 +52,8 @@ public class ScriptingGuide extends AbstractAgentGuide {
 
 			Scripts can declare typed inputs and outputs with the universal `#@` syntax. Language
 			comment characters are interchangeable with the `#`, i.e. `//@` in Groovy. These script
-			parameters completely supersede and replace ImageJ 1.x GenericDialog usage: they should
-			ALWAYS be used when interaction is required. DO NOT import `ij.gui.GenericDialog` when
-			writing scripts.
+			parameters completely replace ImageJ 1.x GenericDialog usage: ALWAYS use them when
+			interaction is required. DO NOT use `ij.gui.GenericDialog` when writing scripts.
 
 			Put one parameter declaration per line at the top of a script before the executable code:
 
@@ -64,10 +63,11 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			#@output Dataset output
 			```
 
-			`#@ Type name` is an input, creating a variable `name` in the script; `#@output Type name` is
-			an output, and the variable `name` must be defined in the script. The framework harvests inputs
-			before execution and handles outputs afterward, displaying or passing them on according to their
-			type. So a script behaves like a reusable module, without hard-coding a dialog or relying on
+			`#@ Dataset input` is an input: inputs are supplied by the framework before execution and
+			define a variable for use in the script body.
+			`#@output Dataset output` is an output: output variables must be defined in the script body,
+			and are passed to the framework after execution.
+			So a script behaves like a reusable module, without hard-coding a dialog or relying on
 			global state.
 
 			Parameters have a number of optional properties that are set using a parenthetical 
@@ -106,35 +106,29 @@ public class ScriptingGuide extends AbstractAgentGuide {
 
 			Parameter declarations also make scripts usable without a UI. For example, a saved script can be
 			run headlessly with `fiji --headless --run path/to/script.py 'name="value",count=3'`, using
-			parameter names as the keys. Prefer parameters over `GenericDialog` when a script should work
-			from the editor, a command, a batch workflow, or headless.
+			parameter names as the keys.
 			
-			Parameters of SciJava service types are auto-injected, and should be used instead of manual
-			construction.
+			Do not import or manually construct a SciJava Service class: they are auto-injected as 
+			Parameters.
 
 			## Script development workflow
 
 			1. Inspect the current Fiji script state with `fiji_script_list`.
 			2. Do not overwrite an existing script unless the user asks for it; create a new editor or script otherwise.
-			3. Use `fiji_script_rename` to set the filename extension to the requested language; if the user did not specify a language, this document provides selection
+			3. Use `fiji_script_rename` to set the filename extension to the requested language; use your judgement if not specified
 			4. Use the appropriate `fiji_script_*` tools to replace, edit, delete or read the complete script or selected line ranges, as needed.
-			5. Start a script run with `fiji_script_run`. Poll with `fiji_script_run_status` using the returned `run_id` until the run reaches a terminal state. If it returns `blocked_by_dialog`, inspect the dialog with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title and button text.
+			5. Start a script run with `fiji_script_run`. Poll with `fiji_script_run_status` using the returned `run_id` until the run reaches a terminal state.
 			6. Verify script behavior using observable Fiji results appropriate to the script's goal, such as image, ROI, or Results Table changes.
 			7. If a concrete failure is identified, attempt repair: use the smallest script edit that addresses the diagnostic, then rerun from (5) above.
-			8. Stop if success cannot be attained after a small number of focused repair attempts, or if the same infrastructure failure persists. Report the blocker rather than repeatedly changing script code.
+			8. Stop and report the blocker if success cannot be attained after a small number of focused repair attempts, or if the same infrastructure failure persists.
 
 			## Diagnostic guidance
-			- Use `fiji_script_run_status` with the returned `run_id` for an asynchronous script run.
-			- Parameter dialogs and other modal dialogs can pause a script. Treat `blocked_by_dialog` as an interaction point, not a completed run.
 			- Treat `success`, `finished_with_errors`, `timed_out`, and `infrastructure_error` as distinct outcomes.
 			- If an error is indicated, classify the `errors` field:
 				- Syntax or compilation failure: parser, compiler, expected-token, or source-location messages.
 				- Runtime failure: an exception raised after parsing, usually with a script path and line number.
 				- Infrastructure failure: missing engine, class-loading failure, uninitialized Fiji service, or an MCP/tool error.
-			- Timeouts are requested but not guaranteed. If the result reports failed termination, inspect the script and logs before retrying.
-			- Prefer the per-run output, errors, console streams, and ImageJ/SciJava logs in the execution result for diagnosing that run. `fiji_script_read_logs` returns cumulative logs retained by the active Script Editor across runs.
-			- If a diagnostic is truncated by the file reader, report the visible portion and avoid inventing omitted details.
-			- Normal `print` or console output may appear in `output` rather than `errors`; absence from `errors` is not by itself a runtime failure.
+			- If the result reports failed termination, inspect the script and logs before retrying.
 
 			## Reporting
 
@@ -146,13 +140,13 @@ public class ScriptingGuide extends AbstractAgentGuide {
 
 			## Recommended script languages
 
-			The language you pick depends on your goals and environment.
+			All script languages have access to Fiji's Java classpath. Pick the language that best fits your needs.
 
-			| Language | Notes | Guide ID |
+			| Language | Reason to use | Guide ID |
 			|---|---|---|
-			| Groovy | Java-like syntax; access to all classes in Fiji | `%1$s` |
-			| Jython | Python syntax; similar scope as Groovy | `%2$s` |
-			| Python | Bridged custom python environment; requires configuration in `Edit > Options > Python...` | `%3$s` |
+			| Groovy | Java-like syntax | `%1$s` |
+			| Jython | Python mode is disabled (`Edit > Options > Python...`) | `%2$s` |
+			| Python | Connect to load external Python libraries (Python mode required) |`%3$s` |
 
 			## Additional resources
 

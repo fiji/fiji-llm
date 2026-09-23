@@ -54,11 +54,11 @@ public class OnboardingGuide extends AbstractAgentGuide {
 	private static final String CONTENT = """
 		# Fiji Onboarding
 
-		Fiji is an application for scientific image analysis.
+		Fiji is an application for scientific image analysis. Built on the SciJava plugin framework,
+		Fiji bundles ImageJ (1.x), ImageJ2, and curated plugins commonly used in bioimage analysis.
 
-		Built on the SciJava plugin framework, Fiji bundles ImageJ (1.x), ImageJ2, and a large collection of curated plugins commonly used in bioimage analysis.
-
-		Fiji is an extensible, open source project commonly used for research and publication: reproducibilty and collaboration are core tenets.
+		Fiji is an extensible, open source project commonly used for research and publication:
+		reproducibilty is essential.
 
 		## Agentic Tools
 		Tools are named by functional group, including:
@@ -75,17 +75,18 @@ public class OnboardingGuide extends AbstractAgentGuide {
 		Tool descriptions contain information relevant to usage.
 
 		## Guidance Tools
-		The `fiji_guidance_*` tools provide on-demand access to information essential for effective Fiji interaction.
+		The `fiji_guidance_*` tools provide on-demand access to information essential for effective Fiji
+		interaction.
 
 		1. Use `fiji_guidance_topics` to see the exact topic keywords available.
 		2. Use `fiji_guidance_search` to see the documents available for one exact topic keyword.
 		3. Use `fiji_guidance_read` to read an exact document ID.
 
 		### Agent Goals
-		The provided tools, and therefore guides, focus on several core agentic goals within Fiji.
-		Before using an agentic tool for the first time, determine which goal best applies, and ensure you have
-		read the corresponding initial guide, while following situational directions to further related guides
-		that apply to the current use-case.
+		The provided tools and guides focus on several core agentic goals within Fiji. Before using a
+		`fiji_*` tool for the first time, determine which goal best applies, and ensure you have read
+		the corresponding initial guide, and follow situational directions to any related guides that
+		apply to your current use-case.
 
 		| Goal | Initial guide ID(s) |
 		|---|---|

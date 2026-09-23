@@ -63,16 +63,7 @@ public class ScriptingGroovyGuide extends AbstractAgentGuide {
 			import ij.WindowManager
 			import ij.measure.ResultsTable
 			import net.imagej.Dataset
-			import net.imagej.ops.OpService
-			import org.scijava.command.CommandService
-			import org.scijava.log.LogService
-			import org.scijava.ui.UIService
 			```
-
-			Common API areas include `ij.*` for ImageJ 1.x images, commands, windows, dialogs, ROIs, and results;
-			`net.imagej.*` for ImageJ2 data and services; `org.scijava.*` for commands, logging, UI, and context;
-			and `net.imglib2.*` for typed n-dimensional image data. Use the actual Java API types expected by a
-			method. For example, an ImageJ 1.x `ImagePlus` is not interchangeable with an ImageJ2 `Dataset`.
 
 			The adapter remembers imports between evaluations in the Script Editor. Saved scripts should still declare
 			all of their imports explicitly and must not depend on an earlier editor evaluation.

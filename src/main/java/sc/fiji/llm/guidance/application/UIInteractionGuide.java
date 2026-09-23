@@ -48,11 +48,14 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			# Fiji UI Interaction
 
 			The `fiji_ui_*` tools inspect and, in limited cases, interact with visible Fiji
-			windows and dialogs. Use them when application state or a blocked workflow is
-			exposed only through the UI; they are not a substitute for Fiji's image-analysis
-			tools or a durable analysis pipeline.
+			windows and dialogs.
+			
+			Use them to support image analysis workflow development: when application state
+			or a blocked workflow is exposed only through the UI. Remember that scripts and
+			macros are artifacts that can be saved, edited, shared, and re-run. Clicks in a
+			UI are transient.
 
-			## Choose the UI tool
+			## Choosing a UI tool
 
 			- Use `fiji_ui_windows_read` to discover visible windows when the target or its
 			  exact title is unknown.
@@ -64,21 +67,7 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			  dialog title and button text; never guess which dialog or button to use. Check
 			  post-action state afterward.
 			- Use `fiji_ui_screenshot` when visual context is useful for a vision-capable
-			  client. Treat the result as a screen capture: another window may occlude it,
-			  and focus activation or restoration is not guaranteed.
-
-			## Reproducible workflows
-
-			Prefer `fiji_command_search` and `fiji_command_run`, or the script and macro
-			tools, for substantive image analysis and state-changing workflows. A script or
-			macro can be saved, reviewed, rerun, shared, and adapted; a sequence of clicks
-			through a transient UI is harder to reproduce and may depend on window focus,
-			layout, timing, and hidden application state.
-
-			Use UI interaction to inspect a workflow, handle a dialog that pauses an existing
-			script or macro, or perform a small necessary UI-only action. When a UI action is
-			unavoidable, record the relevant command, settings, target, and resulting state
-			in the workflow rather than treating the click itself as the analysis.
+			  client.
 			""".strip();
 
 	public UIInteractionGuide() {

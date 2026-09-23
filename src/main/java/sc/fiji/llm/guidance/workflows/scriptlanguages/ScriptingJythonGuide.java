@@ -62,16 +62,7 @@ public class ScriptingJythonGuide extends AbstractAgentGuide {
 			from ij.plugin.frame import RoiManager
 			from ij.process import FloatProcessor
 			from net.imagej import Dataset
-			from net.imagej.ops import OpService
-			from org.scijava.command import CommandService
-			from org.scijava.log import LogService
-			from org.scijava.ui import UIService
 			```
-
-			Common API areas include `ij` for ImageJ 1.x images, commands, windows, dialogs, ROIs, and results;
-			`net.imagej` for ImageJ2 data and services; `org.scijava` for commands, logging, UI, and context; and
-			`net.imglib2` for typed n-dimensional image data. Use the Java type expected by each method: an
-			ImageJ 1.x `ImagePlus` is not interchangeable with an ImageJ2 `Dataset`.
 
 			## Jython idioms for Fiji APIs
 

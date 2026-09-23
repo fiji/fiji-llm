@@ -46,16 +46,15 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 	private static final String CONTENT = """
 			# Integrated Fiji Chat
 
-			Fiji Chat brings approachable natural-language AI assistance into Fiji, helping
-			scientists discover tools, learn workflows, and create reusable scripts. Unlike
-			a general-purpose chatbot, it can work with relevant Fiji application context
-			through attached context items and Fiji tools while remaining inside the Fiji
-			workflow.
-			The integrated chat and the MCP server are separate access paths: they share
-			Fiji's extensible tool framework and live application state, but not conversations
-			or chat memory.
+			This guide is for informational assistance purposes only. Fiji chat is not intended
+			for agentic operation.
 
-			## Start the chat
+			Fiji Chat brings approachable natural-language AI assistance into Fiji, helping
+			scientists discover image analysis tools, learn workflows, and create reusable
+			scripts. Unlike a general-purpose chatbot, it can work with relevant Fiji
+			application context and use tools to directly interact with the application.
+
+			## Starting the chat
 
 			- Run **Help > Assistants > Fiji Chat...** (also available with `Ctrl+0`).
 			- Choose an **AI Service** and then a **Chat Model**. The service is the provider;
@@ -63,19 +62,13 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 			- If the selected service needs an API key, Fiji opens the key-management step
 			  before starting the chat.
 
-			## Main commands
+			## Additional commands
 
-			- **Fiji Chat...** starts or configures a chat session.
 			- **Manage API Keys...** adds, replaces, or removes credentials for providers
 			  that require them. It also links to the provider's key page. Keys are masked
 			  when already configured.
 
-			## Chat window for human users
-
-			These are the normal controls for a human using the integrated chat window.
-			An agent normally interacts by receiving a request and using its available Fiji
-			tools; it should not assume that it can click these controls. A UI-capable agent
-			may inspect and operate the window separately when that is explicitly required.
+			## Chat window functions
 
 			- Type a request in the input area and use **Send**. While the assistant is
 			  responding, the same control becomes **Stop** and interrupts the response.
@@ -85,15 +78,10 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 			- Use the conversation selector to reload a previous conversation. The `+`
 			  button starts a new conversation with the current model, while the trash button
 			  permanently deletes the selected conversation.
-			- Use the provider/model button to change the service or model. Use the key
-			  button to return to API-key configuration when the active service requires it.
-			- Use the `?` button for the in-application tour of the chat controls, and the
-			  forum button for Image.sc support.
-
-			Depending on the selected model and provider, the assistant may use available
-			Fiji tools while answering. Explicitly attached context and the current
-			conversation are different: context supplies information for a request, while
-			conversation history preserves the ongoing dialogue.
+			- Use the provider/model button to change the service or model.
+			- Use the key button to return to API-key configuration when the active
+			  service requires it.
+			- Use the `?` button for the in-application tour of the chat controls.
 			""".strip();
 
 	public IntegratedChatGuide() {

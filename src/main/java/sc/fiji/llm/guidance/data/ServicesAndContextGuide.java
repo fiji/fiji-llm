@@ -52,19 +52,15 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			annotated with `@Plugin` are indexed and instantiated when needed.
 
 			Fiji itself is organized around the lifecycle of its application `Context`.
-			An agent running inside Fiji should use the existing context and its injected
-			services rather than create another context. A second context creates a separate
-			service graph and can lead to duplicate services, disconnected application state,
-			or resources that are not managed by Fiji's lifecycle. Separate contexts are
-			appropriate only for deliberately isolated tests or standalone applications.
+			Use the existing context and its injected services rather than create another context
+			or manually constructing/wiring services.
+			
+			Assume services will operate implicitly: a script that creates, opens, or shows an
+			image will normally be handled by the dataset, display, and UI services. Use the
+			service interfaces explicitly when you need to inspect or control that state,
+			request a specific update, or diagnose behavior that did not meet expectations.
 
-			Most services operate implicitly, so do not recreate or manually wire them.
-			Presume that initialized services provide Fiji's normal integration: for example,
-			a script that creates or opens an image will normally be handled by the dataset,
-			display, and UI services and shown when a UI is available. Use the service
-			interfaces explicitly when you need to inspect or control that state, request a
-			specific update, or diagnose behavior that did not meet expectations. UI behavior
-			is context-dependent and may be unavailable during headless execution.
+			UI behavior may be unavailable during headless execution.
 
 			## Core SciJava services (`scijava-common`)
 
@@ -93,28 +89,20 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			- These converters enable convenient interoperability: a script or command can
 			  often declare an `ImagePlus`, `ImgPlus`, or `Dataset` parameter according to
 			  the API it wants to use, and SciJava will perform the conversion.
-			- Conversion is not proof that the objects are identical. The bridge may share
-			  backing data, wrap it, or copy it, depending on the source and target. Live
-			  synchronization between ImageJ 1.x and ImageJ2 is configurable and may be
-			  disabled for performance, so verify state after cross-model mutations.
-			- Use the existing `LegacyService` from Fiji's application context. Do not create
-			  another legacy service or another ImageJ 1.x application instance.
+			- Conversion may share backing data, wrap it, or copy it, depending on the
+			  source and target. Auto synchronization between ImageJ 1.x and ImageJ2 is
+			  may be disabled for performance.
 
 			## Fiji-LLM services
+		
+			The following are points of extensibility in LLM capabilities.
 
-			These services are also available through the same SciJava context:
-
-			- `AgentGuidanceService`: discovers and reads curated guidance for agents.
-			- `ProviderService`: discovers the configured LLM provider plugins.
-			- `AssistantService`: creates assistants with a selected provider, model,
-			  memory, and tools.
-			- `AiToolService`: discovers and filters the tools available to an agent.
-			- `ContextItemService`: discovers suppliers for user-selected Fiji context.
-			- `ImageRenderingService`: renders an ImageJ display as bounded image content
-			  for multimodal models.
+			- `AgentGuidanceService`: Agentic knowledge base.
+			- `ProviderService`: Model vendors and versions.
+			- `AiToolService`: Tools for agentic use.
+			- `ContextItemService`: UI items for user-selected context.
 			- `ConversationService`: manages saved conversations and their history.
-			- `MCPService`: exposes discovered tools through a local MCP server for external
-			  clients.
+			- `MCPService`: Manages a local MCP server for external tool access.
 			""".strip();
 
 	public ServicesAndContextGuide() {

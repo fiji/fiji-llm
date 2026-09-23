@@ -48,46 +48,29 @@ public class EnvironmentInspectionGuide extends AbstractAgentGuide {
 	private static final String CONTENT = """
 			# Environment inspection
 
-			Fiji state can change between requests and between tool calls. Inspect the
-			narrowest relevant state before modifying an image, script, command, dialog,
-			or other workspace object. Prefer current tool results over older application
-			context when the two disagree.
+			Fiji state can change between requests and between tool calls.  Prefer current
+			queries over older application context when the two disagree.
 
 			## Communication channels
 
-			Different channels answer different questions. Do not treat an empty channel as
-			proof that an operation did nothing, and do not treat one channel as a complete
-			record of Fiji state.
+			Different channels answer different questions.
 
-			- **The operation's tool result:** Start here. It is the most direct evidence
+			- **Executed tool results:** Start here. It is the most direct evidence
 			  about what that tool attempted and whether it reported an error.
-			- **Host and installation state:** Use `fiji_system_read` for broad runtime
-			  facts and `fiji_system_list_update_sites` for update-site configuration. Use
-			  dedicated image, ROI, table, or display tools for workspace state.
 			- **ImageJ's legacy log:** Use `fiji_log_imagej_read` for messages in the
-			  ImageJ 1.x Log window. Treat it as cumulative history, not as a scoped record
-			  of the latest operation.
-			- **SciJava and console output:** Use the multi-step SciJava capture workflow
-			  below when diagnosing messages emitted during a particular operation. It is
-			  useful even when no console window is visible.
-			- **Visible UI:** Use `fiji_ui_windows_read` or `fiji_ui_dialogs_read` when a
-			  dialog or window may be blocking progress. Use `fiji_ui_controls_read` to
-			  inspect one identified window and `fiji_ui_screenshot` only when visual context
-			  is needed. A screenshot is visual evidence, not authoritative state.
-			- **Execution-specific diagnostics:** Preserve the result from script, macro,
-			  and command tools. Their status and diagnostics are often more relevant than
-			  a global log.
-
-			## System inspection
-
-			Call the system tools when installation or host configuration could affect the
-			answer, and call them again after a meaningful environment change. Do not use a
-			previous system result as proof of current state.
+			  ImageJ 1.x Log window. Provides a cumulative history.
+			- **Script logs:** Stored per-script. Output and error deltas are attached
+			  when run via `fiji_script_run`. `fiji_script_read_logs` provides a
+			  cumulative history.
+			- **LogService and console streams:** Require the multi-step SciJava logging
+			  workflow below when.
+			- **Host and installation state:** Use `fiji_system_read` for broad runtime
+			  facts.
 
 			## SciJava logging workflow
 
-			SciJava capture is interval-based and is not retroactive. To diagnose one
-			operation:
+			SciJava capture is interval-based and is not retroactive. If an operation requires
+			diagnosis:
 
 			1. Call `fiji_log_scijava_start_capture` immediately before the operation.
 			2. Run the operation while the capture is active. Keep the interval narrow because
@@ -97,22 +80,15 @@ public class EnvironmentInspectionGuide extends AbstractAgentGuide {
 			4. Call `fiji_log_scijava_stop_capture` after the operation to get the final
 			   capture and close it.
 
-			Only one SciJava capture can be active at a time. Starting a second capture is
-			an error, and reading or stopping without an active capture is also an error.
-			Always stop a capture after the operation, including after a failure, so later
-			operations do not become mixed into its diagnostics. Use
-			`fiji_log_imagej_read` separately when the suspected evidence is in ImageJ's
-			legacy Log window; starting SciJava capture does not make that window a scoped
-			operation log.
+			Only one SciJava capture can be active at a time. Always stop a capture after the
+			target operation, including after a failure, to avoid future confusion.
 
 			## Interpreting evidence
 
 			Correlate channels by timing and operation. A SciJava error, console stderr,
 			ImageJ Log message, visible dialog, or tool error may describe the same failure
 			from a different layer, while a successful tool return does not guarantee that
-			an asynchronous operation has finished. Inspect current UI and application state
-			after operations that may open dialogs, change images, or mutate shared tables,
-			ROIs, or displays.
+			an asynchronous operation has finished.
 			""".strip();
 
 	public EnvironmentInspectionGuide() {

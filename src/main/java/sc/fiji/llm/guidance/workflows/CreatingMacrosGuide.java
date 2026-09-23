@@ -56,7 +56,7 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 			7. Manual editing can continue in the script editor. Common editing needs include removing unintended command invocations and parameterization to generalize the workflow.
 			8. Use the `fiji_script_*` tools to inspect or edit the created `.ijm` script. Keep this extension so that the file is identified as an ImageJ macro.
 			9. ImageJ has a number of built-in macro functions for use in editing. Use `fiji_macro_list_categories` to discover available function categories, then `fiji_macro_list_functions` with a category to inspect available function signatures and descriptions.
-			10. Use `fiji_macro_run` to run the active `.ijm` script. Poll with `fiji_macro_run_status` until the run reaches a terminal state. If execution pauses on a modal dialog, inspect it with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` and the exact title and button text.
+			10. Use `fiji_macro_run` to run the active `.ijm` script. Poll with `fiji_macro_run_status` until the run reaches a terminal state.
 			11. Verify the run's result using a observable Fiji state appropriate to the macro's goal, such as image, ROI, or Results Table changes. Do not claim a macro is successful based on a started or transferred response alone.
 			12. If a concrete failure is identified, attempt repair: use the smallest edit that addresses the diagnostic, then rerun from (10) above.
 			13. Stop if success cannot be attained after a small number of focused repair attempts, or if the same infrastructure failure persists. Report the blocker rather than repeatedly changing macro code.

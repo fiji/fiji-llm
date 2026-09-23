@@ -48,49 +48,43 @@ public class UpdateSitesGuide extends AbstractAgentGuide {
 
 			An update site is web space used by the ImageJ Updater to distribute Fiji and
 			ImageJ extensions such as plugins, scripts, and macros. The updater downloads
-			and installs matching files for the site, so users do not need to install each
-			extension manually.
+			and installs matching files for the site so users do not need to install each
+			extension manually, and handles checks for updates over time.
 
-			## How the community uses them
-
-			Update sites are a community distribution mechanism. The core ImageJ and Fiji
-			projects publish important platform and distribution components, while other
-			research groups and developers can publish their own extensions through a
-			hosted or self-hosted site. A site may provide specialized functionality that
-			is not part of the Fiji distribution, and an extension may depend on a
-			particular site being enabled.
+			The core ImageJ and Fiji projects use update sites to publish key platform
+			components and curated plugins, while other research groups and developers can
+			publish their own extensions through a community or self-hosted site. A site
+			may provide specialized functionality that is not part of the Fiji distribution,
+			and an extension may depend on a particular site being enabled.
 
 			Sites are not all equivalent in scope, maintenance, stability, or compatibility.
 			Treat a community site as a source of extensions whose documentation and
 			maintainer determine how it should be used; do not assume that every available
 			site is required or appropriate for every Fiji installation.
 
+			The following update sites should never be manually enabled or disabled:
+			- Fiji-latest: https://sites.imagej.net/Fiji/
+			- Java-8: https://sites.imagej.net/Java-8/
+			- ImageJ: https://update.imagej.net/
+			- Fiji: https://update.fiji.sc/
+
 			## Available versus active
 
-			- An **available** site is known to the updater and can potentially be enabled.
+			- An **available** site is automatically known to the updater and may or may not
+			  be enabled.
 			- An **active** site is enabled for the current Fiji installation and contributes
 			  files when the updater checks for updates.
-			- A site being available does not mean that its extensions are installed.
-			- A site being active does not by itself prove that a particular plugin or script
-			  is installed; inspect the installed command or extension separately.
-
-			Fiji normally uses its core update sites, and they should not be disabled as a
-			general troubleshooting step. If a workflow needs a different Fiji release
-			channel, use the appropriate Fiji distribution or documented release mechanism
-			instead of disabling core sites casually.
 
 			## Inspecting update-site state
 
-			Use the read-only `fiji_system_list_update_sites` tool to inspect the current
-			installation. It reports each known site's name, URL, and active status. Use
-			this live result when deciding whether a dependency site is enabled; do not
-			infer the current state from general Fiji documentation or from a previous
-			conversation.
+			Use the read-only `fiji_system_list_update_sites` tool if you need to determine
+			whether a dependency site is enabled; do not infer the current state from general
+			Fiji documentation or from a conversation.
 
-			This guidance and the listing tool do not enable, disable, add, remove, or
-			modify update sites. Do not recommend changing site configuration merely because
-			an optional site is inactive. First establish that the requested extension
-			actually depends on it and follow the site's or extension's documentation.
+			Update sites should not be modified by an agent. Do not recommend changing site
+			configuration merely because an optional site is inactive. First establish that the
+			requested extension actually depends on it and follow the site's or extension's
+			wiki documentation.
 
 			## Additional resources
 

@@ -47,77 +47,44 @@ public class ExtensionContributionGuide extends AbstractAgentGuide {
 	private static final String CONTENT = """
 			# Extending and Contributing to Fiji-LLM
 
-			Fiji-LLM is itself a SciJava extension for Fiji. Use the official contribution
-			and plugin-development documentation for general project, packaging, and plugin
-			practices:
+			Fiji-LLM is a SciJava extension, not a separate application layered beside Fiji.
+			Its tools, context, guidance, model providers, and chat integrations are discovered
+			through shared extension points and can be reused by both integrated chat and MCP
+			clients.
 
-			- Fiji contribution guide: https://imagej.net/contribute/fiji
-			- ImageJ plugin development: https://imagej.net/develop/plugins
+			The important contribution decision is therefore architectural: add the behavior to
+			the existing extension point that owns it. Avoid creating a parallel registry,
+			client-specific implementation, or new workflow format. Reusing the shared
+			infrastructure keeps discovery, lifecycle, application state, safety boundaries, and
+			documentation consistent across Fiji interfaces. It also means one focused extension
+			can serve more than one client instead of making the same capability separately for
+			chat, MCP, or a particular model.
 
-			This guide describes how those extension mechanisms become an extensible LLM
-			foundation in this project. SciJava discovers annotated plugins from the
-			classpath, so a new contribution should use the existing extension point rather
-			than create a parallel registry or client-specific integration.
+			## Find the right extension point
 
-			## Choose an extension point
-
-			| Goal | Extension point | What it provides |
-			|---|---|---|
-			| Let an LLM inspect or change Fiji state | `AiToolPlugin` | LangChain4j `@Tool` methods discovered by the shared AI tool service and exposed to integrated chat and MCP |
-			| Add domain state to model context | `ContextItem` and `ContextItemSupplier` | Structured context items that can be supplied to the chat system from the current Fiji state |
-			| Teach an agent a stable workflow or concept | `AgentGuide` | Curated, searchable guidance read through the `fiji_guidance_*` tools |
-			| Add a model backend | `LLMProvider` | A discoverable provider that creates the chat models used by the assistant |
-			| Add a human chat integration | `ChatbotService` | The project service boundary for integrated chat UI behavior |
-
-			## What to add
-
-			- **A tool:** Implement `AiToolPlugin`, annotate it with
-			  `@Plugin(type = AiToolPlugin.class)`, and expose narrowly scoped methods with
-			  LangChain4j `@Tool` descriptions. Extend `AbstractAiToolPlugin` when its shared
-			  reflective tool discovery and naming behavior applies. Prefer structured results,
-			  explicit inputs, and verification-friendly operations. Use `ToolScope` when a
-			  tool should be available only in a particular integrated-chat context.
-			- **Context:** Implement a `ContextItem` for the model-facing representation and
-			  a `ContextItemSupplier` plugin when the item should be offered from live Fiji
-			  state or the chat UI. Keep context focused; do not inject large or sensitive
-			  application state by default.
-			- **Guidance:** Extend `AbstractAgentGuide`, annotate the class as an
-			  `AgentGuide` plugin, and give it a stable Guide ID, useful topic terms, and
-			  related Guide IDs. Guidance should route an agent to the right tools or other
-			  guides instead of copying tool descriptions or general API documentation.
-			- **A provider:** Implement `LLMProvider` and register it with
-			  `@Plugin(type = LLMProvider.class)`. API-key-based providers normally extend
-			  `AbstractLLMProvider`; Ollama providers normally extend
-			  `AbstractOllamaProvider` or `AbstractSingletonOllamaProvider`. Keep model
-			  connectivity separate from tools and application behavior.
-			- **Chat UI behavior:** Use `ChatbotService` and the existing SciJava service and
-			  command mechanisms. Do not create a second chat registry when the shared
-			  service, tool, context, or guidance extension point already fits.
-
-			## How an LLM can route a developer request
-
-			| Developer request | First suggestion |
+			| Need | Extension point |
 			|---|---|
-			| “Let the assistant perform or inspect a Fiji operation” | Add a focused `AiToolPlugin`; the integrated chat and MCP can discover the same tool |
-			| “Give the model the current state of my domain object” | Add a `ContextItem` and, when appropriate, a `ContextItemSupplier` |
-			| “Help agents understand this workflow” | Add or update an `AgentGuide` with searchable topics and related Guide IDs |
-			| “Support another model service” | Add an `LLMProvider` using the matching provider base class |
-			| “Change the human chat experience” | Inspect `ChatbotService` and existing commands/services before adding UI code |
+			| Let an agent inspect or change Fiji state | `AiToolPlugin` |
+			| Supply current domain state as model context | `ContextItem` and `ContextItemSupplier` |
+			| Explain a stable workflow or concept | `AgentGuide` |
+			| Connect another model service | `LLMProvider` |
+			| Change the human chat integration | `ChatbotService` |
 
-			A new tool is the usual route for agentic behavior. Because the integrated chat
-			and MCP server use the shared discovered tool framework, one well-scoped tool can
-			serve both interfaces. The exact exposed tool set remains dynamic: clients should
-			discover the running Fiji instance rather than assume that every installation has
-			the same extensions.
+			When the need crosses boundaries, keep the responsibilities separate: model
+			connectivity should not contain Fiji tools, tools should not become a second context
+			system, and guidance should route agents rather than duplicate tool descriptions or
+			general API documentation.
 
-			## Contribution checklist
+			## Read next
 
-			Start from a nearby implementation, keep the extension narrow, and add focused
-			tests for deterministic behavior. Use structured tool results and clear names and
-			descriptions so both people and LLMs can select the capability. Verify state before
-			mutating it and report enough context to make failures reproducible. When changing
-			an extension contract or agent-facing tool, update the relevant guidance and
-			documentation as well as the implementation.
+			For project conventions, nearby implementation links, tool-design guidance, testing,
+			and documentation requirements, read the [Developers: Adding Functionality section
+			of the README](https://github.com/fiji/fiji-llm#developers-adding-functionality).
+			For the broader architecture, read the [technical summary](https://github.com/fiji/fiji-llm/blob/main/doc/TECHNICAL_SUMMARY.md).
+
+			For general Fiji contribution and plugin-development practices, see the [Fiji
+			contribution guide](https://imagej.net/contribute/fiji) and [ImageJ plugin
+			development guide](https://imagej.net/develop/plugins).
 			""".strip();
 
 	public ExtensionContributionGuide() {
