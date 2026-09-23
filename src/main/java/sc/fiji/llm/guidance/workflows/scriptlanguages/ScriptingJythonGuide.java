@@ -35,7 +35,7 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.workflows.WritingScriptsGuide;
+import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 
 /** Guidance for Jython scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
@@ -106,7 +106,7 @@ public class ScriptingJythonGuide extends AbstractAgentGuide {
 	public ScriptingJythonGuide() {
 		super(ID, "Jython Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
 			Topic.PYTHON), Authority.PROJECT_AUTHORED, List.of(
-				WritingScriptsGuide.ID));
+				ScriptingGuide.ID));
 	}
 
 	@Override

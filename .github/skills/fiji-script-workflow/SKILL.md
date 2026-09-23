@@ -8,4 +8,4 @@ disable-model-invocation: false
 
 # Fiji Script Workflow
 
-A complete writeup of the edit-run-diagnose-repair-verify loop can be read using the `fiji_guidance_read` tool with Guide ID `writing-scripts`
+A complete writeup of the edit-run-diagnose-repair-verify loop can be read using the `fiji_guidance_read` tool with Guide ID `scripting`

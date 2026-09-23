@@ -39,14 +39,14 @@ import sc.fiji.llm.guidance.workflows.scriptlanguages.ScriptingGroovyGuide;
 import sc.fiji.llm.guidance.workflows.scriptlanguages.ScriptingJythonGuide;
 import sc.fiji.llm.guidance.workflows.scriptlanguages.ScriptingPythonGuide;
 
-/** Guidance for writing scripts in Fiji. */
+/** Guidance for writing and running scripts in Fiji. */
 @Plugin(type = AgentGuide.class)
-public class WritingScriptsGuide extends AbstractAgentGuide {
+public class ScriptingGuide extends AbstractAgentGuide {
 
-	public static final String ID = "writing-scripts";
+	public static final String ID = "scripting";
 
 	private static final String CONTENT = """
-			# Using the Fiji Script Editor
+			# Writing and Running Scripts in Fiji
 
 			## Script parameters
 
@@ -160,8 +160,8 @@ public class WritingScriptsGuide extends AbstractAgentGuide {
 			""".formatted(ScriptingGroovyGuide.ID, ScriptingJythonGuide.ID,
 				ScriptingPythonGuide.ID).strip();
 
-	public WritingScriptsGuide() {
-		super(ID, "Writing Scripts", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS),
+	public ScriptingGuide() {
+		super(ID, "Writing and Running Scripts", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS),
 			Authority.PROJECT_AUTHORED, List.of(
 				ScriptingPythonGuide.ID, ScriptingJythonGuide.ID, ScriptingGroovyGuide.ID,
 				ScriptsAndMacrosGuide.ID));

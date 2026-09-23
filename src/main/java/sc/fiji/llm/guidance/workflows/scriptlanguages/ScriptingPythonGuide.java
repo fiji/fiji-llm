@@ -35,7 +35,7 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.workflows.WritingScriptsGuide;
+import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 
 /** Guidance for Python scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
@@ -118,12 +118,12 @@ public class ScriptingPythonGuide extends AbstractAgentGuide {
 			  but remember that a Python object is not automatically a Java object accepted by every overload.
 			- `print` writes to the Python/script console. Use `ij.IJ.log(str(value))` for the ImageJ Log window and
 			  a `LogService` parameter for ImageJ2/SciJava logging.
-			""".formatted(WritingScriptsGuide.ID).strip();
+			""".formatted(ScriptingGuide.ID).strip();
 
 	public ScriptingPythonGuide() {
 		super(ID, "Python Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
 			Topic.PYTHON), Authority.PROJECT_AUTHORED, List.of(
-				WritingScriptsGuide.ID));
+				ScriptingGuide.ID));
 	}
 
 	@Override
