@@ -102,7 +102,7 @@ public class OnboardingGuide extends AbstractAgentGuide {
 		""".formatted(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
 			EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID, UIInteractionGuide.ID,
 			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,
-			ExtensionContributionGuide.ID);
+			ExtensionContributionGuide.ID).strip();
 
 	public OnboardingGuide() {
 		super(ID, "Fiji Agent Onboarding", AgentGuide.topics(Topic.ONBOARDING, Topic.FIJI,

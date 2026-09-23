@@ -101,7 +101,7 @@ public class RoisGuide extends AbstractAgentGuide {
 			Use an ImageJ command or script for ROI creation, addition, selection, or
 			measurement; use these tools to inspect the resulting shared state and verify
 			that the intended ROI and image are involved.
-			""";
+			""".strip();
 
 	public RoisGuide() {
 		super(ID, "Regions of Interest", AgentGuide.topics(Topic.DATA, Topic.ROIS),

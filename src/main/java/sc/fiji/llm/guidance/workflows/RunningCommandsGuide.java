@@ -112,7 +112,7 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 			requiring knowledge of Java development practices. Contributions can also be made via macros and scripts. In all
 			cases, update sites are the mechanism of distribution (Guide ID: `%3$s`).
 			""".formatted(UIInteractionGuide.ID, EnvironmentInspectionGuide.ID,
-				UpdateSitesGuide.ID);
+				UpdateSitesGuide.ID).strip();
 
 	public RunningCommandsGuide() {
 		super(ID, "Running Commands", AgentGuide.topics(Topic.IMAGE_ANALYSIS, Topic.COMMANDS,

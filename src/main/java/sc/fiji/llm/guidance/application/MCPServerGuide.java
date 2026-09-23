@@ -112,7 +112,7 @@ public class MCPServerGuide extends AbstractAgentGuide {
 			workspace state. Inspect the current state first, choose the narrowest applicable
 			tool, and verify the result afterward. Re-query state when accuracy matters
 			because a human or another client may change Fiji between tool calls.
-			""".formatted(OnboardingGuide.ID);
+			""".formatted(OnboardingGuide.ID).strip();
 
 	public MCPServerGuide() {
 		super(ID, "MCP Server", AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,

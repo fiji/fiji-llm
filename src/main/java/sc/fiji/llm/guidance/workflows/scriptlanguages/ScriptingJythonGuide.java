@@ -101,7 +101,7 @@ public class ScriptingJythonGuide extends AbstractAgentGuide {
 			    image = WindowManager.getImage(image_id)
 			    IJ.log(image.getTitle() if image is not None else 'untitled')
 			```
-			""";
+			""".strip();
 
 	public ScriptingJythonGuide() {
 		super(ID, "Jython Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,

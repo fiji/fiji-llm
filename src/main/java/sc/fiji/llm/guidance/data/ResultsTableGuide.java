@@ -100,7 +100,7 @@ public class ResultsTableGuide extends AbstractAgentGuide {
 			image or ROI for a row, or read every independently created or displayed table.
 			Use an ImageJ command or script to perform measurements or manage table state,
 			then use `fiji_results_read` to inspect the resulting shared table.
-			""";
+			""".strip();
 
 	public ResultsTableGuide() {
 		super(ID, "Results Table", AgentGuide.topics(Topic.DATA, Topic.RESULTS_TABLE),

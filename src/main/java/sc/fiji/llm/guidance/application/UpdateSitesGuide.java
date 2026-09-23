@@ -97,7 +97,7 @@ public class UpdateSitesGuide extends AbstractAgentGuide {
 			- Official overview: https://imagej.net/update-sites/
 			- Available sites: https://imagej.net/list-of-update-sites
 			- Following a site: https://imagej.net/update-sites/following
-			""";
+			""".strip();
 
 	public UpdateSitesGuide() {
 		super(ID, "Update Sites", AgentGuide.topics(Topic.APPLICATION, Topic.UPDATE_SITES,

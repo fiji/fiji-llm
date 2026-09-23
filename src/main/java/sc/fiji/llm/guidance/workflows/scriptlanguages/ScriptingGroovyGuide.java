@@ -108,7 +108,7 @@ public class ScriptingGroovyGuide extends AbstractAgentGuide {
 			    IJ.log("${image?.title ?: 'untitled'}")
 			}
 			```
-			""";
+			""".strip();
 
 	public ScriptingGroovyGuide() {
 		super(ID, "Groovy Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,

@@ -113,7 +113,7 @@ public class EnvironmentInspectionGuide extends AbstractAgentGuide {
 			an asynchronous operation has finished. Inspect current UI and application state
 			after operations that may open dialogs, change images, or mutate shared tables,
 			ROIs, or displays.
-			""".trim();
+			""".strip();
 
 	public EnvironmentInspectionGuide() {
 		super(ID, "Environment Inspection", AgentGuide.topics(Topic.APPLICATION,

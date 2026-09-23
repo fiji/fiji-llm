@@ -65,7 +65,7 @@ public class DataTypesGuide extends AbstractAgentGuide {
 			image representation is unclear, then add the article for each state or data type
 			that the operation uses.
 			""".formatted(ImagesAndDatasetsGuide.ID, ServicesAndContextGuide.ID, RoisGuide.ID,
-				ResultsTableGuide.ID);
+				ResultsTableGuide.ID).strip();
 
 	public DataTypesGuide() {
 		super(ID, "Fiji Data Types", AgentGuide.topics(Topic.DATA_TYPES, Topic.DATA,

@@ -83,7 +83,7 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 			## Additional resources
 			
 			Core macro documentation can be found on the ImageJ wiki: https://imagej.net/scripting/macro
-			""";
+			""".strip();
 
 	public CreatingMacrosGuide() {
 		super(ID, "Creating Macros", AgentGuide.topics(Topic.WORKFLOWS, Topic.MACROS,

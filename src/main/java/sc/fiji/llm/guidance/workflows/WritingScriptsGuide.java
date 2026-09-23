@@ -158,7 +158,7 @@ public class WritingScriptsGuide extends AbstractAgentGuide {
 
 			Core scripting documentation can be found on the ImageJ wiki: https://imagej.net/scripting/
 			""".formatted(ScriptingGroovyGuide.ID, ScriptingJythonGuide.ID,
-				ScriptingPythonGuide.ID);
+				ScriptingPythonGuide.ID).strip();
 
 	public WritingScriptsGuide() {
 		super(ID, "Writing Scripts", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS),

@@ -79,7 +79,7 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			script or macro, or perform a small necessary UI-only action. When a UI action is
 			unavoidable, record the relevant command, settings, target, and resulting state
 			in the workflow rather than treating the click itself as the analysis.
-			""".trim();
+			""".strip();
 
 	public UIInteractionGuide() {
 		super(ID, "UI Interaction", AgentGuide.topics(Topic.APPLICATION, Topic.UI, Topic.DIALOGS,

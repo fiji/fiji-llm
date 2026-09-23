@@ -118,7 +118,7 @@ public class ScriptingPythonGuide extends AbstractAgentGuide {
 			  but remember that a Python object is not automatically a Java object accepted by every overload.
 			- `print` writes to the Python/script console. Use `ij.IJ.log(str(value))` for the ImageJ Log window and
 			  a `LogService` parameter for ImageJ2/SciJava logging.
-			""".formatted(WritingScriptsGuide.ID);
+			""".formatted(WritingScriptsGuide.ID).strip();
 
 	public ScriptingPythonGuide() {
 		super(ID, "Python Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,

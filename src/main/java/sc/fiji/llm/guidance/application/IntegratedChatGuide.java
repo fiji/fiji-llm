@@ -94,7 +94,7 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 			Fiji tools while answering. Explicitly attached context and the current
 			conversation are different: context supplies information for a request, while
 			conversation history preserves the ongoing dialogue.
-			""";
+			""".strip();
 
 	public IntegratedChatGuide() {
 			super(ID, "Integrated Chat", AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,

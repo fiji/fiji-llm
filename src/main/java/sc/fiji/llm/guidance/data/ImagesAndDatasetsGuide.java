@@ -145,7 +145,7 @@ public class ImagesAndDatasetsGuide extends AbstractAgentGuide {
 			A displayed image, an ImagePlus, a Dataset, and an ImgPlus may be different
 			views or bridges over related state; object class alone is not enough to infer
 			identity, ownership, or storage cost.
-			""";
+			""".strip();
 
 	public ImagesAndDatasetsGuide() {
 		super(ID, "Images and Datasets", AgentGuide.topics(Topic.DATA, Topic.IMAGES,

@@ -115,7 +115,7 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			- `ConversationService`: manages saved conversations and their history.
 			- `MCPService`: exposes discovered tools through a local MCP server for external
 			  clients.
-			""";
+			""".strip();
 
 	public ServicesAndContextGuide() {
 		super(ID, "Services and Context", AgentGuide.topics(Topic.DATA, Topic.SERVICES,

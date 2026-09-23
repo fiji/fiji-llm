@@ -87,7 +87,7 @@ public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
 			The functionality underlying both scripts and macros is directly tied to available Commands (Guide ID: `%4$s`).
 			Additionally, you should be familiar with Guide ID: `%5$s`.
 			""".formatted(WritingScriptsGuide.ID, WritingScriptsGuide.ID, CreatingMacrosGuide.ID,
-				RunningCommandsGuide.ID, DataTypesGuide.ID);
+				RunningCommandsGuide.ID, DataTypesGuide.ID).strip();
 
 	public ScriptsAndMacrosGuide() {
 		super(ID, "Scripts and Macros in Fiji", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,

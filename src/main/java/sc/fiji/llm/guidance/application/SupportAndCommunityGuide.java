@@ -88,7 +88,7 @@ public class SupportAndCommunityGuide extends AbstractAgentGuide {
 			These resources are complementary: use imagej.net to learn, Image.sc to discuss
 			and troubleshoot, and GitHub issues to track actionable defects or feature
 			requests in the appropriate project.
-			""".formatted(OnboardingGuide.ID).trim();
+			""".formatted(OnboardingGuide.ID).strip();
 
 	public SupportAndCommunityGuide() {
 		super(ID, "Fiji Support and Community", AgentGuide.topics(Topic.APPLICATION,

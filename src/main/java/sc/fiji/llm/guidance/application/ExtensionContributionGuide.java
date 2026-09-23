@@ -118,7 +118,7 @@ public class ExtensionContributionGuide extends AbstractAgentGuide {
 			mutating it and report enough context to make failures reproducible. When changing
 			an extension contract or agent-facing tool, update the relevant guidance and
 			documentation as well as the implementation.
-			""".trim();
+			""".strip();
 
 	public ExtensionContributionGuide() {
 		super(ID, "Fiji Extension and Contribution", AgentGuide.topics(
