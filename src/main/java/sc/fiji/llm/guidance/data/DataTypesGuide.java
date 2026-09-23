@@ -64,13 +64,13 @@ public class DataTypesGuide extends AbstractAgentGuide {
 			legacy ImageJ state to modern Fiji state. Read the image article first when the
 			image representation is unclear, then add the article for each state or data type
 			that the operation uses.
-			""".formatted(ImagesAndDatasetsGuide.ID, ServicesAndContextGuide.ID, RoisGuide.ID,
+			""".formatted(ImagesInFiji.ID, ServicesAndContextGuide.ID, RoisGuide.ID,
 				ResultsTableGuide.ID).strip();
 
 	public DataTypesGuide() {
 		super(ID, "Fiji Data Types", AgentGuide.topics(Topic.DATA_TYPES, Topic.DATA,
 			Topic.IMAGES, Topic.ROIS, Topic.RESULTS_TABLE), Authority.PROJECT_AUTHORED, List.of(
-				RoisGuide.ID, ResultsTableGuide.ID, ImagesAndDatasetsGuide.ID,
+				RoisGuide.ID, ResultsTableGuide.ID, ImagesInFiji.ID,
 				ServicesAndContextGuide.ID, ID));
 	}
 

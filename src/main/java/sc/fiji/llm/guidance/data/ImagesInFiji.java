@@ -36,14 +36,14 @@ import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 
-/** Guidance for images and datasets in Fiji. */
+/** Guidance for image data in Fiji. */
 @Plugin(type = AgentGuide.class)
-public class ImagesAndDatasetsGuide extends AbstractAgentGuide {
+public class ImagesInFiji extends AbstractAgentGuide {
 
-	public static final String ID = "images-and-datasets";
+	public static final String ID = "image-types";
 
 	private static final String CONTENT = """
-			# Images and Datasets in Fiji
+			# Image Data in Fiji
 
 			Fiji has both a legacy ImageJ 1.x data model and the modern ImageJ2/ImgLib2
 			data model. `ImagePlus`, `ImgPlus`, and `Dataset` are related, but they are not
@@ -147,8 +147,8 @@ public class ImagesAndDatasetsGuide extends AbstractAgentGuide {
 			identity, ownership, or storage cost.
 			""".strip();
 
-	public ImagesAndDatasetsGuide() {
-		super(ID, "Images and Datasets", AgentGuide.topics(Topic.DATA, Topic.IMAGES,
+	public ImagesInFiji() {
+		super(ID, "Image Data in Fiji", AgentGuide.topics(Topic.DATA, Topic.IMAGES,
 			Topic.IMAGEPLUS, Topic.DATASET, Topic.IMGPLUS),
 			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
