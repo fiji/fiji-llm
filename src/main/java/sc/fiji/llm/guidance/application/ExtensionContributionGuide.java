@@ -35,10 +35,14 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
+import sc.fiji.llm.guidance.data.ServicesAndContextGuide;
 
 /** Guidance for extending and contributing to Fiji-LLM. */
 @Plugin(type = AgentGuide.class)
 public class ExtensionContributionGuide extends AbstractAgentGuide {
+
+	public static final String ID = "extension-contribution";
 
 	private static final String CONTENT = """
 			# Extending and Contributing to Fiji-LLM
@@ -117,10 +121,10 @@ public class ExtensionContributionGuide extends AbstractAgentGuide {
 			""".trim();
 
 	public ExtensionContributionGuide() {
-		super("extension-contribution", "Fiji Extension and Contribution", List.of(
+		super(ID, "Fiji Extension and Contribution", List.of(
 			"application", "development", "extensions", "contribution", "llm"),
-			Authority.PROJECT_AUTHORED, List.of("onboarding", "mcp-server", "integrated-chat",
-			"services-and-context"));
+			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID, MCPServerGuide.ID,
+				IntegratedChatGuide.ID, ServicesAndContextGuide.ID));
 	}
 
 	@Override

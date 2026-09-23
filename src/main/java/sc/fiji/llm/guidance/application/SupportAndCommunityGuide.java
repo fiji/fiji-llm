@@ -35,17 +35,20 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Guidance for Fiji support and community resources. */
 @Plugin(type = AgentGuide.class)
 public class SupportAndCommunityGuide extends AbstractAgentGuide {
+
+	public static final String ID = "support-and-community";
 
 	private static final String CONTENT = """
 			# Fiji Support and Community
 
 			Use this guide when a user needs help, official documentation, or a place to
 			report a reproducible problem. For the general agent workflow and available Fiji
-			tools, first read the guide with Guide ID `onboarding`.
+			tools, first read the guide with Guide ID `%s`.
 
 			## Choose the right channel
 
@@ -85,12 +88,12 @@ public class SupportAndCommunityGuide extends AbstractAgentGuide {
 			These resources are complementary: use imagej.net to learn, Image.sc to discuss
 			and troubleshoot, and GitHub issues to track actionable defects or feature
 			requests in the appropriate project.
-			""".trim();
+			""".formatted(OnboardingGuide.ID).trim();
 
 	public SupportAndCommunityGuide() {
-		super("support-and-community", "Fiji Support and Community", List.of(
+		super(ID, "Fiji Support and Community", List.of(
 			"application", "support", "community", "documentation", "issues"),
-			Authority.PROJECT_AUTHORED, List.of("onboarding"));
+			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
 	}
 
 	@Override

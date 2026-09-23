@@ -35,10 +35,14 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
+import sc.fiji.llm.guidance.data.DataTypesGuide;
 
 /** Guidance for choosing between scripts and macros in Fiji. */
 @Plugin(type = AgentGuide.class)
 public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
+
+	public static final String ID = "scripts-and-macros";
 
 	private static final String CONTENT = """
 			# Scripts and Macros in Fiji
@@ -64,7 +68,7 @@ public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
 			differ from coding in the same language "natively." Many languages are connected via the JSR223 script API,
 			but there are exceptions.
 			
-			Before writing a script in Fiji, read Guide ID `writing-scripts`, and at least one language-specific Guide
+			Before writing a script in Fiji, read Guide ID `%1$s`, and at least one language-specific Guide
 			appropriate to your particular use.
 
 			## Macros
@@ -75,19 +79,20 @@ public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
 			for repetition.
 
 			In Fiji, the resulting portable ImageJ macro files (*.ijm) have been absorbed into the Script Editor's umbrella. Therefore,
-			before creating a Macro in Fiji, read both Guide IDs `writing-scripts` and `creating-macros`. A language-specific script
+			before creating a Macro in Fiji, read both Guide IDs `%2$s` and `%3$s`. A language-specific script
 			guide is not necessary for this use.
 
 			## Shared concepts
 
-			The functionality underlying both scripts and macros is directly tied to available Commands (Guide ID: `running-commands`).
-			Additionally, you should be familiar with Guide ID: `data-types`.
-			""";
+			The functionality underlying both scripts and macros is directly tied to available Commands (Guide ID: `%4$s`).
+			Additionally, you should be familiar with Guide ID: `%5$s`.
+			""".formatted(WritingScriptsGuide.ID, WritingScriptsGuide.ID, CreatingMacrosGuide.ID,
+				RunningCommandsGuide.ID, DataTypesGuide.ID);
 
 	public ScriptsAndMacrosGuide() {
-		super("scripts-and-macros", "Scripts and Macros in Fiji", List.of("workflows",
-			"scripts", "macros"), Authority.PROJECT_AUTHORED, List.of("running-commands", "data-types",
-			"writing-scripts", "creating-macros", "onboarding"));
+		super(ID, "Scripts and Macros in Fiji", List.of("workflows", "scripts", "macros"),
+			Authority.PROJECT_AUTHORED, List.of(RunningCommandsGuide.ID, DataTypesGuide.ID,
+				WritingScriptsGuide.ID, CreatingMacrosGuide.ID, OnboardingGuide.ID));
 	}
 
 	@Override

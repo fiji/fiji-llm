@@ -40,6 +40,8 @@ import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 @Plugin(type = AgentGuide.class)
 public class ImagesAndDatasetsGuide extends AbstractAgentGuide {
 
+	public static final String ID = "images-and-datasets";
+
 	private static final String CONTENT = """
 			# Images and Datasets in Fiji
 
@@ -146,9 +148,9 @@ public class ImagesAndDatasetsGuide extends AbstractAgentGuide {
 			""";
 
 	public ImagesAndDatasetsGuide() {
-		super("images-and-datasets", "Images and Datasets", List.of(
+		super(ID, "Images and Datasets", List.of(
 			"data", "images", "imageplus", "dataset", "imgplus"),
-			Authority.PROJECT_AUTHORED, List.of("data-types"));
+			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
 
 	@Override

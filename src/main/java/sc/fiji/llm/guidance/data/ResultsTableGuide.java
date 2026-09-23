@@ -40,6 +40,8 @@ import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 @Plugin(type = AgentGuide.class)
 public class ResultsTableGuide extends AbstractAgentGuide {
 
+	public static final String ID = "results-table";
+
 	private static final String CONTENT = """
 			# ImageJ 1.x Results Table
 
@@ -101,8 +103,8 @@ public class ResultsTableGuide extends AbstractAgentGuide {
 			""";
 
 	public ResultsTableGuide() {
-		super("results-table", "Results Table", List.of("data",
-			"results-table"), Authority.PROJECT_AUTHORED, List.of( "data-types"));
+		super(ID, "Results Table", List.of("data", "results-table"),
+			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
 
 	@Override

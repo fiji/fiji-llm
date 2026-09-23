@@ -35,10 +35,13 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.workflows.WritingScriptsGuide;
 
 /** Guidance for Python scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
 public class ScriptingPythonGuide extends AbstractAgentGuide {
+
+	public static final String ID = "scripting-python";
 
 	private static final String CONTENT = """
 			# Python Scripting in Fiji
@@ -101,7 +104,7 @@ public class ScriptingPythonGuide extends AbstractAgentGuide {
 			`net.imagej.*` for ImageJ2 data and services; `org.scijava.*` for commands, logging, UI, and context;
 			and `net.imglib2.*` for typed n-dimensional image data. Use the Java type expected by each method: an
 			ImageJ 1.x `ImagePlus` is not interchangeable with an ImageJ2 `Dataset`. SciJava services should
-			be requested as script parameters rather than constructed manually; see Guide ID `writing-scripts`.
+			be requested as script parameters rather than constructed manually; see Guide ID `%s`.
 
 			## Python and Java interop
 
@@ -115,12 +118,12 @@ public class ScriptingPythonGuide extends AbstractAgentGuide {
 			  but remember that a Python object is not automatically a Java object accepted by every overload.
 			- `print` writes to the Python/script console. Use `ij.IJ.log(str(value))` for the ImageJ Log window and
 			  a `LogService` parameter for ImageJ2/SciJava logging.
-			""";
+			""".formatted(WritingScriptsGuide.ID);
 
 	public ScriptingPythonGuide() {
-		super("scripting-python", "Python Scripting", List.of(
+		super(ID, "Python Scripting", List.of(
 			"workflows", "scripts", "python"), Authority.PROJECT_AUTHORED, List.of(
-				"writing-scripts"));
+				WritingScriptsGuide.ID));
 	}
 
 	@Override

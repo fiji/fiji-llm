@@ -35,10 +35,13 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Information about the integrated MCP server. */
 @Plugin(type = AgentGuide.class)
 public class MCPServerGuide extends AbstractAgentGuide {
+
+	public static final String ID = "mcp-server";
 
 	private static final String CONTENT = """
 			# Fiji MCP Server
@@ -87,7 +90,7 @@ public class MCPServerGuide extends AbstractAgentGuide {
 			assume that every Fiji installation exposes the same list.
 
 			For an unfamiliar Fiji-specific workflow, start with the read-only guidance tool
-			`fiji_guidance_read` and Guide ID `onboarding`, then retrieve only the additional
+			`fiji_guidance_read` and Guide ID `%s`, then retrieve only the additional
 			guidance needed for the task.
 
 			## Managing the server
@@ -109,11 +112,11 @@ public class MCPServerGuide extends AbstractAgentGuide {
 			workspace state. Inspect the current state first, choose the narrowest applicable
 			tool, and verify the result afterward. Re-query state when accuracy matters
 			because a human or another client may change Fiji between tool calls.
-			""";
+			""".formatted(OnboardingGuide.ID);
 
 	public MCPServerGuide() {
-			super("mcp-server", "MCP Server", List.of("application", "ai", "llm",
-				"agent", "mcp"), Authority.PROJECT_AUTHORED, List.of("onboarding"));
+		super(ID, "MCP Server", List.of("application", "ai", "llm", "agent", "mcp"),
+			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
 	}
 
 	@Override

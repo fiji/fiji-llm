@@ -35,10 +35,13 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Guidance for Fiji update sites. */
 @Plugin(type = AgentGuide.class)
 public class UpdateSitesGuide extends AbstractAgentGuide {
+
+	public static final String ID = "update-sites";
 
 	private static final String CONTENT = """
 			# Fiji Update Sites
@@ -97,9 +100,9 @@ public class UpdateSitesGuide extends AbstractAgentGuide {
 			""";
 
 	public UpdateSitesGuide() {
-		super("update-sites", "Update Sites", List.of(
+		super(ID, "Update Sites", List.of(
 			"application", "update-sites", "plugins"), Authority.PROJECT_AUTHORED, List.of(
-				"onboarding"));
+				OnboardingGuide.ID));
 	}
 
 	@Override

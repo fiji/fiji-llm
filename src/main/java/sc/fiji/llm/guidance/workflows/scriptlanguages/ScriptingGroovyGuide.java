@@ -35,10 +35,13 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.workflows.WritingScriptsGuide;
 
 /** Guidance for Groovy scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
 public class ScriptingGroovyGuide extends AbstractAgentGuide {
+
+	public static final String ID = "scripting-groovy";
 
 	private static final String CONTENT = """
 			# Groovy Scripting in Fiji
@@ -108,9 +111,9 @@ public class ScriptingGroovyGuide extends AbstractAgentGuide {
 			""";
 
 	public ScriptingGroovyGuide() {
-		super("scripting-groovy", "Groovy Scripting", List.of(
+		super(ID, "Groovy Scripting", List.of(
 			"workflows", "scripts", "groovy"), Authority.PROJECT_AUTHORED, List.of(
-				"writing-scripts"));
+				WritingScriptsGuide.ID));
 	}
 
 	@Override

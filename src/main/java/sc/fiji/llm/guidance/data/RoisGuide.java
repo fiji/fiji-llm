@@ -40,6 +40,8 @@ import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 @Plugin(type = AgentGuide.class)
 public class RoisGuide extends AbstractAgentGuide {
 
+	public static final String ID = "rois";
+
 	private static final String CONTENT = """
 			# ImageJ 1.x Regions of Interest
 
@@ -102,8 +104,8 @@ public class RoisGuide extends AbstractAgentGuide {
 			""";
 
 	public RoisGuide() {
-		super("rois", "Regions of Interest", List.of("data", "rois"),
-			Authority.PROJECT_AUTHORED, List.of("data-types"));
+		super(ID, "Regions of Interest", List.of("data", "rois"),
+			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
 
 	@Override

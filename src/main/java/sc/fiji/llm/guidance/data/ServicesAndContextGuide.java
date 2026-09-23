@@ -40,6 +40,8 @@ import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 @Plugin(type = AgentGuide.class)
 public class ServicesAndContextGuide extends AbstractAgentGuide {
 
+	public static final String ID = "services-and-context";
+
 	private static final String CONTENT = """
 			# SciJava Services and Context
 
@@ -116,9 +118,9 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			""";
 
 	public ServicesAndContextGuide() {
-		super("services-and-context", "Services and Context", List.of(
+		super(ID, "Services and Context", List.of(
 			"data", "services", "context"), Authority.PROJECT_AUTHORED,
-			List.of("data-types"));
+			List.of(DataTypesGuide.ID));
 	}
 
 	@Override

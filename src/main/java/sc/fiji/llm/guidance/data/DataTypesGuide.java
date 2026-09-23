@@ -40,20 +40,22 @@ import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 @Plugin(type = AgentGuide.class)
 public class DataTypesGuide extends AbstractAgentGuide {
 
+	public static final String ID = "data-types";
+
 	private static final String CONTENT = """
 			# Fiji Data Types: Choose a Guide
 
 			Find the article that matches the data or behavior you need to understand:
 
-			- **Image pixels and image representations:** Read Guide ID `images-and-datasets`
+			- **Image pixels and image representations:** Read Guide ID `%1$s`
 			  for `ImagePlus`, `ImgPlus`, `Dataset`, dimensions, axes, storage, virtual
 			  images, and legacy/modern image conversion.
-			- **Fiji runtime and service behavior:** Read Guide ID `services-and-context`
+			- **Fiji runtime and service behavior:** Read Guide ID `%2$s`
 			  for the SciJava `Context`, injected services, displays, UI behavior, and
 			  `LegacyService` interoperability.
-			- **Selection geometry:** Read Guide ID `rois` for `Roi`, current-image selections,
+			- **Selection geometry:** Read Guide ID `%3$s` for `Roi`, current-image selections,
 			  `RoiManager`, positions, and reuse across images.
-			- **Measurement and tabular output:** Read Guide ID `results-table` for
+			- **Measurement and tabular output:** Read Guide ID `%4$s` for
 			  `ResultsTable`, `Analyzer`, measurement provenance, rows, columns, and shared
 			  table state.
 
@@ -62,13 +64,14 @@ public class DataTypesGuide extends AbstractAgentGuide {
 			legacy ImageJ state to modern Fiji state. Read the image article first when the
 			image representation is unclear, then add the article for each state or data type
 			that the operation uses.
-			""";
+			""".formatted(ImagesAndDatasetsGuide.ID, ServicesAndContextGuide.ID, RoisGuide.ID,
+				ResultsTableGuide.ID);
 
 	public DataTypesGuide() {
-		super("data-types", "Fiji Data Types", List.of("data-types",
+		super(ID, "Fiji Data Types", List.of("data-types",
 			"data", "images", "rois", "results-table"), Authority.PROJECT_AUTHORED, List.of(
-				"rois", "results-table", "images-and-datasets", "services-and-context",
-				"data-types"));
+				RoisGuide.ID, ResultsTableGuide.ID, ImagesAndDatasetsGuide.ID,
+				ServicesAndContextGuide.ID, ID));
 	}
 
 	@Override

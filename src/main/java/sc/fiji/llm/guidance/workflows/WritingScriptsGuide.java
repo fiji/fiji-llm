@@ -35,10 +35,15 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.workflows.scriptlanguages.ScriptingGroovyGuide;
+import sc.fiji.llm.guidance.workflows.scriptlanguages.ScriptingJythonGuide;
+import sc.fiji.llm.guidance.workflows.scriptlanguages.ScriptingPythonGuide;
 
 /** Guidance for writing scripts in Fiji. */
 @Plugin(type = AgentGuide.class)
 public class WritingScriptsGuide extends AbstractAgentGuide {
+
+	public static final String ID = "writing-scripts";
 
 	private static final String CONTENT = """
 			# Using the Fiji Script Editor
@@ -145,19 +150,21 @@ public class WritingScriptsGuide extends AbstractAgentGuide {
 
 			| Language | Notes | Guide ID |
 			|---|---|---|
-			| Groovy | Java-like syntax; access to all classes in Fiji | `scripting-groovy` |
-			| Jython | Python syntax; similar scope as Groovy | `scripting-jython` |
-			| Python | Bridged custom python environment; requires configuration in `Edit > Options > Python...` | `scripting-python` |
+			| Groovy | Java-like syntax; access to all classes in Fiji | `%1$s` |
+			| Jython | Python syntax; similar scope as Groovy | `%2$s` |
+			| Python | Bridged custom python environment; requires configuration in `Edit > Options > Python...` | `%3$s` |
 
 			## Additional resources
 
 			Core scripting documentation can be found on the ImageJ wiki: https://imagej.net/scripting/
-			""";
+			""".formatted(ScriptingGroovyGuide.ID, ScriptingJythonGuide.ID,
+				ScriptingPythonGuide.ID);
 
 	public WritingScriptsGuide() {
-		super("writing-scripts", "Writing Scripts", List.of(
+		super(ID, "Writing Scripts", List.of(
 			"workflows", "scripts"), Authority.PROJECT_AUTHORED, List.of(
-				"scripting-python", "scripting-jython", "scripting-groovy", "scripts-and-macros"));
+				ScriptingPythonGuide.ID, ScriptingJythonGuide.ID, ScriptingGroovyGuide.ID,
+				ScriptsAndMacrosGuide.ID));
 	}
 
 	@Override

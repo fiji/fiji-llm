@@ -33,10 +33,21 @@ import java.util.List;
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.application.EnvironmentInspectionGuide;
+import sc.fiji.llm.guidance.application.ExtensionContributionGuide;
+import sc.fiji.llm.guidance.application.IntegratedChatGuide;
+import sc.fiji.llm.guidance.application.MCPServerGuide;
+import sc.fiji.llm.guidance.application.SupportAndCommunityGuide;
+import sc.fiji.llm.guidance.application.UIInteractionGuide;
+import sc.fiji.llm.guidance.application.UpdateSitesGuide;
+import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
+import sc.fiji.llm.guidance.workflows.ScriptsAndMacrosGuide;
 
 /** Onboarding guidance for agents operating in Fiji. */
 @Plugin(type = AgentGuide.class)
 public class OnboardingGuide extends AbstractAgentGuide {
+
+	public static final String ID = "onboarding";
 
 	private static final String CONTENT = """
 		# Fiji Onboarding
@@ -76,25 +87,29 @@ public class OnboardingGuide extends AbstractAgentGuide {
 
 		| Goal | Initial guide ID(s) |
 		|---|---|
-		| Perform image analysis | 'running-commands' |
-		| Create reproducible workflows | 'scripts-and-macros' |
-		| Query application information | `environment-inspection`, `update-sites`, `ui-interaction` |
+		| Perform image analysis | '%1$s' |
+		| Create reproducible workflows | '%2$s' |
+		| Query application information | `%3$s`, `%4$s`, `%5$s` |
 
 		### Additional topics
 		These topics are not directly related to tool use. Read them when a user raises a related question.
 
 		| Content | Guide ID(s) |
 		|---|---|
-		| LLM capabilities | `integrated-chat`, `mcp-server` |
-		| Support and community resources | `support-and-community` |
-		| Extending and contributing | `extension-contribution` |
-		""";
+		| LLM capabilities | `%6$s`, `%7$s` |
+		| Support and community resources | `%8$s` |
+		| Extending and contributing | `%9$s` |
+		""".formatted(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
+			EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID, UIInteractionGuide.ID,
+			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,
+			ExtensionContributionGuide.ID);
 
 	public OnboardingGuide() {
-		super("onboarding", "Fiji Agent Onboarding", List.of("onboarding", "fiji", "tools"),
-			Authority.PROJECT_AUTHORED, List.of("running-commands", "scripts-and-macros",
-			"environment-inspection", "ui-interaction", "update-sites", "integrated-chat", "mcp-server",
-			"support-and-community", "extension-contribution"));
+		super(ID, "Fiji Agent Onboarding", List.of("onboarding", "fiji", "tools"),
+			Authority.PROJECT_AUTHORED, List.of(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
+			EnvironmentInspectionGuide.ID, UIInteractionGuide.ID, UpdateSitesGuide.ID,
+			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,
+			ExtensionContributionGuide.ID));
 	}
 
 	@Override

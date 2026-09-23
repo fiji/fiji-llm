@@ -35,10 +35,16 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
+import sc.fiji.llm.guidance.application.EnvironmentInspectionGuide;
+import sc.fiji.llm.guidance.application.UIInteractionGuide;
+import sc.fiji.llm.guidance.application.UpdateSitesGuide;
 
 /** Guidance for running Fiji commands. */
 @Plugin(type = AgentGuide.class)
 public class RunningCommandsGuide extends AbstractAgentGuide {
+
+	public static final String ID = "running-commands";
 
 	private static final String CONTENT = """
 			# Running Commands in Fiji
@@ -64,10 +70,10 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 
 			In addition to interactive commands, it is very possible that running commands will lead to blocking
 			dialogs, whether informative or error related. To understand your options for dealing with these
-			dialogs, read Guide ID: `ui-interaction`.
+			dialogs, read Guide ID: `%1$s`.
 
 			When running commands, tools will make an effort to provide you information of what resulting application
-			state may have changed. Read Guide ID `environment-inspection` for an overview of communication channels.
+			state may have changed. Read Guide ID `%2$s` for an overview of communication channels.
 
 			## Menu overview
 
@@ -104,13 +110,15 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 
 			The most robust contribution option is using the SciJava plugin framework. However, this presents a high barrier,
 			requiring knowledge of Java development practices. Contributions can also be made via macros and scripts. In all
-			cases, update sites are the mechanism of distribution (Guide ID: `update-sites`).
-			""";
+			cases, update sites are the mechanism of distribution (Guide ID: `%3$s`).
+			""".formatted(UIInteractionGuide.ID, EnvironmentInspectionGuide.ID,
+				UpdateSitesGuide.ID);
 
 	public RunningCommandsGuide() {
-		super("running-commands", "Running Commands", List.of(
+		super(ID, "Running Commands", List.of(
 			"image-analysis", "commands", "ui"), Authority.PROJECT_AUTHORED,
-			List.of("ui-interaction", "environment-inspection", "update-sites", "onboarding"));
+			List.of(UIInteractionGuide.ID, EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID,
+				OnboardingGuide.ID));
 	}
 
 	@Override

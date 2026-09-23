@@ -40,6 +40,8 @@ import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
 @Plugin(type = AgentGuide.class)
 public class CreatingMacrosGuide extends AbstractAgentGuide {
 
+	public static final String ID = "creating-macros";
+
 	private static final String CONTENT = """
 			# ImageJ Macro use in Jiji
 
@@ -84,9 +86,9 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 			""";
 
 	public CreatingMacrosGuide() {
-		super("creating-macros", "Creating Macros", List.of(
+		super(ID, "Creating Macros", List.of(
 			"workflows", "macros", "commands", "scripts"), Authority.PROJECT_AUTHORED, List.of(
-				"running-commands", "writing-scripts", "scripts-and-macros"));
+				RunningCommandsGuide.ID, WritingScriptsGuide.ID, ScriptsAndMacrosGuide.ID));
 	}
 
 	@Override

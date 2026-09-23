@@ -35,10 +35,15 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
+import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
+import sc.fiji.llm.guidance.workflows.ScriptsAndMacrosGuide;
 
 /** Guidance for inspecting the Fiji environment. */
 @Plugin(type = AgentGuide.class)
 public class EnvironmentInspectionGuide extends AbstractAgentGuide {
+
+	public static final String ID = "environment-inspection";
 
 	private static final String CONTENT = """
 			# Environment inspection
@@ -111,9 +116,9 @@ public class EnvironmentInspectionGuide extends AbstractAgentGuide {
 			""".trim();
 
 	public EnvironmentInspectionGuide() {
-		super("environment-inspection", "Environment Inspection", List.of("application",
+		super(ID, "Environment Inspection", List.of("application",
 			"environment", "print-stream", "logs"), Authority.PROJECT_AUTHORED,
-			List.of("running-commands", "scripts-and-macros", "onboarding"));
+			List.of(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID, OnboardingGuide.ID));
 	}
 
 	@Override

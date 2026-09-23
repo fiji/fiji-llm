@@ -35,10 +35,13 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Information about the integrated chat functionality. */
 @Plugin(type = AgentGuide.class)
 public class IntegratedChatGuide extends AbstractAgentGuide {
+
+	public static final String ID = "integrated-chat";
 
 	private static final String CONTENT = """
 			# Integrated Fiji Chat
@@ -94,8 +97,8 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 			""";
 
 	public IntegratedChatGuide() {
-			super("integrated-chat", "Integrated Chat", List.of("application", "ai",
-				"llm", "agent"), Authority.PROJECT_AUTHORED, List.of("onboarding"));
+			super(ID, "Integrated Chat", List.of("application", "ai", "llm", "agent"),
+			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
 	}
 
 	@Override

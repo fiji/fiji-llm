@@ -35,10 +35,14 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.OnboardingGuide;
+import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
 
 /** Guidance for interacting with the Fiji UI. */
 @Plugin(type = AgentGuide.class)
 public class UIInteractionGuide extends AbstractAgentGuide {
+
+	public static final String ID = "ui-interaction";
 
 	private static final String CONTENT = """
 			# Fiji UI Interaction
@@ -78,9 +82,9 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			""".trim();
 
 	public UIInteractionGuide() {
-		super("ui-interaction", "UI Interaction", List.of(
+		super(ID, "UI Interaction", List.of(
 			"application", "ui", "dialogs", "input", "errors"), Authority.PROJECT_AUTHORED,
-			List.of("running-commands", "onboarding"));
+			List.of(RunningCommandsGuide.ID, OnboardingGuide.ID));
 	}
 
 	@Override

@@ -35,10 +35,13 @@ import org.scijava.plugin.Plugin;
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
+import sc.fiji.llm.guidance.workflows.WritingScriptsGuide;
 
 /** Guidance for Jython scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
 public class ScriptingJythonGuide extends AbstractAgentGuide {
+
+	public static final String ID = "scripting-jython";
 
 	private static final String CONTENT = """
 			# Jython Scripting in Fiji
@@ -101,9 +104,9 @@ public class ScriptingJythonGuide extends AbstractAgentGuide {
 			""";
 
 	public ScriptingJythonGuide() {
-		super("scripting-jython", "Jython Scripting", List.of(
+		super(ID, "Jython Scripting", List.of(
 			"workflows", "scripts", "python"), Authority.PROJECT_AUTHORED, List.of(
-				"writing-scripts"));
+				WritingScriptsGuide.ID));
 	}
 
 	@Override
