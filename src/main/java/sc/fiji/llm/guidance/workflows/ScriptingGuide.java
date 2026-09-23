@@ -52,7 +52,7 @@ public class ScriptingGuide extends AbstractAgentGuide {
 
 			Scripts can declare typed inputs and outputs with the universal `#@` syntax. Language
 			comment characters are interchangeable with the `#`, i.e. `//@` in Groovy. These script
-			parameters completely supercede and replace ImageJ 1.x GenericDialog usage: they should
+			parameters completely supersede and replace ImageJ 1.x GenericDialog usage: they should
 			ALWAYS be used when interaction is required. DO NOT import `ij.gui.GenericDialog` when
 			writing scripts.
 
@@ -70,7 +70,7 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			type. So a script behaves like a reusable module, without hard-coding a dialog or relying on
 			global state.
 
-			Parameters have a number of optional properties that are set usinag a parenthetical 
+			Parameters have a number of optional properties that are set using a parenthetical 
 			comma-separated `key=value` list.
 
 			| Property | type | notes |

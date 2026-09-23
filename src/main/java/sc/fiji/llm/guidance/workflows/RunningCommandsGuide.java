@@ -49,31 +49,31 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 	private static final String CONTENT = """
 			# Running Commands in Fiji
 			Commands are the core mechanism of action in Fiji: how to get things done. They range from
-			one-off operations to opening standalone, dedicated UI's for complex tasks.
+			one-off operations to opening standalone, dedicated UIs for complex tasks.
 
 			Image analysis workflows are typically made up of a series of relevant commands.
 
 			## Active Image
 
-			One of the most important concepts in Fiji usage is the "active image": the most recently selectd
+			One of the most important concepts in Fiji usage is the "active image": the most recently selected
 			image window is the default target for almost all image-related commands.
 
 			## Interactive commands
 
-			Indicated by an ellipses, "...", at the end of the plugin name. These commands require
+			Indicated by an ellipsis, "...", at the end of the plugin name. These commands require
 			configuration via parameters. When executed via the menu they will trigger an input dialog
 			before running. When run programmatically, this dialog can be skipped by fully specifying
-			their parameters. Using the macro recorder (Guide ID: `macro-recorder`) is one way to determine
+			their parameters. Using the macro recorder (Guide ID: `%1$s`) is one way to determine
 			these parameters.
 
 			## Agentic use
 
 			In addition to interactive commands, it is very possible that running commands will lead to blocking
 			dialogs, whether informative or error related. To understand your options for dealing with these
-			dialogs, read Guide ID: `%1$s`.
+			dialogs, read Guide ID: `%2$s`.
 
 			When running commands, tools will make an effort to provide you information of what resulting application
-			state may have changed. Read Guide ID `%2$s` for an overview of communication channels.
+			state may have changed. Read Guide ID `%3$s` for an overview of communication channels.
 
 			## Menu overview
 
@@ -110,8 +110,8 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 
 			The most robust contribution option is using the SciJava plugin framework. However, this presents a high barrier,
 			requiring knowledge of Java development practices. Contributions can also be made via macros and scripts. In all
-			cases, update sites are the mechanism of distribution (Guide ID: `%3$s`).
-			""".formatted(UIInteractionGuide.ID, EnvironmentInspectionGuide.ID,
+			cases, update sites are the mechanism of distribution (Guide ID: `%4$s`).
+			""".formatted(CreatingMacrosGuide.ID, UIInteractionGuide.ID, EnvironmentInspectionGuide.ID,
 				UpdateSitesGuide.ID).strip();
 
 	public RunningCommandsGuide() {

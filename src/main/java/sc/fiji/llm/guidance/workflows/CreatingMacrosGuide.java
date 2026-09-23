@@ -43,7 +43,7 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 	public static final String ID = "creating-macros";
 
 	private static final String CONTENT = """
-			# ImageJ Macro use in Jiji
+			# ImageJ Macro use in Fiji
 
 			## Workflow
 
