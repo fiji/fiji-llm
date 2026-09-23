@@ -40,6 +40,8 @@ import sc.fiji.llm.guidance.application.MCPServerGuide;
 import sc.fiji.llm.guidance.application.SupportAndCommunityGuide;
 import sc.fiji.llm.guidance.application.UIInteractionGuide;
 import sc.fiji.llm.guidance.application.UpdateSitesGuide;
+import sc.fiji.llm.guidance.data.ResultsTableGuide;
+import sc.fiji.llm.guidance.data.RoisGuide;
 import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
 import sc.fiji.llm.guidance.workflows.ScriptsAndMacrosGuide;
 
@@ -87,7 +89,7 @@ public class OnboardingGuide extends AbstractAgentGuide {
 
 		| Goal | Initial guide ID(s) |
 		|---|---|
-		| Perform image analysis | '%1$s' |
+		| Perform image analysis | '%1$s', '%10$s', '%11$s' |
 		| Create reproducible workflows | '%2$s' |
 		| Query application information | `%3$s`, `%4$s`, `%5$s` |
 
@@ -102,7 +104,7 @@ public class OnboardingGuide extends AbstractAgentGuide {
 		""".formatted(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
 			EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID, UIInteractionGuide.ID,
 			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,
-			ExtensionContributionGuide.ID).strip();
+			ExtensionContributionGuide.ID, RoisGuide.ID, ResultsTableGuide.ID).strip();
 
 	public OnboardingGuide() {
 		super(ID, "Fiji Agent Onboarding", AgentGuide.topics(Topic.ONBOARDING, Topic.FIJI,
