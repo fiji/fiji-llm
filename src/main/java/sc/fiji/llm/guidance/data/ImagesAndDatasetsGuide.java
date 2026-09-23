@@ -148,8 +148,8 @@ public class ImagesAndDatasetsGuide extends AbstractAgentGuide {
 			""";
 
 	public ImagesAndDatasetsGuide() {
-		super(ID, "Images and Datasets", List.of(
-			"data", "images", "imageplus", "dataset", "imgplus"),
+		super(ID, "Images and Datasets", AgentGuide.topics(Topic.DATA, Topic.IMAGES,
+			Topic.IMAGEPLUS, Topic.DATASET, Topic.IMGPLUS),
 			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
 

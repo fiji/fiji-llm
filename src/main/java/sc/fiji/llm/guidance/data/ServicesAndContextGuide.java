@@ -118,8 +118,8 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			""";
 
 	public ServicesAndContextGuide() {
-		super(ID, "Services and Context", List.of(
-			"data", "services", "context"), Authority.PROJECT_AUTHORED,
+		super(ID, "Services and Context", AgentGuide.topics(Topic.DATA, Topic.SERVICES,
+			Topic.CONTEXT), Authority.PROJECT_AUTHORED,
 			List.of(DataTypesGuide.ID));
 	}
 

@@ -105,7 +105,8 @@ public class OnboardingGuide extends AbstractAgentGuide {
 			ExtensionContributionGuide.ID);
 
 	public OnboardingGuide() {
-		super(ID, "Fiji Agent Onboarding", List.of("onboarding", "fiji", "tools"),
+		super(ID, "Fiji Agent Onboarding", AgentGuide.topics(Topic.ONBOARDING, Topic.FIJI,
+			Topic.TOOLS),
 			Authority.PROJECT_AUTHORED, List.of(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
 			EnvironmentInspectionGuide.ID, UIInteractionGuide.ID, UpdateSitesGuide.ID,
 			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,

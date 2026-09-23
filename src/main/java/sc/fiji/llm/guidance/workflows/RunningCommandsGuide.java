@@ -115,8 +115,8 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 				UpdateSitesGuide.ID);
 
 	public RunningCommandsGuide() {
-		super(ID, "Running Commands", List.of(
-			"image-analysis", "commands", "ui"), Authority.PROJECT_AUTHORED,
+		super(ID, "Running Commands", AgentGuide.topics(Topic.IMAGE_ANALYSIS, Topic.COMMANDS,
+			Topic.UI), Authority.PROJECT_AUTHORED,
 			List.of(UIInteractionGuide.ID, EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID,
 				OnboardingGuide.ID));
 	}

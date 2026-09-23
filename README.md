@@ -106,6 +106,9 @@ The same server exposes the read-only `fiji_guidance_topics`,
 `fiji_guidance_search`, and `fiji_guidance_read` tools. For an unfamiliar
 Fiji-specific workflow, start by reading the `onboarding` guidance document,
 then retrieve only the additional topic guidance needed for the task.
+Built-in guide plugins declare topics through the discoverable `AgentGuide.Topic`
+vocabulary, while the metadata boundary remains string-based for extension-provided
+topics.
 
 **Available Configuration**
 - **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`

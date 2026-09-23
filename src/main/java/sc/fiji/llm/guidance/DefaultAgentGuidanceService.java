@@ -65,23 +65,16 @@ public class DefaultAgentGuidanceService extends
 
 	@Override
 	public List<AgentGuideMetadata> listDocuments() {
-
 		return guidesById().values().stream().sorted(Comparator.comparing(guide -> guide
-
 			.metadata().id())).map(AgentGuide::metadata).collect(Collectors.toList());
-
 	}
 
 	@Override
-
 	public List<String> getAvailableTopics() {
-
 		return availableTopics;
-
 	}
 
 	@Override
-
 	public List<AgentGuideMetadata> search(final String topic) {
 		if (topic == null || topic.trim().isEmpty()) return Collections.emptyList();
 		final String normalizedTopic = topic.trim().toLowerCase(Locale.ROOT);

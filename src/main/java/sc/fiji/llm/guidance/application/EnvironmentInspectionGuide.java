@@ -116,8 +116,8 @@ public class EnvironmentInspectionGuide extends AbstractAgentGuide {
 			""".trim();
 
 	public EnvironmentInspectionGuide() {
-		super(ID, "Environment Inspection", List.of("application",
-			"environment", "print-stream", "logs"), Authority.PROJECT_AUTHORED,
+		super(ID, "Environment Inspection", AgentGuide.topics(Topic.APPLICATION,
+			Topic.ENVIRONMENT, Topic.PRINT_STREAM, Topic.LOGS), Authority.PROJECT_AUTHORED,
 			List.of(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID, OnboardingGuide.ID));
 	}
 

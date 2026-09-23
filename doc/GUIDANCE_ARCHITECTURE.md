@@ -165,7 +165,9 @@ while `AgentGuidanceService` discovers and indexes all `AgentGuide` instances.
 `AgentGuideMetadata` represents catalog and search results, while the
 `AgentGuide` instance owns the full guide text. The service's read operation
 returns only bounded text. There is no separate JSON index or packaged-resource
-loader.
+loader. Built-in guides use the explicit `AgentGuide.Topic` vocabulary to avoid
+typos in canonical topic declarations, while metadata remains string-based so
+third-party guide plugins can add topic keywords.
 
 A useful document or section should answer as many of these questions as
 applicable:

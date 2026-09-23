@@ -97,7 +97,8 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 			""";
 
 	public IntegratedChatGuide() {
-			super(ID, "Integrated Chat", List.of("application", "ai", "llm", "agent"),
+			super(ID, "Integrated Chat", AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,
+				Topic.AGENT),
 			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
 	}
 

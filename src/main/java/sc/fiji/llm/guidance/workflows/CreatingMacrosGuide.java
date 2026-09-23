@@ -86,8 +86,8 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 			""";
 
 	public CreatingMacrosGuide() {
-		super(ID, "Creating Macros", List.of(
-			"workflows", "macros", "commands", "scripts"), Authority.PROJECT_AUTHORED, List.of(
+		super(ID, "Creating Macros", AgentGuide.topics(Topic.WORKFLOWS, Topic.MACROS,
+			Topic.COMMANDS, Topic.SCRIPTS), Authority.PROJECT_AUTHORED, List.of(
 				RunningCommandsGuide.ID, WritingScriptsGuide.ID, ScriptsAndMacrosGuide.ID));
 	}
 

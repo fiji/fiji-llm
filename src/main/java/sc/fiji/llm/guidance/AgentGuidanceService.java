@@ -51,29 +51,18 @@ public interface AgentGuidanceService extends SingletonService<AgentGuide>,
 	List<AgentGuideMetadata> listDocuments();
 
 	/**
-
 	 * Lists the topic categories present in the loaded guides.
-
 	 *
-
 	 * @return an unmodifiable, sorted list of canonical, lower-case topic keywords
-
 	 */
-
 	List<String> getAvailableTopics();
 
 	/**
-
 	 * Lists guide metadata for guides assigned to one topic category.
-
 	 *
-
 	 * @param topic one topic category, matched case-insensitively
-
 	 * @return matching guides in stable identifier order
-
 	 */
-
 	List<AgentGuideMetadata> search(String topic);
 
 	/**

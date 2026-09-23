@@ -90,7 +90,8 @@ public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
 				RunningCommandsGuide.ID, DataTypesGuide.ID);
 
 	public ScriptsAndMacrosGuide() {
-		super(ID, "Scripts and Macros in Fiji", List.of("workflows", "scripts", "macros"),
+		super(ID, "Scripts and Macros in Fiji", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
+			Topic.MACROS),
 			Authority.PROJECT_AUTHORED, List.of(RunningCommandsGuide.ID, DataTypesGuide.ID,
 				WritingScriptsGuide.ID, CreatingMacrosGuide.ID, OnboardingGuide.ID));
 	}

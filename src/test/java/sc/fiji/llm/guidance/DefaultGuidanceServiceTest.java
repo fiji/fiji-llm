@@ -79,6 +79,12 @@ public class DefaultGuidanceServiceTest {
 
 
 	@Test
+	public void convertsTopicsToCanonicalKeywords() {
+		assertEquals(List.of("data-types", "print-stream"), AgentGuide.topics(
+			AgentGuide.Topic.DATA_TYPES, AgentGuide.Topic.PRINT_STREAM));
+	}
+
+	@Test
 
 	public void listsCanonicalUnmodifiableCategories() {
 
@@ -96,7 +102,7 @@ public class DefaultGuidanceServiceTest {
 
 		assertTrue(categories.contains("workflows"));
 
-		assertEquals("application", categories.get(0));
+		assertEquals("agent", categories.get(0));
 
 		assertEquals("workflows", categories.get(categories.size() - 1));
 
@@ -152,9 +158,9 @@ public class DefaultGuidanceServiceTest {
 		final AgentGuidanceService service = service();
 
 		assertTrue(service.read("integrated-chat", 1000).get().contains(
-			"chatbot embedded in Fiji"));
+			"Fiji Chat brings approachable natural-language AI assistance into Fiji"));
 		assertTrue(service.read("mcp-server", 1000).get().contains(
-			"live Fiji/ImageJ image analysis application"));
+			"The Model Context Protocol (MCP) server is the standard connection point"));
 	}
 
 	@Test

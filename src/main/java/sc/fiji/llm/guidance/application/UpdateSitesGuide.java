@@ -100,8 +100,8 @@ public class UpdateSitesGuide extends AbstractAgentGuide {
 			""";
 
 	public UpdateSitesGuide() {
-		super(ID, "Update Sites", List.of(
-			"application", "update-sites", "plugins"), Authority.PROJECT_AUTHORED, List.of(
+		super(ID, "Update Sites", AgentGuide.topics(Topic.APPLICATION, Topic.UPDATE_SITES,
+			Topic.PLUGINS), Authority.PROJECT_AUTHORED, List.of(
 				OnboardingGuide.ID));
 	}
 

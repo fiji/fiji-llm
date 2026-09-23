@@ -111,8 +111,8 @@ public class ScriptingGroovyGuide extends AbstractAgentGuide {
 			""";
 
 	public ScriptingGroovyGuide() {
-		super(ID, "Groovy Scripting", List.of(
-			"workflows", "scripts", "groovy"), Authority.PROJECT_AUTHORED, List.of(
+		super(ID, "Groovy Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
+			Topic.GROOVY), Authority.PROJECT_AUTHORED, List.of(
 				WritingScriptsGuide.ID));
 	}
 

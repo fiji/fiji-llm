@@ -115,7 +115,8 @@ public class MCPServerGuide extends AbstractAgentGuide {
 			""".formatted(OnboardingGuide.ID);
 
 	public MCPServerGuide() {
-		super(ID, "MCP Server", List.of("application", "ai", "llm", "agent", "mcp"),
+		super(ID, "MCP Server", AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,
+			Topic.AGENT, Topic.MCP),
 			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
 	}
 

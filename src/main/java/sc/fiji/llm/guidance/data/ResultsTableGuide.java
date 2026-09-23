@@ -103,7 +103,7 @@ public class ResultsTableGuide extends AbstractAgentGuide {
 			""";
 
 	public ResultsTableGuide() {
-		super(ID, "Results Table", List.of("data", "results-table"),
+		super(ID, "Results Table", AgentGuide.topics(Topic.DATA, Topic.RESULTS_TABLE),
 			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
 

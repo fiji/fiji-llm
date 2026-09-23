@@ -104,7 +104,7 @@ public class RoisGuide extends AbstractAgentGuide {
 			""";
 
 	public RoisGuide() {
-		super(ID, "Regions of Interest", List.of("data", "rois"),
+		super(ID, "Regions of Interest", AgentGuide.topics(Topic.DATA, Topic.ROIS),
 			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
 	}
 

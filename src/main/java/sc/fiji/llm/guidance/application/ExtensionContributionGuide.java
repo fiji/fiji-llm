@@ -121,8 +121,8 @@ public class ExtensionContributionGuide extends AbstractAgentGuide {
 			""".trim();
 
 	public ExtensionContributionGuide() {
-		super(ID, "Fiji Extension and Contribution", List.of(
-			"application", "development", "extensions", "contribution", "llm"),
+		super(ID, "Fiji Extension and Contribution", AgentGuide.topics(
+			Topic.APPLICATION, Topic.DEVELOPMENT, Topic.EXTENSIONS, Topic.CONTRIBUTION, Topic.LLM),
 			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID, MCPServerGuide.ID,
 				IntegratedChatGuide.ID, ServicesAndContextGuide.ID));
 	}

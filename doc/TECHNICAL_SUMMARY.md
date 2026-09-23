@@ -23,6 +23,9 @@ and application context.
 
 The knowledge boundary, document metadata, authority rules, retrieval contract,
 and future directions are described in the [Shared Guidance Architecture](GUIDANCE_ARCHITECTURE.md).
+Built-in guide plugins use the explicit `AgentGuide.Topic` vocabulary when
+declaring topics. Metadata remains string-based so third-party guide plugins can
+add topic keywords without extending the enum.
 
 ---
 

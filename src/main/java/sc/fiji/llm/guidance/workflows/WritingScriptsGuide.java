@@ -161,8 +161,8 @@ public class WritingScriptsGuide extends AbstractAgentGuide {
 				ScriptingPythonGuide.ID);
 
 	public WritingScriptsGuide() {
-		super(ID, "Writing Scripts", List.of(
-			"workflows", "scripts"), Authority.PROJECT_AUTHORED, List.of(
+		super(ID, "Writing Scripts", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS),
+			Authority.PROJECT_AUTHORED, List.of(
 				ScriptingPythonGuide.ID, ScriptingJythonGuide.ID, ScriptingGroovyGuide.ID,
 				ScriptsAndMacrosGuide.ID));
 	}

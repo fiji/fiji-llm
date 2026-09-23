@@ -68,8 +68,8 @@ public class DataTypesGuide extends AbstractAgentGuide {
 				ResultsTableGuide.ID);
 
 	public DataTypesGuide() {
-		super(ID, "Fiji Data Types", List.of("data-types",
-			"data", "images", "rois", "results-table"), Authority.PROJECT_AUTHORED, List.of(
+		super(ID, "Fiji Data Types", AgentGuide.topics(Topic.DATA_TYPES, Topic.DATA,
+			Topic.IMAGES, Topic.ROIS, Topic.RESULTS_TABLE), Authority.PROJECT_AUTHORED, List.of(
 				RoisGuide.ID, ResultsTableGuide.ID, ImagesAndDatasetsGuide.ID,
 				ServicesAndContextGuide.ID, ID));
 	}

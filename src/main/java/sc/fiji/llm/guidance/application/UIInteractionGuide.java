@@ -82,8 +82,8 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			""".trim();
 
 	public UIInteractionGuide() {
-		super(ID, "UI Interaction", List.of(
-			"application", "ui", "dialogs", "input", "errors"), Authority.PROJECT_AUTHORED,
+		super(ID, "UI Interaction", AgentGuide.topics(Topic.APPLICATION, Topic.UI, Topic.DIALOGS,
+			Topic.INPUT, Topic.ERRORS), Authority.PROJECT_AUTHORED,
 			List.of(RunningCommandsGuide.ID, OnboardingGuide.ID));
 	}
 

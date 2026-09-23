@@ -91,8 +91,8 @@ public class SupportAndCommunityGuide extends AbstractAgentGuide {
 			""".formatted(OnboardingGuide.ID).trim();
 
 	public SupportAndCommunityGuide() {
-		super(ID, "Fiji Support and Community", List.of(
-			"application", "support", "community", "documentation", "issues"),
+		super(ID, "Fiji Support and Community", AgentGuide.topics(Topic.APPLICATION,
+			Topic.SUPPORT, Topic.COMMUNITY, Topic.DOCUMENTATION, Topic.ISSUES),
 			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
 	}
 
