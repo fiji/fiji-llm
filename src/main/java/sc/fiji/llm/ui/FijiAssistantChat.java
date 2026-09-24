@@ -1278,11 +1278,11 @@ Expect iteration and troubleshooting.  Be concise, patient, humble, and collabor
 		});
 		preparationTimer.start();
 
-		llmProvider.prepare(modelName).whenComplete((ignored, error) ->
-			SwingUtilities.invokeLater(() -> finishModelPreparation(error)));
+		llmProvider.prepare(modelName).whenComplete((message, error) ->
+			SwingUtilities.invokeLater(() -> finishModelPreparation(message, error)));
 	}
 
-	private void finishModelPreparation(final Throwable error) {
+	private void finishModelPreparation(final String message, final Throwable error) {
 		if (preparationTimer != null) {
 			preparationTimer.stop();
 			preparationTimer = null;
@@ -1297,6 +1297,10 @@ Expect iteration and troubleshooting.  Be concise, patient, humble, and collabor
 		if (error != null) {
 			handleAssistantFailure(error, "Unable to prepare the assistant", false);
 			return;
+		}
+
+		if (message != null && !message.isBlank()) {
+			appendToChat(Sender.SYSTEM, message);
 		}
 
 		setPreparationControlsEnabled(true);

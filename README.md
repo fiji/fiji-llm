@@ -203,6 +203,7 @@ bridge is available.
 - Models typically come in varieants (`7b`, `20b`, etc...), indicating the number of model parameters (in billions). More parameters means a better ability to conceptualize solutions, but also more resource use.-
 - Fiji-chat is intended for use with models that support [Tool Use](https://ollama.com/search?c=tools).
 - Vision support is reported for the selected model when Ollama provides it; use a model whose capabilities include `vision` to attach images.
+- When a model is only partially loaded into GPU memory, Fiji reports that performance may be very slow and suggests trying a smaller model.
 - **Installation**:
   1. Download and install [Ollama](https://ollama.com/download)
   2. (Optionally) Use the ollama UI or command line tool to download a model of interest.

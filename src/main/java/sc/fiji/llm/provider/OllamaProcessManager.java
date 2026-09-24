@@ -77,6 +77,8 @@ public class OllamaProcessManager {
 	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
 		.connectTimeout(SERVER_TIMEOUT).build();
 
+	public record ModelMemoryUsage(long modelSizeBytes, long vramSizeBytes) {}
+
 	private Process ollamaProcess;
 	private List<String> cachedInstalledModels;
 
@@ -114,39 +116,88 @@ public class OllamaProcessManager {
 			return false;
 		}
 
+		return getRunningModelsResponse().flatMap(response -> findRunningModel(
+			response, modelName)).isPresent();
+	}
+
+	/**
+	 * Gets the amount of a running model that Ollama reports as loaded in VRAM.
+	 *
+	 * @param modelName the model name to check
+	 * @return the model and VRAM sizes, or empty when the status is unavailable or
+	 *         the model does not report usable size information
+	 */
+	public Optional<ModelMemoryUsage> getModelMemoryUsage(final String modelName) {
+		if (modelName == null || modelName.isBlank()) return Optional.empty();
+
+		return getRunningModelsResponse().flatMap(response ->
+			parseModelMemoryUsage(response, modelName));
+	}
+
+	private Optional<String> getRunningModelsResponse() {
 		try {
 			final HttpRequest request = HttpRequest.newBuilder(
 				OLLAMA_RUNNING_MODELS_URI).timeout(SERVER_TIMEOUT).GET().build();
 			final HttpResponse<String> response = HTTP_CLIENT.send(request,
 				HttpResponse.BodyHandlers.ofString());
-			if (response.statusCode() != 200) {
-				return false;
-			}
+			if (response.statusCode() != 200) return Optional.empty();
+			return Optional.of(response.body());
+		}
+		catch (IOException e) {
+			return Optional.empty();
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return Optional.empty();
+		}
+	}
 
-			final JsonObject responseBody = JsonParser.parseString(response.body())
+	static Optional<JsonObject> findRunningModel(final String responseBody,
+		final String modelName)
+	{
+		try {
+			final JsonObject response = JsonParser.parseString(responseBody)
 				.getAsJsonObject();
-			if (!responseBody.has("models") || responseBody.get("models").isJsonNull()) {
-				return false;
+			if (!response.has("models") || !response.get("models").isJsonArray()) {
+				return Optional.empty();
 			}
 
-			for (var model : responseBody.getAsJsonArray("models")) {
+			for (final var model : response.getAsJsonArray("models")) {
+				if (!model.isJsonObject()) continue;
 				final JsonObject modelObject = model.getAsJsonObject();
 				if (modelObject.has("name") && modelName.equals(modelObject.get("name")
 					.getAsString()))
 				{
-					return true;
+					return Optional.of(modelObject);
 				}
 				if (modelObject.has("model") && modelName.equals(modelObject.get("model")
 					.getAsString()))
 				{
-					return true;
+					return Optional.of(modelObject);
 				}
 			}
 		}
-		catch (Exception e) {
+		catch (RuntimeException e) {
 			// Treat an unavailable or malformed status response as not prepared.
 		}
-		return false;
+		return Optional.empty();
+	}
+
+	static Optional<ModelMemoryUsage> parseModelMemoryUsage(
+		final String responseBody, final String modelName)
+	{
+		final Optional<JsonObject> model = findRunningModel(responseBody, modelName);
+		if (model.isEmpty()) return Optional.empty();
+
+		try {
+			final long modelSizeBytes = model.get().get("size").getAsLong();
+			final long vramSizeBytes = model.get().get("size_vram").getAsLong();
+			if (modelSizeBytes <= 0 || vramSizeBytes < 0) return Optional.empty();
+			return Optional.of(new ModelMemoryUsage(modelSizeBytes, vramSizeBytes));
+		}
+		catch (RuntimeException e) {
+			return Optional.empty();
+		}
 	}
 
 	/**

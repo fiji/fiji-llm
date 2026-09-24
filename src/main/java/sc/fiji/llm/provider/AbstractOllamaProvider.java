@@ -33,7 +33,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -83,7 +85,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	private static final boolean LOG_RESPONSES = false;
 
 	private OllamaProcessManager processManager;
-	private final Map<String, CompletableFuture<Void>> preparationFutures =
+	private final Map<String, CompletableFuture<String>> preparationFutures =
 		new ConcurrentHashMap<>();
 	private final Map<String, VisionSupport> visionSupportByModel =
 		new ConcurrentHashMap<>();
@@ -165,7 +167,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 				"Model name must not be blank"));
 		}
 
-		final CompletableFuture<Void> preparation = preparationFutures.get(modelName);
+		final CompletableFuture<String> preparation = preparationFutures.get(modelName);
 		if (preparation != null) {
 			return preparation.thenApply(ignored -> true);
 		}
@@ -175,14 +177,14 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	}
 
 	@Override
-	public CompletionStage<Void> prepare(final String modelName) {
+	public CompletionStage<String> prepare(final String modelName) {
 		if (modelName == null || modelName.isBlank()) {
 			return CompletableFuture.failedFuture(new IllegalArgumentException(
 				"Model name must not be blank"));
 		}
 
 		return preparationFutures.computeIfAbsent(modelName, name -> {
-			final CompletableFuture<Void> preparation = CompletableFuture.runAsync(() -> {
+			final CompletableFuture<String> preparation = CompletableFuture.supplyAsync(() -> {
 				try {
 					if (!processManager.isModelPrepared(name)) {
 						processManager.prepareModel(name);
@@ -192,6 +194,19 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 							"vision") ? VisionSupport.SUPPORTED : VisionSupport.UNSUPPORTED)
 						.orElse(VisionSupport.UNKNOWN);
 					visionSupportByModel.put(name, visionSupport);
+
+						final Optional<OllamaProcessManager.ModelMemoryUsage> memoryUsage =
+							processManager.getModelMemoryUsage(name);
+						if (memoryUsage.isPresent() && memoryUsage.get().vramSizeBytes() <
+							memoryUsage.get().modelSizeBytes())
+						{
+							final double gpuPercentage = 100.0 * memoryUsage.get()
+								.vramSizeBytes() / memoryUsage.get().modelSizeBytes();
+							return String.format(Locale.ROOT,
+								"Only %.1f%% of this model is loaded in GPU memory. Performance may be VERY slow; try a smaller model if possible.",
+								gpuPercentage, name);
+						}
+						return "";
 				}
 				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();

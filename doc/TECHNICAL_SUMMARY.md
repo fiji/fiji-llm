@@ -53,6 +53,8 @@ add topic keywords without extending the enum.
 
 Ollama providers optionally manage the Ollama process lifecycle via `OllamaProcessManager`. `AbstractSingletonOllamaProvider` bakes in a specific model name, allowing each local model variant to be its own discoverable plugin.
 
+Model preparation is asynchronous. `LLMProvider.prepare()` completes with an optional user-facing message while preparation failures complete exceptionally. Ollama uses `/api/ps` after preparation to compare `size_vram` with `size`; partial GPU residency produces a performance warning in the chat UI.
+
 Cloud providers extend `AbstractLLMProvider`, which retrieves API keys from `APIKeyService` (stored via SciJava `PrefService`).
 
 Providers report model image-input support through `LLMProvider.VisionSupport`. Hosted providers maintain this classification for their fixed model lists. Ollama queries `/api/show` after preparing a model and caches the reported capabilities; unavailable capability metadata is represented as `UNKNOWN`.
