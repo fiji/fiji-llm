@@ -131,10 +131,11 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * preparation complete immediately.
 	 *
 	 * @param modelName the name of the model to prepare
-	 * @return a stage that completes when the model is ready
+	 * @return a stage that completes with an optional user-facing message when the
+	 *         model is ready; preparation failures complete the stage exceptionally
 	 */
-	default CompletionStage<Void> prepare(final String modelName) {
-		return CompletableFuture.completedFuture(null);
+	default CompletionStage<String> prepare(final String modelName) {
+		return CompletableFuture.completedFuture("");
 	}
 
 	/**

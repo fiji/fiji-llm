@@ -80,6 +80,21 @@ public class ProviderVisionSupportTest {
 	}
 
 	@Test
+	public void testOllamaModelMemoryParser() {
+		final String response = "{\"models\":[{" +
+			"\"name\":\"llama3:latest\",\"size\":1000,\"size_vram\":750" +
+			"}]}";
+		final Optional<OllamaProcessManager.ModelMemoryUsage> usage =
+			OllamaProcessManager.parseModelMemoryUsage(response, "llama3:latest");
+
+		assertTrue(usage.isPresent());
+		assertEquals(1000, usage.get().modelSizeBytes());
+		assertEquals(750, usage.get().vramSizeBytes());
+		assertEquals(Optional.empty(), OllamaProcessManager.parseModelMemoryUsage(
+			response, "missing-model"));
+	}
+
+	@Test
 	public void testOllamaTokenEstimatorSupportsImageContent() {
 		final UserMessage textOnlyMessage = UserMessage.builder().addContent(
 			new TextContent("Describe this image")).build();
