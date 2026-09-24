@@ -76,6 +76,12 @@ public class GuidanceToolPluginTest {
 			null)).getAsJsonObject();
 		assertEquals("scripts-and-macros", document.get("id").getAsString());
 		assertFalse(document.get("content").getAsString().isEmpty());
+
+		final JsonObject onboarding = JsonParser.parseString(plugin.readOnboarding())
+			.getAsJsonObject();
+		assertEquals("onboarding", onboarding.get("id").getAsString());
+		assertTrue(onboarding.get("content").getAsString().contains(
+			"# Fiji Onboarding"));
 	}
 
 	@Test
