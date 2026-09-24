@@ -76,7 +76,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		return "Image Tools";
 	}
 
-	@Tool(value = { "List all currently open and visible images, including each image's id and title." }, name = "fiji_image_list")
+	@Tool(value = { "List all currently open and visible images, including each image's id, title, and whether it is the active image." }, name = "fiji_image_list")
 	public String listImages() {
 		try {
 			JsonArray images = new JsonArray();
@@ -86,6 +86,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 					JsonObject imageJson = new JsonObject();
 					imageJson.addProperty("id", id);
 					imageJson.addProperty("title", imageJ1HelperService.getImageTitle(id));
+					imageJson.addProperty("active", isActiveImage(id));
 					images.add(imageJson);
 				}
 			}
@@ -96,7 +97,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, and dimensions. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
+	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, dimensions, and whether it is the active image. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
 	public String getImageDetails(@P("image_id") int imageId) {
 		try {
 			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
@@ -113,6 +114,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 				JsonObject result = new JsonObject();
 				result.addProperty("id", imageId);
 				result.addProperty("title", imageJ1HelperService.getImageTitle(imageId));
+				result.addProperty("active", isActiveImage(imageId));
 				result.addProperty("pixel_type", dataset.getType().getClass().getSimpleName());
 
 				JsonArray dims = new JsonArray();
@@ -191,6 +193,12 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 				display);
 		}
 		return imageJ1HelperService.getOrCreateImageDisplay(imageId);
+	}
+
+	private boolean isActiveImage(final int imageId) {
+		final ImageDisplay activeDisplay = imageDisplayService.getActiveImageDisplay();
+		return activeDisplay != null && imageJ1HelperService.getImageId(activeDisplay) ==
+			imageId;
 	}
 
 	private static List<Content> textContents(final String text) {
