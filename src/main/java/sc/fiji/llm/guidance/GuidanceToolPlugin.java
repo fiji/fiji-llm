@@ -82,47 +82,29 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		try {
 			final JsonArray documents = new JsonArray();
 			for (final AgentGuideMetadata document : agentGuidanceService.search(topic)) {
-
 				documents.add(metadataJson(document));
-
 			}
 
 			final JsonObject result = new JsonObject();
-
 			result.addProperty("topic", topic == null ? "" : topic.trim());
-
 			result.add("documents", documents);
-
 			result.addProperty("count", documents.size());
 
 			return result.toString();
-
 		}
-
 		catch (final RuntimeException e) {
-
 			return jsonError("Failed to run fiji_guidance_search: " + e.getMessage());
-
 		}
-
 	}
 
 	@Tool(value = { "Read one curated Fiji guidance document by ID. Use fiji_guidance_search to find the ID; the result contains metadata and bounded Markdown content" }, name = "fiji_guidance_read")
-
 	public String read(@P("id") final String id,
-
-		@P("max_content_characters") final Integer maxContentCharacters)
-
-	{
-
+		@P("max_content_characters") final Integer maxContentCharacters) {
 		try {
-
 			final var document = maxContentCharacters == null ? agentGuidanceService.read(id) :
-
 				agentGuidanceService.read(id, maxContentCharacters);
 
 			if (document.isEmpty()) return jsonError("No guidance document found for ID: " + id,
-
 				"fiji_guidance_search");
 
 			final AgentGuide guide = findGuide(id);
@@ -130,19 +112,12 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 				"fiji_guidance_search");
 
 			final JsonObject result = metadataJson(guide.metadata());
-
 			result.addProperty("content", document.get());
-
 			return result.toString();
-
 		}
-
 		catch (final RuntimeException e) {
-
 			return jsonError("Failed to run fiji_guidance_read: " + e.getMessage());
-
 		}
-
 	}
 
 	private JsonObject metadataJson(final AgentGuideMetadata document) {
