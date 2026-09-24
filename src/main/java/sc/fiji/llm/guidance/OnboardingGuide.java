@@ -40,9 +40,13 @@ import sc.fiji.llm.guidance.application.MCPServerGuide;
 import sc.fiji.llm.guidance.application.SupportAndCommunityGuide;
 import sc.fiji.llm.guidance.application.UIInteractionGuide;
 import sc.fiji.llm.guidance.application.UpdateSitesGuide;
+import sc.fiji.llm.guidance.data.DataTypesGuide;
+import sc.fiji.llm.guidance.data.ImagesInFiji;
 import sc.fiji.llm.guidance.data.ResultsTableGuide;
 import sc.fiji.llm.guidance.data.RoisGuide;
+import sc.fiji.llm.guidance.workflows.CreatingMacrosGuide;
 import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
+import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 import sc.fiji.llm.guidance.workflows.ScriptsAndMacrosGuide;
 
 /** Onboarding guidance for agents operating in Fiji. */
@@ -58,62 +62,64 @@ public class OnboardingGuide extends AbstractAgentGuide {
 		Fiji bundles ImageJ (1.x), ImageJ2, and curated plugins commonly used in bioimage analysis.
 
 		Fiji is an extensible, open source project commonly used for research and publication:
-		reproducibilty is essential.
+		reproducibility is essential.
 
-		## Agentic Tools
-		Tools are named by functional group, including:
-		- `fiji_system_*`: report application and host-environment information.
-		- `fiji_ui_*`: inspect and interact with visible UI components.
-		- `fiji_command_*`: make functional changes to the application state.
-		- `fiji_script_*`: create, edit, and run scripts.
-		- `fiji_macro_*`: create, edit, and run macros.
-		- `fiji_image_*`: queries and view open images.
-		- `fiji_rois_*`: interact with regions of interest (ROIs).
-		- `fiji_results_*`: reads the ImageJ Results Table.
-		- `fiji_log_*`: capture a variety of diagnostic data.
-
-		Tool descriptions contain information relevant to usage.
-
-		## Guidance Tools
+		## Reading Guides
 		The `fiji_guide_*` tools provide on-demand access to information essential for effective Fiji
 		interaction.
 
-		1. Use `fiji_guide_topics` to see the exact topic keywords available.
-		2. Use `fiji_guide_search` to see the documents available for one exact topic keyword.
-		3. Use `fiji_guide_read` to read an exact document ID.
+		Use `fiji_guide_read` with an exact document ID to read that guide.
 
-		### Agent Goals
-		The provided tools and guides focus on several core agentic goals within Fiji. Before using a
-		`fiji_*` tool for the first time, determine which goal best applies, and ensure you have read
-		the corresponding initial guide, and follow situational directions to any related guides that
-		apply to your current use-case.
+		Additional `fiji_guide_*` tools allow exploration of guides by topic.
 
-		| Goal | Initial guide ID(s) |
+		## Tools
+		Tools are named by functional category. Ensure you have read the corresponding guide(s)
+		before calling tools in the following categories.
+
+		| Tool category | Read Guide ID | Tool function |
+		|---|---|---|
+		| `fiji_script_*` | `%1$s` | create, edit, and run scripts |
+		| `fiji_macro_*` | `%2$s` | create, edit, and run macros |
+		| `fiji_image_*` | `%3$s` | query and view open images |
+		| `fiji_rois_*` | `%4$s` | interact with regions of interest (ROIs) |
+		| `fiji_results_*` | `%5$s` | read the ImageJ Results Table |
+		| `fiji_ui_*` | `%6$s` | inspect and interact with visible UI components |
+		| `fiji_log_*` | `%7$s` | capture runtime diagnostic data |
+		| `fiji_system_*` | `%7$s`, `%8$s` | report application and host-environment information |
+		| `fiji_command_*` | `%9$s` | perform functions in Fiji |
+
+		Read individual tool descriptions for information relevant to their usage.
+
+		## Decision Guides
+		These guides are aimed at helping you make appropriate decisions.
+
+		| Decision Point | Guide ID |
 		|---|---|
-		| Perform image analysis | '%1$s', '%10$s', '%11$s' |
-		| Create reproducible workflows | '%2$s' |
-		| Query application information | `%3$s`, `%4$s`, `%5$s` |
+		| Write a script or macro? | `%10$s` |
+		| What data type to use? | `%11$s` |
 
-		### Additional topics
-		These topics are not directly related to tool use. Read them when a user raises a related question.
+		## Additional Guides
+		These are not directly related to tool use. Read them when a user raises a related question.
 
 		| Content | Guide ID(s) |
 		|---|---|
-		| LLM capabilities | `%6$s`, `%7$s` |
-		| Support and community resources | `%8$s` |
-		| Extending and contributing | `%9$s` |
-		""".formatted(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
-			EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID, UIInteractionGuide.ID,
-			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,
-			ExtensionContributionGuide.ID, RoisGuide.ID, ResultsTableGuide.ID).strip();
+		| LLM capabilities | `%12$s`, `%13$s` |
+		| Support and community resources | `%14$s` |
+		| Extending and contributing | `%15$s` |
+		""".formatted(ScriptingGuide.ID, CreatingMacrosGuide.ID, ImagesInFiji.ID, RoisGuide.ID,
+			ResultsTableGuide.ID, UIInteractionGuide.ID, EnvironmentInspectionGuide.ID, 
+			UpdateSitesGuide.ID, RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
+			DataTypesGuide.ID, IntegratedChatGuide.ID, MCPServerGuide.ID,
+			SupportAndCommunityGuide.ID, ExtensionContributionGuide.ID).strip();
 
 	public OnboardingGuide() {
 		super(ID, "Fiji Agent Onboarding", AgentGuide.topics(Topic.ONBOARDING, Topic.FIJI,
 			Topic.TOOLS),
-			Authority.PROJECT_AUTHORED, List.of(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
-			EnvironmentInspectionGuide.ID, UIInteractionGuide.ID, UpdateSitesGuide.ID,
-			IntegratedChatGuide.ID, MCPServerGuide.ID, SupportAndCommunityGuide.ID,
-			ExtensionContributionGuide.ID));
+			Authority.PROJECT_AUTHORED, List.of(ScriptingGuide.ID, CreatingMacrosGuide.ID, ImagesInFiji.ID, RoisGuide.ID,
+			ResultsTableGuide.ID, UIInteractionGuide.ID, EnvironmentInspectionGuide.ID, 
+			UpdateSitesGuide.ID, RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID,
+			DataTypesGuide.ID, IntegratedChatGuide.ID, MCPServerGuide.ID,
+			SupportAndCommunityGuide.ID, ExtensionContributionGuide.ID));
 	}
 
 	@Override
