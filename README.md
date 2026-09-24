@@ -310,6 +310,12 @@ interaction.
 Keep this dedicated live-test session separate from the general
 coding agent so integration tests are run deliberately.
 
+Related human-facing evaluation material:
+
+- [Prompt Suite](doc/PROMPT_SUITE.md) for exploratory Fiji-aware prompts.
+- [Guidance Evaluation](doc/GUIDANCE_EVALUATION.md) for structured guidance
+  retrieval and workflow evaluation.
+
 Keep the integration test document, technical summary, README, and relevant VS
 Code agent files in sync when public tools or APIs are added, removed, renamed,
 or behavior changes.
