@@ -102,8 +102,8 @@ when available, plus a text content block describing the rendered display
 state. The Fiji chat attachment menu provides matching plain-image and image-
 with-overlays choices.
 
-The same server exposes the read-only `fiji_guidance_topics`,
-`fiji_guidance_search`, and `fiji_guidance_read` tools. For an unfamiliar
+The same server exposes the read-only `fiji_guide_topics`,
+`fiji_guide_search`, and `fiji_guide_read` tools. For an unfamiliar
 Fiji-specific workflow, start by reading the `onboarding` guidance document,
 then retrieve only the additional topic guidance needed for the task.
 Built-in guide plugins declare topics through the discoverable `AgentGuide.Topic`

@@ -13,4 +13,4 @@ and an agent with access to the `fiji-mcp` tools. It is a routing stub for the
 Fiji-MCP workflow, not a standalone script guide.
 
 Before carrying out this workflow, read the complete edit-run-diagnose-repair-verify
-guidance with the `fiji_guidance_read` tool using Guide ID `scripting`.
+guidance with the `fiji_guide_read` tool using Guide ID `scripting`.

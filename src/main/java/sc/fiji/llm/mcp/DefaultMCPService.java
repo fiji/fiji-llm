@@ -115,7 +115,7 @@ public class DefaultMCPService extends AbstractService implements MCPService
 This server exposes tools for inspecting and interacting with a live Fiji/ImageJ image analysis application.
 
 Before using other Fiji tools for an unfamiliar Fiji-specific workflow, read
-the onboarding document with the fiji_guidance_onboarding tool.
+the onboarding document with the fiji_guide_onboarding tool.
 
 Tool calls may modify application state, scripts, images, or other workspace artifacts.
 

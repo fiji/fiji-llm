@@ -57,7 +57,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		return "Fiji Guidance";
 	}
 
-	@Tool(value = { "List the exact topic keywords available in the curated Fiji guidance catalog. Use this before fiji_guidance_search" }, name = "fiji_guidance_topics")
+	@Tool(value = { "List the exact topic keywords available in the curated Fiji guidance catalog. Use this before fiji_guide_search" }, name = "fiji_guide_topics")
 	public String listTopics() {
 		try {
 			final JsonArray topics = new JsonArray();
@@ -68,16 +68,16 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 			return result.toString();
 		}
 		catch (final RuntimeException e) {
-			return jsonError("Failed to run fiji_guidance_topics: " + e.getMessage());
+			return jsonError("Failed to run fiji_guide_topics: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Read the curated Fiji onboarding document before using other Fiji-specific tools; the result contains bounded Markdown content" }, name = "fiji_guidance_onboarding")
+	@Tool(value = { "Read the curated Fiji onboarding document before using other Fiji-specific tools; the result contains bounded Markdown content" }, name = "fiji_guide_onboarding")
 	public String readOnboarding() {
 		return read(OnboardingGuide.ID);
 	}
 
-	@Tool(value = { "Search curated Fiji guidance by one exact topic keyword. Use fiji_guidance_topics first; results contain document metadata and IDs, not article content" }, name = "fiji_guidance_search")
+	@Tool(value = { "Search curated Fiji guidance by one exact topic keyword. Use fiji_guide_topics first; results contain document metadata and IDs, not article content" }, name = "fiji_guide_search")
 	public String search(@P("topic") final String topic) {
 		try {
 			final JsonArray documents = new JsonArray();
@@ -93,28 +93,28 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 			return result.toString();
 		}
 		catch (final RuntimeException e) {
-			return jsonError("Failed to run fiji_guidance_search: " + e.getMessage());
+			return jsonError("Failed to run fiji_guide_search: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Read one curated Fiji guidance document by ID. Use fiji_guidance_search to find the ID; the result contains metadata and bounded Markdown content" }, name = "fiji_guidance_read")
+	@Tool(value = { "Read one curated Fiji guidance document by ID. Use fiji_guide_search to find the ID; the result contains metadata and bounded Markdown content" }, name = "fiji_guide_read")
 	public String read(@P("id") final String id) {
 		try {
 			final var document = agentGuidanceService.read(id);
 
 			if (document.isEmpty()) return jsonError("No guidance document found for ID: " + id,
-				"fiji_guidance_search");
+				"fiji_guide_search");
 
 			final AgentGuide guide = findGuide(id);
 			if (guide == null) return jsonError("No guidance document found for ID: " + id,
-				"fiji_guidance_search");
+				"fiji_guide_search");
 
 			final JsonObject result = metadataJson(guide.metadata());
 			result.addProperty("content", document.get());
 			return result.toString();
 		}
 		catch (final RuntimeException e) {
-			return jsonError("Failed to run fiji_guidance_read: " + e.getMessage());
+			return jsonError("Failed to run fiji_guide_read: " + e.getMessage());
 		}
 	}
 

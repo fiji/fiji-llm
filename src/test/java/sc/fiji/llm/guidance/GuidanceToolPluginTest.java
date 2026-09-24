@@ -90,7 +90,7 @@ public class GuidanceToolPluginTest {
 			.getAsJsonObject();
 
 		assertTrue(result.get("error").getAsString().contains("No guidance document"));
-		assertEquals("fiji_guidance_search", result.get("recommended_tool").getAsString());
+		assertEquals("fiji_guide_search", result.get("recommended_tool").getAsString());
 	}
 
 	private GuidanceToolPlugin plugin() throws Exception {

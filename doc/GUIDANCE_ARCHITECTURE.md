@@ -292,7 +292,7 @@ rather than relying on a fixed assumption about every model's context window.
   technical documentation.
 - Add curated packaged guidance resources.
 - Add deterministic search and bounded read operations.
-- Expose `fiji_guidance_search` and `fiji_guidance_read` as read-only tools.
+- Expose `fiji_guide_search` and `fiji_guide_read` as read-only tools.
 - Replace duplicated integrated-chat and MCP baseline instructions with a
   shared composition service.
 

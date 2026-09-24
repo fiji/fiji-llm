@@ -13,4 +13,4 @@ and an agent with access to the `fiji-mcp` tools. It is a routing stub for the
 Fiji-MCP workflow, not a standalone macro guide.
 
 Before carrying out this workflow, read the complete macro workflow guidance with
-the `fiji_guidance_read` tool using Guide ID `creating-macros`.
+the `fiji_guide_read` tool using Guide ID `creating-macros`.

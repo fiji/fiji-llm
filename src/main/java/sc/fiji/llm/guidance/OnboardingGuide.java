@@ -75,12 +75,12 @@ public class OnboardingGuide extends AbstractAgentGuide {
 		Tool descriptions contain information relevant to usage.
 
 		## Guidance Tools
-		The `fiji_guidance_*` tools provide on-demand access to information essential for effective Fiji
+		The `fiji_guide_*` tools provide on-demand access to information essential for effective Fiji
 		interaction.
 
-		1. Use `fiji_guidance_topics` to see the exact topic keywords available.
-		2. Use `fiji_guidance_search` to see the documents available for one exact topic keyword.
-		3. Use `fiji_guidance_read` to read an exact document ID.
+		1. Use `fiji_guide_topics` to see the exact topic keywords available.
+		2. Use `fiji_guide_search` to see the documents available for one exact topic keyword.
+		3. Use `fiji_guide_read` to read an exact document ID.
 
 		### Agent Goals
 		The provided tools and guides focus on several core agentic goals within Fiji. Before using a
