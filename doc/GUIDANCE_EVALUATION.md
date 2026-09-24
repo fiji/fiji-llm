@@ -35,6 +35,7 @@ plugins can legitimately change those details.
 
 Apply these checks to every run:
 
+- Ask the agent what guides it read with `fiji-guide-read`
 - `fiji_guide_onboarding` is called before the first non-guidance Fiji tool.
 - The agent retrieves guidance relevant to the task before taking the related
   action. Acceptable related guides depend on the task; the evaluator should
@@ -53,18 +54,13 @@ workflow guidance should receive partial credit rather than full credit.
 ## Prompt 1: Analyze the Current Image
 
 ```text
-With the Blobs sample image open, use Fiji to perform a sensible
-object-segmentation and measurement analysis. Establish which image is active,
-choose and apply an appropriate Fiji-native workflow, and leave the resulting
-mask or ROIs and Results Table available for inspection. Explain the important
-choices and limitations. Report the result Fiji actually produced rather than
-assuming a particular object count.
-
-At the end, list the exact Fiji tool names you used, in order.
+Open the Blobs sample image, and use Fiji to perform a sensible Fiji-native
+object-segmentation and measurement analysileave any intermediate outputs
+available for inspection. Explain the important choices and limitations.
+Report the analysis results.
 ```
 
 ### Expected evidence
-
 - The trace begins with onboarding guidance before image or command tools.
 - The agent reads guidance relevant to running commands, image/data handling,
   and measurements or Results Table output as needed.
@@ -83,15 +79,10 @@ missing validation, or a workflow that is not Fiji-aware.
 ```text
 Create a reproducible Fiji workflow for segmenting and measuring objects in the
 current image. Choose an appropriate workflow representation supported by this
-Fiji installation. Use Fiji's normal Script Editor or Macro Recorder workflow
-to create the artifact, preserve the important parameters and input
-assumptions, and run or otherwise validate it against the current image.
+Fiji installation. Validate it against the current image.
 
-Do not merely paste an untested script into the response. Explain where the
-workflow artifact exists, how another Fiji user can rerun it, and what result
-was observed.
-
-At the end, list the exact Fiji tool names you used, in order.
+Explain where the workflow artifact exists, how another Fiji user can rerun it,
+and what result was observed.
 ```
 
 ### Expected evidence
@@ -114,12 +105,8 @@ The selected path is part of what is being evaluated.
 
 ```text
 Report which operations are currently available in this Fiji installation for
-segmenting and measuring the open image. Inspect the live application and
-available commands as needed, distinguish installed capabilities from general
-knowledge, and recommend a small next workflow. Do not modify the image or
-Results Table unless that is necessary to support the report.
-
-At the end, list the exact Fiji tool names you used, in order.
+segmenting and measuring the open image. Distinguish installed capabilities from
+general knowledge, and recommend a small next workflow.
 ```
 
 ### Expected evidence
