@@ -74,7 +74,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 
 	@Tool(value = { "Read the curated Fiji onboarding document before using other Fiji-specific tools; the result contains bounded Markdown content" }, name = "fiji_guidance_onboarding")
 	public String readOnboarding() {
-		return read(OnboardingGuide.ID, null);
+		return read(OnboardingGuide.ID);
 	}
 
 	@Tool(value = { "Search curated Fiji guidance by one exact topic keyword. Use fiji_guidance_topics first; results contain document metadata and IDs, not article content" }, name = "fiji_guidance_search")
@@ -98,11 +98,9 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Read one curated Fiji guidance document by ID. Use fiji_guidance_search to find the ID; the result contains metadata and bounded Markdown content" }, name = "fiji_guidance_read")
-	public String read(@P("id") final String id,
-		@P("max_content_characters") final Integer maxContentCharacters) {
+	public String read(@P("id") final String id) {
 		try {
-			final var document = maxContentCharacters == null ? agentGuidanceService.read(id) :
-				agentGuidanceService.read(id, maxContentCharacters);
+			final var document = agentGuidanceService.read(id);
 
 			if (document.isEmpty()) return jsonError("No guidance document found for ID: " + id,
 				"fiji_guidance_search");

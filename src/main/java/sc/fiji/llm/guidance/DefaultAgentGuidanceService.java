@@ -84,16 +84,15 @@ public class DefaultAgentGuidanceService extends
 	}
 
 	@Override
-	public Optional<String> read(final String id,
-		final int maxContentCharacters)
+	public Optional<String> read(final String id)
 	{
 		if (id == null || id.trim().isEmpty()) return Optional.empty();
-		final int contentLimit = contentLimit(maxContentCharacters);
 		final AgentGuide guide = guidesById().get(id.trim());
 		if (guide == null) return Optional.empty();
 		final String content = guide.content();
-		final String boundedContent = content.length() <= contentLimit ? content : content
-			.substring(0, contentLimit);
+		final String boundedContent = content.length() <= AgentGuidanceService
+			.DEFAULT_MAX_CONTENT_CHARACTERS ? content : content.substring(0,
+				AgentGuidanceService.DEFAULT_MAX_CONTENT_CHARACTERS);
 		return Optional.of(boundedContent);
 	}
 
@@ -107,9 +106,4 @@ public class DefaultAgentGuidanceService extends
 		return guides;
 	}
 
-	private static int contentLimit(final int requested) {
-		if (requested <= 0) throw new IllegalArgumentException(
-			"maxContentCharacters must be positive");
-		return Math.min(requested, AgentGuidanceService.MAX_CONTENT_CHARACTERS);
-	}
 }

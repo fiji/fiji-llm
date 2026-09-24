@@ -40,8 +40,7 @@ public interface AgentGuidanceService extends SingletonService<AgentGuide>,
 	ImageJService
 {
 
-	int DEFAULT_MAX_CONTENT_CHARACTERS = 2400;
-	int MAX_CONTENT_CHARACTERS = 12000;
+	int DEFAULT_MAX_CONTENT_CHARACTERS = 6000;
 
 	/**
 	 * Lists guide metadata without including guide content.
@@ -71,16 +70,5 @@ public interface AgentGuidanceService extends SingletonService<AgentGuide>,
 	 * @param id stable guide identifier
 	 * @return bounded guide content, or empty when the identifier is unknown
 	 */
-	default Optional<String> read(final String id) {
-		return read(id, DEFAULT_MAX_CONTENT_CHARACTERS);
-	}
-
-	/**
-	 * Reads one guide with a caller-requested, service-enforced content bound.
-	 *
-	 * @param id stable guide identifier
-	 * @param maxContentCharacters maximum returned content length
-	 * @return bounded guide content, or empty when the identifier is unknown
-	 */
-	Optional<String> read(String id, int maxContentCharacters);
+	Optional<String> read(String id);
 }
