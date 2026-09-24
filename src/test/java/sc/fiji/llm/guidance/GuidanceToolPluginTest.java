@@ -72,8 +72,8 @@ public class GuidanceToolPluginTest {
 		assertEquals("creating-macros", metadata.get("id").getAsString());
 		assertFalse(metadata.has("content"));
 
-		final JsonObject document = JsonParser.parseString(plugin.read("scripts-and-macros",
-			null)).getAsJsonObject();
+		final JsonObject document = JsonParser.parseString(plugin.read("scripts-and-macros"))
+			.getAsJsonObject();
 		assertEquals("scripts-and-macros", document.get("id").getAsString());
 		assertFalse(document.get("content").getAsString().isEmpty());
 
@@ -86,7 +86,7 @@ public class GuidanceToolPluginTest {
 
 	@Test
 	public void reportsUnknownDocuments() throws Exception {
-		final JsonObject result = JsonParser.parseString(plugin().read("missing", null))
+		final JsonObject result = JsonParser.parseString(plugin().read("missing"))
 			.getAsJsonObject();
 
 		assertTrue(result.get("error").getAsString().contains("No guidance document"));

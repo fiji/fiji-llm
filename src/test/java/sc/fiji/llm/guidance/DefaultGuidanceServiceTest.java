@@ -34,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,6 +42,9 @@ import org.junit.Test;
 import org.scijava.Context;
 
 public class DefaultGuidanceServiceTest {
+
+	private static final Pattern FORMAT_PLACEHOLDER = Pattern.compile(
+		"%(?:\\d+\\$)?s");
 
 	private Context context;
 
@@ -143,31 +147,37 @@ public class DefaultGuidanceServiceTest {
 	}
 
 	@Test
-	public void readsWithAnEnforcedBound() {
-		final AgentGuidanceService service = service();
-
-		final Optional<String> result = service.read(
-			"environment-inspection", 20);
-
-		assertTrue(result.isPresent());
-		assertEquals(20, result.get().length());
-	}
-
-	@Test
 	public void readsRuntimeBaselineGuides() {
 		final AgentGuidanceService service = service();
 
-		assertTrue(service.read("integrated-chat", 1000).get().contains(
+		assertTrue(service.read("integrated-chat").get().contains(
 			"Fiji Chat brings approachable natural-language AI assistance into Fiji"));
-		assertTrue(service.read("mcp-server", 1000).get().contains(
+		assertTrue(service.read("mcp-server").get().contains(
 			"The Model Context Protocol (MCP) server is the standard connection point"));
+	}
+
+	@Test
+	public void readsEveryGuideWithoutTruncationOrUnresolvedPlaceholders() {
+		final AgentGuidanceService service = service();
+
+		for (final AgentGuide guide : service.getInstances()) {
+			final String id = guide.metadata().id();
+			final Optional<String> result = service.read(id);
+
+			assertTrue("Missing guide: " + id, result.isPresent());
+			assertEquals("Guide was truncated: " + id, guide.content().length(), result
+				.get().length());
+			assertEquals("Guide content changed: " + id, guide.content(), result.get());
+			assertFalse("Unresolved formatting placeholder in guide: " + id,
+				FORMAT_PLACEHOLDER.matcher(result.get()).find());
+		}
 	}
 
 	@Test
 	public void returnsEmptyForUnknownDocument() {
 		final AgentGuidanceService service = service();
 
-		assertFalse(service.read("missing", 100).isPresent());
+		assertFalse(service.read("missing").isPresent());
 	}
 
 	private AgentGuidanceService service() {
