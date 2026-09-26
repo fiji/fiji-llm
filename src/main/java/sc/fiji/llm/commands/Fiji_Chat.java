@@ -96,12 +96,12 @@ public class Fiji_Chat extends DynamicCommand {
 		"<li>Recommended commands for image analysis tasks</li>" +
 		"<li>Writing and debugging macros and scripts</li>" +
 		"<li>General Fiji support</li>" + "</ul>" +
-		"<p><b>Important:</b> This feature connects to external AI services with their own terms and conditions.<br />" +
-		"Your queries may not be private/confidential.<br />" +
+		"<p><b>Important:</b> This feature connects to external AI services with their own terms and conditions. " +
+		"Your queries may not be private/confidential. " +
 		"For detailed documentation, see <a href=\"https://github.com/fiji/fiji-llm\">the README</a>.</p>" +
-		"<p><b>NOTE:</b> This feature is in active development. <br />" +
-		"The AI may provide incorrect information and make mistakes - always verify generative content.<br />" +
-		"Help out by <a href=\"https://forum.image.sc/tag/llm\">contacting us on the forum</a> with issues or feature requests.<br />" +
+		"<p><b>NOTE:</b> This feature is in active development. " +
+		"The AI may provide incorrect information and make mistakes - always verify generative content." +
+		"Help out by <a href=\"https://forum.image.sc/tag/llm\">contacting us on the forum</a> with issues or feature requests.</p>" +
 		"</body></html>";
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
@@ -109,12 +109,12 @@ public class Fiji_Chat extends DynamicCommand {
 	private String providerMessage = "<html><div style='width: " + WIDTH +
 		"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" +
 		"<body style='width: " + WIDTH + "px'>" +
-		"<p>First, select an <b>AI Service</b>.<br />" +
-		"This is typically the <i>general</i> model provider you want to use (e.g. ChatGPT or Claude).<br />" +
-		"Model selection can be overwhelming! We recommend starting with a curated (<b>*</b>) local model.<br />" +
-		"In general, local model services (e.g. Ollama) provide control, reproducibility, and security.<br />" +
-		"However, they are limited by your local hardware, and have reduced scope compared to frontier models.</p>" +
-		"</body></html>";
+		"<p>First, select an <b>AI Service</b>.</p><ul>" +
+		"<li>This is typically the <i>general</i> model provider you want to use (e.g. ChatGPT or Claude).</li>" +
+		"<li>Model selection can be overwhelming! We recommend starting with a curated (<b>*</b>) local model.</li>" +
+		"<li>In general, local model services (e.g. Ollama) provide control, reproducibility, and security.</li>" +
+		"<li>However, they are limited by your local hardware, and have reduced scope compared to frontier models.</li>" +
+		"</ul></body></html>";
 
 	@Parameter(label = "AI Service →", callback = "providerChanged",
 		persist = false)
