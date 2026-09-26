@@ -32,6 +32,7 @@ package sc.fiji.llm.ui;
 import java.awt.KeyboardFocusManager;
 import java.beans.PropertyChangeEvent;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.scijava.ui.swing.script.TextEditor;
 import org.scijava.ui.swing.script.TextEditorTab;
@@ -44,16 +45,28 @@ import sc.fiji.llm.script.ScriptID;
  */
 public final class TextEditorUtils {
 
+	private static final AtomicBoolean focusTracking = new AtomicBoolean();
 	private static volatile FocusedScript lastFocusedScript;
 
 	static {
-		KeyboardFocusManager.getCurrentKeyboardFocusManager()
-			.addPropertyChangeListener("focusedWindow",
-				TextEditorUtils::handleFocusedWindowChange);
+		startFocusTracking();
 	}
 
 	private TextEditorUtils() {
 		// utility
+	}
+
+	/**
+	 * Starts remembering which Script Editor window was focused last, so the
+	 * active script is known after focus moves elsewhere, such as to the chat.
+	 * Call this early: focus changes before tracking starts are not seen.
+	 * Calling it again has no effect.
+	 */
+	public static void startFocusTracking() {
+		if (!focusTracking.compareAndSet(false, true)) return;
+		KeyboardFocusManager.getCurrentKeyboardFocusManager()
+			.addPropertyChangeListener("focusedWindow",
+				TextEditorUtils::handleFocusedWindowChange);
 	}
 
 	private static void handleFocusedWindowChange(final PropertyChangeEvent event) {
@@ -179,7 +192,16 @@ public final class TextEditorUtils {
 		return TextEditor.instances.get(scriptID.editorIndex);
 	}
 
+	/**
+	 * Return the last focused script or, if none is known, the selected tab of the
+	 * most recent visible editor.
+	 */
 	private static ScriptID getLastFocusedScriptID() {
+		final ScriptID remembered = getRememberedScriptID();
+		return remembered != null ? remembered : getMostRecentVisibleScriptID();
+	}
+
+	private static ScriptID getRememberedScriptID() {
 		final FocusedScript focusedScript = lastFocusedScript;
 		if (focusedScript == null || focusedScript.editor == null ||
 			!focusedScript.editor.isVisible()) return null;
@@ -188,6 +210,20 @@ public final class TextEditorUtils {
 		final int tabIndex = getTabIndex(focusedScript.editor, focusedScript.tab);
 		if (editorIndex == -1 || tabIndex == -1) return null;
 		return new ScriptID(editorIndex, tabIndex);
+	}
+
+	private static ScriptID getMostRecentVisibleScriptID() {
+		final int editorIndex = getMostRecentVisibleEditorIndex();
+		if (editorIndex == -1) return null;
+		final TextEditor textEditor = TextEditor.instances.get(editorIndex);
+		final int tabIndex;
+		try {
+			tabIndex = getTabIndex(textEditor, textEditor.getTab());
+		}
+		catch (final RuntimeException e) {
+			return null;
+		}
+		return tabIndex == -1 ? null : new ScriptID(editorIndex, tabIndex);
 	}
 
 	private static final class FocusedScript {

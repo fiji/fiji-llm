@@ -234,6 +234,7 @@ context relevant to the user's request.
 	public FijiAssistantChat(Context c, String providerName, String modelName)
 	{
 		c.inject(this);
+		TextEditorUtils.startFocusTracking();
 
 		this.contextItemButtons = new HashMap<>();
 		this.contextItems = new ArrayList<>();
