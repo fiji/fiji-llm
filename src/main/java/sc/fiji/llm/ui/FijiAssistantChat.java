@@ -824,9 +824,13 @@ Expect iteration and troubleshooting.  Be concise, patient, humble, and collabor
 				final long[] lastScrollTime = {System.currentTimeMillis()};
 				// Build user message with context items as attributes
 				final List<Content> userContents = new ArrayList<>();
-				userContents.add(new TextContent(userText));
+				final String requestText = mergedContextItems.isEmpty() ? userText :
+					userText + "\n\n=== BEGIN USER-ATTACHED CONTEXT (JSON) ===\n" + userContextArray
+					+ "\n=== END USER-ATTACHED CONTEXT ===";
+				userContents.add(new TextContent(requestText));
 				final UserMessage.Builder msgBuilder = UserMessage.builder()
 						.addContent(new TextContent(userText));
+
 				for (final ContextItem item : mergedContextItems) {
 					if (item instanceof ImageMetaContextItem imageItem) {
 						imageItem.getImageContent().ifPresent(imageContent -> {
