@@ -98,7 +98,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, dimensions, and whether it is the active image. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")
-	public String getImageDetails(@P("image_id") int imageId) {
+	public String getImageDetails(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		try {
 			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
 			final Optional<ImageDisplay> display = findImageDisplay(displays, imageId);
@@ -143,13 +143,13 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "For an open image specified by image id, return its rendered image content. fiji_image_list can be used to find image ids." }, name = "fiji_image_view")
-	public Content viewImage(@P("image_id") int imageId) {
+	public Content viewImage(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(), false,
 			"fiji_image_view").get(0);
 	}
 
 	@Tool(value = { "For an open image specified by image id, return its rendered image content with any visible annotations (e.g. ROIs) included. fiji_image_list can be used to find image ids." }, name = "fiji_image_view_annotated")
-	public List<Content> viewImageAnnotated(@P("image_id") int imageId) {
+	public List<Content> viewImageAnnotated(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(
 			ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true), true,
 			"fiji_image_view_annotated");
