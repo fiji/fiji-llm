@@ -30,11 +30,17 @@
 package sc.fiji.llm.ui;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.Timer;
 
@@ -135,7 +141,7 @@ public class ThinkingIndicator extends JLabel {
 		"Obliging",
 		"Performing",
 		"Philosophizing",
-		"Pondering"
+		"Pondering",
 		"Positing",
 		"Postulating",
 		"Pressing",
@@ -190,6 +196,8 @@ public class ThinkingIndicator extends JLabel {
 		setFont(getFont().deriveFont(Font.ITALIC, fontSize));
 		setForeground(new Color(90, 90, 90));
 		frames = supportedFrames(getFont());
+		setIcon(new StarIcon(getFont().deriveFont(Font.PLAIN)));
+		setIconTextGap(6);
 		timer = new Timer(FRAME_MS, e -> tick());
 	}
 
@@ -245,11 +253,61 @@ public class ThinkingIndicator extends JLabel {
 		frame = (frame + 1) % frames.length;
 		final String message = activity != null ? activity : messages.get(
 			messageIndex);
-		setText(frames[frame] + " " + message + "... (" + elapsedSeconds() + "s)");
+		setText(message + "... (" + elapsedSeconds() + "s)");
+		repaint();
 	}
 
 	private static String[] supportedFrames(final Font font) {
 		return font.canDisplayUpTo(String.join("", STAR_FRAMES)) == -1
 			? STAR_FRAMES : ASCII_FRAMES;
+	}
+
+	/**
+	 * Draws the current star centered in a box as wide as the widest frame, so
+	 * the message does not shift as the star rotates. A fixed-width font alone
+	 * would not suffice, since the stars come from varying fallback fonts.
+	 */
+	private class StarIcon implements Icon {
+
+		private final Font font;
+		private final int width;
+		private final int height;
+
+		StarIcon(final Font font) {
+			this.font = font;
+			final FontMetrics metrics = getFontMetrics(font);
+			int maxWidth = 0;
+			for (final String f : frames) {
+				maxWidth = Math.max(maxWidth, metrics.stringWidth(f));
+			}
+			width = maxWidth;
+			height = metrics.getHeight();
+		}
+
+		@Override
+		public void paintIcon(final Component c, final Graphics g, final int x,
+			final int y)
+		{
+			final Graphics2D g2d = (Graphics2D) g.create();
+			g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+				RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			g2d.setFont(font);
+			g2d.setColor(c.getForeground());
+			final FontMetrics metrics = g2d.getFontMetrics();
+			final String star = frames[frame];
+			g2d.drawString(star, x + (width - metrics.stringWidth(star)) / 2, y +
+				metrics.getAscent());
+			g2d.dispose();
+		}
+
+		@Override
+		public int getIconWidth() {
+			return width;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return height;
+		}
 	}
 }
