@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -557,53 +556,16 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 	}
 
 	/**
-	 * Builds a mapping from argN keys to their description-based names, for use
-	 * in remapping the required list.
+	 * Converts a LangChain4j tool's parameters to an MCP input schema.
 	 */
-	@SuppressWarnings("unchecked")
-	private Map<String, String> buildArgKeyMapping(
-		final Map<String, Object> rawProperties)
-	{
-		final Map<String, String> mapping = new LinkedHashMap<>();
-		if (rawProperties == null) return mapping;
-		for (final Map.Entry<String, Object> entry : rawProperties.entrySet()) {
-			if (entry.getValue() instanceof Map) {
-				final Map<String, Object> propMap =
-					(Map<String, Object>) entry.getValue();
-				final Object desc = propMap.get("description");
-				if (desc instanceof String) {
-					mapping.put(entry.getKey(), (String) desc);
-				}
-			}
+	McpSchema.JsonSchema toInputSchema(final ToolSpecification toolSpec) {
+		final JsonObjectSchema params = toolSpec.parameters();
+		if (params == null) {
+			return new McpSchema.JsonSchema("object", null, null, null, null, null);
 		}
-		return mapping;
-	}
-
-	/**
-	 * Remaps properties from argN-keyed form to name-keyed form using each
-	 * property's "description" field as the new key. The "description" field is
-	 * removed from each property since it served only as the parameter name.
-	 */
-	@SuppressWarnings("unchecked")
-	private Map<String, Object> remapArgNames(
-		final Map<String, Object> rawProperties,
-		final Map<String, String> keyMapping)
-	{
-		if (rawProperties == null) return null;
-		final Map<String, Object> result = new LinkedHashMap<>();
-		for (final Map.Entry<String, Object> entry : rawProperties.entrySet()) {
-			final String newKey = keyMapping.getOrDefault(entry.getKey(),
-				entry.getKey());
-			if (entry.getValue() instanceof Map) {
-				final Map<String, Object> remapped = new LinkedHashMap<>(
-					(Map<String, Object>) entry.getValue());
-				remapped.remove("description");
-				result.put(newKey, remapped);
-			} else {
-				result.put(newKey, entry.getValue());
-			}
-		}
-		return result;
+		return new McpSchema.JsonSchema("object", convertProperties(params
+			.properties()), params.required(), params.additionalProperties(), null,
+			convertProperties(params.definitions()));
 	}
 
 	/**
@@ -617,50 +579,20 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 	private SyncToolSpecification convertToolToSyncSpecification(
 		final ToolSpecification toolSpec, final ToolExecutor toolExecutor)
 	{
-		// Convert LangChain4j parameters to MCP JSON schema
-		McpSchema.JsonSchema inputSchema = null;
-		final JsonObjectSchema params = toolSpec.parameters();
-		final Map<String, String> reverseMapping = new LinkedHashMap<>();
-		if (params != null) {
-			final Map<String, Object> rawProperties = convertProperties(
-				params.properties());
-			final Map<String, String> keyMapping = buildArgKeyMapping(rawProperties);
-			// Build reverse mapping: friendly name -> argN for use in callHandler
-			keyMapping.forEach((argN, friendlyName) -> reverseMapping.put(friendlyName, argN));
-			final Map<String, Object> properties = remapArgNames(rawProperties,
-				keyMapping);
-			final List<String> required = params.required() == null ? null
-				: params.required().stream()
-					.map(k -> keyMapping.getOrDefault(k, k))
-					.collect(Collectors.toList());
-			final Map<String, Object> definitions = convertProperties(
-				params.definitions());
-			inputSchema = new McpSchema.JsonSchema("object", properties,
-				required, params.additionalProperties(), null,
-				definitions);
-		} else {
-			inputSchema = new McpSchema.JsonSchema("object", null, null, null,
-				null, null);
-		}
-
 		return SyncToolSpecification.builder()
 			.tool(Tool.builder()
 				.name(toolSpec.name())
 				.description(toolSpec.description())
-				.inputSchema(inputSchema)
+				.inputSchema(toInputSchema(toolSpec))
 				.build())
 			.callHandler((exchange, request) -> {
 				try {
-					logService.debug("Executing MCP tool: " + toolSpec.name());
-					// Remap argument keys from friendly names back to positional argN names
-					final Map<String, Object> remappedArgs = new LinkedHashMap<>();
-					if (request.arguments() != null) {
-						request.arguments().forEach((k, v) ->
-							remappedArgs.put(reverseMapping.getOrDefault(k, k), v));
-					}
 					// Create a ToolExecutionRequest for the LangChain4j tool executor
 					final String args = McpJsonDefaults.getMapper()
-							.writeValueAsString(remappedArgs);
+						.writeValueAsString(request.arguments() == null ? Map.of()
+							: request.arguments());
+					logService.debug("Executing MCP tool: " + toolSpec.name() + " " +
+						args);
 					final ToolExecutionRequest toolRequest = ToolExecutionRequest
 						.builder()
 						.name(toolSpec.name())

@@ -53,6 +53,7 @@ import org.junit.Test;
 import org.scijava.Context;
 import org.scijava.prefs.PrefService;
 
+import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.service.tool.ToolExecutionResult;
@@ -125,6 +126,21 @@ public class DefaultMCPServiceTest {
 
 		// When/Then: service should not be running initially
 		assertFalse(mcpService.isServerRunning());
+	}
+
+	@Test
+	public void testInputSchemasUseToolParameterNames() {
+		for (final ToolSpecification spec : aiToolService.getToolsWithExecutors()
+			.keySet())
+		{
+			if (spec.parameters() == null) continue;
+			final McpSchema.JsonSchema schema = ((DefaultMCPService) mcpService)
+				.toInputSchema(spec);
+			assertEquals(spec.name(), spec.parameters().properties().keySet(), schema
+				.properties().keySet());
+			assertEquals(spec.name(), spec.parameters().required(), schema
+				.required());
+		}
 	}
 
 	@Test
