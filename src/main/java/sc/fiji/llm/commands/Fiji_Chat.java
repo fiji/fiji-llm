@@ -93,8 +93,8 @@ public class Fiji_Chat extends DynamicCommand {
 	private String welcomeMessage = "<html><body style='width: " + WIDTH +
 		"px'>" + "<h2 style='text-align: center'>Welcome to Fiji Chat!</h2>" +
 		"<p>Chat with an AI assistant for help, including:</p>" + "<ul>" +
-		"<li>Writing and debugging macros and scripts</li>" +
 		"<li>Recommended commands for image analysis tasks</li>" +
+		"<li>Writing and debugging macros and scripts</li>" +
 		"<li>General Fiji support</li>" + "</ul>" +
 		"<p><b>Important:</b> This feature connects to external AI services with their own terms and conditions.<br />" +
 		"Your queries may not be private/confidential.<br />" +
