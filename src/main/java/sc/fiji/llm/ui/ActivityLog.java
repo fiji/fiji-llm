@@ -35,9 +35,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -51,9 +49,11 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 import net.miginfocom.swing.MigLayout;
+import sc.fiji.llm.chat.ActivityRecord;
+import sc.fiji.llm.chat.ActivityRecord.Step;
 
 /**
- * A collapsible record of what the assistant did while producing a response:
+ * A collapsible view of an {@link ActivityRecord}: what the assistant did while producing a response:
  * its thinking and each tool call with arguments, outcome, and result. It is
  * collapsed by default so it does not distract from the response itself. Must
  * be used on the EDT.
@@ -61,13 +61,12 @@ import net.miginfocom.swing.MigLayout;
 public class ActivityLog extends JPanel {
 
 	private static final int MAX_DETAILS_HEIGHT = 240;
-	private static final int MAX_RESULT_LENGTH = 600;
 	private static final int RENDER_DELAY_MS = 250;
 	private static final int CODE_LINE_LENGTH = 50;
 	private static final String EXPANDED = "▾";
 	private static final String COLLAPSED = "▸";
 
-	private final List<Entry> entries = new ArrayList<>();
+	private ActivityRecord record = new ActivityRecord();
 	private final JLabel toggle;
 	private final JTextPane details;
 	private final JScrollPane detailsScroll;
@@ -75,7 +74,6 @@ public class ActivityLog extends JPanel {
 	private final boolean arrowsSupported;
 	private boolean expanded;
 	private boolean finished;
-	private long elapsedSeconds;
 
 	public ActivityLog(final float fontSize) {
 		super(new MigLayout("insets 0, wrap 1, hidemode 3, fillx", "[grow, fill]",
@@ -133,56 +131,57 @@ public class ActivityLog extends JPanel {
 		updateToggle();
 	}
 
-	/** Appends streamed thinking text, starting a new entry after a tool call. */
+	/** @see ActivityRecord#appendThinking(String) */
 	public void appendThinking(final String text) {
-		if (text == null || text.isEmpty()) return;
-		final Entry last = entries.isEmpty() ? null : entries.get(entries.size() -
-			1);
-		if (last != null && last.toolName == null) last.text.append(text);
-		else entries.add(Entry.thinking(text));
+		record.appendThinking(text);
 		changed();
 	}
 
-	/** Records the start of a tool call. */
+	/** @see ActivityRecord#toolStarted(String, String) */
 	public void toolStarted(final String name, final String arguments) {
-		entries.add(Entry.tool(name, arguments));
+		record.toolStarted(name, arguments);
 		changed();
 	}
 
-	/** Records the outcome of the most recent unfinished call to the tool. */
+	/** @see ActivityRecord#toolFinished(String, boolean, long, String) */
 	public void toolFinished(final String name, final boolean failed,
 		final long millis, final String result)
 	{
-		for (int i = entries.size() - 1; i >= 0; i--) {
-			final Entry entry = entries.get(i);
-			if (name.equals(entry.toolName) && entry.millis < 0) {
-				entry.failed = failed;
-				entry.millis = millis;
-				entry.text.append(result == null ? "" : result);
-				break;
-			}
-		}
+		record.toolFinished(name, failed, millis, result);
 		changed();
 	}
 
 	/** Marks the response as complete, summarizing the activity. */
 	public void finish(final long seconds) {
 		finished = true;
-		elapsedSeconds = seconds;
+		record.setElapsedSeconds(seconds);
 		updateToggle();
 		render();
 	}
 
 	public boolean isEmpty() {
-		return entries.isEmpty();
+		return record.isEmpty();
+	}
+
+	/** @return the recorded activity */
+	public ActivityRecord getRecord() {
+		return record;
+	}
+
+	/** Shows a previously recorded, completed activity, collapsed. */
+	public void showRecord(final ActivityRecord completed) {
+		record = completed;
+		finished = true;
+		setVisible(!record.isEmpty());
+		updateToggle();
 	}
 
 	/** @return a short summary, such as "Thought and used 2 tools (12s)" */
 	String summary() {
-		final long toolCount = entries.stream().filter(e -> e.toolName != null)
-			.count();
-		final long failures = entries.stream().filter(e -> e.failed).count();
-		final boolean thought = entries.stream().anyMatch(e -> e.toolName == null);
+		final List<Step> steps = record.getSteps();
+		final long toolCount = steps.stream().filter(s -> !s.isThinking()).count();
+		final long failures = steps.stream().filter(Step::isFailed).count();
+		final boolean thought = steps.stream().anyMatch(Step::isThinking);
 		final StringBuilder sb = new StringBuilder();
 		if (thought) sb.append("Thought");
 		if (toolCount > 0) {
@@ -190,7 +189,7 @@ public class ActivityLog extends JPanel {
 				toolCount == 1 ? " tool" : " tools");
 			if (failures > 0) sb.append(", ").append(failures).append(" failed");
 		}
-		if (finished) sb.append(" (").append(elapsedSeconds).append("s)");
+		if (finished) sb.append(" (").append(record.getElapsedSeconds()).append("s)");
 		return sb.toString();
 	}
 
@@ -227,18 +226,18 @@ public class ActivityLog extends JPanel {
 
 	String toMarkdown() {
 		final StringBuilder md = new StringBuilder();
-		for (final Entry entry : entries) {
-			if (entry.toolName == null) {
-				md.append("**Thinking**\n\n").append(entry.text).append("\n\n");
+		for (final Step step : record.getSteps()) {
+			if (step.isThinking()) {
+				md.append("**Thinking**\n\n").append(step.getText()).append("\n\n");
 				continue;
 			}
-			md.append("**Tool** `").append(entry.toolName).append("` ");
-			if (entry.millis < 0) md.append("*running*");
-			else md.append(entry.failed ? "*failed* after " : "*done* in ").append(
-				entry.millis).append(" ms");
+			md.append("**Tool** `").append(step.getTool()).append("` ");
+			if (!step.isFinished()) md.append("*running*");
+			else md.append(step.isFailed() ? "*failed* after " : "*done* in ").append(
+				step.getMillis()).append(" ms");
 			md.append("\n\n");
-			appendCode(md, entry.arguments);
-			if (entry.millis >= 0) appendCode(md, truncate(entry.text.toString()));
+			appendCode(md, step.getArguments());
+			if (step.isFinished()) appendCode(md, step.getText());
 		}
 		return md.toString();
 	}
@@ -263,12 +262,6 @@ public class ActivityLog extends JPanel {
 			}
 		}
 		return sb.toString();
-	}
-
-	private static String truncate(final String text) {
-		if (text.length() <= MAX_RESULT_LENGTH) return text;
-		return text.substring(0, MAX_RESULT_LENGTH) + "\n... (" + (text.length() -
-			MAX_RESULT_LENGTH) + " more characters)";
 	}
 
 	private void revalidateBubble() {
@@ -310,27 +303,4 @@ public class ActivityLog extends JPanel {
 		return pane;
 	}
 
-	private static class Entry {
-
-		private final String toolName;
-		private final String arguments;
-		private final StringBuilder text = new StringBuilder();
-		private boolean failed;
-		private long millis = -1;
-
-		private Entry(final String toolName, final String arguments) {
-			this.toolName = toolName;
-			this.arguments = arguments;
-		}
-
-		static Entry thinking(final String text) {
-			final Entry entry = new Entry(null, null);
-			entry.text.append(text);
-			return entry;
-		}
-
-		static Entry tool(final String name, final String arguments) {
-			return new Entry(name, arguments);
-		}
-	}
 }

@@ -178,7 +178,8 @@ public class DefaultConversationService extends AbstractService implements
 						{
 							ChatMessage memoryMessage = ChatMessageConverter.fromSerialized(
 								msg.getMemoryMessage());
-							conversation.addMessage(msg.getDisplayMessage(), memoryMessage);
+							conversation.addMessage(msg.getDisplayMessage(), memoryMessage,
+								msg.getActivity());
 						}
 
 						conversationsByName.put(conversation.name(), conversation);
@@ -232,6 +233,7 @@ public class DefaultConversationService extends AbstractService implements
 				serializedMsg.setDisplayMessage(msg.display());
 				serializedMsg.setMemoryMessage(ChatMessageConverter.toSerialized(msg
 					.memory()));
+				serializedMsg.setActivity(msg.activity());
 				messages.add(serializedMsg);
 			}
 			serialized.setMessages(messages);

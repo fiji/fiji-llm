@@ -231,7 +231,7 @@ bridge is available.
 4. **Start Chatting**: Type your question or request in the input box
 5. **Attach Context** (optional): Use the context buttons to provide relevant information from your Fiji environment
 
-While the assistant works, an animated status line shows how long it has been working and which tool, if any, is running. When the assistant thinks or uses tools, its reply begins with a collapsed summary such as "Thought and used 2 tools (12s)"; click it to see the thinking text and each tool call's arguments, outcome, and result. This record is shown only for the current session and is not saved with the conversation.
+While the assistant works, an animated status line shows how long it has been working and which tool, if any, is running. When the assistant thinks or uses tools, its reply begins with a collapsed summary such as "Thought and used 2 tools (12s)"; click it to see the thinking text and each tool call's arguments, outcome, and result. This record is saved with the conversation, so it is still available when you reopen the conversation later.
 
 You can use `Help > Assistants > Manage API Keys...` to manage your key(s) at any time.
 

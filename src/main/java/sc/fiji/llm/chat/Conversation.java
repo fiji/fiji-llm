@@ -57,6 +57,15 @@ public class Conversation {
 	}
 
 	/**
+	 * Adds a message with a record of the assistant activity that produced it.
+	 */
+	public void addMessage(String displayMessage, ChatMessage memoryMessage,
+		ActivityRecord activity)
+	{
+		messages.add(new Message(displayMessage, memoryMessage, activity));
+	}
+
+	/**
 	 * Removes the last message when it is the expected memory message.
 	 *
 	 * @param expectedMemoryMessage the message that may be rolled back
@@ -101,10 +110,18 @@ public class Conversation {
 
 		private final String displayMessage;
 		private final ChatMessage memoryMessage;
+		private final ActivityRecord activity;
 
 		public Message(String displayMessage, ChatMessage memoryMessage) {
+			this(displayMessage, memoryMessage, null);
+		}
+
+		public Message(String displayMessage, ChatMessage memoryMessage,
+			ActivityRecord activity)
+		{
 			this.displayMessage = displayMessage;
 			this.memoryMessage = memoryMessage;
+			this.activity = activity;
 		}
 
 		public String display() {
@@ -113,6 +130,13 @@ public class Conversation {
 
 		public ChatMessage memory() {
 			return memoryMessage;
+		}
+
+		/**
+		 * @return what the assistant did to produce this message, or null
+		 */
+		public ActivityRecord activity() {
+			return activity;
 		}
 
 		@Override

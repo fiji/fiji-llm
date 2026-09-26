@@ -74,6 +74,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.data.MutableDataSet;
 
 import net.miginfocom.swing.MigLayout;
+import sc.fiji.llm.chat.ActivityRecord;
 
 /**
  * A custom panel for displaying a single chat message with icon and styled
@@ -483,6 +484,22 @@ public class ChatMessagePanel extends JPanel {
 			textPane.setVisible(true);
 			if (!activityLog.isEmpty()) activityLog.finish(seconds);
 			revalidate();
+		});
+	}
+
+	/**
+	 * @return the recorded activity, or null if there was none; call on the EDT
+	 */
+	public ActivityRecord getActivity() {
+		return activityLog == null || activityLog.isEmpty() ? null : activityLog
+			.getRecord();
+	}
+
+	/** Shows a previously recorded activity, such as from a saved conversation. */
+	public void showActivity(final ActivityRecord activity) {
+		onEdt(() -> {
+			if (activityLog != null && activity != null) activityLog.showRecord(
+				activity);
 		});
 	}
 

@@ -98,6 +98,7 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import net.miginfocom.swing.MigLayout;
 import sc.fiji.llm.assistant.AssistantService;
 import sc.fiji.llm.assistant.FijiAssistant;
+import sc.fiji.llm.chat.ActivityRecord;
 import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
@@ -929,8 +930,15 @@ context relevant to the user's request.
 						aiMessageStarted.set(true);
 						currentStreamingPanel.finishWorking();
 						try {
-							requestConversation.addMessage(currentStreamingPanel.getText(),
-								response.aiMessage());
+							// Read the panel on the EDT, after its queued updates.
+							final String[] text = new String[1];
+							final ActivityRecord[] activity = new ActivityRecord[1];
+							SwingUtilities.invokeAndWait(() -> {
+								text[0] = currentStreamingPanel.getText();
+								activity[0] = currentStreamingPanel.getActivity();
+							});
+							requestConversation.addMessage(text[0], response.aiMessage(),
+								activity[0]);
 
 							SwingUtilities.invokeLater(() -> {
 								final JScrollBar vertical = chatScrollPane
@@ -1690,10 +1698,13 @@ context relevant to the user's request.
 			currentConversation = conversation;
 			clearChatPanel();
 			for (Conversation.Message msg : conversation.messages()) {
-				addMessagePanelToChat(msg
+				final ChatMessagePanel panel = new ChatMessagePanel(msg
 					.memory() instanceof dev.langchain4j.data.message.UserMessage
 						? ChatMessagePanel.MessageType.USER
-						: ChatMessagePanel.MessageType.ASSISTANT, msg.display());
+						: ChatMessagePanel.MessageType.ASSISTANT, msg.display(),
+					CHAT_FONT_SIZE);
+				panel.showActivity(msg.activity());
+				addMessagePanelToChat(panel);
 			}
 		}
 		catch (Exception e) {

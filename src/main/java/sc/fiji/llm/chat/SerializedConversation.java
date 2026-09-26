@@ -90,6 +90,7 @@ public class SerializedConversation {
 
 		private String displayMessage;
 		private SerializedMessage memoryMessage;
+		private ActivityRecord activity;
 
 		public SerializedConversationMessage() {}
 
@@ -109,18 +110,27 @@ public class SerializedConversation {
 			this.memoryMessage = memoryMessage;
 		}
 
+		public ActivityRecord getActivity() {
+			return activity;
+		}
+
+		public void setActivity(ActivityRecord activity) {
+			this.activity = activity;
+		}
+
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;
 			if (o == null || getClass() != o.getClass()) return false;
 			SerializedConversationMessage that = (SerializedConversationMessage) o;
 			return Objects.equals(displayMessage, that.displayMessage) && Objects
-				.equals(memoryMessage, that.memoryMessage);
+				.equals(memoryMessage, that.memoryMessage) &&
+				Objects.equals(activity, that.activity);
 		}
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(displayMessage, memoryMessage);
+			return Objects.hash(displayMessage, memoryMessage, activity);
 		}
 	}
 }
