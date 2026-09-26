@@ -159,6 +159,8 @@ onboarding entry point while retaining chat role and context framing.
 `ContextItem` supports merging (multiple items of the same type collapse into one) before being serialized into the user message payload.
 Context items may also provide tooltip text for the chat attachment menu.
 
+Each chat message also carries a `SessionSnapshot`: the current output of `fiji_script_list` and `fiji_image_list` (names and IDs only, at most 20 images with the active one always kept), appended to the text sent to the model. It lets the model know which scripts and images are open without sending their content; the system prompt tells it to read relevant items with tools. Like attached context, the snapshot is neither displayed nor saved with the conversation. The active script falls back to the most recent visible Script Editor tab when no editor focus has been recorded.
+
 `ImageRenderingService` is the separate transient image payload layer. It copies the
 currently rendered `DatasetView` plane, preserving the active display LUT,
 channel ranges, color mode, and non-XY position, then bounds and encodes it as a

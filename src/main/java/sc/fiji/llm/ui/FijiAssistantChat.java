@@ -104,9 +104,12 @@ import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.context.SessionSnapshot;
 import sc.fiji.llm.image.ImageMetaContextItem;
+import sc.fiji.llm.image.ImageToolPlugin;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
+import sc.fiji.llm.script.ScriptEditorToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -162,10 +165,14 @@ ImageJ knowledge.
 
 In addition to chat text, user messages may include:
 1. User-selected attachments, such as scripts, highlighted lines, images, or other items
-2. Automatically captured Fiji application context
+2. A Fiji session snapshot listing the scripts and images open when the message was
+	sent, in the format returned by `fiji_script_list` and `fiji_image_list`
 
-Treat user-selected attachments as likely objects of focus, and only use application
-context relevant to the user's request.
+Treat user-selected attachments as likely objects of focus. The snapshot lists names
+only; its items are not attached. When the user refers to a script or image, check the
+latest snapshot and read the item with the appropriate tool (such as
+`fiji_script_read_content` or `fiji_image_view`) before assuming it is unavailable.
+Only use snapshot items relevant to the user's request.
 """;
 
 	// -- Contextual fields --
@@ -847,9 +854,11 @@ context relevant to the user's request.
 				final long[] lastScrollTime = {System.currentTimeMillis()};
 				// Build user message with context items as attributes
 				final List<Content> userContents = new ArrayList<>();
-				final String requestText = mergedContextItems.isEmpty() ? userText :
+				String requestText = mergedContextItems.isEmpty() ? userText :
 					userText + "\n\n=== BEGIN USER-ATTACHED CONTEXT (JSON) ===\n" + userContextArray
 					+ "\n=== END USER-ATTACHED CONTEXT ===";
+				final String snapshot = buildSessionSnapshot();
+				if (!snapshot.isEmpty()) requestText += "\n\n" + snapshot;
 				userContents.add(new TextContent(requestText));
 				final UserMessage.Builder msgBuilder = UserMessage.builder()
 						.addContent(new TextContent(userText));
@@ -992,6 +1001,26 @@ context relevant to the user's request.
 				}
 			}
 		});
+	}
+
+	/**
+	 * Lists the open scripts and images, so the model knows what it can inspect.
+	 */
+	private String buildSessionSnapshot() {
+		try {
+			final ScriptEditorToolPlugin scripts = aiToolService.getInstance(
+				ScriptEditorToolPlugin.class);
+			final ImageToolPlugin images = aiToolService.getInstance(
+				ImageToolPlugin.class);
+			final String snapshot = SessionSnapshot.format(scripts == null ? null
+				: scripts.listOpenScripts(), images == null ? null : images.listImages());
+			logService.debug("Fiji session snapshot:\n" + snapshot);
+			return snapshot;
+		}
+		catch (final RuntimeException e) {
+			logService.debug("Unable to build Fiji session snapshot", e);
+			return "";
+		}
 	}
 
 	private void removeChatBubble(ChatMessagePanel chatMessagePanel) {
