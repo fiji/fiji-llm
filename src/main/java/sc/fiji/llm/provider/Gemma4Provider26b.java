@@ -46,7 +46,12 @@ public class Gemma4Provider26b extends AbstractSingletonOllamaProvider {
 
 	@Override
 	public String getName() {
-		return "*Gemma4 - medium (Ollama)";
+		return "Gemma4 - medium (Ollama)";
+	}
+
+	@Override
+	public boolean isCurated() {
+		return true;
 	}
 
 	@Override

@@ -30,6 +30,7 @@
 package sc.fiji.llm.commands;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,6 +62,7 @@ public class Fiji_Chat extends DynamicCommand {
 
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
+	private static final String CURATED_MARKER = "*";
 	public static final String AUTO_RUN = "sc.fiji.chat.autoRunChat";
 	private static final String NO_MODELS_AVAILABLE =
 		"<No Models Available For This Service>";
@@ -120,6 +122,9 @@ public class Fiji_Chat extends DynamicCommand {
 		persist = false)
 	private String provider;
 
+	// Maps each service choice label to its provider name.
+	private final Map<String, String> providerNamesByLabel = new LinkedHashMap<>();
+
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
 	private String modelMessage = MULTIPLE_MODEL_MESSAGE;
@@ -145,31 +150,32 @@ public class Fiji_Chat extends DynamicCommand {
 	public void initialize() {
 		// Get available providers and populate the provider choices
 		final List<LLMProvider> providers = providerService.getInstances();
-		final String[] providerNames = providers.stream().map(LLMProvider::getName)
-			.toArray(String[]::new);
+		for (final LLMProvider p : providers) {
+			providerNamesByLabel.put(choiceLabel(p), p.getName());
+		}
+		final List<String> providerLabels = List.copyOf(providerNamesByLabel
+			.keySet());
 
 		final MutableModuleItem<String> providerItem = getInfo().getMutableInput(
 			"provider", String.class);
-		providerItem.setChoices(List.of(providerNames));
+		providerItem.setChoices(providerLabels);
 
 		// Set default provider if available
 		String recommendedModel = "";
-		if (providerNames.length > 0) {
-			String defaultProvider = prefService.get(Fiji_Chat.class,
-				LAST_CHAT_PROVIDER, "");
+		if (!providerLabels.isEmpty()) {
+			String defaultProvider = labelForName(prefService.get(Fiji_Chat.class,
+				LAST_CHAT_PROVIDER, ""));
 			if (defaultProvider.isEmpty()) {
-				final var recommended = providerService.getInstances().stream()
+				final var recommended = providers.stream()
 					.filter(p -> p.getRecommendedModel().isPresent())
 					.findFirst();
-				if (recommended.isPresent() && providerItem.getChoices().contains(
-					recommended.get().getName()))
-				{
-					defaultProvider = recommended.get().getName();
+				if (recommended.isPresent()) {
+					defaultProvider = choiceLabel(recommended.get());
 					recommendedModel = recommended.get().getRecommendedModel().get();
 				}
 			}
 			if (!providerItem.getChoices().contains(defaultProvider)) {
-				defaultProvider = providerNames[0];
+				defaultProvider = providerLabels.get(0);
 			}
 			providerItem.setValue(this, defaultProvider);
 			providerChanged();
@@ -191,6 +197,30 @@ public class Fiji_Chat extends DynamicCommand {
 	}
 
 	/**
+	 * @return the label for a provider in the service chooser, which marks
+	 *         curated providers
+	 */
+	static String choiceLabel(final LLMProvider p) {
+		return p.isCurated() ? CURATED_MARKER + p.getName() : p.getName();
+	}
+
+	/** @return the name of the provider chosen in the service chooser */
+	private String providerName() {
+		return providerNamesByLabel.getOrDefault(provider, provider);
+	}
+
+	/**
+	 * @return the chooser label for a provider name, or an empty string if none
+	 */
+	private String labelForName(final String name) {
+		// Note: curated names once included the marker, so strip it.
+		final String bare = name.startsWith(CURATED_MARKER) ? name.substring(
+			CURATED_MARKER.length()) : name;
+		return providerNamesByLabel.entrySet().stream().filter(e -> e.getValue()
+			.equals(bare)).map(Map.Entry::getKey).findFirst().orElse("");
+	}
+
+	/**
 	 * Callback triggered when the provider selection changes. Updates the model
 	 * choices.
 	 */
@@ -199,7 +229,8 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 
-		final LLMProvider selectedProvider = providerService.getProvider(provider);
+		final LLMProvider selectedProvider = providerService.getProvider(
+			providerName());
 		if (selectedProvider == null) {
 			return;
 		}
@@ -244,16 +275,18 @@ public class Fiji_Chat extends DynamicCommand {
 	@Override
 	public void run() {
 		if (NO_MODELS_AVAILABLE.equals(model)) {
-			uiService.showDialog("No models available for service: " + provider +
+			uiService.showDialog("No models available for service: " +
+				providerName() +
 				"\nPlease select a different service.");
 			commandService.run(Fiji_Chat.class, true);
 			return;
 		}
-		prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, provider);
+		final String providerName = providerName();
+		prefService.put(Fiji_Chat.class, LAST_CHAT_PROVIDER, providerName);
 		prefService.remove(Fiji_Chat.class, LAST_CHAT_MODEL);
 		prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
-		final LLMProvider selectedProvider = providerService.getProvider(provider);
+		final LLMProvider selectedProvider = providerService.getProvider(providerName);
 		String validatedModel = selectedProvider.validateModel(model);
 		if (LLMProvider.VALIDATION_FAILED.equals(validatedModel)) {
 			cancel("Model validation failed");
@@ -264,7 +297,7 @@ public class Fiji_Chat extends DynamicCommand {
 		if (selectedProvider.requiresApiKey()) {
 			Map<String, Object> params = new HashMap<>();
 			params.put("startChatbot", true);
-			params.put("provider", provider);
+			params.put("provider", providerName);
 
 			commandService.run(Manage_Keys.class, true, params);
 		}
@@ -273,8 +306,8 @@ public class Fiji_Chat extends DynamicCommand {
 			try {
 				// Launch the chat window with provider and model info so it can
 				// recreate the assistant with memory
-				chatbotService.launchChat(provider + " - " + validatedModel, provider,
-					validatedModel);
+				chatbotService.launchChat(providerName + " - " + validatedModel,
+					providerName, validatedModel);
 				prefService.put(Fiji_Chat.class, Fiji_Chat.AUTO_RUN, true);
 			}
 			catch (Exception e) {

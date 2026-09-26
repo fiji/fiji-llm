@@ -196,6 +196,16 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
+	 * Curated providers are configured and tested by the Fiji developers, and
+	 * are marked as such when choosing a service.
+	 *
+	 * @return true if this provider is curated
+	 */
+	default boolean isCurated() {
+		return false;
+	}
+
+	/**
 	 * Get the URL where users can obtain an API key for this provider.
 	 *
 	 * @return URL to the API key page

@@ -48,7 +48,12 @@ public class Gemma4ProviderE4b extends AbstractSingletonOllamaProvider {
 
 	@Override
 	public String getName() {
-		return "*Gemma4 - extra small (Ollama)";
+		return "Gemma4 - extra small (Ollama)";
+	}
+
+	@Override
+	public boolean isCurated() {
+		return true;
 	}
 
 	@Override

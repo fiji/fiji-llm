@@ -61,6 +61,8 @@ Both `AbstractLLMProvider` and `AbstractOllamaProvider` attach a `ChatModelLogge
 
 Providers report model image-input support through `LLMProvider.VisionSupport`. Hosted providers maintain this classification for their fixed model lists. Ollama queries `/api/show` after preparing a model and caches the reported capabilities; unavailable capability metadata is represented as `UNKNOWN`.
 
+Providers configured and tested by the Fiji developers return true from `LLMProvider.isCurated()`. The Fiji Chat service chooser marks them with a leading `*` in its labels only; provider names, which key lookups and saved preferences, carry no marker.
+
 ### Assistant Construction
 
 `DefaultAssistantService.createAssistant()` wires together a typed assistant using LangChain4j's `AiServices` builder:

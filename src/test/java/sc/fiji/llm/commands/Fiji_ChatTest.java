@@ -27,40 +27,22 @@
  * #L%
  */
 
-package sc.fiji.llm.provider;
+package sc.fiji.llm.commands;
 
-import org.scijava.plugin.Plugin;
+import static org.junit.Assert.assertEquals;
 
-/**
- * LLM provider plugin for Ollama Gemma4:31B model.
- * See: https://huggingface.co/google/gemma-4-31B-it-qat-q4_0-gguf
- */
-@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:31B)")
-public class Gemma4Provider31b extends AbstractSingletonOllamaProvider {
+import org.junit.Test;
 
-	private static final String MODEL_NAME = "hf.co/google/gemma-4-31B-it-qat-q4_0-gguf:latest";
+import sc.fiji.llm.provider.AnthropicProvider;
+import sc.fiji.llm.provider.Gemma4Provider12b;
 
-	public Gemma4Provider31b() {
-		super(MODEL_NAME);
-	}
+public class Fiji_ChatTest {
 
-	@Override
-	public String getName() {
-		return "Gemma4 - large (Ollama)";
-	}
-
-	@Override
-	public boolean isCurated() {
-		return true;
-	}
-
-	@Override
-	public String getDescription() {
-		return "Local Gemma4 model - largest parameter count and memory footprint.";
-	}
-
-	@Override
-	protected int getContextSize() {
-		return 64 * 1024;
+	@Test
+	public void testChoiceLabelMarksOnlyCuratedProviders() {
+		final Gemma4Provider12b curated = new Gemma4Provider12b();
+		assertEquals("Gemma4 - small (Ollama)", curated.getName());
+		assertEquals("*Gemma4 - small (Ollama)", Fiji_Chat.choiceLabel(curated));
+		assertEquals("Claude", Fiji_Chat.choiceLabel(new AnthropicProvider()));
 	}
 }
