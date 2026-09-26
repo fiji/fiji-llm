@@ -100,13 +100,13 @@ public class GeminiProvider extends AbstractLLMProvider {
 		return GoogleAiGeminiChatModel.builder().apiKey(apiKey()).modelName(
 			modelName).timeout(DEFAULT_TIMEOUT).maxRetries(DEFAULT_MAX_RETRIES)
 			.returnThinking(true).sendThinking(true)
-			.build();
+			.listeners(listeners()).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return GoogleAiGeminiStreamingChatModel.builder().apiKey(apiKey())
 			.modelName(modelName).timeout(DEFAULT_TIMEOUT).returnThinking(true)
-			.sendThinking(true).build();
+			.sendThinking(true).listeners(listeners()).build();
 	}
 }

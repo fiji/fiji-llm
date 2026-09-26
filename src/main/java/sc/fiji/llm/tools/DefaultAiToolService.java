@@ -50,6 +50,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.Service;
 
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
@@ -58,6 +59,7 @@ import dev.langchain4j.service.tool.ToolErrorContext;
 import dev.langchain4j.service.tool.ToolErrorHandlerResult;
 import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolExecutor;
+import sc.fiji.llm.log.LogUtils;
 
 /**
  * Default implementation of AiToolService.
@@ -66,6 +68,8 @@ import dev.langchain4j.service.tool.ToolExecutor;
 public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	implements AiToolService
 {
+
+	private static final int LOG_SUMMARY_LENGTH = 300;
 
 	private Map<String, List<ToolSpecification>> toolsByContext;
 	private Map<ToolSpecification, ToolExecutor> toolsWithExecutors;
@@ -98,12 +102,24 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 
 	@Override
 	public void processToolRequest(BeforeToolExecution beforeToolExecutionEvent) {
-		// No-op
+		if (!logService.isDebug()) return;
+		final ToolExecutionRequest request = beforeToolExecutionEvent.request();
+		logService.debug("Calling tool " + request.name() + " " + LogUtils
+			.abbreviate(request.arguments(), LOG_SUMMARY_LENGTH));
 	}
 
 	@Override
 	public void processToolExecution(ToolExecution toolExecutionEvent) {
-		// No-op
+		if (!logService.isDebug()) return;
+		final String name = toolExecutionEvent.request().name();
+		final String result = toolExecutionEvent.result();
+		logService.debug("Tool " + name + (toolExecutionEvent.hasFailed()
+			? " failed" : " finished") + " in " + toolExecutionEvent.duration()
+				.toMillis() + " ms: " + LogUtils.abbreviate(result,
+					LOG_SUMMARY_LENGTH));
+		if (logService.isTrace()) {
+			logService.trace("Tool " + name + " result:\n" + result);
+		}
 	}
 
 	@Override

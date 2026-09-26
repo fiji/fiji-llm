@@ -119,12 +119,14 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	@Override
 	public ChatModel createChatModel(final String modelName) {
 		return OpenAiChatModel.builder().apiKey(apiKey()).modelName(modelName)
-			.maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT).build();
+			.maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
+			.listeners(listeners()).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OpenAiStreamingChatModel.builder().apiKey(apiKey()).modelName(
-			modelName).timeout(DEFAULT_TIMEOUT).build();
+			modelName).timeout(DEFAULT_TIMEOUT).listeners(listeners())
+			.build();
 	}
 }

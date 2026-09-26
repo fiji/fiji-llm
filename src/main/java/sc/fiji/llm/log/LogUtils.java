@@ -47,4 +47,16 @@ public final class LogUtils {
 		return currentText.startsWith(initialText) ? currentText.substring(initialText
 			.length()) : currentText;
 	}
+
+	/**
+	 * Shortens text for a single log line, collapsing whitespace and noting how
+	 * many characters were omitted.
+	 */
+	public static String abbreviate(final String text, final int maxLength) {
+		if (text == null) return "";
+		final String oneLine = text.replaceAll("\\s+", " ").trim();
+		if (oneLine.length() <= maxLength) return oneLine;
+		return oneLine.substring(0, maxLength) + "... (" + (oneLine.length() -
+			maxLength) + " more chars)";
+	}
 }

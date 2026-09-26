@@ -57,6 +57,8 @@ Model preparation is asynchronous. `LLMProvider.prepare()` completes with an opt
 
 Cloud providers extend `AbstractLLMProvider`, which retrieves API keys from `APIKeyService` (stored via SciJava `PrefService`).
 
+Both `AbstractLLMProvider` and `AbstractOllamaProvider` attach a `ChatModelLogger` (a LangChain4j `ChatModelListener`) to every model they create. At SciJava debug level it logs a summary of each API call: message and tool counts, duration, finish reason, token usage, and requested tool calls. At trace level it also logs the thinking and response text. `DefaultAiToolService` logs each tool call and result from the `beforeToolExecution` and `onToolExecuted` hooks the same way. Ollama models set `returnThinking(true)`, so thinking text is parsed when the server reports it separately.
+
 Providers report model image-input support through `LLMProvider.VisionSupport`. Hosted providers maintain this classification for their fixed model lists. Ollama queries `/api/show` after preparing a model and caches the reported capabilities; unavailable capability metadata is represented as `UNKNOWN`.
 
 ### Assistant Construction
