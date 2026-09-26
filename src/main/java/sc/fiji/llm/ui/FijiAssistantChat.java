@@ -128,6 +128,8 @@ public class FijiAssistantChat {
 			USER, ASSISTANT, SYSTEM, ERROR
 	};
 
+	private static final int INPUT_ROWS = 5;
+
 	private static final String SYSTEM_PROMPT =
 		"""
 You are a chatbot embedded in the Fiji (ImageJ) application for scientific image
@@ -562,6 +564,7 @@ Only use snapshot items relevant to the user's request.
 			}
 		};
 
+		inputArea.setRows(INPUT_ROWS);
 		inputArea.setLineWrap(true);
 		inputArea.setWrapStyleWord(true);
 		inputArea.setFont(inputArea.getFont().deriveFont(CHAT_FONT_SIZE));
@@ -635,7 +638,6 @@ Only use snapshot items relevant to the user's request.
 		// Create a split pane with vertical divider between chat and input
 		final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
 			chatScrollPane, bottomPanel);
-		splitPane.setDividerLocation(0.7); // 70% for chat, 30% for input initially
 		splitPane.setResizeWeight(1.0); // Extra space goes to the top (chat area)
 		splitPane.setContinuousLayout(true); // Smooth resizing
 
