@@ -17,6 +17,7 @@ buildNumber.properties
 .project
 .editorconfig
 .classpath
+.factorypath
 .settings/
 .metadata
 bin/
