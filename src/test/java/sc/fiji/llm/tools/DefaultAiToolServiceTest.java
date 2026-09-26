@@ -45,6 +45,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
+import sc.fiji.llm.Setup;
 
 public class DefaultAiToolServiceTest {
 
@@ -52,7 +53,7 @@ public class DefaultAiToolServiceTest {
 
 	@Before
 	public void setUp() {
-		context = new Context();
+		context = Setup.context();
 	}
 
 	@After

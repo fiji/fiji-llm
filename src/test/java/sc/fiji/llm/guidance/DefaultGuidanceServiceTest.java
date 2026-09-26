@@ -40,6 +40,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.launcher.ReflectionUnlocker;
+
+import sc.fiji.llm.Setup;
 
 public class DefaultGuidanceServiceTest {
 
@@ -50,7 +53,7 @@ public class DefaultGuidanceServiceTest {
 
 	@Before
 	public void setUp() {
-		context = new Context();
+		context = Setup.context();
 	}
 
 	@After

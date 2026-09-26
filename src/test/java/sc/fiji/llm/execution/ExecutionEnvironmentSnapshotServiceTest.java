@@ -53,6 +53,7 @@ import net.imagej.axis.AxisType;
 import net.imagej.display.ImageDisplay;
 import net.imglib2.Cursor;
 import net.imglib2.type.numeric.RealType;
+import sc.fiji.llm.Setup;
 
 public class ExecutionEnvironmentSnapshotServiceTest {
 
@@ -61,7 +62,7 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 
 	@Before
 	public void setUp() {
-		context = new Context();
+		context = Setup.context();
 		snapshotService = context.getService(ExecutionEnvironmentSnapshotService.class);
 		ResultsTable.getResultsTable().reset();
 	}

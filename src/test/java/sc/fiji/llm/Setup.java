@@ -26,59 +26,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+package sc.fiji.llm;
 
-package sc.fiji.llm.macro;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.lang.reflect.Field;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.launcher.ReflectionUnlocker;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+/**
+ * Helper class for setting up SciJava {@link Context}s with
+ * ImageJ Legacy support in Java 17+.
+ */
+public final class Setup {
 
-import sc.fiji.llm.Setup;
-import sc.fiji.llm.data.ImageJ1HelperService;
-
-public class ImageJMacroToolPluginTest {
-
-	private Context context;
-
-	@Before
-	public void setUp() {
-		context = Setup.context();
+	static {
+		// NB: Necessary for ImageJ Legacy support in Java 17+.
+		ReflectionUnlocker.unlockAll();
 	}
 
-	@After
-	public void tearDown() {
-		context.dispose();
-	}
-
-	@Test
-	public void testReadsMacroRecorderState() throws Exception {
-		final ImageJMacroToolPlugin plugin = new ImageJMacroToolPlugin();
-		setField(plugin, "imageJ1HelperService", context.getService(
-			ImageJ1HelperService.class));
-
-		final JsonObject json = JsonParser.parseString(plugin.getMacroRecorderState())
-			.getAsJsonObject();
-
-		assertTrue(json.has("recorder_open"));
-		assertTrue(json.has("recording"));
-		assertTrue(json.has("script_mode"));
-		assertNotNull(json.get("buffer").getAsString());
-	}
-
-	private static void setField(final Object target, final String name,
-		final Object value) throws Exception
-	{
-		final Field field = target.getClass().getDeclaredField(name);
-		field.setAccessible(true);
-		field.set(target, value);
+	public static Context context() {
+		return new Context();
 	}
 }

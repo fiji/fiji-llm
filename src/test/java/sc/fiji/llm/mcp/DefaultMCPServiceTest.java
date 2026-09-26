@@ -58,6 +58,7 @@ import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.service.tool.ToolExecutionResult;
 import io.modelcontextprotocol.spec.McpSchema;
 import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.Setup;
 import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AiToolService;
 
@@ -83,7 +84,7 @@ public class DefaultMCPServiceTest {
 			MCPService.LAUNCH_ON_START_KEY, null);
 		mcpPreferences.putBoolean(MCPService.LAUNCH_ON_START_KEY, false);
 
-		context = new Context();
+		context = Setup.context();
 		prefService = context.getService(PrefService.class);
 		originalPort = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
 			MCPService.DEFAULT_PORT);

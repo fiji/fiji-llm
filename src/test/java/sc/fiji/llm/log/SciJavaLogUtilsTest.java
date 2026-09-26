@@ -41,6 +41,7 @@ import org.scijava.console.OutputEvent;
 import org.scijava.console.OutputEvent.Source;
 import org.scijava.log.LogService;
 
+import sc.fiji.llm.Setup;
 import sc.fiji.llm.log.SciJavaLogUtils.LogCapture;
 import sc.fiji.llm.log.SciJavaLogUtils.LogMessages;
 
@@ -50,7 +51,7 @@ public class SciJavaLogUtilsTest {
 
 	@Before
 	public void setUp() {
-		context = new Context();
+		context = Setup.context();
 	}
 
 	@After
