@@ -99,7 +99,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	@Tool(value = { "Execute a command using its full menu path. This tool does not select a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and produced log output. Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
-	public String runCommand(@P("menu_path") String menuPath) {
+	public String runCommand(@P(name = "menu_path", value = "Full menu path from fiji_command_search") String menuPath) {
 		ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = null;
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
@@ -170,7 +170,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	@Tool(value = { "Search for available ImageJ commands whose name matches the given term, sorted by descending relevance. The returned menu_path can be used with fiji_command_run" },
 		name = "fiji_command_search" )
-	public String searchCommands(@P("search_name") String searchName) {
+	public String searchCommands(@P(name = "search_name", value = "Term to match against command names") String searchName) {
 		try {
 			if (searchName == null || searchName.trim().isEmpty()) {
 				return jsonError("Command name cannot be empty");

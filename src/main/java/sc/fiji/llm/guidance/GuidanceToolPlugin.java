@@ -78,7 +78,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Search curated Fiji guidance by one exact topic keyword. Use fiji_guide_topics first; results contain document metadata and IDs, not article content" }, name = "fiji_guide_search")
-	public String search(@P("topic") final String topic) {
+	public String search(@P(name = "topic", value = "Topic keyword from fiji_guide_topics") final String topic) {
 		try {
 			final JsonArray documents = new JsonArray();
 			for (final AgentGuideMetadata document : agentGuidanceService.search(topic)) {
@@ -98,7 +98,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Read one curated Fiji guidance document by ID. Use fiji_guide_search to find the ID; the result contains metadata and bounded Markdown content" }, name = "fiji_guide_read")
-	public String read(@P("id") final String id) {
+	public String read(@P(name = "id", value = "Document ID from fiji_guide_search") final String id) {
 		try {
 			final var document = agentGuidanceService.read(id);
 

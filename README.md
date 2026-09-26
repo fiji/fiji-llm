@@ -291,7 +291,7 @@ When adding an `AiToolPlugin`:
 
 * **Use scoped tool names.** Give every `@Tool` an explicit lower-case `snake_case` name following the `fiji_<scope>_<operation>` pattern, such as `fiji_script_read_content`. The scope prevents collisions between plugins. Preserve an existing name when modifying a tool and use the exact name consistently in descriptions, errors, and recommendations.
 
-* **Choose useful parameter names.** Use `@P` to provide descriptive, stable names to the LLM, usually in `snake_case`, even when the Java parameter uses `camelCase`: `@P("image_id")`, `@P("menu_path")`, or `@P("start_line")`. Include units, indexing conventions, and other constraints in the tool description when they matter.
+* **Choose useful parameter names.** Use `@P(name = ..., value = ...)` to give each parameter a descriptive, stable `snake_case` name and a short description, even when the Java parameter uses `camelCase`: `@P(name = "image_id", value = "Image ID from fiji_image_list")`. Always set `name`: `@P("image_id")` sets only the description, so the LLM would see the parameter as `arg0`. Mark optional parameters `required = false` and use boxed types (`Integer`, `Boolean`) for them, since the model may omit them. Include units, indexing conventions, and other constraints in the tool description when they matter.
 
 * **Keep descriptions at the right level.** Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description. Shared Fiji workflow guidance belongs in the curated `AgentGuide` plugins and should be exposed through guidance tools rather than duplicated in each plugin.
 

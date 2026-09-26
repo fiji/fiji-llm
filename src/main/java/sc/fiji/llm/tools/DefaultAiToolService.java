@@ -38,6 +38,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+
 import org.scijava.Priority;
 import org.scijava.log.LogService;
 import org.scijava.plugin.AbstractSingletonService;
@@ -46,6 +51,8 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.Service;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
 import dev.langchain4j.service.tool.BeforeToolExecution;
 import dev.langchain4j.service.tool.ToolErrorContext;
 import dev.langchain4j.service.tool.ToolErrorHandlerResult;
@@ -63,6 +70,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	private Map<String, List<ToolSpecification>> toolsByContext;
 	private Map<ToolSpecification, ToolExecutor> toolsWithExecutors;
 	private Map<String, AiToolPlugin> pluginsByToolName;
+	private Map<String, ToolSpecification> specsByToolName;
 
 	@Parameter
 	private LogService logService;
@@ -125,13 +133,88 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 		}
 		String message = "";
 		switch (errorType) {
-			case ARGUMENT -> message = "Tool argument error.";
+			case ARGUMENT -> message = "Tool argument error";
 			case EXECUTION -> message = "Tool execution error";
 		}
 
-		logService.error(message, error);
-		return new ToolErrorHandlerResult(
-			"Error with tool: " + name + ".  Please contact the Fiji developers.");
+		logService.error(message + ": " + name, error);
+		return new ToolErrorHandlerResult(errorMessage(name, specsByToolName.get(
+			name), context.toolExecutionRequest().arguments(), error));
+	}
+
+	/**
+	 * Describes a failed tool call so the model can correct its next call.
+	 * Argument problems are reported first, since models commonly omit or
+	 * misname parameters, which otherwise surfaces as an opaque exception.
+	 */
+	static String errorMessage(final String toolName,
+		final ToolSpecification spec, final String arguments, final Throwable error)
+	{
+		final JsonObjectSchema schema = spec == null ? null : spec.parameters();
+		final Map<String, JsonSchemaElement> properties = schema == null ||
+			schema.properties() == null ? Map.of() : schema.properties();
+		final List<String> required = schema == null || schema.required() == null
+			? List.of() : schema.required();
+		final JsonObject args = parseArguments(arguments);
+
+		final List<String> missing = new ArrayList<>();
+		for (final String param : required) {
+			if (args == null || !args.has(param) || args.get(param).isJsonNull()) {
+				missing.add(param);
+			}
+		}
+		final List<String> unexpected = new ArrayList<>();
+		if (args != null) {
+			for (final String key : args.keySet()) {
+				if (!properties.containsKey(key)) unexpected.add(key);
+			}
+		}
+
+		final StringBuilder sb = new StringBuilder("Error with tool " + toolName +
+			":");
+		if (args == null) sb.append(" arguments are not a valid JSON object.");
+		if (!missing.isEmpty()) {
+			sb.append(" missing required parameter(s): " + String.join(", ", missing) +
+				".");
+		}
+		if (!unexpected.isEmpty()) {
+			sb.append(" unexpected parameter(s): " + String.join(", ", unexpected) +
+				".");
+		}
+		if (args != null && missing.isEmpty() && unexpected.isEmpty()) {
+			sb.append(" " + rootCause(error) +
+				". This may be a bug in the tool; do not repeat the same call unchanged.");
+			return sb.toString();
+		}
+		if (!properties.isEmpty()) {
+			final List<String> expected = new ArrayList<>();
+			for (final String param : properties.keySet()) {
+				expected.add(required.contains(param) ? param + " (required)" : param);
+			}
+			sb.append(" Expected parameters: " + String.join(", ", expected) + ".");
+		}
+		sb.append(" Correct the arguments and try again.");
+		return sb.toString();
+	}
+
+	private static JsonObject parseArguments(final String arguments) {
+		if (arguments == null || arguments.isBlank()) return new JsonObject();
+		try {
+			final JsonElement element = JsonParser.parseString(arguments);
+			return element.isJsonObject() ? element.getAsJsonObject() : null;
+		}
+		catch (final JsonParseException e) {
+			return null;
+		}
+	}
+
+	private static String rootCause(final Throwable error) {
+		Throwable cause = error;
+		while (cause.getCause() != null && cause.getCause() != cause) {
+			cause = cause.getCause();
+		}
+		return cause.getMessage() == null ? cause.getClass().getSimpleName() : cause
+			.getClass().getSimpleName() + ": " + cause.getMessage();
 	}
 
 	private synchronized void initMaps() {
@@ -143,6 +226,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 			List<ToolSpecification> anyContextList = new ArrayList<>();
 			interimContextMap.put(ToolScope.ANY, anyContextList);
 			Map<String, AiToolPlugin> interimPluginMap = new HashMap<>();
+			Map<String, ToolSpecification> interimSpecMap = new HashMap<>();
 			Set<String> toolNames = new HashSet<>();
 
 			for (AiToolPlugin plugin : getInstances()) {
@@ -164,6 +248,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 					toolNames.add(name);
 					interimExecutorMap.put(spec, entry.getValue());
 					interimPluginMap.put(name, plugin);
+					interimSpecMap.put(name, spec);
 
 					// Always add to ANY list
 					anyContextList.add(spec);
@@ -186,6 +271,7 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 			toolsByContext = Collections.unmodifiableMap(finalMap);
 			toolsWithExecutors = Collections.unmodifiableMap(interimExecutorMap);
 			pluginsByToolName = Collections.unmodifiableMap(interimPluginMap);
+			specsByToolName = Collections.unmodifiableMap(interimSpecMap);
 		}
 	}
 }

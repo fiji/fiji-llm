@@ -95,7 +95,7 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Read the exact geometry for one ROI Manager entry, including its shape, bounding box, and polygon coordinates. Use fiji_rois_read first to identify the ROI index." }, name = "fiji_rois_read_details")
-	public String readRoiDetails(@P("index") final int index) {
+	public String readRoiDetails(@P(name = "index", value = "0-based ROI index from fiji_rois_read") final int index) {
 		try {
 			final Object manager = invokeLegacyRoiManager();
 			if (manager == null) return jsonError("ROI Manager is not open",
