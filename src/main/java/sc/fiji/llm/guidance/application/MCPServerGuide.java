@@ -75,7 +75,7 @@ public class MCPServerGuide extends AbstractAgentGuide {
 
 			## Managing the server
 
-			Use **Help > Assistants > Manage MCP Server...** to see whether the server is
+			Use **Help > Assistants > Manage Fiji MCP Server...** to see whether the server is
 			running, its URL, and the number of exposed tools. The dialog can start the
 			server, configure its port, and enable launch on Fiji startup.
 

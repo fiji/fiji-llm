@@ -93,38 +93,17 @@ All LLM tools in Fiji are accessed via an [MCP Server](https://en.wikipedia.org/
 
 Currently, the MCP server is tied to a running Fiji application - which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (note the default port 9090)
 
-The image namespace includes `fiji_image_list`, `fiji_image_details`,
-`fiji_image_view`, and `fiji_image_view_annotated`. The view tools accept an
-`image_id` and return the rendered image as an MCP `image` content block with
-PNG data, allowing compatible external clients to inspect the image directly.
-`fiji_image_view_annotated` also includes visible ROIs and image overlays
-when available, plus a text content block describing the rendered display
-state. The Fiji chat attachment menu provides matching plain-image and image-
-with-overlays choices.
-
-The same server exposes the read-only `fiji_guide_topics`,
-`fiji_guide_search`, and `fiji_guide_read` tools. For an unfamiliar
-Fiji-specific workflow, start by reading the `onboarding` guidance document,
-then retrieve only the additional topic guidance needed for the task.
-Built-in guide plugins declare topics through the discoverable `AgentGuide.Topic`
-vocabulary, while the metadata boundary remains string-based for extension-provided
-topics.
-
-**Available Configuration**
-- **Set Port**: Use `Help > Assistants > Manage MCP Server...` or preferences key `sc.fiji.mcp.port`
+### Available Configuration
+- **Set Port**: Use `Help > Assistants > Manage Fiji MCP Server...` or preferences key `sc.fiji.mcp.port`
 - **Start Manually**: Click "Start Server" in the Manage MCP Server dialog
 - **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
+- **Copy Connection Details**: Once the server is running, use the dialog's `Copy:` selector to copy the URL, a Claude Code registration command, or a VS Code `mcp.json` configuration
 
 ### VS Code
 
-You can connect your VS Code LLMs to the Fiji MCP server! This allows your agents to run tasks in a local Fiji. Edit your `mcp.json` and add the following entry:
+You can connect your VS Code LLMs to the Fiji MCP server! This allows your agents to run tasks in a local Fiji. The quickest setup is to open the Command Palette, run `MCP: Add Server`, and follow the guided HTTP-server setup. See the [VS Code MCP server documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers) for workspace and user configuration details.
 
-```json
-		"fiji-mcp": {
-			"type": "http",
-			"url": "http://localhost:9090/mcp",
-		},
-```
+For manual setup, start Fiji, choose `VS Code Config` from the `Copy:` selector in the `Manage MCP Server...` dialog, and paste the copied configuration into your `.vscode/mcp.json` or user MCP configuration. The copied URL reflects any custom port configured for Fiji.
 
 In your chat `Configure Tools` dialog, you should see a new `fiji-mcp-server` option that you can toggle on or off.
 
@@ -139,8 +118,18 @@ You should run `MCP: Reset Tool Caches` any time deployed tools are revised.
 
 You can manually check and manage MCP server status with `MCP: List Servers`, as well.
 
-**NB**: Update the port in `mcp.json` as necessary
+**NB**: If you change the Fiji port, copy the VS Code configuration again or update the configured URL.
 **NB**: Your local Fiji application must be running first for the MCP server to be findable by VS Code. For best results, (re)start the server from `mcp.json` after launching Fiji.
+
+### Claude Code
+
+Claude Code can register the running Fiji server from a terminal. See the [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp) for HTTP server setup, configuration scopes, and server management:
+
+```bash
+claude mcp add --transport http fiji --scope user http://localhost:9090/mcp
+```
+
+Use the current URL from the Manage MCP Server dialog when a non-default port is configured.
 
 #### Custom Agent and Skill
 

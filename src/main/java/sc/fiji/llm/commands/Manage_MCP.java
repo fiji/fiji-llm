@@ -29,6 +29,9 @@
 
 package sc.fiji.llm.commands;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+
 import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
 import org.scijava.command.DynamicCommand;
@@ -46,12 +49,16 @@ import sc.fiji.llm.mcp.MCPService;
  * Manage MCP (Model Context Protocol) server settings. Provides a user
  * interface to configure the MCP server port and view its status.
  */
-@Plugin(type = Command.class, description = "Manage MCP Server settings",
+@Plugin(type = Command.class, description = "Manage Fiji MCP Server settings",
 	iconPath = "/icons/robot-icon-32.png", menu = { @Menu(label = "Help"), @Menu(
-		label = "Assistants"), @Menu(label = "Manage MCP Server...") })
+		label = "Assistants"), @Menu(label = "Manage Fiji MCP Server...") })
 public class Manage_MCP extends DynamicCommand {
 
 	private static final String WIDTH = "300";
+	private static final String COPY_PLACEHOLDER = "Choose...";
+	private static final String COPY_SERVER_URL = "Server URL";
+	private static final String COPY_VS_CODE_CONFIG = "VS Code Config";
+	private static final String COPY_CLAUDE_CODE_COMMAND = "Claude Code Command";
 
 	@Parameter
 	private MCPService mcpService;
@@ -78,22 +85,31 @@ public class Manage_MCP extends DynamicCommand {
 		persist = false)
 	private int port;
 
+	@Parameter(label = "Copy:", description = "Select an item to copy it to the clipboard",
+		choices = { COPY_PLACEHOLDER, COPY_SERVER_URL, COPY_VS_CODE_CONFIG,
+			COPY_CLAUDE_CODE_COMMAND }, persist = false,
+		callback = "copySelectionChanged")
+	private String copySelection = COPY_PLACEHOLDER;
+
 	@Parameter(label = "Launch MCP on Startup",
 		description = "Automatically launch MCP server when Fiji starts")
 	private boolean launchOnStartup;
 
 	@Parameter(label = "Start Server", persist = false, callback = "startServer")
-	private Button help;
+	private Button startServerButton;
 
 	@Override
 	public void initialize() {
 		StringBuilder welcomeMsg = new StringBuilder();
 		welcomeMsg.append("<body style='width: " + WIDTH + "px'>");
-		welcomeMsg.append("<h2 style='text-align: center'>MCP Server Management</h2>");
+		welcomeMsg.append("<h2 style='text-align: center'>Fiji MCP Server</h2>");
 		welcomeMsg.append(
-			"<p><b>Model Context Protocol (MCP)</b> exposes Fiji tools to AI assistants.</p>");
+			"<p>The <b>Model Context Protocol (MCP)</b> server exposes Fiji tools to AI assistants.</p>");
 		welcomeMsg.append(
-			"Configure the server port and check its status here.</p></body>");
+			"<p>Configure the server port and check its status here.</p>");
+		welcomeMsg.append(
+			"<p>To use Fiji MCP from your assistant software, such as Claude Desktop or VS Code, it's often easiest to ask the built-in agent to help connect and follow its instructions. If it asks for connection details, use the <code>Copy:</code> selector below.</p>");
+		welcomeMsg.append("</body>");
 		welcomeMessage = welcomeMsg.toString();
 
 		// Load current port from preferences
@@ -191,6 +207,66 @@ public class Manage_MCP extends DynamicCommand {
 		} catch (final Exception e) {
 			uiService.showDialog("Failed to start MCP Server: " + e.getMessage(),
 				"Error");
+		}
+	}
+
+	private void copyToClipboard(final String value, final String description) {
+		try {
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+				new StringSelection(value), null);
+			uiService.showDialog(description + " copied to the clipboard.");
+		} catch (final RuntimeException e) {
+			uiService.showDialog("Could not copy " + description.toLowerCase() + ": " +
+				e.getMessage(), "Clipboard Error");
+		}
+	}
+
+	private String getRunningServerUrl() {
+		if (!mcpService.isServerRunning()) {
+			uiService.showDialog("Start the MCP server before copying its connection details.",
+				"MCP Server Not Running");
+			return null;
+		}
+		return "http://localhost:" + mcpService.getServerPort() + "/mcp";
+	}
+
+	@SuppressWarnings("unused")
+	private void copySelectionChanged() {
+		if (COPY_PLACEHOLDER.equals(copySelection)) return;
+
+		try {
+			final String url = getRunningServerUrl();
+			if (url == null) return;
+
+			switch (copySelection) {
+				case COPY_SERVER_URL:
+					copyToClipboard(url, "MCP server URL");
+					break;
+				case COPY_VS_CODE_CONFIG:
+					copyToClipboard("""
+						{
+						  "servers": {
+						    "fiji": {
+						      "type": "http",
+						      "url": "%s"
+						    }
+						  }
+						}
+						""".formatted(url), "VS Code MCP configuration");
+					break;
+				case COPY_CLAUDE_CODE_COMMAND:
+					copyToClipboard(
+						"claude mcp add --transport http fiji --scope user " + url,
+						"Claude Code command");
+					break;
+				default:
+					break;
+			}
+		}
+		finally {
+			copySelection = COPY_PLACEHOLDER;
+			getInfo().getMutableInput("copySelection", String.class).setValue(this,
+				copySelection);
 		}
 	}
 }
