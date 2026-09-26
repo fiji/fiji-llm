@@ -21,6 +21,23 @@ live Fiji instance with the Script Editor and MCP tools available.
       and a `changes` object; verify those fields for command cases that open,
       close, or modify images or Results table metadata.
 
+## Integrated Chat Window
+
+Manually test the Fiji chat window's attachment workflow with at least one item
+from each currently supported context category:
+
+- Script: attach an open script, including a selected range when available, and
+      ask the model to identify or summarize the attached code.
+- Image: attach a visible image without overlays and ask the model to describe
+      the attached image.
+- Annotated image: add a visible ROI or overlay, attach the annotated image, and
+      ask the model to account for the annotation.
+
+For each category, verify that the attachment appears in the chat window, the
+model receives the attached content, and removing the attachment before sending
+prevents it from being included. When practical, repeat the test with multiple
+attachments and with a new conversation.
+
 ## Image Content
 
 With at least one visible image open, use the MCP server as an external client
