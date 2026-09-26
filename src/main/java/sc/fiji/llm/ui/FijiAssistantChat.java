@@ -388,7 +388,7 @@ context relevant to the user's request.
 		else {
 			guideButton = new JButton("Show Guide");
 		}
-		guideButton.setToolTipText("Explain chat componenets");
+		guideButton.setToolTipText("Explain chat components");
 		guideButton.setFocusPainted(false);
 		guideButton.addActionListener(e -> launchGuide());
 		buttonPanel.add(guideButton);
