@@ -46,6 +46,17 @@ public class LogUtilsTest {
 	}
 
 	@Test
+	public void testAbbreviateCollapsesWhitespace() {
+		assertEquals("a b c", LogUtils.abbreviate(" a\n b\t\tc ", 10));
+	}
+
+	@Test
+	public void testAbbreviateReportsOmittedLength() {
+		assertEquals("abc... (3 more chars)", LogUtils.abbreviate("abcdef", 3));
+		assertEquals("", LogUtils.abbreviate(null, 3));
+	}
+
+	@Test
 	public void testTextLogsDelta() {
 		final TextLogs initial = new TextLogs("output\n", "error\n");
 		final TextLogs current = new TextLogs("output\nnew\n", "error\nnew\n");

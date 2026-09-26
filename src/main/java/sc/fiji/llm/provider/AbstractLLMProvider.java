@@ -29,14 +29,21 @@
 
 package sc.fiji.llm.provider;
 
+import java.util.List;
+
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 import sc.fiji.llm.auth.APIKeyService;
 
 public abstract class AbstractLLMProvider implements LLMProvider {
 
 	@Parameter
 	private APIKeyService apiKeyService;
+
+	@Parameter
+	private LogService logService;
 
 	protected String apiKey() {
 		String apiKey = apiKeyService.getApiKey(getName());
@@ -45,5 +52,12 @@ public abstract class AbstractLLMProvider implements LLMProvider {
 				getName());
 		}
 		return apiKey;
+	}
+
+	/**
+	 * @return listeners to attach to every chat model this provider creates
+	 */
+	protected List<ChatModelListener> listeners() {
+		return List.of(new ChatModelLogger(logService, getName()));
 	}
 }

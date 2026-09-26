@@ -133,12 +133,13 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	public ChatModel createChatModel(final String modelName) {
 		return AnthropicChatModel.builder().apiKey(apiKey()).modelName(getModel(
 			modelName)).maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
-			.build();
+			.listeners(listeners()).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return AnthropicStreamingChatModel.builder().apiKey(apiKey()).modelName(
-			getModel(modelName)).timeout(DEFAULT_TIMEOUT).build();
+			getModel(modelName)).timeout(DEFAULT_TIMEOUT)
+			.listeners(listeners()).build();
 	}
 }

@@ -267,6 +267,16 @@ A help button `( ? )` in the chat window provides in-app explanations of the UI 
 
 For questions, bug reports, and feature requests, visit the [Image.sc Forum](https://forum.image.sc/tag/llm). The Fiji community is active there and happy to help!
 
+### Debug Logging
+
+To see what the assistant is doing under the hood, start Fiji with debug logging enabled for this component:
+
+```
+./fiji -Dscijava.log.level:sc.fiji.llm=debug
+```
+
+Each model API call is then logged with its duration, finish reason, token usage, and requested tool calls, along with each tool call's arguments, outcome, and a summary of its result. Use `trace` instead of `debug` to also log the full thinking text, response text, and tool results.
+
 ## Developers: Adding Functionality
 
 This project provides [langchain4j](https://docs.langchain4j.dev/) integration to the SciJava plugin framework. There are several key points of extension:

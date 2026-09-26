@@ -65,6 +65,7 @@ import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
@@ -146,18 +147,27 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 			new OllamaTokenCountEstimator());
 	}
 
+	/**
+	 * @return listeners to attach to every chat model this provider creates
+	 */
+	protected List<ChatModelListener> listeners() {
+		return List.of(new ChatModelLogger(logService, getName()));
+	}
+
 	@Override
 	public ChatModel createChatModel(final String modelName) {
 		return OllamaChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL).modelName(
 			modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
-			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES).build();
+			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES)
+			.returnThinking(true).listeners(listeners()).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OllamaStreamingChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL)
 			.modelName(modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
-			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES).build();
+			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES)
+			.returnThinking(true).listeners(listeners()).build();
 	}
 
 	@Override
