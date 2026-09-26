@@ -2,7 +2,7 @@
  * #%L
  * Fiji software for LLM integration.
  * %%
- * Copyright (C) 2025 - 2026 ImageJ2 Developers
+ * Copyright (C) 2025 - 2026 Fiji developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:

@@ -74,7 +74,7 @@
 
 	<properties>
 		<license.licenseName>bsd_2</license.licenseName>
-		<license.copyrightOwners>ImageJ2 Developers</license.copyrightOwners>
+		<license.copyrightOwners>Fiji developers.</license.copyrightOwners>
 		<license.projectName>Fiji software for LLM integration.</license.projectName>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
