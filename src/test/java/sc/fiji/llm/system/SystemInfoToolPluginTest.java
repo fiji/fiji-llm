@@ -45,6 +45,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import sc.fiji.llm.Setup;
 import sc.fiji.llm.data.ImageJ1HelperService;
 
 public class SystemInfoToolPluginTest {
@@ -53,7 +54,7 @@ public class SystemInfoToolPluginTest {
 
 	@Before
 	public void setUp() {
-		context = new Context();
+		context = Setup.context();
 	}
 
 	@After

@@ -42,13 +42,15 @@ import org.scijava.Context;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import sc.fiji.llm.Setup;
+
 public class GuidanceToolPluginTest {
 
 	private Context context;
 
 	@Before
 	public void setUp() {
-		context = new Context();
+		context = Setup.context();
 	}
 
 	@After
