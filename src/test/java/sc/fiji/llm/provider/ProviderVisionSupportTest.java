@@ -59,8 +59,12 @@ public class ProviderVisionSupportTest {
 	@Test
 	public void testHostedVisionSupport() {
 		final GeminiProvider gemini = new GeminiProvider();
-		assertEquals(LLMProvider.VisionSupport.SUPPORTED, gemini
-			.getVisionSupport("gemini-2.5-flash"));
+		for (final String model : gemini.getAvailableModels()) {
+			assertEquals(model, LLMProvider.VisionSupport.SUPPORTED, gemini
+				.getVisionSupport(model));
+		}
+		assertEquals(LLMProvider.VisionSupport.UNKNOWN, gemini
+			.getVisionSupport("future-model"));
 
 		final AnthropicProvider anthropic = new AnthropicProvider();
 		assertEquals(LLMProvider.VisionSupport.SUPPORTED, anthropic
