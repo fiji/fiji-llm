@@ -174,7 +174,7 @@ ImageJ ROI when the legacy bridge is available.
 
 `Conversation` holds a list of `Message` pairs — a **display string** (rendered in the UI) and a **`ChatMessage`** (stored in LangChain4j memory). This dual representation allows UI formatting to diverge from what the model sees. An assistant message may also carry an `ActivityRecord` of the thinking and tool calls that produced it (tool results truncated); it is display-only and never added to chat memory. It is stored as an optional `activity` field, so conversation files without it still load.
 
-`ConversationService` persists conversations to disk as JSON (`SerializedConversation`/`SerializedMessage`) and manages their lifecycle (create, load, delete).
+`ConversationService` persists conversations to disk as JSON (`SerializedConversation`/`SerializedMessage`) and manages their lifecycle (create, load, delete). Each conversation has a unique ID (a UUID for new conversations) that keys the service and names its file, `<id>.json`; display names need not be unique. Files saved before IDs existed use their file name as their ID, so they load and save in place.
 
 ---
 

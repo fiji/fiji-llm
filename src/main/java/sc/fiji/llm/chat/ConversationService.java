@@ -39,22 +39,23 @@ import net.imagej.ImageJService;
 public interface ConversationService extends ImageJService {
 
 	/**
-	 * @return Names of all saved conversations
+	 * @return All saved conversations, most recently modified first. Names are
+	 *         for display and need not be unique.
 	 */
-	List<String> getConversationNames();
+	List<Conversation> getConversations();
 
 	/**
-	 * Gets a saved conversation by name.
+	 * Gets a saved conversation by ID.
 	 *
-	 * @param name The conversation name
+	 * @param id The conversation ID
 	 * @return The conversation, or null if not found
 	 */
-	Conversation getConversation(String name);
+	Conversation getConversation(String id);
 
 	/**
-	 * Creates and registers a new conversation.
+	 * Creates and registers a new conversation with a new unique ID.
 	 *
-	 * @param name The conversation name
+	 * @param name The conversation's display name
 	 * @param systemMessage The system message for the conversation
 	 * @return The created conversation
 	 */
@@ -62,7 +63,7 @@ public interface ConversationService extends ImageJService {
 		dev.langchain4j.data.message.SystemMessage systemMessage);
 
 	/**
-	 * Adds/updates a conversation.
+	 * Adds a conversation, replacing any with the same ID.
 	 *
 	 * @param newConversation The conversation to add
 	 * @return true if successful
@@ -72,16 +73,16 @@ public interface ConversationService extends ImageJService {
 	/**
 	 * Removes a conversation.
 	 *
-	 * @param name The conversation name to remove
+	 * @param id The ID of the conversation to remove
 	 * @return true if the conversation was found and removed
 	 */
-	boolean removeConversation(String name);
+	boolean removeConversation(String id);
 
 	/**
 	 * Deletes a conversation permanently from disk and memory.
 	 *
-	 * @param name The conversation name to delete
+	 * @param id The ID of the conversation to delete
 	 * @return true if the conversation was found and deleted
 	 */
-	boolean deleteConversation(String name);
+	boolean deleteConversation(String id);
 }

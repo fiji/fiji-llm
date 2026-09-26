@@ -35,10 +35,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 import org.scijava.app.AppService;
 import org.scijava.plugin.Parameter;
@@ -61,56 +62,56 @@ public class DefaultConversationService extends AbstractService implements
 	private AppService appService;
 
 	private final Map<String, Integer> conversationLengths = new HashMap<>();
-	private final Map<String, Conversation> conversationsByName = new HashMap<>();
+	private final Map<String, Conversation> conversationsById = new HashMap<>();
 	private final List<Conversation> conversations = new ArrayList<>();
 
 	private File conversationDir;
 	private Gson gson;
 
 	@Override
-	public List<String> getConversationNames() {
-		return conversations.stream().map(Conversation::name).collect(Collectors
-			.toList());
+	public List<Conversation> getConversations() {
+		return Collections.unmodifiableList(conversations);
 	}
 
 	@Override
-	public Conversation getConversation(String name) {
-		return conversationsByName.get(name);
+	public Conversation getConversation(String id) {
+		return conversationsById.get(id);
 	}
 
 	@Override
 	public Conversation createConversation(String name,
 		SystemMessage systemMessage)
 	{
-		Conversation conversation = new Conversation(name, systemMessage);
+		Conversation conversation = new Conversation(UUID.randomUUID().toString(),
+			name, systemMessage);
 		addConversation(conversation);
 		return conversation;
 	}
 
 	@Override
 	public boolean addConversation(Conversation newConversation) {
-		if (!conversationsByName.containsKey(newConversation.name())) {
-			conversations.add(newConversation);
-		}
-		conversationsByName.put(newConversation.name(), newConversation);
+		final Conversation previous = conversationsById.put(newConversation.id(),
+			newConversation);
+		if (previous != null) conversations.remove(previous);
+		conversations.add(0, newConversation);
 		return true;
 	}
 
 	@Override
-	public boolean removeConversation(String name) {
-		Conversation conversation = conversationsByName.remove(name);
+	public boolean removeConversation(String id) {
+		Conversation conversation = conversationsById.remove(id);
 		if (conversation != null) {
 			conversations.remove(conversation);
-			conversationLengths.remove(name);
+			conversationLengths.remove(id);
 			return true;
 		}
 		return false;
 	}
 
 	@Override
-	public boolean deleteConversation(String name) {
-		if (removeConversation(name)) {
-			File file = new File(conversationDir, sanitizeFileName(name) + ".json");
+	public boolean deleteConversation(String id) {
+		if (removeConversation(id)) {
+			File file = conversationFile(id);
 			if (file.exists()) {
 				file.delete();
 			}
@@ -149,6 +150,19 @@ public class DefaultConversationService extends AbstractService implements
 	}
 
 	/**
+	 * Saves pending changes, then switches to another directory and loads its
+	 * conversations. For testing.
+	 */
+	void setConversationDirectory(File dir) {
+		saveConversations();
+		conversationDir = dir;
+		conversations.clear();
+		conversationsById.clear();
+		conversationLengths.clear();
+		loadConversations();
+	}
+
+	/**
 	 * Load all conversations from the conversation directory.
 	 */
 	private void loadConversations() {
@@ -170,8 +184,11 @@ public class DefaultConversationService extends AbstractService implements
 					if (serialized != null) {
 						SystemMessage systemMessage = new SystemMessage(serialized
 							.getSystemMessage());
-						Conversation conversation = new Conversation(serialized.getName(),
-							systemMessage);
+						// Note: older files have no ID; their file name serves as one.
+						final String id = isValidId(serialized.getId()) ? serialized.getId()
+							: file.getName().replaceFirst("\\.json$", "");
+						Conversation conversation = new Conversation(id, serialized
+							.getName(), systemMessage);
 
 						for (SerializedConversation.SerializedConversationMessage msg : serialized
 							.getMessages())
@@ -182,9 +199,9 @@ public class DefaultConversationService extends AbstractService implements
 								msg.getActivity());
 						}
 
-						conversationsByName.put(conversation.name(), conversation);
+						conversationsById.put(conversation.id(), conversation);
 						conversations.add(conversation);
-						conversationLengths.put(conversation.name(), conversation.messages()
+						conversationLengths.put(conversation.id(), conversation.messages()
 							.size());
 					}
 				}
@@ -202,13 +219,13 @@ public class DefaultConversationService extends AbstractService implements
 	private void saveConversations() {
 		for (Conversation conversation : conversations) {
 			int currentLength = conversation.messages().size();
-			int previousLength = conversationLengths.getOrDefault(conversation.name(),
+			int previousLength = conversationLengths.getOrDefault(conversation.id(),
 				-1);
 
 			// Only save if changed or new
 			if (previousLength != currentLength) {
 				saveConversation(conversation);
-				conversationLengths.put(conversation.name(), currentLength);
+				conversationLengths.put(conversation.id(), currentLength);
 			}
 		}
 	}
@@ -218,10 +235,10 @@ public class DefaultConversationService extends AbstractService implements
 	 */
 	private void saveConversation(Conversation conversation) {
 		try {
-			File file = new File(conversationDir, sanitizeFileName(conversation
-				.name()) + ".json");
+			File file = conversationFile(conversation.id());
 
 			SerializedConversation serialized = new SerializedConversation();
+			serialized.setId(conversation.id());
 			serialized.setName(conversation.name());
 			serialized.setSystemMessage(conversation.systemMessage().text());
 
@@ -248,10 +265,12 @@ public class DefaultConversationService extends AbstractService implements
 		}
 	}
 
-	/**
-	 * Sanitize conversation name for use as a filename.
-	 */
-	private String sanitizeFileName(String name) {
-		return name.replaceAll("[^a-zA-Z0-9_-]", "_");
+	/** IDs name files, so they must not contain path characters. */
+	private static boolean isValidId(String id) {
+		return id != null && id.matches("[A-Za-z0-9_-]+");
+	}
+
+	private File conversationFile(String id) {
+		return new File(conversationDir, id + ".json");
 	}
 }

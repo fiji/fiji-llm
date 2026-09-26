@@ -43,10 +43,18 @@ import dev.langchain4j.data.message.SystemMessage;
 public class Conversation {
 
 	private final List<Message> messages;
+	private final String id;
 	private final String name;
 	private final SystemMessage systemMessage;
 
-	public Conversation(String name, SystemMessage systemMessage) {
+	/**
+	 * @param id A unique, stable identifier, which is also the file name used
+	 *          to save the conversation
+	 * @param name A display name, which need not be unique
+	 * @param systemMessage The system message for the conversation
+	 */
+	public Conversation(String id, String name, SystemMessage systemMessage) {
+		this.id = id;
 		this.name = name;
 		messages = new ArrayList<>();
 		this.systemMessage = systemMessage;
@@ -94,6 +102,13 @@ public class Conversation {
 	 */
 	public List<Message> messages() {
 		return Collections.unmodifiableList(messages);
+	}
+
+	/**
+	 * @return The unique identifier of this conversation
+	 */
+	public String id() {
+		return id;
 	}
 
 	/**

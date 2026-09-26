@@ -38,12 +38,21 @@ import java.util.Objects;
  */
 public class SerializedConversation {
 
+	private String id;
 	private String name;
 	private String systemMessage;
 	private List<SerializedConversationMessage> messages = new ArrayList<>();
 
 	// No-arg constructor for GSON
 	public SerializedConversation() {}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 
 	public String getName() {
 		return name;
@@ -74,13 +83,14 @@ public class SerializedConversation {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		SerializedConversation that = (SerializedConversation) o;
-		return Objects.equals(name, that.name) && Objects.equals(systemMessage,
-			that.systemMessage) && Objects.equals(messages, that.messages);
+		return Objects.equals(id, that.id) && Objects.equals(name, that.name) &&
+			Objects.equals(systemMessage, that.systemMessage) && Objects.equals(
+				messages, that.messages);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(name, systemMessage, messages);
+		return Objects.hash(id, name, systemMessage, messages);
 	}
 
 	/**

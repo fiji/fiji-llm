@@ -224,7 +224,7 @@ Only use snapshot items relevant to the user's request.
 	private final java.util.Map<ContextItem, JButton> contextItemButtons;
 	private final JButton guideButton;
 	private final List<ContextItem> contextItems;
-	private JComboBox<String> conversationComboBox;
+	private JComboBox<Conversation> conversationComboBox;
 	private JButton newConversationButton;
 	private JButton deleteConversationButton;
 	private volatile boolean stopRequested = false;
@@ -282,15 +282,15 @@ Only use snapshot items relevant to the user's request.
 				final JList<?> list, final Object value, final int index,
 				final boolean isSelected, final boolean cellHasFocus)
 			{
-				final Object displayValue = index == -1 && value == null ?
-					"<no conversation>" : value;
+				final Object displayValue = value instanceof Conversation conversation
+					? conversation.name() : "<no conversation>";
 				return super.getListCellRendererComponent(list, displayValue, index,
 					isSelected, cellHasFocus);
 			}
 		});
 
 		conversationComboBox.setToolTipText("Load a previous conversation");
-		conversationService.getConversationNames().stream().forEach(
+		conversationService.getConversations().forEach(
 			conversationComboBox::addItem);
 		conversationComboBox.setSelectedIndex(-1);
 		conversationComboBox.addActionListener(e -> onConversationSelected());
@@ -1661,17 +1661,13 @@ Only use snapshot items relevant to the user's request.
 			return;
 		}
 
-		Object selected = conversationComboBox.getSelectedItem();
-		if (selected != null && !selected.toString().isEmpty()) {
-			String selectedName = selected.toString();
-			if (currentConversation == null || !(currentConversation.name().equals(
-				selectedName)))
-			{
-				// Already active
-				loadConversation(selected.toString());
+		final Object selected = conversationComboBox.getSelectedItem();
+		if (selected instanceof Conversation selectedConversation) {
+			if (currentConversation != selectedConversation) {
+				loadConversation(selectedConversation);
 			}
-			final boolean conversationLoaded = currentConversation != null &&
-				currentConversation.name().equals(selectedName);
+			final boolean conversationLoaded =
+				currentConversation == selectedConversation;
 			deleteConversationButton.setEnabled(conversationLoaded);
 			newConversationButton.setEnabled(conversationLoaded);
 		}
@@ -1707,14 +1703,8 @@ Only use snapshot items relevant to the user's request.
 	/**
 	 * Load a previously saved conversation.
 	 */
-	private void loadConversation(String conversationName) {
+	private void loadConversation(final Conversation conversation) {
 		if (!modelReady) {
-			return;
-		}
-
-		Conversation conversation = conversationService.getConversation(
-			conversationName);
-		if (conversation == null) {
 			return;
 		}
 
@@ -1843,12 +1833,13 @@ Only use snapshot items relevant to the user's request.
 		final String timestampedName = conversationName + new SimpleDateFormat(
 			" [dd.MMM.yyyy]").format(new Date());
 		// Create the conversation with the auto-generated name
-		currentConversation = conversationService.createConversation(
+		final Conversation conversation = conversationService.createConversation(
 			timestampedName, systemMessage);
+		currentConversation = conversation;
 
 		SwingUtilities.invokeLater(() -> {
-			conversationComboBox.insertItemAt(timestampedName, 0);
-			conversationComboBox.setSelectedItem(timestampedName);
+			conversationComboBox.insertItemAt(conversation, 0);
+			conversationComboBox.setSelectedItem(conversation);
 			deleteConversationButton.setEnabled(true);
 			newConversationButton.setEnabled(true);
 		});
@@ -1862,7 +1853,8 @@ Only use snapshot items relevant to the user's request.
 			return;
 		}
 
-		final String conversationName = currentConversation.name();
+		final Conversation conversation = currentConversation;
+		final String conversationName = conversation.name();
 
 		// Confirm deletion with user
 		final int response = javax.swing.JOptionPane.showConfirmDialog(frame,
@@ -1872,13 +1864,13 @@ Only use snapshot items relevant to the user's request.
 			javax.swing.JOptionPane.WARNING_MESSAGE);
 
 		if (response == javax.swing.JOptionPane.YES_OPTION) {
-			conversationService.deleteConversation(conversationName);
+			conversationService.deleteConversation(conversation.id());
 			currentConversation = null;
 			clearChatPanel();
 			conversationComboBox.setSelectedIndex(-1);
 			deleteConversationButton.setEnabled(false);
 			newConversationButton.setEnabled(false);
-			conversationComboBox.removeItem(conversationName);
+			conversationComboBox.removeItem(conversation);
 			inputArea.requestFocus();
 		}
 	}
