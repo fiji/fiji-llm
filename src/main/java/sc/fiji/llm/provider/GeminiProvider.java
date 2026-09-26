@@ -29,7 +29,7 @@
 
 package sc.fiji.llm.provider;
 
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -48,10 +48,11 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
 @Plugin(type = LLMProvider.class, name = "Gemini")
 public class GeminiProvider extends AbstractLLMProvider {
 
-	private static final Set<String> VISION_MODELS = Set.of("gemini-3.8-flash",
-		"gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
-		"gemini-3.5-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash",
-		"gemini-2.5-flash-lite");
+	private static final List<String> AVAILABLE_MODELS = List.of("gemini-3.5-flash-lite",
+		"gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash", "gemini-3.7-flash",
+		"gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-flash-preview");
+
+	private static final Set<String> VISION_MODELS = new HashSet<>(AVAILABLE_MODELS);
 
 	@Override
 	public String getName() {
@@ -74,9 +75,7 @@ public class GeminiProvider extends AbstractLLMProvider {
 		// Google AI doesn't provide a public API endpoint to list models
 		// Fall back to hard-coded list, ordered by most to least permissive
 		// Taken from https://aistudio.google.com/docs/models
-		return Arrays.asList( "gemini-3.5-flash-lite", "gemini-3.1.-flash-lite",
-			"gemini-2.5-flash-lite", "gemini-3.8-flash", "gemini-3.7-flash",
-			"gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-flash-preview");
+		return AVAILABLE_MODELS;
 	}
 
 	@Override
