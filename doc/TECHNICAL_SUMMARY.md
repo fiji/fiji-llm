@@ -198,6 +198,8 @@ Swing-based UI integrated into Fiji as SciJava `Command` plugins:
 
 Markdown responses are rendered in the chat UI via **flexmark** (`0.64.8`).
 
+While a response streams, `ChatMessagePanel` shows a `ThinkingIndicator` (animated status line with elapsed time and the running tool) and an `ActivityLog` (collapsible record of streamed thinking and tool calls, fed by the `TokenStream` thinking and tool hooks in `FijiAssistantChat`). The activity record is not persisted with conversations.
+
 ---
 
 ## Key Dependencies Summary

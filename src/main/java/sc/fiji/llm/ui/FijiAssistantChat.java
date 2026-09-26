@@ -818,6 +818,7 @@ context relevant to the user's request.
 
 		// Add empty assistant message panel for streaming
 		final ChatMessagePanel currentStreamingPanel = createEmptyAssistantMessagePanel();
+		currentStreamingPanel.startWorking();
 
 		// Switch to stop mode
 		setStopMode();
@@ -880,8 +881,17 @@ context relevant to the user's request.
 				// sole service argument would stringify it as user text.
 				try {
 					assistant.chatStreaming(userContents)
-					.beforeToolExecution(aiToolService::processToolRequest)
-					.onToolExecuted(aiToolService::processToolExecution)
+					.beforeToolExecution(event -> {
+						aiToolService.processToolRequest(event);
+						currentStreamingPanel.toolStarted(event.request().name(), event
+							.request().arguments());
+					})
+					.onToolExecuted(execution -> {
+						aiToolService.processToolExecution(execution);
+						currentStreamingPanel.toolFinished(execution.request().name(),
+							execution.hasFailed(), execution.duration().toMillis(), execution
+								.result());
+					})
 					.onPartialThinkingWithContext((thinking, context) -> {
 						if (stopRequested) {
 							stopRequested = false;
@@ -889,12 +899,16 @@ context relevant to the user's request.
 							context.streamingHandle().cancel();
 							removeChatBubble(currentStreamingPanel);
 						}
+						else {
+							currentStreamingPanel.appendThinking(thinking.text());
+						}
 					})
 					.onPartialResponseWithContext((partialResponse, context) -> {
 						aiMessageStarted.set(true);
 						if (stopRequested) {
 							stopRequested = false;
 							context.streamingHandle().cancel();
+							currentStreamingPanel.finishWorking();
 							if (currentStreamingPanel.getText().isEmpty()) {
 								removeChatBubble(currentStreamingPanel);
 							}
@@ -913,6 +927,7 @@ context relevant to the user's request.
 					})
 					.onCompleteResponse(response -> {
 						aiMessageStarted.set(true);
+						currentStreamingPanel.finishWorking();
 						try {
 							requestConversation.addMessage(currentStreamingPanel.getText(),
 								response.aiMessage());
@@ -960,9 +975,6 @@ context relevant to the user's request.
 						removeChatBubble(currentStreamingPanel);
 					});
 				} else {
-					SwingUtilities.invokeLater(() -> {
-						currentStreamingPanel.updateThinking();
-					});
 					try {
 						Thread.sleep(updateDelay);
 					} catch (InterruptedException e) {
@@ -974,6 +986,7 @@ context relevant to the user's request.
 	}
 
 	private void removeChatBubble(ChatMessagePanel chatMessagePanel) {
+		chatMessagePanel.finishWorking();
 		SwingUtilities.invokeLater(() -> {
 				chatPanel.remove(chatMessagePanel);
 				chatPanel.repaint();
@@ -1045,6 +1058,7 @@ context relevant to the user's request.
 		final AtomicBoolean aiMessageStarted)
 	{
 		aiMessageStarted.set(true);
+		streamingPanel.finishWorking();
 		if (streamingPanel.getText().isEmpty()) {
 			removeChatBubble(streamingPanel);
 		}

@@ -97,6 +97,8 @@ public class ChatMessagePanel extends JPanel {
 	private JTextPane textPane;
 	private int thinkingStage = -1;
 	private final StringBuilder rawMarkdown;
+	private ActivityLog activityLog;
+	private ThinkingIndicator indicator;
 
 	// Flexmark parser/renderer configured for common GFM extensions used by LLMs
 	private static final Parser MARKDOWN_PARSER;
@@ -230,7 +232,7 @@ public class ChatMessagePanel extends JPanel {
 	private JPanel createMessageBubble(final MessageType type) {
 		final JPanel bubble = new JPanel(new MigLayout("insets " + BUBBLE_PADDING +
 			" " + BUBBLE_HORIZONTAL_PADDING + " " + BUBBLE_PADDING + " " +
-			BUBBLE_HORIZONTAL_PADDING, "", ""))
+			BUBBLE_HORIZONTAL_PADDING + ", wrap 1, hidemode 3", "", ""))
 		{
 
 			private final int RESERVED_WIDTH = (2 * MARGIN) + ICON_SIZE + (2 *
@@ -277,7 +279,17 @@ public class ChatMessagePanel extends JPanel {
 
 		createTextPane(type);
 
-		bubble.add(textPane);
+		if (type == MessageType.ASSISTANT) {
+			activityLog = new ActivityLog(textFontSize);
+			indicator = new ThinkingIndicator(textFontSize);
+			indicator.setVisible(false);
+			bubble.add(activityLog, "growx");
+			bubble.add(textPane);
+			bubble.add(indicator);
+		}
+		else {
+			bubble.add(textPane);
+		}
 
 		return bubble;
 	}
@@ -412,12 +424,71 @@ public class ChatMessagePanel extends JPanel {
 		if (thinkingStage == THINKING_STAGES) {
 			thinkingStage = 0;
 		}
-		StringBuilder sb = new StringBuilder("*").append(status);
+		StringBuilder sb = new StringBuilder(ThinkingIndicator.frame(textPane
+			.getFont(), thinkingStage)).append(" *").append(status);
 		for (int i = 0; i < thinkingStage; i++) {
 			sb.append(".");
 		}
 		sb.append("*");
 		textPane.setText(renderMarkdownToSafeHtml(sb.toString()));
+	}
+
+	/**
+	 * Shows the animated working indicator until {@link #finishWorking()}. Only
+	 * assistant messages show activity; for other types this does nothing. Like
+	 * the other activity methods, this is safe to call from any thread.
+	 */
+	public void startWorking() {
+		onEdt(() -> {
+			if (indicator == null) return;
+			if (rawMarkdown.length() == 0) textPane.setVisible(false);
+			indicator.start();
+			revalidate();
+		});
+	}
+
+	/** Records streamed thinking text in the collapsible activity log. */
+	public void appendThinking(final String text) {
+		onEdt(() -> {
+			if (activityLog != null) activityLog.appendThinking(text);
+		});
+	}
+
+	/** Records a tool call and shows it in the working indicator. */
+	public void toolStarted(final String name, final String arguments) {
+		onEdt(() -> {
+			if (activityLog == null) return;
+			activityLog.toolStarted(name, arguments);
+			indicator.setActivity("Running " + name);
+		});
+	}
+
+	/** Records a tool call's outcome. */
+	public void toolFinished(final String name, final boolean failed,
+		final long millis, final String result)
+	{
+		onEdt(() -> {
+			if (activityLog == null) return;
+			activityLog.toolFinished(name, failed, millis, result);
+			indicator.setActivity(null);
+		});
+	}
+
+	/** Stops the working indicator and summarizes the recorded activity. */
+	public void finishWorking() {
+		onEdt(() -> {
+			if (indicator == null || !indicator.isRunning()) return;
+			final long seconds = indicator.elapsedSeconds();
+			indicator.stop();
+			textPane.setVisible(true);
+			if (!activityLog.isEmpty()) activityLog.finish(seconds);
+			revalidate();
+		});
+	}
+
+	private static void onEdt(final Runnable runnable) {
+		if (javax.swing.SwingUtilities.isEventDispatchThread()) runnable.run();
+		else javax.swing.SwingUtilities.invokeLater(runnable);
 	}
 
 	/**
@@ -441,6 +512,7 @@ public class ChatMessagePanel extends JPanel {
 			if (thinkingStage >= 0) {
 				thinkingStage = -1;
 			}
+			textPane.setVisible(true);
 
 			// Append incoming streaming tokens to the tracked raw markdown,
 			// then re-render the sanitized HTML and replace the pane contents.
@@ -481,7 +553,7 @@ public class ChatMessagePanel extends JPanel {
 	/**
 	 * Render markdown to HTML and sanitize the output with jsoup.
 	 */
-	private static String renderMarkdownToSafeHtml(final String markdown) {
+	static String renderMarkdownToSafeHtml(final String markdown) {
 		String md = markdown == null ? "" : markdown;
 		// Guard against code fences that are on line ends instead of their own
 		// lines
