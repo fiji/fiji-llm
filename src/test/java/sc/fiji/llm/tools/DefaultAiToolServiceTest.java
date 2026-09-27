@@ -120,6 +120,7 @@ public class DefaultAiToolServiceTest {
 			"IllegalStateException: no active script"));
 	}
 
+	@SuppressWarnings( "unused" )
 	private static ToolSpecification spec() {
 		for (final var method : DefaultAiToolServiceTest.class
 			.getDeclaredMethods())

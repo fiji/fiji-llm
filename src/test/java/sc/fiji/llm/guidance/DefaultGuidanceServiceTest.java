@@ -40,7 +40,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.scijava.Context;
-import org.scijava.launcher.ReflectionUnlocker;
 
 import sc.fiji.llm.Setup;
 
