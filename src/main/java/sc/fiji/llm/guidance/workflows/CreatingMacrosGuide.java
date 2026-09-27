@@ -64,9 +64,9 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 			## Diagnostic Guidance
 
 			- Use `fiji_macro_run_status` with the returned `run_id` for an asynchronous macro run.
-			- Treat `success`, `finished_with_errors`, `timed_out`, and `infrastructure_error` as distinct outcomes.
+			- Treat `running`, `success`, `finished_with_errors`, `blocked_by_dialog`, and `infrastructure_error` as distinct outcomes.
+			- A `running` result with `wait_expired: true` is still active; poll its run status instead of retrying.
 			- A modal `showMessage` dialog is an interaction point, not by itself a macro error. Genuine macro-error dialogs and structured error output should be reported as errors.
-			- Timeouts are requested but not guaranteed. If the result reports failed termination, inspect the script and logs before retrying.
 			- Prefer the per-run output, errors, console streams, and ImageJ/SciJava logs in the execution result for diagnosing that run. `fiji_script_read_logs` returns cumulative logs retained by the active Script Editor across runs.
 			- If a desired command is unavailable, report the infrastructure limitation instead of repeatedly changing the macro.
 

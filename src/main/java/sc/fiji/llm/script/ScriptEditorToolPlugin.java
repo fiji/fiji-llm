@@ -319,7 +319,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This call returns when the script finishes or pauses on a new modal dialog. Use the run_id with fiji_script_run_status to poll, then use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title. Timeouts are requested, but not guaranteed, if runtime exceeds 30 seconds" }, name = "fiji_script_run")
+	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_script_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();

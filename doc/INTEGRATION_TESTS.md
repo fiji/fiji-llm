@@ -143,11 +143,11 @@ syntax failures, runtime failures, and timeouts.
 - [ ] Console exception: write an exception to the language console or stderr
       and verify that the diagnostic is captured in `errors` and
       `console_stderr` or another relevant log.
-- [ ] Timeout: run a script longer than 30 seconds and verify
-      `completion_state: "timed_out"`, a true `timeout_requested`, the actual
-      `execution_terminated`/`termination_status`, and any `termination_failure`
-      from the Script Editor; if termination fails, the recommended action must
-      mention that manual inspection is required.
+- [ ] Long-running script: run a script longer than 30 seconds and verify the
+      initial result reports `status: "running"`, `wait_expired: true`,
+      `completed: false`, `elapsed_ms`, and a `run_id`; verify that wait expiry
+      does not populate `errors` or cancel the Script Editor task. Poll the run
+      until it reaches a terminal result.
 
 ## ImageJ Macros
 
@@ -193,10 +193,11 @@ inspected together.
       that the dialog state changed.
 - [ ] Console exception: trigger a macro exception or error after `print()`
       output and compare the Script Editor, ImageJ Log, and SciJava results.
-- [ ] Timeout: run a macro longer than 30 seconds and verify interruption,
-      `timeout_requested`, the corresponding `execution_terminated`/
-      `termination_status`, and any `termination_failure` surfaced by the
-      timed-out result.
+- [ ] Long-running macro: run a macro longer than 30 seconds and verify the
+      initial result reports `status: "running"`, `wait_expired: true`,
+      `completed: false`, `elapsed_ms`, and a `run_id`; verify that wait expiry
+      does not populate `errors` or cancel the Script Editor task. Poll the run
+      until it reaches a terminal result.
 
 ## Commands
 

@@ -141,12 +141,12 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			8. Stop and report the blocker if success cannot be attained after two focused repair attempts, or if the same infrastructure failure persists.
 
 			## Diagnostic guidance
-			- Treat `success`, `finished_with_errors`, `timed_out`, and `infrastructure_error` as distinct outcomes.
+			- Treat `running`, `success`, `finished_with_errors`, `blocked_by_dialog`, and `infrastructure_error` as distinct outcomes.
+			- A `running` result with `wait_expired: true` is still active; poll its run status instead of retrying.
 			- If an error is indicated, classify the `errors` field:
 				- Syntax or compilation failure: parser, compiler, expected-token, or source-location messages.
 				- Runtime failure: an exception raised after parsing, usually with a script path and line number.
 				- Infrastructure failure: missing engine, class-loading failure, uninitialized Fiji service, or an MCP/tool error.
-			- If the result reports failed termination, inspect the script and logs before retrying.
 
 			## Reporting
 			Summarize the final script name, language, actions taken, diagnostic classification, repair attempts, and verification result. Distinguish clearly between:

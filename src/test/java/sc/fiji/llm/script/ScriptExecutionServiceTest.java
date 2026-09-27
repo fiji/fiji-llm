@@ -46,17 +46,6 @@ import sc.fiji.llm.log.TextLogs;
 public class ScriptExecutionServiceTest {
 
 	@Test
-	public void testFindTerminationFailureFromSciJavaLog() {
-		assertEquals("[ERROR] UnsupportedOperationException: Thread.stop",
-			DefaultScriptExecutionService.findTerminationFailure(
-				"[ERROR] UnsupportedOperationException: Thread.stop"));
-		assertEquals("Thread stop failure",
-			DefaultScriptExecutionService.findTerminationFailure("Thread stop failure"));
-		assertEquals(null, DefaultScriptExecutionService.findTerminationFailure(
-			"[INFO] Script completed"));
-	}
-
-	@Test
 	public void testStructuredErrorControlsFinalStatusAfterDialogDismissal() {
 		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
 			DefaultScriptExecutionService.classifyFinishedStatus("", "", "Type mismatch", null));
@@ -80,24 +69,20 @@ public class ScriptExecutionServiceTest {
 	}
 
 	@Test
-	public void testTimedOutResultReportsTimeoutRequestedAndTerminationFailure() throws Exception {
+	public void testWaitExpiryReportsRunningWithoutExecutionError() throws Exception {
 		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
-			ScriptExecutionService.Status.TIMED_OUT, true, false,
-			"UnsupportedOperationException: Thread.stop", null, null);
+			ScriptExecutionService.Status.RUNNING, true, null, null);
 		final JsonObject json = result.toJson();
-		assertEquals("timed_out", json.get("status").getAsString());
-		assertTrue(json.get("timeout_requested").getAsBoolean());
-		assertFalse(json.get("execution_terminated").getAsBoolean());
-		assertEquals("failed_to_terminate", json.get("termination_status").getAsString());
-		assertEquals("UnsupportedOperationException: Thread.stop",
-			json.get("termination_failure").getAsString());
+		assertEquals("running", json.get("status").getAsString());
+		assertTrue(json.get("wait_expired").getAsBoolean());
 		assertFalse(json.get("completed").getAsBoolean());
+		assertTrue(json.get("recommended_action").getAsString().contains("Poll"));
 	}
 
 	@Test
 	public void testResultPreservesPrimaryErrorAndErrorDialog() throws Exception {
 		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
-			ScriptExecutionService.Status.FINISHED_WITH_ERRORS, false, true, null,
+			ScriptExecutionService.Status.FINISHED_WITH_ERRORS, false,
 			"Type mismatch in macro call", "Macro Error: Number expected");
 		final JsonObject json = result.toJson();
 		assertEquals("Type mismatch in macro call", json.get("primary_error")
@@ -116,9 +101,7 @@ public class ScriptExecutionServiceTest {
 
 	private static ScriptExecutionService.ExecutionResult createExecutionResult(
 		final ScriptExecutionService.Status status,
-		final boolean timeoutRequested,
-		final boolean executionTerminated,
-		final String terminationFailure,
+		final boolean waitExpired,
 		final String primaryError,
 		final String errorDialog) throws Exception
 	{
@@ -134,27 +117,14 @@ public class ScriptExecutionServiceTest {
 		statusField.setAccessible(true);
 		statusField.set(execution, status);
 
-		final Field timeoutRequestedField = execution.getClass()
-			.getDeclaredField("timeoutRequested");
-		timeoutRequestedField.setAccessible(true);
-		timeoutRequestedField.set(execution, timeoutRequested);
-
-		final Field executionTerminatedField = execution.getClass()
-			.getDeclaredField("executionTerminated");
-		executionTerminatedField.setAccessible(true);
-		executionTerminatedField.set(execution, executionTerminated);
-
-		final Field terminationFailureField = execution.getClass()
-			.getDeclaredField("terminationFailure");
-		terminationFailureField.setAccessible(true);
-		terminationFailureField.set(execution, terminationFailure);
-
 		setOptionalField(execution, "primaryError", primaryError);
 		setOptionalField(execution, "errorDialog", errorDialog);
 
-		final Method snapshot = execution.getClass().getDeclaredMethod("snapshot");
+		final Method snapshot = execution.getClass().getDeclaredMethod("snapshot",
+			boolean.class);
 		snapshot.setAccessible(true);
-		return (ScriptExecutionService.ExecutionResult) snapshot.invoke(execution);
+		return (ScriptExecutionService.ExecutionResult) snapshot.invoke(execution,
+			waitExpired);
 	}
 
 	private static void setOptionalField(final Object execution,

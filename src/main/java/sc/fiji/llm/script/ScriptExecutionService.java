@@ -35,7 +35,7 @@ import net.imagej.ImageJService;
 /** Service for running scripts through the SciJava Script Editor. */
 public interface ScriptExecutionService extends ImageJService {
 
-	long DEFAULT_TIMEOUT_MS = 30_000;
+	long DEFAULT_WAIT_MS = 30_000;
 
 	enum RunKind {
 		SCRIPT, MACRO
@@ -46,7 +46,6 @@ public interface ScriptExecutionService extends ImageJService {
 		SUCCESS("success"),
 		FINISHED_WITH_ERRORS("finished_with_errors"),
 		BLOCKED_BY_DIALOG("blocked_by_dialog"),
-		TIMED_OUT("timed_out"),
 		INFRASTRUCTURE_ERROR("infrastructure_error");
 
 		private final String value;
@@ -61,7 +60,7 @@ public interface ScriptExecutionService extends ImageJService {
 		}
 	}
 
-	/** Starts a run and waits for completion or, optionally, a blocking dialog. */
+	/** Starts a run and waits for completion, a blocking dialog, or the wait limit. */
 	ExecutionResult run(ScriptID scriptID, RunKind kind, boolean returnWhenBlocked);
 
 	/** Returns the current state of a previously started run. */
