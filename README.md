@@ -95,15 +95,16 @@ Currently, the MCP server is tied to a running Fiji application - which is where
 
 ### Available Configuration
 - **Set Port**: Use `Help > Assistants > Manage Fiji MCP Server...` or preferences key `sc.fiji.mcp.port`
-- **Start Manually**: Click "Start Server" in the Manage MCP Server dialog
-- **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
+- **Start Manually**: Click "Start Server" in the Manage Fiji MCP Server dialog
+- **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage Fiji MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
+- **View Tools**: Click "View tools..." to browse the tools exposed by the running server, grouped by category
 - **Copy Connection Details**: Once the server is running, use the dialog's `Copy:` selector to copy the URL, a Claude Code registration command, or a VS Code `mcp.json` configuration
 
 ### VS Code
 
 You can connect your VS Code LLMs to the Fiji MCP server! This allows your agents to run tasks in a local Fiji. The quickest setup is to open the Command Palette, run `MCP: Add Server`, and follow the guided HTTP-server setup. See the [VS Code MCP server documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers) for workspace and user configuration details.
 
-For manual setup, start Fiji, choose `VS Code Config` from the `Copy:` selector in the `Manage MCP Server...` dialog, and paste the copied configuration into your `.vscode/mcp.json` or user MCP configuration. The copied URL reflects any custom port configured for Fiji.
+For manual setup, start Fiji, choose `VS Code Config` from the `Copy:` selector in the `Manage Fiji MCP Server...` dialog, and paste the copied configuration into your `.vscode/mcp.json` or user MCP configuration. The copied URL reflects any custom port configured for Fiji.
 
 In your chat `Configure Tools` dialog, you should see a new `fiji-mcp-server` option that you can toggle on or off.
 

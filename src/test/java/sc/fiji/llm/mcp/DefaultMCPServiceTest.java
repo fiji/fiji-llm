@@ -156,6 +156,17 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test
+	public void testToolNamesMatchRegisteredTools() {
+		mcpService.startServer();
+
+		assertEquals(mcpService.getToolCount(), mcpService.getToolNames().size());
+		assertEquals(mcpService.getToolNames(), mcpService.getToolNames().stream()
+			.sorted().toList());
+		assertTrue(mcpService.getToolNames().stream().allMatch(name -> name.startsWith(
+			"fiji_")));
+	}
+
+	@Test
 	public void testServerRecoversAfterJettyStops() throws Exception {
 		mcpService.startServer();
 		final Field jettyServerField = DefaultMCPService.class

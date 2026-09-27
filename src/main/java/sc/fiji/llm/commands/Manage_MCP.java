@@ -29,8 +29,22 @@
 
 package sc.fiji.llm.commands;
 
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.StringSelection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import javax.swing.JDialog;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.WindowConstants;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
@@ -80,6 +94,13 @@ public class Manage_MCP extends DynamicCommand {
 	@Parameter(label = "MCP Server URL", visibility = ItemVisibility.MESSAGE,
 		persist = false, required = false)
 	private String mcpServerUrl = "";
+
+	@Parameter(label = "Available tools", visibility = ItemVisibility.MESSAGE,
+		persist = false, required = false)
+	private String availableTools = "";
+
+	@Parameter(label = "View tools...", persist = false, callback = "showTools")
+	private Button viewToolsButton;
 
 	@Parameter(label = "Port Configuration", description = "Port for MCP server",
 		persist = false)
@@ -133,8 +154,7 @@ public class Manage_MCP extends DynamicCommand {
 
 		if (mcpService.isServerRunning()) {
 			statusMsg.append("<p style='color: green;'><b>✓ Server Running</b></p>");
-			statusMsg.append("<p>Port: " + mcpService.getServerPort() + "</p>");
-			statusMsg.append("<p>Tools available: " + mcpService.getToolCount() + "</p>");
+			availableTools = "<p>" + toolCountText(mcpService.getToolCount()) + "</p>";
 
 			// Update MCP Server URL display
 			final int serverPort = mcpService.getServerPort();
@@ -144,6 +164,7 @@ public class Manage_MCP extends DynamicCommand {
 		} else {
 			statusMsg.append("<p style='color: orange;'><b>⚠ Server Not Running</b></p>");
 			statusMsg.append("<p>Click 'Start Server' to initialize.</p>");
+			availableTools = "<p style='color: gray;'>Unavailable until the server is running.</p>";
 
 			// Clear MCP Server URL when server is not running
 			mcpServerUrl = "<p style='color: gray;'>Server URL will appear here when running.</p>";
@@ -161,6 +182,15 @@ public class Manage_MCP extends DynamicCommand {
 		final MutableModuleItem<String> urlItem = getInfo().getMutableInput(
 			"mcpServerUrl", String.class);
 		urlItem.setValue(this, mcpServerUrl);
+
+		// Update the available tools display
+		final MutableModuleItem<String> toolsItem = getInfo().getMutableInput(
+			"availableTools", String.class);
+		toolsItem.setValue(this, availableTools);
+	}
+
+	private String toolCountText(final int count) {
+		return count + (count == 1 ? " tool" : " tools");
 	}
 
 	@Override
@@ -268,5 +298,65 @@ public class Manage_MCP extends DynamicCommand {
 			getInfo().getMutableInput("copySelection", String.class).setValue(this,
 				copySelection);
 		}
+	}
+
+	@SuppressWarnings("unused")
+	private void showTools() {
+		if (!mcpService.isServerRunning()) {
+			uiService.showDialog("Start the MCP server before viewing its tools.",
+				"MCP Server Not Running");
+			return;
+		}
+
+		final List<String> toolNames = mcpService.getToolNames();
+		if (toolNames.isEmpty()) {
+			uiService.showDialog("No MCP tools are currently exposed.",
+				"Fiji MCP Tools");
+			return;
+		}
+
+		final DefaultMutableTreeNode root = new DefaultMutableTreeNode(
+			"Fiji MCP tools");
+		final Map<String, List<String>> toolsByCategory = new TreeMap<>();
+		for (final String toolName : toolNames) {
+			final String category = categoryFor(toolName);
+			toolsByCategory.computeIfAbsent(category, key -> new ArrayList<>())
+				.add(toolName);
+		}
+
+		for (final Map.Entry<String, List<String>> entry : toolsByCategory.entrySet()) {
+			final List<String> categoryTools = entry.getValue();
+			categoryTools.sort(String::compareTo);
+			final DefaultMutableTreeNode categoryNode = new DefaultMutableTreeNode(
+				entry.getKey() + " (" + categoryTools.size() + ")");
+			for (final String toolName : categoryTools) {
+				categoryNode.add(new DefaultMutableTreeNode(toolName));
+			}
+			root.add(categoryNode);
+		}
+
+		final JTree toolsTree = new JTree(root);
+		toolsTree.setRootVisible(false);
+		toolsTree.setShowsRootHandles(true);
+		final JScrollPane scrollPane = new JScrollPane(toolsTree);
+		scrollPane.setPreferredSize(new Dimension(420, 360));
+
+		final Window owner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
+			.getActiveWindow();
+		final JDialog dialog = new JDialog(owner, "Fiji MCP Tools",
+			Dialog.ModalityType.APPLICATION_MODAL);
+		dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		dialog.add(scrollPane);
+		dialog.pack();
+		dialog.setLocationRelativeTo(owner);
+		dialog.setVisible(true);
+	}
+
+	private String categoryFor(final String toolName) {
+		final String prefix = "fiji_";
+		if (!toolName.startsWith(prefix)) return "Other";
+		final int separator = toolName.indexOf('_', prefix.length());
+		return separator > prefix.length() ? toolName.substring(prefix.length(),
+			separator) : "Other";
 	}
 }

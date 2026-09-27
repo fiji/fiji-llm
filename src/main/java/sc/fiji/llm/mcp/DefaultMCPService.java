@@ -138,6 +138,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 	private volatile Server jettyServer;
 	private volatile Thread serverThread;
 	private volatile int toolCount = 0;
+	private volatile List<String> toolNames = List.of();
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean disposed = new AtomicBoolean(false);
 	private final AtomicBoolean stopServer = new AtomicBoolean(false);
@@ -196,6 +197,11 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 	}
 
 	@Override
+	public List<String> getToolNames() {
+		return toolNames;
+	}
+
+	@Override
 	public void initialize() {
 		if (!initialized.get() && launchOnStartup()) {
 			initializeServer();
@@ -225,6 +231,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 		} finally {
 			initialized.set(false);
 			toolCount = 0;
+			toolNames = List.of();
 			jettyServer = null;
 			logService.info("MCPService disposed successfully");
 		}
@@ -392,6 +399,8 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			}
 
 			toolCount = tools.size();
+			toolNames = tools.keySet().stream().map(ToolSpecification::name).sorted()
+				.toList();
 			logService.info("MCP server started with " + tools.size() + " tools");
 
 			// Signal that the server is ready for client connections
@@ -424,6 +433,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			try {
 				jettyServer.stop();
 				toolCount = 0;
+				toolNames = List.of();
 				logService.debug("Jetty server stopped");
 			} catch (final Exception e) {
 				logService.warn("Error stopping Jetty server", e);

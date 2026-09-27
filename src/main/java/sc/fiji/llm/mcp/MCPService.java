@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.mcp;
 
+import java.util.List;
+
 import net.imagej.ImageJService;
 
 /**
@@ -88,4 +90,12 @@ public interface MCPService extends ImageJService {
 	 * @return the tool count (0 if server is not running)
 	 */
 	int getToolCount();
+
+	/**
+	 * Gets the names of tools currently exposed by the MCP server.
+	 *
+	 * @return an alphabetically sorted list of tool names, or an empty list when
+	 *         the server is not running
+	 */
+	List<String> getToolNames();
 }
