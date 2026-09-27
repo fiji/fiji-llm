@@ -128,6 +128,15 @@ public class FijiAssistantChat {
 			USER, ASSISTANT, SYSTEM, ERROR
 	};
 
+	private static final class ConversationComboBox extends JComboBox<Conversation> {
+
+		@Override
+		protected void paintComponent(final Graphics graphics) {
+			if (getComponentCount() == 0) return;
+			super.paintComponent(graphics);
+		}
+	}
+
 	private static final int INPUT_ROWS = 5;
 
 	private static final String SYSTEM_PROMPT =
@@ -272,7 +281,7 @@ Only use snapshot items relevant to the user's request.
 		spacer.setPreferredSize(new Dimension(2, 1));
 		conversationPanel.add(spacer);
 
-		conversationComboBox = new JComboBox<>();
+		conversationComboBox = new ConversationComboBox();
 		int prefHeight = conversationComboBox.getPreferredSize().height;
 		conversationComboBox.setPreferredSize(new Dimension(280, prefHeight));
 		conversationComboBox.setRenderer(new DefaultListCellRenderer() {
@@ -414,7 +423,6 @@ Only use snapshot items relevant to the user's request.
 			// fills
 			"[grow][][]" // First row grows (pushes content down), then message rows
 		));
-		chatPanel.setBackground(Color.WHITE);
 
 		// Add a glue panel that will push messages to bottom
 		final JPanel glue = new JPanel();

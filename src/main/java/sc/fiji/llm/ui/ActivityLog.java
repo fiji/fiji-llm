@@ -36,6 +36,7 @@ import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -72,6 +73,7 @@ public class ActivityLog extends JPanel {
 	private final JScrollPane detailsScroll;
 	private final Timer renderTimer;
 	private final boolean arrowsSupported;
+	private final float detailsFontSize;
 	private boolean expanded;
 	private boolean finished;
 
@@ -79,10 +81,12 @@ public class ActivityLog extends JPanel {
 		super(new MigLayout("insets 0, wrap 1, hidemode 3, fillx", "[grow, fill]",
 			""));
 		setOpaque(false);
+		detailsFontSize = fontSize - 2;
 
 		toggle = new JLabel();
 		toggle.setFont(toggle.getFont().deriveFont(Font.PLAIN, fontSize - 1));
-		toggle.setForeground(new Color(70, 90, 120));
+		toggle.setForeground(ChatMessagePanel.readableTextColor(ChatMessagePanel
+			.uiBackground()));
 		toggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		toggle.setToolTipText("Show or hide what the assistant did");
 		toggle.addMouseListener(new MouseAdapter() {
@@ -117,7 +121,8 @@ public class ActivityLog extends JPanel {
 			}
 		};
 		detailsScroll.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0,
-			new Color(144, 202, 249)));
+			ChatMessagePanel.blend(ChatMessagePanel.uiBackground(), new Color(58, 140,
+				180), 0.70f)));
 		detailsScroll.setOpaque(false);
 		detailsScroll.getViewport().setOpaque(false);
 		detailsScroll.setVisible(false);
@@ -129,6 +134,26 @@ public class ActivityLog extends JPanel {
 		add(detailsScroll, "gapleft 4");
 		setVisible(false);
 		updateToggle();
+	}
+
+	@Override
+	public void updateUI() {
+		super.updateUI();
+		if (toggle == null || details == null || detailsScroll == null) return;
+		SwingUtilities.invokeLater(this::refreshLookAndFeel);
+	}
+
+	private void refreshLookAndFeel() {
+		if (toggle == null || details == null || detailsScroll == null) return;
+		final Color background = ChatMessagePanel.uiBackground();
+		toggle.setForeground(ChatMessagePanel.readableTextColor(background));
+		detailsScroll.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0,
+			ChatMessagePanel.blend(background, new Color(58, 140, 180), 0.70f)));
+		if (details.getEditorKit() instanceof HTMLEditorKit kit) {
+			applyDetailsStyles(kit.getStyleSheet());
+			details.setText(details.getText());
+		}
+		repaint();
 	}
 
 	/** @see ActivityRecord#appendThinking(String) */
@@ -277,7 +302,7 @@ public class ActivityLog extends JPanel {
 		repaint();
 	}
 
-	private static JTextPane createDetailsPane(final float fontSize) {
+	private JTextPane createDetailsPane(final float fontSize) {
 		final JTextPane pane = new JTextPane() {
 
 			// Note: always wrap prose, even when a code line is wider than the view.
@@ -289,18 +314,29 @@ public class ActivityLog extends JPanel {
 		pane.setEditable(false);
 		pane.setOpaque(false);
 		final HTMLEditorKit kit = new HTMLEditorKit();
-		final StyleSheet ss = kit.getStyleSheet();
-		ss.addRule("body { font-family: Dialog, Arial, sans-serif; font-size: " +
-			(int) fontSize + "px; color: #555; margin: 2px 4px; }");
-		ss.addRule("pre { font-family: monospace; background: #f6f8fa; border: 1px solid #ddd; padding: 4px; }");
-		ss.addRule("code { font-family: monospace; }");
-		ss.addRule("p { margin-top: 1px; margin-bottom: 3px; }");
 		pane.setEditorKit(kit);
 		pane.setContentType("text/html");
+		applyDetailsStyles(kit.getStyleSheet());
 		// Note: never move the caret, so updates do not scroll the chat.
 		((DefaultCaret) pane.getCaret()).setUpdatePolicy(
 			DefaultCaret.NEVER_UPDATE);
 		return pane;
+	}
+
+	private void applyDetailsStyles(final StyleSheet styleSheet) {
+		final Color background = ChatMessagePanel.uiBackground();
+		final Color textColor = ChatMessagePanel.readableTextColor(background);
+		final Color codeBackground = ChatMessagePanel.blend(background, textColor,
+			0.10f);
+		final Color codeBorder = ChatMessagePanel.blend(background, textColor, 0.35f);
+		styleSheet.addRule("body { font-family: Dialog, Arial, sans-serif; font-size: " +
+			(int) detailsFontSize + "px; color: " + ChatMessagePanel.cssColor(
+				textColor) + "; margin: 2px 4px; }");
+		styleSheet.addRule("pre { font-family: monospace; background: " +
+			ChatMessagePanel.cssColor(codeBackground) + "; border: 1px solid " +
+			ChatMessagePanel.cssColor(codeBorder) + "; padding: 4px; }");
+		styleSheet.addRule("code { font-family: monospace; }");
+		styleSheet.addRule("p { margin-top: 1px; margin-bottom: 3px; }");
 	}
 
 }

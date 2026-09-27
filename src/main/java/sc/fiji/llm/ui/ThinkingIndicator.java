@@ -29,7 +29,6 @@
 
 package sc.fiji.llm.ui;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -194,11 +193,17 @@ public class ThinkingIndicator extends JLabel {
 
 	public ThinkingIndicator(final float fontSize) {
 		setFont(getFont().deriveFont(Font.ITALIC, fontSize));
-		setForeground(new Color(90, 90, 90));
+		setForeground(ChatMessagePanel.uiForeground());
 		frames = supportedFrames(getFont());
 		setIcon(new StarIcon(getFont().deriveFont(Font.PLAIN)));
 		setIconTextGap(6);
 		timer = new Timer(FRAME_MS, e -> tick());
+	}
+
+	@Override
+	public void updateUI() {
+		super.updateUI();
+		setForeground(ChatMessagePanel.uiForeground());
 	}
 
 	/** Starts the animation, if not already running. */

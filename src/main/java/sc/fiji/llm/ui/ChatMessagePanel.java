@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Locale;
 
 import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
@@ -51,6 +52,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.AbstractBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -96,6 +99,10 @@ public class ChatMessagePanel extends JPanel {
 	private static final int THINKING_STAGES = 4;
 	private final float textFontSize;
 	private JTextPane textPane;
+	private JPanel messageBubble;
+	private JLabel iconLabel;
+	private MessageType messageType;
+	private String renderedHtml;
 	private int thinkingStage = -1;
 	private final StringBuilder rawMarkdown;
 	private ActivityLog activityLog;
@@ -127,13 +134,35 @@ public class ChatMessagePanel extends JPanel {
 	{
 		this.textFontSize = fontSize;
 		this.rawMarkdown = new StringBuilder(message == null ? "" : message);
+		this.messageType = type;
 		setLayout(new MigLayout("insets 0 0 0 0, fillx", "", "[]"));
 		setOpaque(false);
 
-		final JPanel bubble = createMessageBubble(type);
-		final JLabel iconLabel = createIcon(type);
+		messageBubble = createMessageBubble(type);
+		iconLabel = createIcon(type);
 
-		layoutComponents(type, bubble, iconLabel);
+		layoutComponents(type, messageBubble, iconLabel);
+	}
+
+	@Override
+	public void updateUI() {
+		super.updateUI();
+		if (messageBubble == null || textPane == null) return;
+		SwingUtilities.invokeLater(this::refreshLookAndFeel);
+	}
+
+	private void refreshLookAndFeel() {
+		if (messageBubble == null || textPane == null) return;
+		applyBubbleStyle(messageBubble, messageType);
+		if (iconLabel != null && iconLabel.isOpaque()) {
+			iconLabel.setBackground(getIconBackground());
+		}
+		textPane.setForeground(getTextColor(getBackgroundColor(messageType)));
+		if (textPane.getEditorKit() instanceof HTMLEditorKit kit) {
+			applyTextPaneStyles(kit.getStyleSheet(), messageType);
+			if (renderedHtml != null) textPane.setText(renderedHtml);
+		}
+		repaint();
 	}
 
 	private void layoutComponents(final MessageType type, final JPanel bubble, final JLabel iconLabel) {
@@ -211,12 +240,15 @@ public class ChatMessagePanel extends JPanel {
 
 	private JLabel createLabelWithFixedSize(final ImageIcon icon) {
 		final JLabel label = new JLabel(icon);
+		label.setOpaque(true);
+		label.setBackground(getIconBackground());
 		setFixedSize(label, ICON_SIZE, ICON_SIZE);
 		return label;
 	}
 
 	private JLabel createEmptyIconLabel() {
 		final JLabel label = new JLabel();
+		label.setOpaque(false);
 		setFixedSize(label, ICON_SIZE, ICON_SIZE);
 		return label;
 	}
@@ -304,21 +336,23 @@ public class ChatMessagePanel extends JPanel {
 	}
 
 	private Color getBackgroundColor(final MessageType type) {
+		final Color background = uiBackground();
 		return switch (type) {
-			case USER -> new Color(229, 229, 234);
-			case ASSISTANT -> new Color(227, 242, 253);
-			case SYSTEM -> new Color(255, 249, 196);
-			case ERROR -> new Color(255, 205, 210);
+			case USER -> blend(background, new Color(76, 114, 176), 0.16f);
+			case ASSISTANT -> blend(background, new Color(58, 140, 180), 0.16f);
+			case SYSTEM -> blend(background, new Color(190, 145, 20), 0.16f);
+			case ERROR -> blend(background, new Color(190, 55, 55), 0.16f);
 		};
 	}
 
 	private Color getBorderColor(final MessageType type) {
-		return switch (type) {
-			case USER -> new Color(200, 200, 210);
-			case ASSISTANT -> new Color(144, 202, 249);
-			case SYSTEM -> new Color(255, 235, 59);
-			case ERROR -> new Color(239, 83, 80);
+		final Color accent = switch (type) {
+			case USER -> new Color(76, 114, 176);
+			case ASSISTANT -> new Color(58, 140, 180);
+			case SYSTEM -> new Color(190, 145, 20);
+			case ERROR -> new Color(190, 55, 55);
 		};
+		return blend(uiBackground(), accent, 0.70f);
 	}
 
 	private JTextPane createTextPane(final MessageType type) {
@@ -331,19 +365,9 @@ public class ChatMessagePanel extends JPanel {
 
 		// Use an HTMLEditorKit with a programmatic StyleSheet for predictable styling
 		final HTMLEditorKit kit = new HTMLEditorKit();
-		final StyleSheet ss = kit.getStyleSheet();
-		ss.addRule("body { font-family: Dialog, Arial, sans-serif; font-size: " + (int) textFontSize + "px; color: #222; }");
-		ss.addRule("pre { font-family: monospace; background: #f6f8fa; border: 1px solid #ddd; padding: 6px; }");
-		ss.addRule("code { font-family: monospace; background: #eee; padding: 2px 4px; border-radius: 3px; }");
-		ss.addRule("blockquote { color: #666; margin-left: 8px; padding-left: 8px; border-left: 3px solid #ddd; }");
-		ss.addRule("a { color: #1a73e8; text-decoration: none; }");
-		ss.addRule("img { max-width: 100%; }");
-		ss.addRule("body { margin: 1px; }");
-		ss.addRule("div { margin: 1px; }");
-		ss.addRule("p { margin-top: 1px; margin-bottom: 1px; }");
-
 		textPane.setEditorKit(kit);
 		textPane.setContentType("text/html");
+		applyTextPaneStyles(kit.getStyleSheet(), type);
 
 		// Convert Markdown => HTML and sanitize from the tracked raw markdown
 		String safeHtml = renderMarkdownToSafeHtml(rawMarkdown.toString());
@@ -353,7 +377,8 @@ public class ChatMessagePanel extends JPanel {
 			safeHtml = "<div style=\"text-align:center\">" + safeHtml + "</div>";
 		}
 
-		textPane.setText(safeHtml);
+		renderedHtml = safeHtml;
+		textPane.setText(renderedHtml);
 
 		// Remove extra JTextPane margin
 		textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
@@ -399,6 +424,99 @@ public class ChatMessagePanel extends JPanel {
 		return textPane;
 	}
 
+	private void applyTextPaneStyles(final StyleSheet styleSheet,
+		final MessageType type)
+	{
+		final Color bubbleBackground = getBackgroundColor(type);
+		final Color textColor = getTextColor(bubbleBackground);
+		final Color codeBackground = blend(bubbleBackground, textColor, 0.10f);
+		final Color codeBorder = blend(bubbleBackground, textColor, 0.35f);
+		final Color linkColor = getTextColor(bubbleBackground, new Color(45, 120,
+			190));
+		styleSheet.addRule("body { font-family: Dialog, Arial, sans-serif; font-size: " +
+			(int) textFontSize + "px; color: " + cssColor(textColor) + "; }");
+		styleSheet.addRule("pre { font-family: monospace; background: " + cssColor(
+			codeBackground) + "; border: 1px solid " + cssColor(codeBorder) +
+			"; padding: 6px; }");
+		styleSheet.addRule("code { font-family: monospace; background: " + cssColor(
+			codeBackground) + "; padding: 2px 4px; border-radius: 3px; }");
+		styleSheet.addRule("blockquote { color: " + cssColor(textColor) +
+			"; margin-left: 8px; padding-left: 8px; border-left: 3px solid " +
+			cssColor(codeBorder) + "; }");
+		styleSheet.addRule("a { color: " + cssColor(linkColor) +
+			"; text-decoration: none; }");
+		styleSheet.addRule("img { max-width: 100%; }");
+		styleSheet.addRule("body { margin: 1px; }");
+		styleSheet.addRule("div { margin: 1px; }");
+		styleSheet.addRule("p { margin-top: 1px; margin-bottom: 1px; }");
+	}
+
+	private Color getTextColor(final Color background) {
+		return readableTextColor(background, uiForeground());
+	}
+
+	private Color getTextColor(final Color background, final Color preferred) {
+		return readableTextColor(background, preferred);
+	}
+
+	static Color readableTextColor(final Color background) {
+		return readableTextColor(background, uiForeground());
+	}
+
+	static Color readableTextColor(final Color background, final Color preferred) {
+		if (contrastRatio(background, preferred) >= 4.5) return preferred;
+		return contrastRatio(background, Color.BLACK) >= contrastRatio(background,
+			Color.WHITE) ? Color.BLACK : Color.WHITE;
+	}
+
+	private Color getIconBackground() {
+		return blend(uiBackground(), uiForeground(), 0.08f);
+	}
+
+	static Color uiBackground() {
+		final Color panelBackground = UIManager.getColor("Panel.background");
+		if (panelBackground != null) return panelBackground;
+		final Color textPaneBackground = UIManager.getColor("TextPane.background");
+		return textPaneBackground == null ? Color.WHITE : textPaneBackground;
+	}
+
+	static Color uiForeground() {
+		final Color textPaneForeground = UIManager.getColor("TextPane.foreground");
+		if (textPaneForeground != null) return textPaneForeground;
+		final Color labelForeground = UIManager.getColor("Label.foreground");
+		return labelForeground == null ? Color.BLACK : labelForeground;
+	}
+
+	static Color blend(final Color base, final Color overlay, final float amount) {
+		final float ratio = Math.max(0f, Math.min(1f, amount));
+		return new Color(Math.round(base.getRed() * (1f - ratio) + overlay.getRed() *
+			ratio), Math.round(base.getGreen() * (1f - ratio) + overlay.getGreen() *
+		ratio), Math.round(base.getBlue() * (1f - ratio) + overlay.getBlue() * ratio));
+	}
+
+	static String cssColor(final Color color) {
+		return String.format(Locale.ROOT, "#%02x%02x%02x", color.getRed(), color
+			.getGreen(), color.getBlue());
+	}
+
+	private static double contrastRatio(final Color first, final Color second) {
+		final double firstLuminance = relativeLuminance(first);
+		final double secondLuminance = relativeLuminance(second);
+		final double lighter = Math.max(firstLuminance, secondLuminance);
+		final double darker = Math.min(firstLuminance, secondLuminance);
+		return (lighter + 0.05) / (darker + 0.05);
+	}
+
+	private static double relativeLuminance(final Color color) {
+		return 0.2126 * linearize(color.getRed() / 255.0) + 0.7152 * linearize(
+			color.getGreen() / 255.0) + 0.0722 * linearize(color.getBlue() / 255.0);
+	}
+
+	private static double linearize(final double channel) {
+		return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) /
+			1.055, 2.4);
+	}
+
 	private void addContextMenu(final JTextPane textPane) {
 		final JPopupMenu contextMenu = new JPopupMenu();
 		final JMenuItem copyItem = new JMenuItem("Copy");
@@ -431,7 +549,8 @@ public class ChatMessagePanel extends JPanel {
 			sb.append(".");
 		}
 		sb.append("*");
-		textPane.setText(renderMarkdownToSafeHtml(sb.toString()));
+		renderedHtml = renderMarkdownToSafeHtml(sb.toString());
+		textPane.setText(renderedHtml);
 	}
 
 	/**
@@ -538,7 +657,8 @@ public class ChatMessagePanel extends JPanel {
 			try {
 				final String safeHtml = renderMarkdownToSafeHtml(rawMarkdown
 					.toString());
-				textPane.setText(safeHtml);
+				renderedHtml = safeHtml;
+				textPane.setText(renderedHtml);
 				// Try to move caret to end so view scrolls with content
 				try {
 					textPane.setCaretPosition(textPane.getDocument().getLength());
