@@ -133,7 +133,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			JsonObject result = new JsonObject();
 			result.add("executed_command", command);
 			result.addProperty("status", "success");
-			result.add("environment", capture.finish().toJson());
+			final JsonObject environment = capture.finish().toJson();
+			if (environment.size() > 0) result.add("environment_impact", environment);
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -164,7 +165,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		result.add("executed_command", command);
 		result.addProperty("status", "infrastructure_error");
 		result.addProperty("diagnostic", diagnostic == null ? "" : diagnostic);
-		result.add("environment", impact.toJson());
+		final JsonObject environment = impact.toJson();
+		if (environment.size() > 0) result.add("environment_impact", environment);
 		return result.toString();
 	}
 

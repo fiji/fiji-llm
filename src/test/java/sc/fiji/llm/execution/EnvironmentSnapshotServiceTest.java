@@ -77,20 +77,7 @@ public class EnvironmentSnapshotServiceTest {
 	public void testEmptyCaptureHasStableEnvironmentShape() {
 		final JsonObject environment = snapshotService.capture().finish().toJson();
 
-		assertTrue(environment.has("before"));
-		assertTrue(environment.has("after"));
-		assertTrue(environment.has("changes"));
-		assertTrue(environment.has("imagej_log"));
-		assertTrue(environment.has("scijava_log"));
-		assertTrue(environment.has("console_stdout"));
-		assertTrue(environment.has("console_stderr"));
-		assertTrue(environment.getAsJsonObject("before").has("images"));
-		assertTrue(environment.getAsJsonObject("before").has("active_image"));
-		assertTrue(environment.getAsJsonObject("before").has("results_table"));
-		assertTrue(environment.getAsJsonObject("changes").has("images_opened"));
-		assertTrue(environment.getAsJsonObject("changes").has("images_closed"));
-		assertFalse(environment.getAsJsonObject("changes").get("active_image_changed")
-			.getAsBoolean());
+		assertTrue(environment.entrySet().isEmpty());
 	}
 
 	@Test
@@ -108,18 +95,16 @@ public class EnvironmentSnapshotServiceTest {
 			table.addValue("area", 42);
 
 			final JsonObject environment = capture.finish().toJson();
-			final JsonObject afterResults = environment.getAsJsonObject("after")
-				.getAsJsonObject("results_table");
 			final JsonObject changes = environment.getAsJsonObject("changes");
+			final JsonObject resultsTable = changes.getAsJsonObject("results_table");
 
-			assertEquals(1, afterResults.get("rows").getAsInt());
-			assertTrue(afterResults.get("column_headings").getAsString().contains("area"));
-			assertTrue(changes.get("results_table_changed").getAsBoolean());
+			assertEquals(1, resultsTable.get("rows").getAsInt());
+			assertTrue(resultsTable.get("column_headings").getAsString().contains("area"));
 			assertTrue(environment.get("scijava_log").getAsString().contains(
 				"environment snapshot test message"));
 			assertEquals("environment snapshot stderr\n", environment.get("console_stderr")
 				.getAsString());
-			assertTrue(changes.get("images_opened").isJsonArray());
+			assertFalse(changes.has("images_opened"));
 		}
 		finally {
 			capture.close();
@@ -142,14 +127,14 @@ public class EnvironmentSnapshotServiceTest {
 			final JsonObject liveChanges = capture.current().toJson().getAsJsonObject(
 				"changes");
 			assertEquals("deferred", liveChanges.get("pixel_changes").getAsString());
-			assertEquals(0, liveChanges.get("images_changed").getAsJsonArray().size());
+			assertFalse(liveChanges.has("images_changed"));
 
 			final JsonObject environment = capture.finish().toJson();
 			final JsonObject changes = environment.getAsJsonObject("changes");
 			assertEquals("changed", changes.get("pixel_changes").getAsString());
 			assertEquals(1, changes.get("images_changed").getAsJsonArray().size());
-			final JsonObject afterImage = environment.getAsJsonObject("after").get(
-				"images").getAsJsonArray().get(0).getAsJsonObject();
+			final JsonObject afterImage = changes.get("images_changed").getAsJsonArray()
+				.get(0).getAsJsonObject();
 			assertEquals("captured", afterImage.get("pixel_hash_status").getAsString());
 			assertEquals("SHA-256", afterImage.get("pixel_hash_algorithm").getAsString());
 			assertEquals("imglib2-native-storage-v1", afterImage.get("pixel_hash_encoding")
@@ -174,11 +159,8 @@ public class EnvironmentSnapshotServiceTest {
 		try {
 			final JsonObject environment = capture.finish().toJson();
 			final JsonObject changes = environment.getAsJsonObject("changes");
-			final JsonObject afterImage = environment.getAsJsonObject("after").get(
-				"images").getAsJsonArray().get(0).getAsJsonObject();
 			assertEquals("inconclusive", changes.get("pixel_changes").getAsString());
-			assertEquals("skipped", afterImage.get("pixel_hash_status").getAsString());
-			assertEquals("lazy_container", afterImage.get("pixel_hash_reason").getAsString());
+			assertFalse(changes.has("images_changed"));
 		}
 		finally {
 			capture.close();

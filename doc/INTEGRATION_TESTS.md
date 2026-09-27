@@ -17,8 +17,8 @@ live Fiji instance with the Script Editor and MCP tools available.
   log state so that new output can be distinguished from older output.
 - When a case may show a blocking dialog, inspect it with
   `fiji_ui_dialogs_read` before taking any manual action.
-- `fiji_command_run` returns an `environment` object with before/after metadata
-      and a `changes` object; verify those fields for command cases that open,
+- `fiji_command_run` returns an optional `environment_impact` object with
+      changes-only metadata and a nested `changes` object; verify those fields for command cases that open,
       close, or modify images or Results table metadata.
 
 ## Integrated Chat Window
@@ -62,12 +62,14 @@ same order:
 
 1. `fiji_script_list` reports the expected editor, tab, and active script.
 2. `fiji_script_read_content` returns the code that is about to run.
-3. `fiji_script_run` returns the expected `output`, `errors`, and
-      `completion_state` fields. A dialog-paused run returns `blocked_by_dialog`
-      and a `run_id`; poll it with `fiji_script_run_status` after responding with
+3. `fiji_script_run` returns `status` and optional non-empty `output` and
+      `errors` fields. A dialog-paused run returns `blocked_by_dialog` and a
+      `run_id`; poll it with `fiji_script_run_status` after responding with
       `fiji_ui_dialog_respond` or closing with `fiji_ui_dialog_close`.
-      Console writes are also returned as `console_stdout` and
-      `console_stderr`; stderr is included in `errors`.
+      Console writes are returned as optional
+      `environment_impact.console_stdout` and
+      `environment_impact.console_stderr` fields; stderr is also included in
+      `errors`.
 4. Output from an earlier run is not repeated in the next run's delta.
 5. `fiji_log_imagej_read` exposes ImageJ macro `print()` output when
       applicable.
@@ -122,8 +124,8 @@ For each script case, repeat this tool sequence:
       editor tab and the exact source under test.
 4. For cases that should produce SciJava diagnostics, start a capture with
       `fiji_log_scijava_start_capture`.
-5. Call `fiji_script_run` and check `output`, `errors`, and
-      `completion_state`. If a parameter or other modal dialog appears,
+5. Call `fiji_script_run` and check `status` plus optional `output` and
+      `errors`. If a parameter or other modal dialog appears,
       inspect it with `fiji_ui_dialogs_read`, respond with
       `fiji_ui_dialog_respond` or close with `fiji_ui_dialog_close`, and poll
       with `fiji_script_run_status`. Do not
@@ -145,7 +147,7 @@ syntax failures, runtime failures, and timeouts.
       `console_stderr` or another relevant log.
 - [ ] Long-running script: run a script longer than 30 seconds and verify the
       initial result reports `status: "running"`, `wait_expired: true`,
-      `completed: false`, `elapsed_ms`, and a `run_id`; verify that wait expiry
+      `duration_ms`, and a `run_id`; verify that wait expiry
       does not populate `errors` or cancel the Script Editor task. Poll the run
       until it reaches a terminal result.
 
@@ -195,7 +197,7 @@ inspected together.
       output and compare the Script Editor, ImageJ Log, and SciJava results.
 - [ ] Long-running macro: run a macro longer than 30 seconds and verify the
       initial result reports `status: "running"`, `wait_expired: true`,
-      `completed: false`, `elapsed_ms`, and a `run_id`; verify that wait expiry
+      `duration_ms`, and a `run_id`; verify that wait expiry
       does not populate `errors` or cancel the Script Editor task. Poll the run
       until it reaches a terminal result.
 
@@ -203,7 +205,7 @@ inspected together.
 
 - [ ] Use `fiji_command_search` to find a known command and run it with
       `fiji_command_run`; verify `status: "success"`, command metadata, and
-      the `environment` before/after report.
+      an optional changes-only `environment_impact` report.
 - [ ] Run a command that opens an image and verify `changes.images_opened` and
       the active-image metadata.
 - [ ] Run a command that changes or closes an image and verify
@@ -212,9 +214,9 @@ inspected together.
       `pixel_hash_status` values. For large or lazy images, verify sampled or
       skipped hashes produce `pixel_changes: "inconclusive"`.
 - [ ] Run a measurement command and verify the Results table row/heading
-      metadata and `changes.results_table_changed`.
+      metadata in `changes.results_table`.
 - [ ] Run a command that emits ImageJ or SciJava log output and verify the
-      corresponding log delta in `environment`.
+      corresponding log delta in `environment_impact`.
 
 ## ImageJ Data Objects
 

@@ -87,7 +87,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			"scriptID cannot be null");
 		if (kind == null) throw new IllegalArgumentException("run kind cannot be null");
 
-		final Execution execution = new Execution(UUID.randomUUID().toString(),
+		final Execution execution = new Execution(newRunID(),
 			scriptID, kind);
 		executions.put(execution.runID, execution);
 
@@ -414,6 +414,10 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			status == Status.INFRASTRUCTURE_ERROR;
 	}
 
+	private static String newRunID() {
+		return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+	}
+
 	public static final class ExecutionResult implements ScriptExecutionService.ExecutionResult {
 
 		private final Execution execution;
@@ -429,38 +433,20 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			final JsonObject result = new JsonObject();
 			result.addProperty("run_id", execution.runID);
 			result.addProperty("status", execution.status.toString());
-			result.addProperty("completion_state", execution.status.toString());
-			result.addProperty("wait_expired", waitExpired);
-			result.addProperty("paused", execution.status == Status.BLOCKED_BY_DIALOG);
-			result.addProperty("completed", isTerminal(execution.status));
-			result.addProperty("elapsed_ms", execution.elapsedMillis());
+			if (waitExpired) result.addProperty("wait_expired", true);
+			result.addProperty("duration_ms", execution.elapsedMillis());
 			result.addProperty("script_id", execution.scriptID.toString());
-			result.addProperty("script_name", execution.scriptName == null ? "" :
-				execution.scriptName);
-			result.addProperty("started_at", execution.startedAt);
-			if (execution.finishedAt > 0) result.addProperty("finished_at",
-				execution.finishedAt);
+			addTextProperty(result, "script_name", execution.scriptName);
 
 			final TextLogs logs = execution.logs == null ? new TextLogs("", "") :
 				execution.logs.withoutGenericMacroInterpreterMessages();
-			result.addProperty("output", logs.getOutput());
 			final EnvironmentImpact environment = execution.environment;
 			final String consoleStderr = environment == null ? "" : environment
 				.getConsoleStderr();
-			result.addProperty("errors", appendDiagnostic(logs.getErrors(), consoleStderr));
-			result.addProperty("console_stdout", environment == null ? "" : environment
-				.getConsoleStdout());
-			result.addProperty("console_stderr", consoleStderr);
-			if (execution.primaryError != null && !execution.primaryError.isBlank()) {
-				result.addProperty("primary_error", execution.primaryError);
-			}
-			if (execution.errorDialog != null && !execution.errorDialog.isBlank()) {
-				result.addProperty("error_dialog", execution.errorDialog);
-			}
-			result.addProperty("imagej_log", environment == null ? "" : environment
-				.getImageJLog());
-			result.addProperty("scijava_log", environment == null ? "" : environment
-				.getSciJavaLog());
+			addTextProperty(result, "output", logs.getOutput());
+			addTextProperty(result, "errors", appendDiagnostic(logs.getErrors(),
+				consoleStderr));
+			addTextProperty(result, "error_dialog", execution.errorDialog);
 
 			final JsonArray dialogs = new JsonArray();
 			final List<AWTDialogUtils.DialogInfo> blockingDialogs = environment == null ?
@@ -489,10 +475,12 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				dialogJson.add("buttons", buttons);
 				dialogs.add(dialogJson);
 			}
-			result.add("dialogs", dialogs);
-			if (environment != null) result.add("environment", environment.toJson());
-			if (execution.diagnostic != null) result.addProperty("diagnostic",
-				execution.diagnostic);
+			if (dialogs.size() > 0) result.add("dialogs", dialogs);
+			if (environment != null) {
+				final JsonObject environmentJson = environment.toJson();
+				if (environmentJson.size() > 0) result.add("environment_impact", environmentJson);
+			}
+			addTextProperty(result, "diagnostic", execution.diagnostic);
 			if (execution.status == Status.BLOCKED_BY_DIALOG) result.addProperty(
 				"recommended_action",
 				"Inspect the dialog with fiji_ui_dialogs_read, then use " +
@@ -513,6 +501,12 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			if (errors == null || errors.isBlank()) return consoleStderr;
 			if (errors.contains(consoleStderr)) return errors;
 			return errors + System.lineSeparator() + consoleStderr;
+		}
+
+		private static void addTextProperty(final JsonObject result, final String name,
+			final String value)
+		{
+			if (value != null && !value.isBlank()) result.addProperty(name, value);
 		}
 	}
 

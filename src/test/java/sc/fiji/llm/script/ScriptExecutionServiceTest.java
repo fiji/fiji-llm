@@ -74,8 +74,17 @@ public class ScriptExecutionServiceTest {
 			ScriptExecutionService.Status.RUNNING, true, null, null);
 		final JsonObject json = result.toJson();
 		assertEquals("running", json.get("status").getAsString());
+		assertTrue(json.get("run_id").getAsString().length() <= 12);
+		assertTrue(json.has("duration_ms"));
+		assertFalse(json.has("elapsed_ms"));
 		assertTrue(json.get("wait_expired").getAsBoolean());
-		assertFalse(json.get("completed").getAsBoolean());
+		assertFalse(json.has("completion_state"));
+		assertFalse(json.has("completed"));
+		assertFalse(json.has("paused"));
+		assertFalse(json.has("output"));
+		assertFalse(json.has("errors"));
+		assertFalse(json.has("environment"));
+		assertFalse(json.has("environment_impact"));
 		assertTrue(json.get("recommended_action").getAsString().contains("Poll"));
 	}
 
@@ -85,10 +94,9 @@ public class ScriptExecutionServiceTest {
 			ScriptExecutionService.Status.FINISHED_WITH_ERRORS, false,
 			"Type mismatch in macro call", "Macro Error: Number expected");
 		final JsonObject json = result.toJson();
-		assertEquals("Type mismatch in macro call", json.get("primary_error")
-			.getAsString());
 		assertEquals("Macro Error: Number expected", json.get("error_dialog")
 			.getAsString());
+		assertFalse(json.has("primary_error"));
 	}
 
 	@Test

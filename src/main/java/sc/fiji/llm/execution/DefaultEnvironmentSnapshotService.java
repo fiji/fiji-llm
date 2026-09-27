@@ -83,15 +83,13 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 	private static final String PIXEL_HASH_ALGORITHM = "SHA-256";
 
 	private enum PixelSnapshotMode {
-		NOT_REQUESTED("not_requested", PixelHashStatus.NOT_REQUESTED),
-		DEFERRED("deferred", PixelHashStatus.DEFERRED),
-		CAPTURED("captured", PixelHashStatus.UNAVAILABLE);
+		NOT_REQUESTED(PixelHashStatus.NOT_REQUESTED),
+		DEFERRED(PixelHashStatus.DEFERRED),
+		CAPTURED(PixelHashStatus.UNAVAILABLE);
 
-		private final String value;
 		private final PixelHashStatus hashStatus;
 
-		PixelSnapshotMode(final String value, final PixelHashStatus hashStatus) {
-			this.value = value;
+		PixelSnapshotMode(final PixelHashStatus hashStatus) {
 			this.hashStatus = hashStatus;
 		}
 
@@ -526,19 +524,6 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 			this.pixelSnapshotMode = pixelSnapshotMode;
 		}
 
-		private JsonObject toJson() {
-			final JsonObject result = new JsonObject();
-			final JsonArray imagesJson = new JsonArray();
-			for (final ImageState image : images) imagesJson.add(image.toJson());
-			result.add("images", imagesJson);
-			result.add("active_image", activeImage == null ? JsonNull.INSTANCE : activeImage
-				.toJson());
-			result.add("results_table", resultsTable.toJson());
-			result.add("dialogs", dialogsJson(dialogs));
-			result.addProperty("imagej_log_open", imageJLog.isOpen());
-			result.addProperty("pixel_change_tracking", pixelSnapshotMode.value);
-			return result;
-		}
 	}
 
 	public static final class EnvironmentImpact implements
@@ -595,13 +580,12 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 		@Override
 		public JsonObject toJson() {
 			final JsonObject result = new JsonObject();
-			result.add("before", before.toJson());
-			result.add("after", after.toJson());
-			result.add("changes", changesJson());
-			result.addProperty("imagej_log", getImageJLog());
-			result.addProperty("scijava_log", scijavaLog);
-			result.addProperty("console_stdout", consoleStdout);
-			result.addProperty("console_stderr", consoleStderr);
+			final JsonObject changes = changesJson();
+			if (changes.size() > 0) result.add("changes", changes);
+			addTextProperty(result, "imagej_log", getImageJLog());
+			addTextProperty(result, "scijava_log", scijavaLog);
+			addTextProperty(result, "console_stdout", consoleStdout);
+			addTextProperty(result, "console_stderr", consoleStderr);
 			return result;
 		}
 
@@ -618,19 +602,30 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 			for (final ImageState image : before.images) {
 				if (findImage(after.images, image.key()) == null) closed.add(image.toJson());
 			}
-			changes.add("images_opened", opened);
-			changes.add("images_closed", closed);
-			changes.add("images_changed", changed);
-			changes.addProperty("pixel_changes", pixelChangesStatus());
-			changes.addProperty("active_image_changed", !sameImageKey(before.activeImage,
-				after.activeImage));
-			changes.addProperty("results_table_changed", !before.resultsTable.equals(after
-				.resultsTable));
-			changes.add("dialogs_opened", dialogsJson(newDialogs(before.dialogs, after
-				.dialogs)));
-			changes.add("dialogs_closed", dialogsJson(newDialogs(after.dialogs, before
-				.dialogs)));
+			if (opened.size() > 0) changes.add("images_opened", opened);
+			if (closed.size() > 0) changes.add("images_closed", closed);
+			if (changed.size() > 0) changes.add("images_changed", changed);
+			final String pixelChanges = pixelChangesStatus();
+			if (!"not_requested".equals(pixelChanges) && !"unchanged".equals(
+				pixelChanges)) changes.addProperty("pixel_changes", pixelChanges);
+			if (!sameImageKey(before.activeImage, after.activeImage)) changes.add(
+				"active_image", after.activeImage == null ? JsonNull.INSTANCE : after
+					.activeImage.toJson());
+			if (!before.resultsTable.equals(after.resultsTable)) changes.add(
+				"results_table", after.resultsTable.toJson());
+			final JsonArray dialogsOpened = dialogsJson(newDialogs(before.dialogs, after
+				.dialogs));
+			if (dialogsOpened.size() > 0) changes.add("dialogs_opened", dialogsOpened);
+			final JsonArray dialogsClosed = dialogsJson(newDialogs(after.dialogs, before
+				.dialogs));
+			if (dialogsClosed.size() > 0) changes.add("dialogs_closed", dialogsClosed);
 			return changes;
+		}
+
+		private static void addTextProperty(final JsonObject result, final String name,
+			final String value)
+		{
+			if (value != null && !value.isBlank()) result.addProperty(name, value);
 		}
 
 		private String pixelChangesStatus() {
