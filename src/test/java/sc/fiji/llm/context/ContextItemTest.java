@@ -130,7 +130,7 @@ public class ContextItemTest {
 		final ScriptContextItem item = new ScriptContextItem("test.py", "content", 0,
 			1, "Python");
 
-		assertEquals("active script tab in the most recently selected editor window",
+		assertEquals("script",
 			item.getTooltipText());
 	}
 
