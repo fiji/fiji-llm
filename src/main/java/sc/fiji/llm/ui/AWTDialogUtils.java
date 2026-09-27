@@ -52,6 +52,7 @@ import java.awt.TextComponent;
 import java.awt.TextField;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -462,24 +463,40 @@ public final class AWTDialogUtils {
 		return result[0];
 	}
 
+	/**
+	 * Requests the normal window-manager close behavior for the unique visible
+	 * dialog with the given title.
+	 *
+	 * @throws IllegalArgumentException if the title is {@code null}
+	 * @throws IllegalStateException if the dialog is missing or ambiguous
+	 */
+	public static DialogCloseResponse closeDialog(final String dialogTitle) {
+		if (dialogTitle == null) throw new IllegalArgumentException(
+			"Dialog title is required");
+
+		if (SwingUtilities.isEventDispatchThread()) return closeOnEdt(dialogTitle);
+
+		final DialogCloseResponse[] result = new DialogCloseResponse[1];
+		try {
+			SwingUtilities.invokeAndWait(() -> result[0] = closeOnEdt(dialogTitle));
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrupted while closing dialog", e);
+		}
+		catch (InvocationTargetException e) {
+			if (e.getCause() instanceof RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			throw new IllegalStateException("Could not close dialog", e.getCause());
+		}
+		return result[0];
+	}
+
 	private static DialogResponse respondOnEdt(final String dialogTitle,
 		final String buttonText)
 	{
-		final List<Dialog> matchingDialogs = new ArrayList<>();
-		for (final Window window : Window.getWindows()) {
-			if (window instanceof Dialog dialog && dialog.isVisible() && dialogTitle
-				.equals(dialog.getTitle())) matchingDialogs.add(dialog);
-		}
-
-		if (matchingDialogs.isEmpty()) {
-			throw new IllegalStateException("No visible dialog has title: " + dialogTitle);
-		}
-		if (matchingDialogs.size() > 1) {
-			throw new IllegalStateException("Multiple visible dialogs have title: " +
-				dialogTitle);
-		}
-
-		final Dialog dialog = matchingDialogs.get(0);
+		final Dialog dialog = findVisibleDialog(dialogTitle);
 		final List<Component> matchingButtons = new ArrayList<>();
 		collectMatchingButtons(dialog, buttonText, matchingButtons, Collections
 			.newSetFromMap(new IdentityHashMap<>()));
@@ -504,6 +521,30 @@ public final class AWTDialogUtils {
 		clickButton(button);
 		return new DialogResponse(dialog.getTitle(), dialog.getClass().getName(),
 			buttonInfo.getText(), buttonInfo.getActionCommand(), dialog.isVisible());
+	}
+
+	private static DialogCloseResponse closeOnEdt(final String dialogTitle) {
+		final Dialog dialog = findVisibleDialog(dialogTitle);
+		dialog.dispatchEvent(new WindowEvent(dialog, WindowEvent.WINDOW_CLOSING));
+		return new DialogCloseResponse(dialog.getTitle(), dialog.getClass().getName(), dialog
+			.isVisible());
+	}
+
+	private static Dialog findVisibleDialog(final String dialogTitle) {
+		final List<Dialog> matchingDialogs = new ArrayList<>();
+		for (final Window window : Window.getWindows()) {
+			if (window instanceof Dialog dialog && dialog.isVisible() && dialogTitle
+				.equals(dialog.getTitle())) matchingDialogs.add(dialog);
+		}
+
+		if (matchingDialogs.isEmpty()) {
+			throw new IllegalStateException("No visible dialog has title: " + dialogTitle);
+		}
+		if (matchingDialogs.size() > 1) {
+			throw new IllegalStateException("Multiple visible dialogs have title: " +
+				dialogTitle);
+		}
+		return matchingDialogs.get(0);
 	}
 
 	private static void collectMatchingButtons(final Component component,
@@ -1012,6 +1053,33 @@ public final class AWTDialogUtils {
 
 		public String getActionCommand() {
 			return actionCommand;
+		}
+
+		public boolean isDialogVisibleAfter() {
+			return dialogVisibleAfter;
+		}
+	}
+
+	public static final class DialogCloseResponse {
+
+		private final String dialogTitle;
+		private final String dialogClassName;
+		private final boolean dialogVisibleAfter;
+
+		private DialogCloseResponse(final String dialogTitle,
+			final String dialogClassName, final boolean dialogVisibleAfter)
+		{
+			this.dialogTitle = dialogTitle == null ? "" : dialogTitle;
+			this.dialogClassName = dialogClassName == null ? "" : dialogClassName;
+			this.dialogVisibleAfter = dialogVisibleAfter;
+		}
+
+		public String getDialogTitle() {
+			return dialogTitle;
+		}
+
+		public String getDialogClassName() {
+			return dialogClassName;
 		}
 
 		public boolean isDialogVisibleAfter() {

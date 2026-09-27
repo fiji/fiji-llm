@@ -86,8 +86,8 @@ public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
 
 			The functionality underlying both scripts and macros is directly tied to available Commands (Guide ID: `%4$s`).
 			Both scripts and macros run asynchronously; if a poll return of `blocked_by_dialog` is an interaction point:
-			inspect the dialog with `fiji_ui_dialogs_read`, respond with `fiji_ui_dialog_respond` using the exact title
-			and button text.
+			inspect the dialog with `fiji_ui_dialogs_read`, then use `fiji_ui_dialog_respond` with the exact title
+			and button text or `fiji_ui_dialog_close` with the exact title.
 			Finally, you should be familiar with the data types in Guide ID: `%5$s`.
 			""".formatted(ScriptingGuide.ID, ScriptingGuide.ID, CreatingMacrosGuide.ID,
 				RunningCommandsGuide.ID, DataTypesGuide.ID).strip();

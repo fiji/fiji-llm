@@ -591,7 +591,8 @@ public final class ScriptExecutionService extends AbstractService implements
 			if (execution.status == Status.BLOCKED_BY_DIALOG) result.addProperty(
 				"recommended_action",
 				"Inspect the dialog with fiji_ui_dialogs_read, then use " +
-					"fiji_ui_dialog_respond with its exact title and button text. " +
+					"fiji_ui_dialog_respond with its exact title and button text, or " +
+					"fiji_ui_dialog_close with its exact title. " +
 					"This run remains active.");
 			if (execution.status == Status.TIMED_OUT) {
 				result.addProperty("recommended_action",

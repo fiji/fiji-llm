@@ -181,6 +181,28 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
+	@Tool(value = { "Request the normal window-manager close action for one visible dialog with the exact title. Call fiji_ui_dialogs_read first; this tool rejects missing or ambiguous dialogs, does not choose a button, and reports whether the dialog remains visible" }, name = "fiji_ui_dialog_close")
+	public String closeDialog(@P(name = "dialog_title", value = "Exact dialog title") final String dialogTitle) {
+		if (dialogTitle == null || dialogTitle.isBlank()) {
+			return jsonError("dialog_title cannot be null or blank");
+		}
+
+		try {
+			final AWTDialogUtils.DialogCloseResponse response = AWTDialogUtils
+				.closeDialog(dialogTitle);
+			final JsonObject result = new JsonObject();
+			result.addProperty("action_requested", "window_close");
+			result.addProperty("dialog_title", response.getDialogTitle());
+			result.addProperty("dialog_class_name", response.getDialogClassName());
+			result.addProperty("dialog_visible_after", response
+				.isDialogVisibleAfter());
+			return result.toString();
+		}
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_ui_dialog_close: " + e.getMessage());
+		}
+	}
+
 	private JsonObject dialogJson(final AWTDialogUtils.DialogInfo dialog) {
 		final JsonObject result = new JsonObject();
 		result.addProperty("title", dialog.getTitle());

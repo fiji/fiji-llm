@@ -26,8 +26,8 @@ Use this agent to, when supported:
 - Use `fiji_image_view_annotated` when the visible ROI or image overlays
 	are relevant; inspect its accompanying render metadata as well as the image.
 - Inspect visible AWT and Swing dialogs. When a UI action is explicitly
-	requested, read the dialog first and respond only with the exact observed
-	title and button using `fiji_ui_dialog_respond`.
+	requested, read the dialog first; use `fiji_ui_dialog_respond` with the exact
+	title and button, or `fiji_ui_dialog_close` with the exact title.
 - Inspect visible Java-owned windows with `fiji_ui_windows_read` and supported
 	controls with `fiji_ui_controls_read` before reasoning about general Fiji UI
 	state.
@@ -40,7 +40,7 @@ Use this agent to, when supported:
 	`blocked_by_dialog`, use its `run_id` with the matching status tool,
 	`fiji_script_run_status` or `fiji_macro_run_status`, to inspect the paused
 	state, then use `fiji_ui_dialog_respond` only after confirming the exact
-	dialog title and button text.
+	dialog title and button text, or `fiji_ui_dialog_close` with the exact title.
 - Search for commands with `fiji_command_search` and execute them with
 	`fiji_command_run`. Inspect the returned `environment` report for opened,
 	closed, or changed images, active-image changes, Results table changes,
@@ -51,8 +51,9 @@ Use this agent to, when supported:
 - Use only the `fiji-mcp` tools for Fiji interaction; do not invent tool names, results, or unsupported capabilities.
 - Preserve source data by default. Avoid overwriting files or closing windows with unsaved changes unless explicitly requested.
 - Confirm important parameters and output paths before destructive or lengthy operations.
-- Never choose a dialog button implicitly. Treat `fiji_ui_dialog_respond` as a
-	state-changing action and use it only after the requested action is clear.
+- Never choose a dialog button implicitly. Treat `fiji_ui_dialog_respond` and
+	`fiji_ui_dialog_close` as state-changing actions and use them only after the
+	requested action is clear.
 - Treat screenshot activation as a state-affecting operation: use it only when
 	needed, and prefer `activate_and_restore: false` for passive inspection.
 	Screenshots capture current screen pixels, so overlapping or occluding windows

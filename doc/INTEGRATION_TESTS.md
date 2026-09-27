@@ -64,8 +64,8 @@ same order:
 2. `fiji_script_read_content` returns the code that is about to run.
 3. `fiji_script_run` returns the expected `output`, `errors`, and
       `completion_state` fields. A dialog-paused run returns `blocked_by_dialog`
-      and a `run_id`; poll it with `fiji_script_run_status` after responding to
-      the dialog with `fiji_ui_dialog_respond`.
+      and a `run_id`; poll it with `fiji_script_run_status` after responding with
+      `fiji_ui_dialog_respond` or closing with `fiji_ui_dialog_close`.
       Console writes are also returned as `console_stdout` and
       `console_stderr`; stderr is included in `errors`.
 4. Output from an earlier run is not repeated in the next run's delta.
@@ -77,8 +77,12 @@ same order:
 7. `fiji_ui_dialogs_read` reports visible error or confirmation dialogs,
       including their titles, messages, buttons, and modal state.
 8. When a test intentionally proceeds through a dialog, call
-      `fiji_ui_dialog_respond` with the exact observed title and button, then
-      call `fiji_ui_dialogs_read` again to verify the resulting state.
+      `fiji_ui_dialog_respond` with the exact observed title and button, or
+      `fiji_ui_dialog_close` with the exact title, then call
+      `fiji_ui_dialogs_read` again to verify the resulting state.
+
+- [ ] Dialog without a suitable button: close it with
+      `fiji_ui_dialog_close` and verify the reported visibility.
 
 ## UI Inspection and Screenshots
 
@@ -121,7 +125,8 @@ For each script case, repeat this tool sequence:
 5. Call `fiji_script_run` and check `output`, `errors`, and
       `completion_state`. If a parameter or other modal dialog appears,
       inspect it with `fiji_ui_dialogs_read`, respond with
-      `fiji_ui_dialog_respond`, and poll with `fiji_script_run_status`. Do not
+      `fiji_ui_dialog_respond` or close with `fiji_ui_dialog_close`, and poll
+      with `fiji_script_run_status`. Do not
       use it for `.ijm` tabs; it must direct the caller to `fiji_macro_run`.
 6. Read the final SciJava messages with
       `fiji_log_scijava_stop_capture`, and inspect ImageJ Log or visible dialogs

@@ -63,9 +63,9 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			  Select the window using its exact title and, when needed, its class name.
 			- Use `fiji_ui_dialogs_read` when a dialog may be blocking an operation or when
 			  its message and available buttons must be identified.
-			- Use `fiji_ui_dialog_respond` only after reading the dialogs. Provide the exact
-			  dialog title and button text; never guess which dialog or button to use. Check
-			  post-action state afterward.
+			- Use `fiji_ui_dialog_respond` only after reading the dialogs, with the exact
+			  title and button; use `fiji_ui_dialog_close` with the exact title when closing
+			  without selecting a button. Check post-action state afterward.
 			- Use `fiji_ui_screenshot` when visual context is useful for a vision-capable
 			  client.
 			""".strip();

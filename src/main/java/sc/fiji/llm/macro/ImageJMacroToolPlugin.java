@@ -260,7 +260,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. Execution runs asynchronously; this call returns when it finishes or pauses on a new modal dialog. Use the run_id with fiji_macro_run_status to poll, then fiji_ui_dialog_respond to continue. Timeouts are requested, but not guaranteed, if runtime exceeds 30 seconds" }, name = "fiji_macro_run")
+	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. Execution runs asynchronously; this call returns when it finishes or pauses on a new modal dialog. Use the run_id with fiji_macro_run_status to poll, then use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title. Timeouts are requested, but not guaranteed, if runtime exceeds 30 seconds" }, name = "fiji_macro_run")
 	public String runMacro() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -285,7 +285,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Poll an asynchronous macro run by run_id. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button, then poll again." }, name = "fiji_macro_run_status")
+	@Tool(value = { "Poll an asynchronous macro run by run_id. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_macro_run_status")
 	public String macroRunStatus(@P(name = "run_id", value = "Run ID returned when the run was started") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");
