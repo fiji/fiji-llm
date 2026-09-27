@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.data;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -106,9 +104,10 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public ServicesAndContextGuide() {
-		super(ID, "Services and Context", AgentGuide.topics(Topic.DATA, Topic.SERVICES,
-			Topic.CONTEXT), Authority.PROJECT_AUTHORED,
-			List.of(DataTypesGuide.ID));
+		super(ID, "Services and Context",
+			"Understand SciJava Context, service injection, plugin discovery, and Fiji-LLM services.",
+			AgentGuide.topics(Topic.DATA, Topic.SERVICES, Topic.CONTEXT),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

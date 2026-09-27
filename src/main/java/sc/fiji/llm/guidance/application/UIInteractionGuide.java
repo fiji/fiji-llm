@@ -28,15 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
-import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
 
 /** Guidance for interacting with the Fiji UI. */
 @Plugin(type = AgentGuide.class)
@@ -71,9 +67,10 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public UIInteractionGuide() {
-		super(ID, "UI Interaction", AgentGuide.topics(Topic.APPLICATION, Topic.UI, Topic.DIALOGS,
-			Topic.INPUT, Topic.ERRORS), Authority.PROJECT_AUTHORED,
-			List.of(RunningCommandsGuide.ID, OnboardingGuide.ID));
+		super(ID, "UI Interaction",
+			"Inspect and interact with Fiji windows, controls, dialogs, and blocking user interfaces.",
+			AgentGuide.topics(Topic.APPLICATION, Topic.UI, Topic.DIALOGS,
+			Topic.INPUT, Topic.ERRORS), Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

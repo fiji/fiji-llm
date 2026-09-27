@@ -50,9 +50,9 @@ public final class AgentGuideMetadata {
 
 	private final String id;
 	private final String title;
+	private final String summary;
 	private final List<String> topics;
 	private final Authority authority;
-	private final List<String> relatedDocuments;
 
 	/**
 	 * Creates guidance metadata.
@@ -63,19 +63,18 @@ public final class AgentGuideMetadata {
 	 *
 	 * @param id stable identifier used by guidance search and read operations
 	 * @param title human-readable document title
-	 * @param topics taxonomy terms used to classify and filter the document
+	 * @param summary concise description of the document's scope
+	 * @param topics taxonomy terms used to classify the document
 	 * @param authority trust classification for the document source
-	 * @param relatedDocuments stable identifiers for related guidance
 	 */
 	public AgentGuideMetadata(final String id, final String title,
-		final List<String> topics, final Authority authority,
-		final List<String> relatedDocuments)
+		final String summary, final List<String> topics, final Authority authority)
 	{
 		this.id = requireText(id, "id");
 		this.title = requireText(title, "title");
+		this.summary = requireText(summary, "summary");
 		this.topics = immutableTopics(topics);
 		this.authority = Objects.requireNonNull(authority, "authority");
-		this.relatedDocuments = immutableCopy(relatedDocuments);
 	}
 
 	public String id() {
@@ -86,6 +85,10 @@ public final class AgentGuideMetadata {
 		return title;
 	}
 
+	public String summary() {
+		return summary;
+	}
+
 	public List<String> topics() {
 		return topics;
 	}
@@ -94,24 +97,11 @@ public final class AgentGuideMetadata {
 		return authority;
 	}
 
-	public List<String> relatedDocuments() {
-		return relatedDocuments;
-	}
-
 	private static String requireText(final String value, final String name) {
 		if (value == null || value.trim().isEmpty()) {
 			throw new IllegalArgumentException(name + " cannot be empty");
 		}
 		return value.trim();
-	}
-
-	private static List<String> immutableCopy(final List<String> values) {
-		if (values == null) return Collections.emptyList();
-		final List<String> copy = new ArrayList<>();
-		for (final String value : values) {
-			if (value != null && !value.trim().isEmpty()) copy.add(value.trim());
-		}
-		return Collections.unmodifiableList(copy);
 	}
 
 	private static List<String> immutableTopics(final List<String> values) {

@@ -51,6 +51,7 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -63,6 +64,11 @@ import sc.fiji.llm.ui.TextEditorUtils;
  */
 @Plugin(type = AiToolPlugin.class)
 public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
+
+	@Override
+	protected String[] recommendedGuideIds() {
+		return new String[] { ScriptingGuide.ID };
+	}
 
 	private static final String IS_ACTIVE_KEY = "is_active";
 	private static final String ERROR_KEY = "errors";

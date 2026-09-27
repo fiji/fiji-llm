@@ -28,16 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
-import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
-import sc.fiji.llm.guidance.workflows.ScriptsAndMacrosGuide;
 
 /** Guidance for inspecting the Fiji environment. */
 @Plugin(type = AgentGuide.class)
@@ -92,9 +87,10 @@ public class EnvironmentInspectionGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public EnvironmentInspectionGuide() {
-		super(ID, "Environment Inspection", AgentGuide.topics(Topic.APPLICATION,
-			Topic.ENVIRONMENT, Topic.PRINT_STREAM, Topic.LOGS), Authority.PROJECT_AUTHORED,
-			List.of(RunningCommandsGuide.ID, ScriptsAndMacrosGuide.ID, OnboardingGuide.ID));
+		super(ID, "Environment Inspection",
+			"Inspect live Fiji state, logs, console output, dialogs, and execution evidence.",
+			AgentGuide.topics(Topic.APPLICATION,
+			Topic.ENVIRONMENT, Topic.PRINT_STREAM, Topic.LOGS), Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

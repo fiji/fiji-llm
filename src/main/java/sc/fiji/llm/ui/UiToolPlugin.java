@@ -43,12 +43,18 @@ import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
+import sc.fiji.llm.guidance.application.UIInteractionGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** AI tools for inspecting Fiji's visible UI. */
 @Plugin(type = AiToolPlugin.class)
 public class UiToolPlugin extends AbstractAiToolPlugin {
+
+	@Override
+	protected String[] recommendedGuideIds() {
+		return new String[] { UIInteractionGuide.ID };
+	}
 
 	public UiToolPlugin() {
 		super(UiToolPlugin.class);

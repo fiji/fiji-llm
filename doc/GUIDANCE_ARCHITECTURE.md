@@ -153,16 +153,16 @@ initial logical model is intentionally small:
 ```text
 id: python-runtime-selection
 title: Choosing a Fiji Python Runtime
+summary: Select and configure the Python runtime appropriate for Fiji scripting.
 topics: [scripts, python, runtime]
 authority: project-authored
-related_documents: []
 content: ...
 ```
 
 The implementation uses singleton SciJava plugins and a singleton service:
 `AgentGuide` represents one guide and directly returns its metadata and text,
 while `AgentGuidanceService` discovers and indexes all `AgentGuide` instances.
-`AgentGuideMetadata` represents catalog and search results, while the
+`AgentGuideMetadata` represents catalog results, while the
 `AgentGuide` instance owns the full guide text. The service's read operation
 returns only bounded text. There is no separate JSON index or packaged-resource
 loader. Built-in guides use the explicit `AgentGuide.Topic` vocabulary to avoid
@@ -279,9 +279,9 @@ schemas, and necessary live context. Detailed guidance is retrieved when:
 - A tool result indicates a known diagnostic or execution condition.
 - The user explicitly requests documentation or an example.
 
-Topic search should remain a lightweight catalog operation. Callers should
-read only the selected documents, and the read limit should remain configurable
-rather than relying on a fixed assumption about every model's context window.
+The catalog should remain a lightweight list operation. Callers should read only
+the selected documents, and the read limit should remain configurable rather than
+relying on a fixed assumption about every model's context window.
 
 ## Roadmap
 
@@ -291,10 +291,10 @@ rather than relying on a fixed assumption about every model's context window.
 - Inventory existing prompts, tool descriptions, skills, README material, and
   technical documentation.
 - Add curated packaged guidance resources.
-- Add deterministic search and bounded read operations.
-- Expose `fiji_guide_search` and `fiji_guide_read` as read-only tools.
-- Replace duplicated integrated-chat and MCP baseline instructions with a
-  shared composition service.
+- Add deterministic list and bounded read operations.
+- Expose `fiji_guide_list` and `fiji_guide_read` as read-only tools.
+- Put concise guidance protocol instructions in the integrated-chat system
+  message and MCP server instructions.
 
 ### Next implementation
 

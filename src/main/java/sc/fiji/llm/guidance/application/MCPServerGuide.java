@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Information about the integrated MCP server. */
 @Plugin(type = AgentGuide.class)
@@ -91,9 +88,11 @@ public class MCPServerGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public MCPServerGuide() {
-		super(ID, "MCP Server", AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,
+		super(ID, "MCP Server",
+			"Understand Fiji's local MCP endpoint, tool exposure, client connection, and state and safety model.",
+			AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,
 			Topic.AGENT, Topic.MCP),
-			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

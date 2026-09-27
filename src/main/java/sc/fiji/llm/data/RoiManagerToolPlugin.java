@@ -41,12 +41,18 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.guidance.data.RoisGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** Read-only tool for inspecting the ImageJ ROI Manager state. */
 @Plugin(type = AiToolPlugin.class)
 public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
+
+	@Override
+	protected String[] recommendedGuideIds() {
+		return new String[] { RoisGuide.ID };
+	}
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;

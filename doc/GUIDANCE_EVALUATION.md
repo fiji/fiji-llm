@@ -35,11 +35,10 @@ plugins can legitimately change those details.
 
 Apply these checks to every run:
 
-- Ask the agent what guides it read with `fiji-guide-read`
-- `fiji_guide_onboarding` is called before the first non-guidance Fiji tool.
-- The agent retrieves guidance relevant to the task before taking the related
-  action. Acceptable related guides depend on the task; the evaluator should
-  judge relevance rather than require a single rigid sequence.
+- Ask the agent what guides it read with `fiji_guide_read`.
+- The agent discovers or reads guidance relevant to the task before taking the
+  related action. Acceptable guides depend on the task; judge relevance rather
+  than require a single rigid sequence.
 - Tool calls use live Fiji state instead of assuming that an image, command,
   editor, or Results Table exists.
 - The final response reports the actual result and limitations rather than
@@ -135,8 +134,8 @@ workflow artifact.
 | MCP client | |
 | Model/provider and model name | |
 | Prompt number | |
-| First non-guidance Fiji tool | |
-| Was `fiji_guide_onboarding` called first? | Yes / No |
+| First guidance or operational tool | |
+| Was relevant guidance read before action? | Yes / Partial / No |
 | Guide IDs read | |
 | Were the relevant guides read before action? | Yes / Partial / No |
 | Did the reported tool order match the trace? | Yes / Partial / No |

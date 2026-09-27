@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.workflows;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
 import sc.fiji.llm.guidance.application.EnvironmentInspectionGuide;
 import sc.fiji.llm.guidance.application.UIInteractionGuide;
 import sc.fiji.llm.guidance.application.UpdateSitesGuide;
@@ -115,10 +112,10 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 				UpdateSitesGuide.ID).strip();
 
 	public RunningCommandsGuide() {
-		super(ID, "Running Commands", AgentGuide.topics(Topic.IMAGE_ANALYSIS, Topic.COMMANDS,
-			Topic.UI), Authority.PROJECT_AUTHORED,
-			List.of(UIInteractionGuide.ID, EnvironmentInspectionGuide.ID, UpdateSitesGuide.ID,
-				OnboardingGuide.ID));
+		super(ID, "Running Commands",
+			"Discover and execute Fiji commands, interactive workflows, dialogs, and state changes.",
+			AgentGuide.topics(Topic.IMAGE_ANALYSIS, Topic.COMMANDS, Topic.UI),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

@@ -49,6 +49,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.data.ImageJ1HelperService;
+import sc.fiji.llm.guidance.workflows.CreatingMacrosGuide;
 import sc.fiji.llm.script.ScriptContextItem;
 import sc.fiji.llm.script.ScriptContextUtilities;
 import sc.fiji.llm.script.ScriptExecutionService;
@@ -64,6 +65,11 @@ import sc.fiji.llm.ui.TextEditorUtils;
  */
 @Plugin(type = AiToolPlugin.class)
 public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
+
+	@Override
+	protected String[] recommendedGuideIds() {
+		return new String[] { CreatingMacrosGuide.ID };
+	}
 
 	@Parameter
 	private LegacyService legacyService;

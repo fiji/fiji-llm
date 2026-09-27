@@ -66,7 +66,6 @@ public interface AgentGuide extends SingletonPlugin {
 		LOGS("logs"),
 		MACROS("macros"),
 		MCP("mcp"),
-		ONBOARDING("onboarding"),
 		PLUGINS("plugins"),
 		PRINT_STREAM("print-stream"),
 		PYTHON("python"),

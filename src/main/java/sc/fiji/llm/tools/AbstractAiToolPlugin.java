@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -79,7 +80,33 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 		if (recommendedTool != null && !recommendedTool.trim().isEmpty()) {
 			err.addProperty("recommended_tool", recommendedTool);
 		}
+		addGuideRecommendations(err, recommendedGuideIds());
 		return err.toString();
+	}
+
+	/**
+	 * @return guide IDs to recommend when this plugin reports an error
+	 */
+	protected String[] recommendedGuideIds() {
+		return new String[0];
+	}
+
+	protected static void addGuideRecommendations(final JsonObject result,
+		final String... guideIds)
+	{
+		if (guideIds == null || guideIds.length == 0) return;
+		final JsonArray recommendations = new JsonArray();
+		for (final String guideId : guideIds) {
+			if (guideId == null || guideId.trim().isEmpty()) continue;
+			final JsonObject recommendation = new JsonObject();
+			recommendation.addProperty("tool", "fiji_guide_read");
+			final JsonObject arguments = new JsonObject();
+			arguments.addProperty("id", guideId.trim());
+			recommendation.add("arguments", arguments);
+			recommendations.add(recommendation);
+		}
+		if (recommendations.size() > 0) result.add("guide_recommendations",
+			recommendations);
 	}
 
 	protected String stringProp(String key, JsonElement element) {

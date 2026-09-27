@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.data;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -103,8 +101,9 @@ public class ResultsTableGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public ResultsTableGuide() {
-		super(ID, "Results Table", AgentGuide.topics(Topic.DATA, Topic.RESULTS_TABLE),
-			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
+		super(ID, "Results Table",
+			"Read the ImageJ Results Table structure, headings, rows, and values.",
+			AgentGuide.topics(Topic.DATA, Topic.RESULTS_TABLE), Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

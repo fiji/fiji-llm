@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.data;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -104,8 +102,9 @@ public class RoisGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public RoisGuide() {
-		super(ID, "Regions of Interest", AgentGuide.topics(Topic.DATA, Topic.ROIS),
-			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
+		super(ID, "Regions of Interest",
+			"Inspect ROI Manager entries, selections, geometry, bounds, and coordinates.",
+			AgentGuide.topics(Topic.DATA, Topic.ROIS), Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.data;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -68,10 +66,10 @@ public class DataTypesGuide extends AbstractAgentGuide {
 				ResultsTableGuide.ID).strip();
 
 	public DataTypesGuide() {
-		super(ID, "Fiji Data Types", AgentGuide.topics(Topic.DATA_TYPES, Topic.DATA,
-			Topic.IMAGES, Topic.ROIS, Topic.RESULTS_TABLE), Authority.PROJECT_AUTHORED, List.of(
-				RoisGuide.ID, ResultsTableGuide.ID, ImagesInFiji.ID,
-				ServicesAndContextGuide.ID, ID));
+		super(ID, "Fiji Data Types",
+			"Choose Fiji and ImageJ data representations and understand their interoperability.",
+			AgentGuide.topics(Topic.DATA_TYPES, Topic.DATA, Topic.IMAGES, Topic.ROIS,
+				Topic.RESULTS_TABLE), Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

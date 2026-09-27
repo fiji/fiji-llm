@@ -28,16 +28,11 @@
  */
 package sc.fiji.llm.guidance;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.scijava.plugin.AbstractSingletonService;
@@ -49,15 +44,6 @@ import org.scijava.service.Service;
 public class DefaultAgentGuidanceService extends
 	AbstractSingletonService<AgentGuide> implements AgentGuidanceService
 {
-	private List<String> availableTopics = Collections.emptyList();
-
-	@Override
-	public void initialize() {
-		final Set<String> topics = new TreeSet<>();
-		for (final AgentGuide guide : getInstances()) topics.addAll(guide.metadata().topics());
-		availableTopics = Collections.unmodifiableList(new ArrayList<>(topics));
-	}
-
 	@Override
 	public Class<AgentGuide> getPluginType() {
 		return AgentGuide.class;
@@ -67,20 +53,6 @@ public class DefaultAgentGuidanceService extends
 	public List<AgentGuideMetadata> listDocuments() {
 		return guidesById().values().stream().sorted(Comparator.comparing(guide -> guide
 			.metadata().id())).map(AgentGuide::metadata).collect(Collectors.toList());
-	}
-
-	@Override
-	public List<String> getAvailableTopics() {
-		return availableTopics;
-	}
-
-	@Override
-	public List<AgentGuideMetadata> search(final String topic) {
-		if (topic == null || topic.trim().isEmpty()) return Collections.emptyList();
-		final String normalizedTopic = topic.trim().toLowerCase(Locale.ROOT);
-		return guidesById().values().stream().filter(guide -> guide.metadata().topics()
-			.contains(normalizedTopic)).sorted(Comparator.comparing(guide -> guide.metadata()
-			.id())).map(AgentGuide::metadata).collect(Collectors.toList());
 	}
 
 	@Override

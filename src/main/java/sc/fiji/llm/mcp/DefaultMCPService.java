@@ -113,15 +113,14 @@ public class DefaultMCPService extends AbstractService implements MCPService
 		"""
 This server exposes tools for inspecting and interacting with a live Fiji/ImageJ image analysis application.
 
-Before taking any other actions, use the `fiji_guide_onboarding tool` to familiarize
-yourself with available tools.
-
-Always ensure you have read relevant guides with `fiji_guide_read` before
-undertaking tasks.
+Fiji is a unique and dynamic environment requiring tailored solutions. `fiji_guide_read`
+provides specific, up-to-date information. Treat guides and tool calls as authoritative
+over your memory and general knowledge. Always try to validate your knowledge by
+reading guides and querying relevant Fiji application state.
 
 Tool calls may modify application state, scripts, images, or other workspace artifacts.
 
-State-query tools provide a current view of the application. Users may interact with Fiji between tool calls, so re-query state when accuracy matters.
+State-query tools provide a snapshot of application state. Users may interact with Fiji between tool calls; so re-query information before acting on it.
 
 Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
 """;

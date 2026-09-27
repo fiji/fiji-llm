@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Information about the integrated chat functionality. */
 @Plugin(type = AgentGuide.class)
@@ -85,9 +82,11 @@ public class IntegratedChatGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public IntegratedChatGuide() {
-			super(ID, "Integrated Chat", AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,
+			super(ID, "Integrated Chat",
+				"Understand Fiji Chat's user-facing workflow, context attachments, providers, models, and conversations.",
+				AgentGuide.topics(Topic.APPLICATION, Topic.AI, Topic.LLM,
 				Topic.AGENT),
-			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
+				Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

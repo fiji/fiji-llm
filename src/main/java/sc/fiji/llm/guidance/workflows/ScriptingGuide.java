@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.workflows;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -170,10 +168,9 @@ public class ScriptingGuide extends AbstractAgentGuide {
 				ScriptingPythonGuide.ID).strip();
 
 	public ScriptingGuide() {
-		super(ID, "Writing and Running Scripts", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS),
-			Authority.PROJECT_AUTHORED, List.of(
-				ScriptingPythonGuide.ID, ScriptingJythonGuide.ID, ScriptingGroovyGuide.ID,
-				ScriptsAndMacrosGuide.ID));
+		super(ID, "Writing and Running Scripts",
+			"Write, edit, run, diagnose, and repair Fiji scripts with SciJava parameters and language-specific engines.",
+			AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS), Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

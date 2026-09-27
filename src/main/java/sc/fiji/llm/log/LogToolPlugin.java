@@ -41,12 +41,18 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.guidance.application.EnvironmentInspectionGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** AI tools for reading ImageJ and SciJava diagnostic logs. */
 @Plugin(type = AiToolPlugin.class)
 public class LogToolPlugin extends AbstractAiToolPlugin {
+
+	@Override
+	protected String[] recommendedGuideIds() {
+		return new String[] { EnvironmentInspectionGuide.ID };
+	}
 
 	@Parameter
 	private LogService logService;

@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Guidance for Fiji update sites. */
 @Plugin(type = AgentGuide.class)
@@ -94,9 +91,10 @@ public class UpdateSitesGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public UpdateSitesGuide() {
-		super(ID, "Update Sites", AgentGuide.topics(Topic.APPLICATION, Topic.UPDATE_SITES,
-			Topic.PLUGINS), Authority.PROJECT_AUTHORED, List.of(
-				OnboardingGuide.ID));
+		super(ID, "Update Sites",
+			"Manage Fiji update sites and understand safe extension and plugin distribution.",
+			AgentGuide.topics(Topic.APPLICATION, Topic.UPDATE_SITES, Topic.PLUGINS),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

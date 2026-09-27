@@ -28,15 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
-import sc.fiji.llm.guidance.data.ServicesAndContextGuide;
 
 /** Guidance for extending and contributing to Fiji-LLM. */
 @Plugin(type = AgentGuide.class)
@@ -88,10 +84,11 @@ public class ExtensionContributionGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public ExtensionContributionGuide() {
-		super(ID, "Fiji Extension and Contribution", AgentGuide.topics(
+		super(ID, "Fiji Extension and Contribution",
+			"Extend Fiji-LLM through its existing SciJava plugins, services, tools, and context mechanisms.",
+			AgentGuide.topics(
 			Topic.APPLICATION, Topic.DEVELOPMENT, Topic.EXTENSIONS, Topic.CONTRIBUTION, Topic.LLM),
-			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID, MCPServerGuide.ID,
-				IntegratedChatGuide.ID, ServicesAndContextGuide.ID));
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

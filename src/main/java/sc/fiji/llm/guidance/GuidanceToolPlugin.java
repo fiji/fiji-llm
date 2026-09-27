@@ -57,64 +57,41 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		return "Fiji Guidance";
 	}
 
-	@Tool(value = { "List the exact topic keywords available in the curated Fiji guidance catalog. Use this before fiji_guide_search" }, name = "fiji_guide_topics")
-	public String listTopics() {
+	@Tool(value = { "List IDs, titles, summaries, topics, and authority for all available guides" }, name = "fiji_guide_list")
+	public String list() {
 		try {
-			final JsonArray topics = new JsonArray();
-			for (final String topic : agentGuidanceService.getAvailableTopics()) topics.add(topic);
-			final JsonObject result = new JsonObject();
-			result.add("topics", topics);
-			result.addProperty("count", topics.size());
-			return result.toString();
-		}
-		catch (final RuntimeException e) {
-			return jsonError("Failed to run fiji_guide_topics: " + e.getMessage());
-		}
-	}
-
-	@Tool(value = { "Read the curated Fiji onboarding document before using other Fiji-specific tools; the result contains bounded Markdown content" }, name = "fiji_guide_onboarding")
-	public String readOnboarding() {
-		return read(OnboardingGuide.ID);
-	}
-
-	@Tool(value = { "Search curated Fiji guidance by one exact topic keyword. Use fiji_guide_topics first; results contain document metadata and IDs, not article content" }, name = "fiji_guide_search")
-	public String search(@P(name = "topic", value = "Topic keyword from fiji_guide_topics") final String topic) {
-		try {
-			final JsonArray documents = new JsonArray();
-			for (final AgentGuideMetadata document : agentGuidanceService.search(topic)) {
-				documents.add(metadataJson(document));
+			final JsonArray guides = new JsonArray();
+			for (final AgentGuideMetadata guide : agentGuidanceService.listDocuments()) {
+				guides.add(metadataJson(guide));
 			}
-
 			final JsonObject result = new JsonObject();
-			result.addProperty("topic", topic == null ? "" : topic.trim());
-			result.add("documents", documents);
-			result.addProperty("count", documents.size());
-
+			result.add("guides", guides);
+			result.addProperty("count", guides.size());
 			return result.toString();
 		}
 		catch (final RuntimeException e) {
-			return jsonError("Failed to run fiji_guide_search: " + e.getMessage());
+			return jsonError("Failed to run fiji_guide_list: " + e.getMessage());
 		}
 	}
 
-	@Tool(value = { "Read one curated Fiji guidance document by ID. Use fiji_guide_search to find the ID; the result contains metadata and bounded Markdown content" }, name = "fiji_guide_read")
-	public String read(@P(name = "id", value = "Document ID from fiji_guide_search") final String id) {
+	@Tool(value = { "Returns the contents of one specified guide." }, name = "fiji_guide_read")
+	public String read(@P(name = "id", value = "Guide ID") final String id) {
 		try {
 			final var document = agentGuidanceService.read(id);
 
-			if (document.isEmpty()) return jsonError("No guidance document found for ID: " + id,
-				"fiji_guide_search");
+			final AgentGuideMetadata metadata = agentGuidanceService.listDocuments().stream()
+				.filter(candidate -> candidate.id().equals(id == null ? "" : id.trim()))
+				.findFirst().orElse(null);
+			if (document.isEmpty() || metadata == null) return jsonError(
+				"No guide found for ID: " + id, "fiji_guide_list");
 
-			final AgentGuide guide = findGuide(id);
-			if (guide == null) return jsonError("No guidance document found for ID: " + id,
-				"fiji_guide_search");
-
-			final JsonObject result = metadataJson(guide.metadata());
+			final JsonObject result = metadataJson(metadata);
 			result.addProperty("content", document.get());
 			return result.toString();
 		}
 		catch (final RuntimeException e) {
-			return jsonError("Failed to run fiji_guide_read: " + e.getMessage());
+			return jsonError("Failed to run fiji_guide_read: " + e.getMessage(),
+				"fiji_guide_list");
 		}
 	}
 
@@ -122,22 +99,12 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		final JsonObject result = new JsonObject();
 		result.addProperty("id", document.id());
 		result.addProperty("title", document.title());
+		result.addProperty("summary", document.summary());
 		final JsonArray topics = new JsonArray();
 		for (final String topic : document.topics()) topics.add(topic);
 		result.add("topics", topics);
 		result.addProperty("authority", document.authority().name().toLowerCase(Locale.ROOT)
 			.replace('_', '-'));
-		final JsonArray relatedDocuments = new JsonArray();
-		for (final String relatedDocument : document.relatedDocuments()) relatedDocuments.add(
-			relatedDocument);
-		result.add("related_documents", relatedDocuments);
 		return result;
-	}
-
-	private AgentGuide findGuide(final String id) {
-		if (id == null) return null;
-		final String normalizedId = id.trim();
-		return agentGuidanceService.getInstances().stream().filter(guide -> guide.metadata().id()
-			.equals(normalizedId)).findFirst().orElse(null);
 	}
 }

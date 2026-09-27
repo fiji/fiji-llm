@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.workflows;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
 import sc.fiji.llm.guidance.data.DataTypesGuide;
 
 /** Guidance for choosing between scripts and macros in Fiji. */
@@ -93,10 +90,10 @@ public class ScriptsAndMacrosGuide extends AbstractAgentGuide {
 				RunningCommandsGuide.ID, DataTypesGuide.ID).strip();
 
 	public ScriptsAndMacrosGuide() {
-		super(ID, "Scripts and Macros in Fiji", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
-			Topic.MACROS),
-			Authority.PROJECT_AUTHORED, List.of(RunningCommandsGuide.ID, DataTypesGuide.ID,
-				ScriptingGuide.ID, CreatingMacrosGuide.ID, OnboardingGuide.ID));
+		super(ID, "Scripts and Macros in Fiji",
+			"Choose between Fiji scripts and ImageJ macros and understand their shared execution workflow.",
+			AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS, Topic.MACROS),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

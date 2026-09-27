@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.application;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.OnboardingGuide;
 
 /** Guidance for Fiji support and community resources. */
 @Plugin(type = AgentGuide.class)
@@ -47,8 +44,7 @@ public class SupportAndCommunityGuide extends AbstractAgentGuide {
 			# Fiji Support and Community
 
 			Use this guide when a user needs help, documentation, or a place to report a
-			reproducible problem. For the general agent workflow and available Fiji tools,
-			first read the guide with Guide ID `%s`.
+			reproducible problem.
 
 			## Choose a channel
 
@@ -69,12 +65,14 @@ public class SupportAndCommunityGuide extends AbstractAgentGuide {
 			and never include API keys, passwords, private images, or other sensitive data.
 			Treat official documentation, community advice, and issue reports as different
 			kinds of evidence.
-			""".formatted(OnboardingGuide.ID).strip();
+			""".strip();
 
 	public SupportAndCommunityGuide() {
-		super(ID, "Fiji Support and Community", AgentGuide.topics(Topic.APPLICATION,
+		super(ID, "Fiji Support and Community",
+			"Find official documentation, community help, issue trackers, and ways to report reproducible problems.",
+			AgentGuide.topics(Topic.APPLICATION,
 			Topic.SUPPORT, Topic.COMMUNITY, Topic.DOCUMENTATION, Topic.ISSUES),
-			Authority.PROJECT_AUTHORED, List.of(OnboardingGuide.ID));
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

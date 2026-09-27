@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.workflows.scriptlanguages;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 
 /** Guidance for Python scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
@@ -115,9 +112,10 @@ public class ScriptingPythonGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public ScriptingPythonGuide() {
-		super(ID, "Python Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
-			Topic.PYTHON), Authority.PROJECT_AUTHORED, List.of(
-				ScriptingGuide.ID));
+		super(ID, "Python Scripting",
+			"Use Python 3 mode, the ij gateway, native packages, and Java and Python interop in Fiji.",
+			AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS, Topic.PYTHON),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

@@ -97,6 +97,25 @@ public class ScriptExecutionServiceTest {
 		assertEquals("Macro Error: Number expected", json.get("error_dialog")
 			.getAsString());
 		assertFalse(json.has("primary_error"));
+		assertEquals("fiji_guide_read", json.getAsJsonArray("guide_recommendations")
+			.get(0).getAsJsonObject().get("tool").getAsString());
+		assertEquals("scripting", json.getAsJsonArray("guide_recommendations").get(0)
+			.getAsJsonObject().getAsJsonObject("arguments").get("id").getAsString());
+	}
+
+	@Test
+	public void testMacroFailureRecommendsMacroGuide() throws Exception {
+		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
+			ScriptExecutionService.Status.FINISHED_WITH_ERRORS, false, null, null,
+			ScriptExecutionService.RunKind.MACRO);
+		final JsonObject recommendation = result.toJson().getAsJsonArray(
+			"guide_recommendations").get(0).getAsJsonObject();
+
+		assertEquals("fiji_guide_read", recommendation.get("tool").getAsString());
+		assertEquals("creating-macros", recommendation.getAsJsonObject("arguments")
+			.get("id").getAsString());
+		assertFalse(recommendation.has("guide_id"));
+		assertFalse(recommendation.has("reason"));
 	}
 
 	@Test
@@ -113,13 +132,24 @@ public class ScriptExecutionServiceTest {
 		final String primaryError,
 		final String errorDialog) throws Exception
 	{
+		return createExecutionResult(status, waitExpired, primaryError, errorDialog,
+			ScriptExecutionService.RunKind.SCRIPT);
+	}
+
+	private static ScriptExecutionService.ExecutionResult createExecutionResult(
+		final ScriptExecutionService.Status status,
+		final boolean waitExpired,
+		final String primaryError,
+		final String errorDialog,
+		final ScriptExecutionService.RunKind kind) throws Exception
+	{
 		final Constructor<?> executionCtor = Class.forName(
 			"sc.fiji.llm.script.DefaultScriptExecutionService$Execution")
 			.getDeclaredConstructor(String.class, ScriptID.class,
 				ScriptExecutionService.RunKind.class);
 		executionCtor.setAccessible(true);
 		final Object execution = executionCtor.newInstance("run-id", new ScriptID(0, 0),
-			ScriptExecutionService.RunKind.SCRIPT);
+			kind);
 
 		final Field statusField = execution.getClass().getDeclaredField("status");
 		statusField.setAccessible(true);

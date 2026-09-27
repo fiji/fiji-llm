@@ -28,14 +28,11 @@
  */
 package sc.fiji.llm.guidance.workflows.scriptlanguages;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
 import sc.fiji.llm.guidance.AgentGuide;
 import sc.fiji.llm.guidance.AgentGuideMetadata.Authority;
-import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 
 /** Guidance for Jython scripting in Fiji. */
 @Plugin(type = AgentGuide.class)
@@ -95,9 +92,10 @@ public class ScriptingJythonGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public ScriptingJythonGuide() {
-		super(ID, "Jython Scripting", AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS,
-			Topic.PYTHON), Authority.PROJECT_AUTHORED, List.of(
-				ScriptingGuide.ID));
+		super(ID, "Jython Scripting",
+			"Use Jython 2.7 syntax and Java and Fiji APIs in the Fiji Script Editor.",
+			AgentGuide.topics(Topic.WORKFLOWS, Topic.SCRIPTS, Topic.PYTHON),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

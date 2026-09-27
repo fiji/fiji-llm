@@ -68,7 +68,7 @@ public class DefaultGuidanceServiceTest {
 
 
 
-		assertEquals(20, documents.size());
+		assertEquals(19, documents.size());
 
 		assertTrue(documents.stream().anyMatch(document -> "creating-macros".equals(
 
@@ -79,6 +79,7 @@ public class DefaultGuidanceServiceTest {
 		assertTrue(documents.stream().anyMatch(document -> "mcp-server".equals(document.id())));
 		assertTrue(documents.stream().anyMatch(document -> "extension-contribution".equals(
 			document.id())));
+		assertTrue(documents.stream().allMatch(document -> !document.summary().isBlank()));
 
 	}
 
@@ -88,64 +89,6 @@ public class DefaultGuidanceServiceTest {
 	public void convertsTopicsToCanonicalKeywords() {
 		assertEquals(List.of("data-types", "print-stream"), AgentGuide.topics(
 			AgentGuide.Topic.DATA_TYPES, AgentGuide.Topic.PRINT_STREAM));
-	}
-
-	@Test
-
-	public void listsCanonicalUnmodifiableCategories() {
-
-		final AgentGuidanceService service = service();
-
-
-
-		final List<String> categories = service.getAvailableTopics();
-
-
-
-		assertTrue(categories.contains("macros"));
-
-		assertTrue(categories.contains("onboarding"));
-
-		assertTrue(categories.contains("workflows"));
-
-		assertEquals("agent", categories.get(0));
-
-		assertEquals("workflows", categories.get(categories.size() - 1));
-
-		try {
-
-			categories.add("new-category");
-
-			throw new AssertionError("Categories should be unmodifiable");
-
-		}
-
-		catch (final UnsupportedOperationException expected) {}
-
-	}
-
-
-
-	@Test
-
-	public void searchesOneTopic() {
-
-		final AgentGuidanceService service = service();
-
-
-
-		final List<AgentGuideMetadata> results = service.search("MACROS");
-
-		assertEquals(2, results.size());
-		assertTrue(results.stream().anyMatch(document -> "creating-macros".equals(document.id())));
-		assertTrue(results.stream().anyMatch(document -> "scripts-and-macros".equals(document.id())));
-	}
-
-	@Test
-	public void blankTopicReturnsNoResults() {
-		final AgentGuidanceService service = service();
-
-		assertTrue(service.search("").isEmpty());
 	}
 
 	@Test

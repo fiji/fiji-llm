@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.workflows;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -86,9 +84,10 @@ public class CreatingMacrosGuide extends AbstractAgentGuide {
 			""".strip();
 
 	public CreatingMacrosGuide() {
-		super(ID, "Creating Macros", AgentGuide.topics(Topic.WORKFLOWS, Topic.MACROS,
-			Topic.COMMANDS, Topic.SCRIPTS), Authority.PROJECT_AUTHORED, List.of(
-				RunningCommandsGuide.ID, ScriptingGuide.ID, ScriptsAndMacrosGuide.ID));
+		super(ID, "Creating Macros",
+			"Create, record, edit, run, and diagnose ImageJ macros in Fiji.",
+			AgentGuide.topics(Topic.WORKFLOWS, Topic.MACROS, Topic.COMMANDS, Topic.SCRIPTS),
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

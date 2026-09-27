@@ -481,6 +481,12 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				if (environmentJson.size() > 0) result.add("environment_impact", environmentJson);
 			}
 			addTextProperty(result, "diagnostic", execution.diagnostic);
+			if (execution.status == Status.FINISHED_WITH_ERRORS || execution.status ==
+				Status.INFRASTRUCTURE_ERROR)
+			{
+				addGuideRecommendation(result, execution.kind == RunKind.MACRO ?
+					"creating-macros" : "scripting");
+			}
 			if (execution.status == Status.BLOCKED_BY_DIALOG) result.addProperty(
 				"recommended_action",
 				"Inspect the dialog with fiji_ui_dialogs_read, then use " +
@@ -507,6 +513,19 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			final String value)
 		{
 			if (value != null && !value.isBlank()) result.addProperty(name, value);
+		}
+
+		private static void addGuideRecommendation(final JsonObject result,
+			final String guideId)
+		{
+			final JsonArray recommendations = new JsonArray();
+			final JsonObject recommendation = new JsonObject();
+			recommendation.addProperty("tool", "fiji_guide_read");
+			final JsonObject arguments = new JsonObject();
+			arguments.addProperty("id", guideId);
+			recommendation.add("arguments", arguments);
+			recommendations.add(recommendation);
+			result.add("guide_recommendations", recommendations);
 		}
 	}
 

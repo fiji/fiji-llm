@@ -62,28 +62,18 @@ public class GuidanceToolPluginTest {
 	public void exposesGuidanceCatalogAndDocuments() throws Exception {
 		final GuidanceToolPlugin plugin = plugin();
 
-		final JsonObject topics = JsonParser.parseString(plugin.listTopics()).getAsJsonObject();
-		assertTrue(topics.getAsJsonArray("topics").contains(JsonParser.parseString(
-			"\"macros\"")));
-
-		final JsonObject search = JsonParser.parseString(plugin.search("MACROS"))
+		final JsonObject list = JsonParser.parseString(plugin.list()).getAsJsonObject();
+		assertTrue(list.get("count").getAsInt() > 0);
+		final JsonObject metadata = list.getAsJsonArray("documents").get(0)
 			.getAsJsonObject();
-		assertEquals(2, search.get("count").getAsInt());
-		final JsonObject metadata = search.getAsJsonArray("documents").get(0)
-			.getAsJsonObject();
-		assertEquals("creating-macros", metadata.get("id").getAsString());
+		assertFalse(metadata.get("summary").getAsString().isEmpty());
 		assertFalse(metadata.has("content"));
 
 		final JsonObject document = JsonParser.parseString(plugin.read("scripts-and-macros"))
 			.getAsJsonObject();
 		assertEquals("scripts-and-macros", document.get("id").getAsString());
+		assertFalse(document.get("summary").getAsString().isEmpty());
 		assertFalse(document.get("content").getAsString().isEmpty());
-
-		final JsonObject onboarding = JsonParser.parseString(plugin.readOnboarding())
-			.getAsJsonObject();
-		assertEquals("onboarding", onboarding.get("id").getAsString());
-		assertTrue(onboarding.get("content").getAsString().contains(
-			"# Fiji Onboarding"));
 	}
 
 	@Test
@@ -92,7 +82,7 @@ public class GuidanceToolPluginTest {
 			.getAsJsonObject();
 
 		assertTrue(result.get("error").getAsString().contains("No guidance document"));
-		assertEquals("fiji_guide_search", result.get("recommended_tool").getAsString());
+		assertEquals("fiji_guide_list", result.get("recommended_tool").getAsString());
 	}
 
 	private GuidanceToolPlugin plugin() throws Exception {

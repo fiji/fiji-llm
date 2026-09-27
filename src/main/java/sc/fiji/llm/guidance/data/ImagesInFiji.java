@@ -28,8 +28,6 @@
  */
 package sc.fiji.llm.guidance.data;
 
-import java.util.List;
-
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.guidance.AbstractAgentGuide;
@@ -112,9 +110,11 @@ public class ImagesInFiji extends AbstractAgentGuide {
 			""".strip();
 
 	public ImagesInFiji() {
-		super(ID, "Image Data in Fiji", AgentGuide.topics(Topic.DATA, Topic.IMAGES,
+		super(ID, "Image Data in Fiji",
+			"Inspect and reason about open image data, displays, datasets, ImagePlus, and image metadata.",
+			AgentGuide.topics(Topic.DATA, Topic.IMAGES,
 			Topic.IMAGEPLUS, Topic.DATASET, Topic.IMGPLUS),
-			Authority.PROJECT_AUTHORED, List.of(DataTypesGuide.ID));
+			Authority.PROJECT_AUTHORED);
 	}
 
 	@Override

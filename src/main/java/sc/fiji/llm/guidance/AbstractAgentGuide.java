@@ -36,9 +36,9 @@ public abstract class AbstractAgentGuide implements AgentGuide {
 	private final AgentGuideMetadata metadata;
 
 	protected AbstractAgentGuide(final String id, final String title,
-		final List<String> topics, final AgentGuideMetadata.Authority authority,
-		final List<String> relatedDocuments) {
-		this.metadata = new AgentGuideMetadata(id, title, topics, authority, relatedDocuments);
+		final String summary, final List<String> topics,
+		final AgentGuideMetadata.Authority authority) {
+		this.metadata = new AgentGuideMetadata(id, title, summary, topics, authority);
 	}
 
 	@Override
