@@ -119,6 +119,7 @@ public class FijiAssistantChat {
 
 	public static final float CHAT_FONT_SIZE = 16f;
 	private static final int INPUT_PANEL_PADDING = 8;
+	private static final int INITIAL_CHAT_WIDTH = 800;
 	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 72;
 	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
@@ -439,7 +440,7 @@ Only use snapshot items relevant to the user's request.
 		chatPanel.add(bottomSpacer, "growx, height 8!");
 
 		chatScrollPane = new JScrollPane(chatPanel);
-		chatScrollPane.setPreferredSize(new Dimension(600, 400));
+		chatScrollPane.setPreferredSize(new Dimension(INITIAL_CHAT_WIDTH, 400));
 		chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
 		// Context tags panel (shows active context items as removable tags)
@@ -498,7 +499,7 @@ Only use snapshot items relevant to the user's request.
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		contextTagsScrollPane.setHorizontalScrollBarPolicy(
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		contextTagsScrollPane.setPreferredSize(new Dimension(600, 36));
+		contextTagsScrollPane.setPreferredSize(new Dimension(INITIAL_CHAT_WIDTH, 36));
 		contextTagsScrollPane.setMinimumSize(new Dimension(36, 36));
 		contextTagsScrollPane.getVerticalScrollBar().setUnitIncrement(5);
 
