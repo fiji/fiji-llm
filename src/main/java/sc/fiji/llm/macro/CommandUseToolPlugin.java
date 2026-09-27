@@ -56,8 +56,8 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
-import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService;
-import sc.fiji.llm.execution.ExecutionEnvironmentSnapshotService.PixelChangeTracking;
+import sc.fiji.llm.execution.EnvironmentSnapshotService;
+import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
@@ -81,7 +81,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 	private PluginService pluginService;
 
 	@Parameter
-	private ExecutionEnvironmentSnapshotService environmentSnapshotService;
+	private EnvironmentSnapshotService environmentSnapshotService;
 
 	public CommandUseToolPlugin() {
 		super(CommandUseToolPlugin.class);
@@ -100,7 +100,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 	@Tool(value = { "Execute a command using its full menu path. This tool does not select a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and produced log output. Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
 	public String runCommand(@P(name = "menu_path", value = "Full menu path from fiji_command_search") String menuPath) {
-		ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = null;
+		EnvironmentSnapshotService.EnvironmentCapture capture = null;
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
 				return jsonError("Menu path cannot be empty");
@@ -155,7 +155,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	private String commandError(final String menuPath,
-		final ExecutionEnvironmentSnapshotService.EnvironmentImpact impact,
+		final EnvironmentSnapshotService.EnvironmentImpact impact,
 		final String diagnostic)
 	{
 		final JsonObject command = new JsonObject();

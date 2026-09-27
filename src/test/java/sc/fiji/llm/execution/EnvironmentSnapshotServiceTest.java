@@ -55,15 +55,15 @@ import net.imglib2.Cursor;
 import net.imglib2.type.numeric.RealType;
 import sc.fiji.llm.Setup;
 
-public class ExecutionEnvironmentSnapshotServiceTest {
+public class EnvironmentSnapshotServiceTest {
 
 	private Context context;
-	private ExecutionEnvironmentSnapshotService snapshotService;
+	private EnvironmentSnapshotService snapshotService;
 
 	@Before
 	public void setUp() {
 		context = Setup.context();
-		snapshotService = context.getService(ExecutionEnvironmentSnapshotService.class);
+		snapshotService = context.getService(EnvironmentSnapshotService.class);
 		ResultsTable.getResultsTable().reset();
 	}
 
@@ -97,7 +97,7 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 	public void testCaptureReportsResultsTableAndSciJavaChanges() {
 		final LogService logService = context.getService(LogService.class);
 		final ConsoleService consoleService = context.getService(ConsoleService.class);
-		final ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
 			.capture();
 		try {
 			logService.info("environment snapshot test message");
@@ -133,8 +133,8 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 		final Dataset dataset = datasetService.create(new long[] { 2, 2 }, "pixel test",
 			new AxisType[] { Axes.X, Axes.Y }, 8, false, false);
 		final ImageDisplay display = (ImageDisplay) displayService.createDisplay(dataset);
-		final ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
-			.capture(ExecutionEnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
+		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
 		try {
 			final Cursor<? extends RealType<?>> cursor = dataset.cursor();
 			while (cursor.hasNext()) cursor.next().setReal(255);
@@ -169,8 +169,8 @@ public class ExecutionEnvironmentSnapshotServiceTest {
 		final Dataset dataset = datasetService.create(new long[] { 2, 2 }, "cell test",
 			new AxisType[] { Axes.X, Axes.Y }, 8, false, false, true);
 		final ImageDisplay display = (ImageDisplay) displayService.createDisplay(dataset);
-		final ExecutionEnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
-			.capture(ExecutionEnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
+		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
 		try {
 			final JsonObject environment = capture.finish().toJson();
 			final JsonObject changes = environment.getAsJsonObject("changes");

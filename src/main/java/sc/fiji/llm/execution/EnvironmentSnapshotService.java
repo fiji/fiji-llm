@@ -26,52 +26,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package sc.fiji.llm.script;
+package sc.fiji.llm.execution;
+
+import java.util.List;
 
 import com.google.gson.JsonObject;
 
 import net.imagej.ImageJService;
+import sc.fiji.llm.ui.AWTDialogUtils;
 
-/** Service for running scripts through the SciJava Script Editor. */
-public interface ScriptExecutionService extends ImageJService {
+/** Captures lightweight before/after state around an application operation. */
+public interface EnvironmentSnapshotService extends ImageJService {
 
-	long DEFAULT_TIMEOUT_MS = 30_000;
-
-	enum RunKind {
-		SCRIPT, MACRO
+	enum PixelChangeTracking {
+		NONE,
+		FINAL_SHA256
 	}
 
-	enum Status {
-		RUNNING("running"),
-		SUCCESS("success"),
-		FINISHED_WITH_ERRORS("finished_with_errors"),
-		BLOCKED_BY_DIALOG("blocked_by_dialog"),
-		TIMED_OUT("timed_out"),
-		INFRASTRUCTURE_ERROR("infrastructure_error");
+	/** Starts a capture without changing Fiji state. */
+	EnvironmentCapture capture();
 
-		private final String value;
+	/** Starts a capture with optional final pixel-content comparison. */
+	EnvironmentCapture capture(PixelChangeTracking pixelChangeTracking);
 
-		Status(final String value) {
-			this.value = value;
-		}
+	interface EnvironmentCapture extends AutoCloseable {
+
+		/** Returns the current impact without stopping log capture. */
+		EnvironmentImpact current();
+
+		/** Returns the final impact and stops SciJava log capture. */
+		EnvironmentImpact finish();
 
 		@Override
-		public String toString() {
-			return value;
-		}
+		void close();
 	}
 
-	/** Starts a run and waits for completion or, optionally, a blocking dialog. */
-	ExecutionResult run(ScriptID scriptID, RunKind kind, boolean returnWhenBlocked);
+	interface EnvironmentImpact {
 
-	/** Returns the current state of a previously started run. */
-	ExecutionResult status(String runID, RunKind expectedKind);
+		List<AWTDialogUtils.DialogInfo> getNewModalDialogs();
 
-	static boolean isMacroScript(final String scriptName) {
-		return scriptName != null && scriptName.toLowerCase().endsWith(".ijm");
-	}
+		String getImageJLog();
 
-	interface ExecutionResult {
+		String getSciJavaLog();
+
+		String getConsoleStdout();
+
+		String getConsoleStderr();
 
 		JsonObject toJson();
 	}

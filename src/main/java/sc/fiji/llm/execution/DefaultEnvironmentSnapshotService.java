@@ -53,7 +53,6 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
 import net.imagej.Dataset;
-import net.imagej.ImageJService;
 import net.imagej.ImgPlus;
 import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
@@ -75,18 +74,13 @@ import sc.fiji.llm.ui.AWTDialogUtils;
 
 /** Captures lightweight before/after state around an application operation. */
 @Plugin(type = Service.class, priority = Priority.HIGH)
-public final class ExecutionEnvironmentSnapshotService extends AbstractService
-	implements ImageJService
+public final class DefaultEnvironmentSnapshotService extends AbstractService
+	implements EnvironmentSnapshotService
 {
 
 	private static final long MAX_BULK_HASH_BYTES = 128L * 1024 * 1024;
 	private static final long MAX_CURSOR_HASH_PIXELS = 1_000_000;
 	private static final String PIXEL_HASH_ALGORITHM = "SHA-256";
-
-	public enum PixelChangeTracking {
-		NONE,
-		FINAL_SHA256
-	}
 
 	private enum PixelSnapshotMode {
 		NOT_REQUESTED("not_requested", PixelHashStatus.NOT_REQUESTED),
@@ -137,11 +131,13 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 	private ImageJ1HelperService imageJ1HelperService;
 
 	/** Starts a capture without changing Fiji state. */
+	@Override
 	public EnvironmentCapture capture() {
 		return capture(PixelChangeTracking.NONE);
 	}
 
 	/** Starts a capture with optional final pixel-content comparison. */
+	@Override
 	public EnvironmentCapture capture(final PixelChangeTracking pixelChangeTracking) {
 		Objects.requireNonNull(pixelChangeTracking, "pixelChangeTracking");
 		final PixelSnapshotMode snapshotMode = pixelChangeTracking ==
@@ -446,7 +442,9 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			.getColumnHeadings());
 	}
 
-	public final class EnvironmentCapture implements AutoCloseable {
+	public final class EnvironmentCapture implements
+		EnvironmentSnapshotService.EnvironmentCapture
+	{
 
 		private final EnvironmentSnapshot before;
 		private final PixelChangeTracking pixelChangeTracking;
@@ -463,6 +461,7 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 		}
 
 		/** Returns the current impact without stopping log capture. */
+		@Override
 		public synchronized EnvironmentImpact current() {
 			final SciJavaLogUtils.LogMessages logs = scijavaCapture.getLogs();
 			final PixelSnapshotMode mode = pixelChangeTracking ==
@@ -472,6 +471,7 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 		}
 
 		/** Returns the final impact and stops SciJava log capture. */
+		@Override
 		public synchronized EnvironmentImpact finish() {
 			try {
 				final SciJavaLogUtils.LogMessages logs = scijavaCapture.getLogs();
@@ -541,7 +541,9 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 		}
 	}
 
-	public static final class EnvironmentImpact {
+	public static final class EnvironmentImpact implements
+		EnvironmentSnapshotService.EnvironmentImpact
+	{
 
 		private final EnvironmentSnapshot before;
 		private final EnvironmentSnapshot after;
@@ -560,6 +562,7 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			this.consoleStderr = consoleStderr == null ? "" : consoleStderr;
 		}
 
+		@Override
 		public List<AWTDialogUtils.DialogInfo> getNewModalDialogs() {
 			final List<AWTDialogUtils.DialogInfo> result = new ArrayList<>();
 			for (final AWTDialogUtils.DialogInfo dialog : after.dialogs) {
@@ -569,22 +572,27 @@ public final class ExecutionEnvironmentSnapshotService extends AbstractService
 			return result;
 		}
 
+		@Override
 		public String getImageJLog() {
 			return after.imageJLog.deltaFrom(before.imageJLog).getText();
 		}
 
+		@Override
 		public String getSciJavaLog() {
 			return scijavaLog;
 		}
 
+		@Override
 		public String getConsoleStdout() {
 			return consoleStdout;
 		}
 
+		@Override
 		public String getConsoleStderr() {
 			return consoleStderr;
 		}
 
+		@Override
 		public JsonObject toJson() {
 			final JsonObject result = new JsonObject();
 			result.add("before", before.toJson());

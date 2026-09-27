@@ -48,34 +48,34 @@ public class ScriptExecutionServiceTest {
 	@Test
 	public void testFindTerminationFailureFromSciJavaLog() {
 		assertEquals("[ERROR] UnsupportedOperationException: Thread.stop",
-			ScriptExecutionService.findTerminationFailure(
+			DefaultScriptExecutionService.findTerminationFailure(
 				"[ERROR] UnsupportedOperationException: Thread.stop"));
 		assertEquals("Thread stop failure",
-			ScriptExecutionService.findTerminationFailure("Thread stop failure"));
-		assertEquals(null, ScriptExecutionService.findTerminationFailure(
+			DefaultScriptExecutionService.findTerminationFailure("Thread stop failure"));
+		assertEquals(null, DefaultScriptExecutionService.findTerminationFailure(
 			"[INFO] Script completed"));
 	}
 
 	@Test
 	public void testStructuredErrorControlsFinalStatusAfterDialogDismissal() {
 		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
-			ScriptExecutionService.classifyFinishedStatus("", "", "Type mismatch", null));
+			DefaultScriptExecutionService.classifyFinishedStatus("", "", "Type mismatch", null));
 		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
-			ScriptExecutionService.classifyFinishedStatus("", "", null,
+			DefaultScriptExecutionService.classifyFinishedStatus("", "", null,
 				"Macro Error: Number expected"));
 		assertEquals(ScriptExecutionService.Status.SUCCESS,
-			ScriptExecutionService.classifyFinishedStatus("", "", null, null));
+			DefaultScriptExecutionService.classifyFinishedStatus("", "", null, null));
 	}
 
 	@Test
 	public void testOnlyKnownMacroErrorDialogsAreClassifiedAsErrors() {
-		assertTrue(ScriptExecutionService.isMacroErrorDialog(
+		assertTrue(DefaultScriptExecutionService.isMacroErrorDialog(
 			"ij.gui.GenericDialog", "Macro Error"));
-		assertTrue(ScriptExecutionService.isMacroErrorDialog(
+		assertTrue(DefaultScriptExecutionService.isMacroErrorDialog(
 			"ij.gui.GenericDialog", "No Image"));
-		assertFalse(ScriptExecutionService.isMacroErrorDialog(
+		assertFalse(DefaultScriptExecutionService.isMacroErrorDialog(
 			"ij.gui.MessageDialog", "Message"));
-		assertFalse(ScriptExecutionService.isMacroErrorDialog(
+		assertFalse(DefaultScriptExecutionService.isMacroErrorDialog(
 			"ij.gui.GenericDialog", "Message"));
 	}
 
@@ -123,7 +123,7 @@ public class ScriptExecutionServiceTest {
 		final String errorDialog) throws Exception
 	{
 		final Constructor<?> executionCtor = Class.forName(
-			"sc.fiji.llm.script.ScriptExecutionService$Execution")
+			"sc.fiji.llm.script.DefaultScriptExecutionService$Execution")
 			.getDeclaredConstructor(String.class, ScriptID.class,
 				ScriptExecutionService.RunKind.class);
 		executionCtor.setAccessible(true);
