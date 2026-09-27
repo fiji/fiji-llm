@@ -231,6 +231,7 @@ public class Manage_MCP extends DynamicCommand {
 	}
 
 	private void copyToClipboard(final String value, final String description) {
+		// TODO replace with SystemClipboard. See https://github.com/scijava/scijava-common/issues/492
 		try {
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
 				new StringSelection(value), null);
