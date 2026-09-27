@@ -218,7 +218,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			stopServer.set(true);
 			final Thread currentServerThread = serverThread;
 			if (currentServerThread != null && currentServerThread.isAlive()) {
-				logService.info("Shutting down MCP server thread");
+				logService.debug("Shutting down MCP server thread");
 				currentServerThread.join(SHUTDOWN_TIMEOUT.toMillis());
 				if (currentServerThread.isAlive()) {
 					logService.warn("MCP server thread did not shut down gracefully");
@@ -233,7 +233,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			toolCount = 0;
 			toolNames = List.of();
 			jettyServer = null;
-			logService.info("MCPService disposed successfully");
+			logService.debug("MCPService disposed successfully");
 		}
 	}
 
@@ -246,7 +246,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 
 		try {
 			final int port = getServerPort();
-			logService.info("Initializing MCP server on localhost:" + port);
+			logService.debug("Initializing MCP server on localhost:" + port);
 
 			// Initialize the server ready signal
 			serverReady = new CountDownLatch(1);
@@ -281,10 +281,8 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 					"Fiji MCP server failed to start for unknown reasons");
 			}
 
-			logService.debug("Fiji MCP server is ready");
-
 			initialized.set(true);
-			logService.info("Fiji MCP server initialized successfully");
+			logService.debug("Fiji MCP server initialized successfully");
 		} catch (final Exception e) {
 			initialized.set(false);
 			logService.error("Failed to initialize Fiji MCP server", e);
@@ -384,7 +382,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 
 		try {
 			jettyServer.start();
-			logService.info("Jetty server started on http://localhost:" + port);
+			logService.debug("Jetty server started on http://localhost:" + port);
 
 			// Register each tool from AiToolService with the MCP server
 			for (final Map.Entry<ToolSpecification, ToolExecutor> entry : tools
@@ -401,7 +399,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			toolCount = tools.size();
 			toolNames = tools.keySet().stream().map(ToolSpecification::name).sorted()
 				.toList();
-			logService.info("MCP server started with " + tools.size() + " tools");
+			logService.debug("MCP server started with " + tools.size() + " tools");
 
 			// Signal that the server is ready for client connections
 			if (serverReady != null) {
