@@ -205,8 +205,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 
 	private JsonObject dialogJson(final AWTDialogUtils.DialogInfo dialog) {
 		final JsonObject result = new JsonObject();
-		result.addProperty("title", dialog.getTitle());
-		result.addProperty("class_name", dialog.getClassName());
+		result.addProperty("dialog_title", dialog.getTitle());
+		result.addProperty("dialog_class_name", dialog.getClassName());
 		result.addProperty("visible", dialog.isVisible());
 		result.addProperty("active", dialog.isActive());
 		result.addProperty("modal", dialog.isModal());
@@ -220,7 +220,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		final JsonArray buttons = new JsonArray();
 		for (final AWTDialogUtils.ButtonInfo button : dialog.getButtons()) {
 			final JsonObject buttonJson = new JsonObject();
-			buttonJson.addProperty("text", button.getText());
+			buttonJson.addProperty("button_text", button.getText());
 			buttonJson.addProperty("action_command", button.getActionCommand());
 			buttonJson.addProperty("enabled", button.isEnabled());
 			buttonJson.addProperty("visible", button.isVisible());
@@ -232,8 +232,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 
 	private JsonObject windowJson(final AWTDialogUtils.WindowInfo window) {
 		final JsonObject result = new JsonObject();
-		result.addProperty("title", window.getTitle());
-		result.addProperty("class_name", window.getClassName());
+		result.addProperty("window_title", window.getTitle());
+		result.addProperty("window_class_name", window.getClassName());
 		result.addProperty("type", window.getType());
 		result.addProperty("visible", window.isVisible());
 		result.addProperty("showing", window.isShowing());
@@ -249,7 +249,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 
 	private JsonObject controlJson(final AWTDialogUtils.ControlInfo control) {
 		final JsonObject result = new JsonObject();
-		result.addProperty("path", control.getPath());
+		result.addProperty("component_path", control.getPath());
 		result.addProperty("role", control.getRole());
 		result.addProperty("class_name", control.getClassName());
 		if (control.getText() != null) result.addProperty("text", control.getText());

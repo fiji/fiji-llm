@@ -126,7 +126,7 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 			final JsonObject recommendation = new JsonObject();
 			recommendation.addProperty("tool", "fiji_guide_read");
 			final JsonObject arguments = new JsonObject();
-			arguments.addProperty("id", guideId.trim());
+			arguments.addProperty("guide_id", guideId.trim());
 			recommendation.add("arguments", arguments);
 			recommendations.add(recommendation);
 		}

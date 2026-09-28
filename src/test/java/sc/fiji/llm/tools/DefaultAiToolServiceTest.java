@@ -140,14 +140,14 @@ public class DefaultAiToolServiceTest {
 		final JsonObject withGuides = JsonParser.parseString(plugin.jsonError("failure",
 			ErrorOptions.withGuides("scenario-guide"))).getAsJsonObject();
 		assertEquals("scenario-guide", withGuides.getAsJsonArray("guide_recommendations")
-			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("id")
+			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("guide_id")
 			.getAsString());
 
 		final JsonObject withBoth = JsonParser.parseString(plugin.jsonError("failure",
 			ErrorOptions.with("fiji_next", "scenario-guide"))).getAsJsonObject();
 		assertEquals("fiji_next", withBoth.get("recommended_tool").getAsString());
 		assertEquals("scenario-guide", withBoth.getAsJsonArray("guide_recommendations")
-			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("id")
+			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("guide_id")
 			.getAsString());
 	}
 

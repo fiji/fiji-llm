@@ -128,7 +128,7 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		final Object roiObject) throws ReflectiveOperationException
 	{
 		final JsonObject roi = new JsonObject();
-		roi.addProperty("index", index);
+		roi.addProperty("roi_index", index);
 		roi.addProperty("name", safeString(invoke(manager, "getName", index)));
 		roi.addProperty("selected", isSelected(manager, index));
 		roi.addProperty("type", roiObject == null ? "" : safeString(invoke(roiObject,

@@ -97,7 +97,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 
 	private JsonObject metadataJson(final AgentGuideMetadata document) {
 		final JsonObject result = new JsonObject();
-		result.addProperty("id", document.id());
+		result.addProperty("guide_id", document.id());
 		result.addProperty("title", document.title());
 		result.addProperty("summary", document.summary());
 		final JsonArray topics = new JsonArray();

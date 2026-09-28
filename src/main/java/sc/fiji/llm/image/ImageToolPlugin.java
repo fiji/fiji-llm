@@ -86,7 +86,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 			for (Integer id : ids) {
 				if (imageJ1HelperService.isImageVisible(id)) {
 					JsonObject imageJson = new JsonObject();
-					imageJson.addProperty("id", id);
+					imageJson.addProperty("image_id", id);
 					imageJson.addProperty("title", imageJ1HelperService.getImageTitle(id));
 					imageJson.addProperty("active", isActiveImage(id));
 					images.add(imageJson);
@@ -140,7 +140,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 
 		final JsonObject activatedImage = new JsonObject();
-		activatedImage.addProperty("id", imageId);
+		activatedImage.addProperty("image_id", imageId);
 		activatedImage.addProperty("title", imageJ1HelperService.getImageTitle(
 			imageId));
 		activatedImage.addProperty("active", true);
@@ -162,7 +162,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 					imageId);
 
 				JsonObject result = new JsonObject();
-				result.addProperty("id", imageId);
+				result.addProperty("image_id", imageId);
 				result.addProperty("title", imageJ1HelperService.getImageTitle(imageId));
 				result.addProperty("active", isActiveImage(imageId));
 				result.addProperty("pixel_type", dataset.getType().getClass().getSimpleName());

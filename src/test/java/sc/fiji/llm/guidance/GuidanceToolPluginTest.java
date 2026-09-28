@@ -66,12 +66,13 @@ public class GuidanceToolPluginTest {
 		assertTrue(list.get("count").getAsInt() > 0);
 		final JsonObject metadata = list.getAsJsonArray("guides").get(0)
 			.getAsJsonObject();
+		assertTrue(metadata.has("guide_id"));
 		assertFalse(metadata.get("summary").getAsString().isEmpty());
 		assertFalse(metadata.has("content"));
 
 		final JsonObject document = JsonParser.parseString(plugin.read("scripts-and-macros"))
 			.getAsJsonObject();
-		assertEquals("scripts-and-macros", document.get("id").getAsString());
+		assertEquals("scripts-and-macros", document.get("guide_id").getAsString());
 		assertFalse(document.get("summary").getAsString().isEmpty());
 		assertFalse(document.get("content").getAsString().isEmpty());
 	}

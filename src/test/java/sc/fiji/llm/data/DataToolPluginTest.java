@@ -139,6 +139,7 @@ public class DataToolPluginTest {
 
 			assertEquals(1, json.get("count").getAsInt());
 			final JsonObject roi = json.getAsJsonArray("rois").get(0).getAsJsonObject();
+			assertEquals(0, roi.get("roi_index").getAsInt());
 			assertEquals("named rectangle", roi.get("name").getAsString());
 			assertEquals("0", roi.get("type").getAsString());
 			assertEquals(10, roi.getAsJsonObject("bounds").get("x").getAsInt());
@@ -148,6 +149,7 @@ public class DataToolPluginTest {
 
 			final JsonObject details = JsonParser.parseString(plugin.readRoiDetails(0))
 				.getAsJsonObject();
+			assertEquals(0, details.get("roi_index").getAsInt());
 			assertEquals("Roi", details.get("shape").getAsString());
 			assertEquals(10, details.getAsJsonObject("bounds").get("x").getAsInt());
 			assertTrue(details.getAsJsonArray("coordinates").size() > 0);

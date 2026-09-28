@@ -453,8 +453,8 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				Collections.emptyList() : environment.getNewModalDialogs();
 			for (final AWTDialogUtils.DialogInfo dialog : blockingDialogs) {
 				final JsonObject dialogJson = new JsonObject();
-				dialogJson.addProperty("title", dialog.getTitle());
-				dialogJson.addProperty("class_name", dialog.getClassName());
+						dialogJson.addProperty("dialog_title", dialog.getTitle());
+						dialogJson.addProperty("dialog_class_name", dialog.getClassName());
 				dialogJson.addProperty("visible", dialog.isVisible());
 				dialogJson.addProperty("active", dialog.isActive());
 				dialogJson.addProperty("modal", dialog.isModal());
@@ -466,7 +466,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				final JsonArray buttons = new JsonArray();
 				for (final AWTDialogUtils.ButtonInfo button : dialog.getButtons()) {
 					final JsonObject buttonJson = new JsonObject();
-					buttonJson.addProperty("text", button.getText());
+							buttonJson.addProperty("button_text", button.getText());
 					buttonJson.addProperty("action_command", button.getActionCommand());
 					buttonJson.addProperty("enabled", button.isEnabled());
 					buttonJson.addProperty("visible", button.isVisible());
@@ -522,7 +522,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			final JsonObject recommendation = new JsonObject();
 			recommendation.addProperty("tool", "fiji_guide_read");
 			final JsonObject arguments = new JsonObject();
-			arguments.addProperty("id", guideId);
+			arguments.addProperty("guide_id", guideId);
 			recommendation.add("arguments", arguments);
 			recommendations.add(recommendation);
 			result.add("guide_recommendations", recommendations);

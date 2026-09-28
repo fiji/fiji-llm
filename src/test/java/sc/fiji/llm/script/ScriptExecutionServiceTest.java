@@ -100,7 +100,7 @@ public class ScriptExecutionServiceTest {
 		assertEquals("fiji_guide_read", json.getAsJsonArray("guide_recommendations")
 			.get(0).getAsJsonObject().get("tool").getAsString());
 		assertEquals("scripting", json.getAsJsonArray("guide_recommendations").get(0)
-			.getAsJsonObject().getAsJsonObject("arguments").get("id").getAsString());
+			.getAsJsonObject().getAsJsonObject("arguments").get("guide_id").getAsString());
 	}
 
 	@Test
@@ -113,8 +113,8 @@ public class ScriptExecutionServiceTest {
 
 		assertEquals("fiji_guide_read", recommendation.get("tool").getAsString());
 		assertEquals("creating-macros", recommendation.getAsJsonObject("arguments")
-			.get("id").getAsString());
-		assertFalse(recommendation.has("guide_id"));
+			.get("guide_id").getAsString());
+		assertFalse(recommendation.getAsJsonObject("arguments").has("id"));
 		assertFalse(recommendation.has("reason"));
 	}
 
