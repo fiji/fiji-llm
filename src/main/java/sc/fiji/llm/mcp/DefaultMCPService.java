@@ -127,6 +127,8 @@ selected before acting.
 
 Re-query state because users may interact with Fiji between tool calls.
 
+When a script produces error logs or a tool reports an exception, treat the output as diagnostic evidence rather than an endpoint. Check the result for `recommended_tools` and `guide_recommendations`, and follow those recommendations before retrying or changing the workflow.
+
 Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
 """;
 

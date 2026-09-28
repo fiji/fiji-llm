@@ -161,6 +161,8 @@ image. fiji_macro_run can also select an image with selectImage(...) or selectWi
 
 State-query tools provide a snapshot of application state. Users may interact with Fiji between tool calls; so re-query information before acting on it.
 
+When a script produces error logs or a tool reports an exception, treat the output as diagnostic evidence rather than an endpoint. Check the result for `recommended_tools` and `guide_recommendations`, and follow those recommendations before retrying or changing the workflow.
+
 Expect iteration and troubleshooting, and prepare users similarly.
 
 Be concise, patient, humble, and collaborative.
