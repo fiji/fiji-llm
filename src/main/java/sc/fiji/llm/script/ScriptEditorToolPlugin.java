@@ -135,7 +135,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Use this tool first, as needed, to set the active script by its script_id. Any fiji_script_* tool that operates on the active script uses the script selected here." }, name = "fiji_script_activate")
+	@Tool(value = { "Use this tool first, if needed, to set the active script by its script_id" }, name = "fiji_script_activate")
 	public String setActiveScript(@P(name = "script_id", value = "Script ID from fiji_script_list") final String scriptId)
 	{
 		try {
@@ -323,7 +323,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This operates on the currently active script; use fiji_script_activate with the target script_id first if needed. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_script_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_script_run")
+	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_script_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -367,7 +367,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Rename the active script. This operates on the currently active script; use fiji_script_activate with the target script_id first if needed. A script's programming language is determined by its name ending in a recognized extension (e.g., .py, .ijm, .groovy). Changing a script's extension will change its language" },
+	@Tool(value = { "Rename the active script. A script's programming language is determined by its name ending in a recognized extension (e.g., .py, .ijm, .groovy). Changing a script's extension will change its language" },
 		name = "fiji_script_rename")
 	public String renameScript(@P(name = "script_name", value = "New script name, including its file extension") final String scriptName)
 	{
@@ -422,7 +422,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Return the content of the active script. Use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_read_content")
+	@Tool(value = { "Return the content of the active script." }, name = "fiji_script_read_content")
 	public String readScript() {
 		try {
 			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
@@ -440,7 +440,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Return lines from the active script between (inclusive) the given start_line and end_line indices (1-indexed). Use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_read_lines")
+	@Tool(value = { "Return lines from the active script between (inclusive) the given start_line and end_line indices (1-indexed)." }, name = "fiji_script_read_lines")
 	public String readLines(@P(name = "start_line", value = "First line, 1-indexed and inclusive") final int startLine, @P(name = "end_line", value = "Last line, 1-indexed and inclusive") final int endLine)
 	{
 		try {
@@ -485,7 +485,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Return the cumulative output and error logs retained by the active Script Editor across runs. This reads logs for the active script; use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_read_logs")
+	@Tool(value = { "Return the cumulative output and error logs retained by the active Script Editor across runs." }, name = "fiji_script_read_logs")
 	public String readLogs() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -516,7 +516,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_line and end_line indices (1-indexed). This edits the active script; use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_delete_lines")
+	@Tool(value = { "Delete lines from the active script between (inclusive) the given start_line and end_line indices (1-indexed)." }, name = "fiji_script_delete_lines")
 	public String deleteLines(@P(name = "start_line", value = "First line, 1-indexed and inclusive") final Integer startLine, @P(name = "end_line", value = "Last line, 1-indexed and inclusive") final Integer endLine)
 	{
 		try {
@@ -585,7 +585,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Insert content in the active script before the specified line number (1-indexed). This edits the active script; use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_insert_content")
+	@Tool(value = { "Insert content in the active script before the specified line number (1-indexed)." }, name = "fiji_script_insert_content")
 	public String insertAt(@P(name = "content", value = "Content to insert") final String content, @P(name = "before_line", value = "Line number, 1-indexed, before which to insert") final Integer beforeLine)
 	{
 		try {
@@ -665,7 +665,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Completely replace the content of the active script. This edits the active script; use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_replace_content")
+	@Tool(value = { "Completely replace the content of the active script." }, name = "fiji_script_replace_content")
 	public String replaceScript(@P(name = "content", value = "New script content") final String content)
 	{
 		try {
@@ -715,7 +715,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		return stringProp("replaced_content", replaceState);
 	}
 
-	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line (1-indexed), adding lines to extend the script if needed. This edits the active script; use fiji_script_activate with the target script_id first if needed." }, name = "fiji_script_replace_lines")
+	@Tool(value = { "Each line in new_content replaces a line in the active script, beginning at start_line (1-indexed), adding lines to extend the script if needed." }, name = "fiji_script_replace_lines")
 	public String replaceLines(@P(name = "new_content", value = "Replacement lines") final String newContent, @P(name = "start_line", value = "First line to replace, 1-indexed") final Integer startLine)
 	{
 		try {

@@ -99,7 +99,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Make the open image specified by image_id the active image for Fiji commands and active-image tools. This changes Fiji's active image but does not modify pixel data." }, name = "fiji_image_activate")
+	@Tool(value = { "Use this tool first to activate the image specified by image_id. Fiji commands and tools that operate on images typically target this active image." }, name = "fiji_image_activate")
 	public String activateImage(@P(name = "image_id", value = "Image ID from fiji_image_list") final int imageId) {
 		try {
 			final String[] result = new String[1];
