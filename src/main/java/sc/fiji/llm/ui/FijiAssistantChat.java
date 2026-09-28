@@ -103,6 +103,7 @@ import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.context.PromptRecommendations;
 import sc.fiji.llm.context.SessionSnapshot;
+import sc.fiji.llm.guidance.GuidancePromptFragments;
 import sc.fiji.llm.image.ImageMetaContextItem;
 import sc.fiji.llm.image.ImageToolPlugin;
 import sc.fiji.llm.provider.LLMProvider;
@@ -147,6 +148,9 @@ Fiji is a unique and dynamic environment requiring tailored solutions. `fiji_gui
 provides specific, up-to-date information. Always try to validate your knowledge by
 reading guides and querying relevant Fiji application state.
 
+""" + GuidancePromptFragments.GUIDE_USAGE +
+		"""
+
 In addition to chat text, user messages may include:
 - User-attached context items, indicating likely areas of focus
 - A point-in-time environment snapshot of the active and open scripts and images at the time the message was sent; it is not live and may become stale
@@ -161,7 +165,8 @@ image. fiji_macro_run can also select an image with selectImage(...) or selectWi
 
 State-query tools provide a snapshot of application state. Users may interact with Fiji between tool calls; so re-query information before acting on it.
 
-When a script produces error logs or a tool reports an exception, treat the output as diagnostic evidence rather than an endpoint. Check the result for `recommended_tools` and `guide_recommendations`, and follow those recommendations before retrying or changing the workflow.
+""" + GuidancePromptFragments.DECISION_POINT_GUIDES +
+		GuidancePromptFragments.ERROR_RECOVERY + """
 
 Expect iteration and troubleshooting, and prepare users similarly.
 

@@ -89,6 +89,7 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import sc.fiji.llm.guidance.GuidancePromptFragments;
 import sc.fiji.llm.tools.AiToolService;
 import sc.fiji.llm.tools.ToolScope;
 
@@ -119,6 +120,9 @@ provides specific, up-to-date information. Treat guides and tool calls as author
 over your memory and general knowledge. Always try to validate your knowledge by
 reading guides and querying relevant Fiji application state.
 
+""" + GuidancePromptFragments.GUIDE_USAGE +
+		GuidancePromptFragments.DECISION_POINT_GUIDES + """
+
 Tool calls may modify application state, scripts, images, or other workspace artifacts.
 
 The active image and active script are Fiji's current implicit targets.
@@ -127,7 +131,7 @@ selected before acting.
 
 Re-query state because users may interact with Fiji between tool calls.
 
-When a script produces error logs or a tool reports an exception, treat the output as diagnostic evidence rather than an endpoint. Check the result for `recommended_tools` and `guide_recommendations`, and follow those recommendations before retrying or changing the workflow.
+""" + GuidancePromptFragments.ERROR_RECOVERY + """
 
 Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
 """;
