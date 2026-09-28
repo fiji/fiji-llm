@@ -41,18 +41,12 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
-import sc.fiji.llm.guidance.data.RoisGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** Read-only tool for inspecting the ImageJ ROI Manager state. */
 @Plugin(type = AiToolPlugin.class)
 public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { RoisGuide.ID };
-	}
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;
@@ -105,11 +99,11 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		try {
 			final Object manager = invokeLegacyRoiManager();
 			if (manager == null) return jsonError("ROI Manager is not open",
-				"fiji_rois_read");
+				ErrorOptions.withTool("fiji_rois_read"));
 
 			final int count = (int) invoke(manager, "getCount");
 			if (index < 0 || index >= count) return jsonError("ROI index must be between 0 and " +
-				(count - 1) + ": " + index, "fiji_rois_read");
+				(count - 1) + ": " + index, ErrorOptions.withTool("fiji_rois_read"));
 
 			final Object roiObject = invoke(manager, "getRoi", index);
 			if (roiObject == null) return jsonError("ROI Manager entry has no ROI object: " +

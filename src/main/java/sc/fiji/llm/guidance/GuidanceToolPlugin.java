@@ -83,7 +83,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 				.filter(candidate -> candidate.id().equals(id == null ? "" : id.trim()))
 				.findFirst().orElse(null);
 			if (document.isEmpty() || metadata == null) return jsonError(
-				"No guide found for ID: " + id, "fiji_guide_list");
+				"No guide found for ID: " + id, ErrorOptions.withTool("fiji_guide_list"));
 
 			final JsonObject result = metadataJson(metadata);
 			result.addProperty("content", document.get());
@@ -91,7 +91,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		}
 		catch (final RuntimeException e) {
 			return jsonError("Failed to run fiji_guide_read: " + e.getMessage(),
-				"fiji_guide_list");
+				ErrorOptions.withTool("fiji_guide_list"));
 		}
 	}
 

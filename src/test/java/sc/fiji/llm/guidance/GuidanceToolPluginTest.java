@@ -64,7 +64,7 @@ public class GuidanceToolPluginTest {
 
 		final JsonObject list = JsonParser.parseString(plugin.list()).getAsJsonObject();
 		assertTrue(list.get("count").getAsInt() > 0);
-		final JsonObject metadata = list.getAsJsonArray("documents").get(0)
+		final JsonObject metadata = list.getAsJsonArray("guides").get(0)
 			.getAsJsonObject();
 		assertFalse(metadata.get("summary").getAsString().isEmpty());
 		assertFalse(metadata.has("content"));
@@ -81,7 +81,7 @@ public class GuidanceToolPluginTest {
 		final JsonObject result = JsonParser.parseString(plugin().read("missing"))
 			.getAsJsonObject();
 
-		assertTrue(result.get("error").getAsString().contains("No guidance document"));
+		assertTrue(result.get("error").getAsString().contains("No guide found"));
 		assertEquals("fiji_guide_list", result.get("recommended_tool").getAsString());
 	}
 

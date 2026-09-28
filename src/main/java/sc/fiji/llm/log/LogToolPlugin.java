@@ -41,18 +41,12 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
-import sc.fiji.llm.guidance.application.EnvironmentInspectionGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** AI tools for reading ImageJ and SciJava diagnostic logs. */
 @Plugin(type = AiToolPlugin.class)
 public class LogToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { EnvironmentInspectionGuide.ID };
-	}
 
 	@Parameter
 	private LogService logService;
@@ -96,7 +90,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			synchronized (captureStateLock) {
 				if (scijavaCapture != null) {
 					return jsonError("A SciJava log capture is already active",
-						"fiji_log_scijava_read");
+						ErrorOptions.withTool("fiji_log_scijava_read"));
 				}
 				scijavaCapture = SciJavaLogUtils.capture(logService, consoleService);
 			}
@@ -120,7 +114,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			}
 			if (capture == null) {
 				return jsonError("No SciJava log capture is active",
-					"fiji_log_scijava_start_capture");
+					ErrorOptions.withTool("fiji_log_scijava_start_capture"));
 			}
 			return sciJavaLogResult(capture.getLogs(), true).toString();
 		}
@@ -136,7 +130,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			synchronized (captureStateLock) {
 				if (scijavaCapture == null) {
 					return jsonError("No SciJava log capture is active",
-						"fiji_log_scijava_start_capture");
+						ErrorOptions.withTool("fiji_log_scijava_start_capture"));
 				}
 				capture = scijavaCapture;
 				scijavaCapture = null;

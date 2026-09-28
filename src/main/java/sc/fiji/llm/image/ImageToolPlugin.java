@@ -49,7 +49,6 @@ import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplay;
 import net.imagej.display.ImageDisplayService;
 import sc.fiji.llm.data.ImageJ1HelperService;
-import sc.fiji.llm.guidance.data.ImagesInFiji;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
@@ -58,11 +57,6 @@ import sc.fiji.llm.tools.AiToolPlugin;
  */
 @Plugin(type = AiToolPlugin.class)
 public class ImageToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { ImagesInFiji.ID };
-	}
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;

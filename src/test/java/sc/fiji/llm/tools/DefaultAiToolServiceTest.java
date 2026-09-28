@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.tools;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -41,11 +42,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.scijava.Context;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
 import sc.fiji.llm.Setup;
+import sc.fiji.llm.tools.AbstractAiToolPlugin.ErrorOptions;
 
 public class DefaultAiToolServiceTest {
 
@@ -120,6 +125,32 @@ public class DefaultAiToolServiceTest {
 			"IllegalStateException: no active script"));
 	}
 
+	@Test
+	public void testErrorOptionsSupportExplicitRecommendations() {
+		final TestToolPlugin plugin = new TestToolPlugin();
+
+		final JsonObject defaults = JsonParser.parseString(plugin.jsonError("failure"))
+			.getAsJsonObject();
+		assertFalse(defaults.has("guide_recommendations"));
+
+		final JsonObject withTool = JsonParser.parseString(plugin.jsonError("failure",
+			ErrorOptions.withTool("fiji_next"))).getAsJsonObject();
+		assertEquals("fiji_next", withTool.get("recommended_tool").getAsString());
+
+		final JsonObject withGuides = JsonParser.parseString(plugin.jsonError("failure",
+			ErrorOptions.withGuides("scenario-guide"))).getAsJsonObject();
+		assertEquals("scenario-guide", withGuides.getAsJsonArray("guide_recommendations")
+			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("id")
+			.getAsString());
+
+		final JsonObject withBoth = JsonParser.parseString(plugin.jsonError("failure",
+			ErrorOptions.with("fiji_next", "scenario-guide"))).getAsJsonObject();
+		assertEquals("fiji_next", withBoth.get("recommended_tool").getAsString());
+		assertEquals("scenario-guide", withBoth.getAsJsonArray("guide_recommendations")
+			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("id")
+			.getAsString());
+	}
+
 	@SuppressWarnings( "unused" )
 	private static ToolSpecification spec() {
 		for (final var method : DefaultAiToolServiceTest.class
@@ -139,5 +170,17 @@ public class DefaultAiToolServiceTest {
 		@P(name = "verbose", value = "Verbose output", required = false) final Boolean verbose)
 	{
 		return "";
+	}
+
+	private static final class TestToolPlugin extends AbstractAiToolPlugin {
+
+		private TestToolPlugin() {
+			super(TestToolPlugin.class);
+		}
+
+		@Override
+		public String getName() {
+			return "Test Tools";
+		}
 	}
 }

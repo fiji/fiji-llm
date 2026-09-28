@@ -51,7 +51,6 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
-import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -64,11 +63,6 @@ import sc.fiji.llm.ui.TextEditorUtils;
  */
 @Plugin(type = AiToolPlugin.class)
 public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { ScriptingGuide.ID };
-	}
 
 	private static final String IS_ACTIVE_KEY = "is_active";
 	private static final String ERROR_KEY = "errors";
@@ -118,7 +112,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 				while (System.currentTimeMillis() - startTime < timeoutMs) {
 					textEditor = TextEditorUtils.getMostRecentVisibleEditor();
 					if (textEditor != null) {
-						break;
+						return jsonError("Script editor is not open",
+							ErrorOptions.withTool("fiji_script_open_editor"));
 					}
 					Thread.sleep(100);
 				}
@@ -159,7 +154,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 			if (scriptID.editorIndex < 0 ||
 				scriptID.editorIndex >= TextEditor.instances.size())
 			{
-				return jsonError("Invalid script_id. No editor found at index: " + scriptID.editorIndex, "fiji_script_list");
+				return jsonError("Invalid script_id. No editor found at index: " + scriptID.editorIndex,
+					ErrorOptions.withTool("fiji_script_list"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(
@@ -195,7 +191,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 			}
 
 			if (tab == null) {
-				return jsonError("Invalid script_id. No script found at index " + scriptID.tabIndex, "fiji_script_list");
+				return jsonError("Invalid script_id. No script found at index " + scriptID.tabIndex,
+					ErrorOptions.withTool("fiji_script_list"));
 			}
 
 			// Switch to the specified tab
@@ -287,7 +284,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 			final TextEditor textEditor = TextEditorUtils
 				.getLastFocusedVisibleEditor();
 			if (textEditor == null) {
-				return jsonError("Script editor is not open", "fiji_script_open_editor");
+				return jsonError("Script editor is not open",
+					ErrorOptions.withTool("fiji_script_open_editor"));
 			}
 
 			// Create new tab with default empty content
@@ -330,14 +328,15 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final String scriptName = ScriptContextUtilities.buildScriptContextItem(
 				scriptID.editorIndex, scriptID.tabIndex).getScriptName();
 			if (ScriptExecutionService.isMacroScript(scriptName)) {
 				return jsonError("The active script is an ImageJ macro (.ijm) and must be run with fiji_macro_run",
-					"fiji_macro_run");
+					ErrorOptions.withTool("fiji_macro_run"));
 			}
 
 			final ScriptExecutionService.ExecutionResult execution = scriptExecutionService
@@ -380,7 +379,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			// Perform UI operations on EDT
@@ -427,7 +427,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		try {
 			ScriptContextItem scriptContext = ScriptContextUtilities.getActiveScriptContext();
 			if (scriptContext == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			JsonObject readScript = getTabJson(scriptContext.getEditorIndex(), scriptContext.getTabIndex());
@@ -450,7 +451,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -488,7 +490,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -524,7 +527,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -597,7 +601,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -671,7 +676,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);
@@ -725,7 +731,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError("No active script found", "fiji_script_create");
+				return jsonError("No active script found",
+					ErrorOptions.withTool("fiji_script_create"));
 			}
 
 			final TextEditor textEditor = TextEditor.instances.get(scriptID.editorIndex);

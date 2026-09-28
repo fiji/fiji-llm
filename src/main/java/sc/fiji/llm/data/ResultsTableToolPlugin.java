@@ -42,18 +42,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import dev.langchain4j.agent.tool.Tool;
-import sc.fiji.llm.guidance.data.ResultsTableGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** Read-only tool for inspecting the active ImageJ Results Table. */
 @Plugin(type = AiToolPlugin.class)
 public class ResultsTableToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { ResultsTableGuide.ID };
-	}
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;

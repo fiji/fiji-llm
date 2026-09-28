@@ -49,7 +49,6 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.data.ImageJ1HelperService;
-import sc.fiji.llm.guidance.workflows.CreatingMacrosGuide;
 import sc.fiji.llm.script.ScriptContextItem;
 import sc.fiji.llm.script.ScriptContextUtilities;
 import sc.fiji.llm.script.ScriptExecutionService;
@@ -65,11 +64,6 @@ import sc.fiji.llm.ui.TextEditorUtils;
  */
 @Plugin(type = AiToolPlugin.class)
 public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { CreatingMacrosGuide.ID };
-	}
 
 	@Parameter
 	private LegacyService legacyService;
@@ -188,7 +182,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				Frame recorder = findRecorderFrame();
 				if (recorder == null) {
 					errors[0] = jsonError("ImageJ macro recorder is not open",
-						"fiji_macro_start_recorder");
+						ErrorOptions.withTool("fiji_macro_start_recorder"));
 					return;
 				}
 
@@ -224,7 +218,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			Runnable createAction = () -> {
 				Frame recorder = findRecorderFrame();
 				if (recorder == null) {
-					errors[0] = jsonError("ImageJ macro recorder is not open", "fiji_macro_start_recorder");
+					errors[0] = jsonError("ImageJ macro recorder is not open",
+					ErrorOptions.withTool("fiji_macro_start_recorder"));
 					return;
 				}
 
@@ -252,7 +247,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 			ScriptID scriptID = TextEditorUtils.getActiveScriptID();
 			if (scriptID == null) {
-				return jsonError( "Macro was created, but no script editor is active", "fiji_script_list");
+				return jsonError("Macro was created, but no script editor is active",
+					ErrorOptions.withTool("fiji_script_list"));
 			}
 
 			JsonObject result = new JsonObject();
@@ -273,14 +269,14 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			if (scriptID == null) {
 				return jsonError(
 					"A visible Script Editor with an active .ijm script is required",
-					"fiji_script_open_editor");
+					ErrorOptions.withTool("fiji_script_open_editor"));
 			}
 
 			final String scriptName = ScriptContextUtilities.buildScriptContextItem(
 				scriptID.editorIndex, scriptID.tabIndex).getScriptName();
 			if (!ScriptExecutionService.isMacroScript(scriptName)) {
 				return jsonError("The active script is not an ImageJ macro (.ijm) and must be run with fiji_script_run",
-					"fiji_script_run");
+					ErrorOptions.withTool("fiji_script_run"));
 			}
 
 			return scriptExecutionService.run(scriptID,

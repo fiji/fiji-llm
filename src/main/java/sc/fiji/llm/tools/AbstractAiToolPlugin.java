@@ -65,30 +65,55 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 	 * @param errorMessage Base error message
 	 * @return A Json-formated version of the error message
 	 */
-	public String jsonError(String errorMessage) {
+	public String jsonError(final String errorMessage) {
 		return jsonError(errorMessage, null);
 	}
 
 	/**
 	 * @param errorMessage Base error message
-	 * @param recommendedTool Optional tool name to recommend for resolving the error
+	 * @param options Error response options
 	 * @return A Json-formated version of the error message
 	 */
-	public String jsonError(String errorMessage, String recommendedTool) {
+	public String jsonError(final String errorMessage, final ErrorOptions options) {
 		JsonObject err = new JsonObject();
 		err.addProperty("error", errorMessage);
-		if (recommendedTool != null && !recommendedTool.trim().isEmpty()) {
-			err.addProperty("recommended_tool", recommendedTool);
+		if (options != null && options.recommendedTool != null && !options.recommendedTool.isEmpty()) {
+			err.addProperty("recommended_tool", options.recommendedTool);
 		}
-		addGuideRecommendations(err, recommendedGuideIds());
+		if (options != null) addGuideRecommendations(err, options.guideIds);
 		return err.toString();
 	}
 
-	/**
-	 * @return guide IDs to recommend when this plugin reports an error
-	 */
-	protected String[] recommendedGuideIds() {
-		return new String[0];
+	/** Immutable options for a structured tool error response. */
+	public static final class ErrorOptions {
+
+		private final String recommendedTool;
+		private final String[] guideIds;
+
+		private ErrorOptions(final String recommendedTool, final String... guideIds) {
+			this.recommendedTool = normalize(recommendedTool);
+			this.guideIds = guideIds == null ? new String[0] : guideIds.clone();
+		}
+
+		public static ErrorOptions withTool(final String toolName) {
+			return new ErrorOptions(toolName);
+		}
+
+		public static ErrorOptions withGuides(final String... guideIds) {
+			return new ErrorOptions(null, guideIds);
+		}
+
+		public static ErrorOptions with(final String toolName,
+			final String... guideIds)
+		{
+			return new ErrorOptions(toolName, guideIds);
+		}
+
+		private static String normalize(final String value) {
+			if (value == null) return null;
+			final String normalized = value.trim();
+			return normalized.isEmpty() ? null : normalized;
+		}
 	}
 
 	protected static void addGuideRecommendations(final JsonObject result,

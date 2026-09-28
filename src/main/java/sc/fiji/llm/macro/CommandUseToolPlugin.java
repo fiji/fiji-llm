@@ -58,7 +58,6 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
-import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolScope;
@@ -68,11 +67,6 @@ import sc.fiji.llm.tools.ToolScope;
  */
 @Plugin(type = AiToolPlugin.class)
 public class CommandUseToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { RunningCommandsGuide.ID };
-	}
 
 	private static final int MAX_RESULTS = 10;
 	private static final long UI_SETTLE_DELAY_MS = 250;

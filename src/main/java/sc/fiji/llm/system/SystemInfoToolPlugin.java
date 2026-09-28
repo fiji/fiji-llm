@@ -43,18 +43,12 @@ import dev.langchain4j.agent.tool.Tool;
 import net.imagej.updater.UpdateSite;
 import net.imagej.updater.util.AvailableSites;
 import sc.fiji.llm.data.ImageJ1HelperService;
-import sc.fiji.llm.guidance.application.EnvironmentInspectionGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 
 /** Read-only tool for inspecting the host system and application versions. */
 @Plugin(type = AiToolPlugin.class)
 public class SystemInfoToolPlugin extends AbstractAiToolPlugin {
-
-	@Override
-	protected String[] recommendedGuideIds() {
-		return new String[] { EnvironmentInspectionGuide.ID };
-	}
 
 	@Parameter
 	private AppService appService;
@@ -117,7 +111,8 @@ public class SystemInfoToolPlugin extends AbstractAiToolPlugin {
 			return result.toString();
 		}
 		catch (IOException e) {
-			return jsonError("Failed to run fiji_system_list_update_sites: " + e.getMessage());
+			return jsonError("Failed to run fiji_system_list_update_sites: " + e
+				.getMessage());
 		}
 	}
 
