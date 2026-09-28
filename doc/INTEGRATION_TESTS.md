@@ -85,6 +85,19 @@ the workflow ambiguous even if the underlying operation succeeds.
       structured result JSON, and irrelevant logs, fields, and tool listings
       are not included merely for completeness.
 
+## Guidance and Recommendations
+
+- [ ] Call `fiji_guide_list` and verify each guide includes its ID, title,
+      summary, topics when available, and authority.
+- [ ] Call `fiji_guide_read` with a returned guide ID and verify that it returns
+      the matching metadata and guide content. An unknown guide ID should
+      return a useful error that recommends `fiji_guide_list`.
+- [ ] For every `recommended_tool`, `recommended_tools`, or
+      `guide_recommendations` value observed in another tool result, verify
+      that the referenced tool or guide exists and is appropriate for the
+      reported state. Verify that conditional recommendations are absent when
+      the follow-up is not needed.
+
 ## Image Content
 
 With at least two visible images open, use the MCP server as an external client
@@ -93,15 +106,17 @@ would:
 1. Call `fiji_image_list` and note the active image and a different returned `id`.
 2. Call `fiji_image_activate` with the different `image_id`.
 3. Call `fiji_image_list` again and verify that the selected image is now active.
-4. Call `fiji_image_view` with that `image_id`.
-5. Verify that the result contains an MCP `image` content block with MIME type
+4. Call `fiji_image_details` with that `image_id` and verify the title, active
+      state, pixel type, and dimension metadata.
+5. Call `fiji_image_view` with that `image_id`.
+6. Verify that the result contains an MCP `image` content block with MIME type
       `image/png` and non-empty base64 data.
-6. Add a visible ROI or image overlay, then call
+7. Add a visible ROI or image overlay, then call
       `fiji_image_view_annotated` with the same `image_id`.
-7. Verify that the annotated result contains a text metadata content block with
+8. Verify that the annotated result contains a text metadata content block with
       `render_mode`, `roi_included`, and `overlay_included`, as well as the MCP
       `image` content block.
-8. Verify that an unknown image id returns a useful text error instead of an
+9. Verify that an unknown image id returns a useful text error instead of an
       image block or a server failure.
 
 ## Tool Sequence and Common Checks
@@ -123,7 +138,8 @@ same order:
 5. `fiji_log_imagej_read` exposes ImageJ macro `print()` output when
       applicable.
 6. SciJava messages are observable by starting a capture with
-      `fiji_log_scijava_start_capture` before the operation and stopping it with
+      `fiji_log_scijava_start_capture` before the operation, reading the active
+      capture with `fiji_log_scijava_read`, and stopping it with
       `fiji_log_scijava_stop_capture` afterward.
 7. `fiji_ui_dialogs_read` reports visible error or confirmation dialogs,
       including their titles, messages, buttons, and modal state.
@@ -143,7 +159,8 @@ With Fiji showing at least one ordinary AWT or Swing window:
       class, type, bounds, active state, and modality metadata.
 2. Call `fiji_ui_controls_read` with one exact window title and verify that
       supported labels, buttons, text fields, checkboxes, choices, combo boxes, and
-      menu entries include roles and state metadata.
+      menu entries include roles and state metadata. Supply the exact window
+      class as well when titles are duplicated.
 3. Call `fiji_ui_screenshot` and verify the result contains JSON metadata plus
       an MCP `image` content block with PNG data. Screenshots request focus
       automatically only when the target is not already active; verify the
@@ -158,6 +175,19 @@ With Fiji showing at least one ordinary AWT or Swing window:
 Run these cases with at least one supported Script Editor language used by the
 project, such as Python. Repeat the language-independent cases for another
 available language when practical.
+
+- [ ] Call `fiji_script_list_languages` and verify the language and extension
+      used for the test are available before renaming the script.
+- [ ] Call `fiji_script_read_lines` on a known range and verify that the
+      response reports the requested 1-indexed inclusive bounds and content.
+      Verify that an invalid or out-of-range range returns a useful error.
+- [ ] After a run, call `fiji_script_read_logs` and verify that retained output
+      and errors are reported without internal start banners. Clear the Script
+      Editor logs and verify that the next read reflects the cleared state.
+- [ ] On a disposable script, use `fiji_script_insert_content`,
+      `fiji_script_delete_lines`, and `fiji_script_replace_content`, reading
+      the content after each operation to verify the requested source change
+      and reported line counts.
 
 For each script case, repeat this tool sequence:
 
@@ -200,6 +230,11 @@ syntax failures, runtime failures, and timeouts.
 
 Start each macro regression run by deriving the test macro from recorded Fiji
 commands:
+
+Before recording, call `fiji_macro_list_categories`, select a returned
+category, and call `fiji_macro_list_functions` with that category. Verify the
+function names and descriptions, and verify that an empty or unknown category
+returns a useful error.
 
 1. Call `fiji_macro_start_recorder` and verify the recorder state with
       `fiji_macro_recorder_state`, including an empty buffer when no commands
@@ -277,13 +312,13 @@ Fiji instance with the ImageJ legacy layer active.
       and column arrays.
 - [ ] ROI Manager: open the ROI Manager, add at least two named ROIs, and call
       `fiji_rois_read`. Verify `present`, `count`, and each ROI's
-      `index`, `name`, `selected`, `type`, and `bounds` fields. Verify each
+      `roi_index`, `name`, `selected`, `type`, and `bounds` fields. Verify each
       bounding box contains `x`, `y`, `width`, and `height`.
 - [ ] ROI Manager details: call `fiji_rois_read_details` with a valid ROI
       index and verify the returned `shape`, `bounds`, and `coordinates`.
       Call it with an invalid index and verify that it returns a useful error.
 - [ ] ROI Manager selection: call `fiji_rois_select` with a valid zero-based
-      index and verify the selected index, `selected`, and
+      index and verify the selected `roi_index`, `selected`, and
       `applied_to_active_image` state. With an active image, verify the ROI is
       restored there and any reported slice change is expected.
 - [ ] ROI Manager unavailable state: close the ROI Manager, call
