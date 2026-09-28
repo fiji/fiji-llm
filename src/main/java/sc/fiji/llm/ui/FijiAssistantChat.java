@@ -104,6 +104,7 @@ import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
+import sc.fiji.llm.context.PromptRecommendations;
 import sc.fiji.llm.context.SessionSnapshot;
 import sc.fiji.llm.image.ImageMetaContextItem;
 import sc.fiji.llm.image.ImageToolPlugin;
@@ -152,6 +153,7 @@ reading guides and querying relevant Fiji application state.
 In addition to chat text, user messages may include:
 - User-attached context items, indicating likely areas of focus
 - A point-in-time environment snapshot of the active and open scripts and images at the time the message was sent; it is not live and may become stale
+- An optional recommended-resources block for attached context; use its guide recommendations when relevant. Its tool-family entries are prefixes, not callable tool names, and do not require automatic calls
 
 Treat the active image and active script as Fiji's current implicit targets. Tools and commands
 without an explicit image_id or script_id may operate on those active targets. Use
@@ -847,6 +849,8 @@ Be concise, patient, humble, and collaborative.
 				String requestText = mergedContextItems.isEmpty() ? userText :
 					userText + "\n\n=== BEGIN USER-ATTACHED CONTEXT (JSON) ===\n" + userContextArray
 					+ "\n=== END USER-ATTACHED CONTEXT ===";
+				final String recommendations = PromptRecommendations.format(mergedContextItems);
+				if (!recommendations.isEmpty()) requestText += "\n\n" + recommendations;
 				final String snapshot = buildSessionSnapshot();
 				if (!snapshot.isEmpty()) requestText += "\n\n" + snapshot;
 				userContents.add(new TextContent(requestText));

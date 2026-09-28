@@ -55,7 +55,7 @@ import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentImpact;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.log.TextLogs;
-import sc.fiji.llm.tools.AbstractAiToolPlugin;
+import sc.fiji.llm.tools.ToolRecommendationUtils;
 import sc.fiji.llm.ui.AWTDialogUtils;
 import sc.fiji.llm.ui.TextEditorUtils;
 
@@ -490,11 +490,11 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				addGuideRecommendation(result, execution.kind == RunKind.MACRO ?
 					"creating-macros" : "scripting");
 			}
-			if (execution.status == Status.BLOCKED_BY_DIALOG) AbstractAiToolPlugin
+			if (execution.status == Status.BLOCKED_BY_DIALOG) ToolRecommendationUtils
 				.addToolRecommendations(result, "fiji_ui_dialog_respond",
 					"fiji_ui_dialog_close");
 			if (waitExpired && execution.status == Status.RUNNING) {
-				AbstractAiToolPlugin.addToolRecommendations(result, execution.kind ==
+				ToolRecommendationUtils.addToolRecommendations(result, execution.kind ==
 					RunKind.MACRO ? "fiji_macro_run_status" : "fiji_script_run_status");
 			}
 			return result;

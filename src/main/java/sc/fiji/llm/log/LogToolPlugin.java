@@ -43,6 +43,7 @@ import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolRecommendationUtils;
 
 /** AI tools for reading ImageJ and SciJava diagnostic logs. */
 @Plugin(type = AiToolPlugin.class)
@@ -96,7 +97,8 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			}
 			final JsonObject result = new JsonObject();
 			result.addProperty("capture_started", true);
-			addToolRecommendations(result, "fiji_log_scijava_read");
+			ToolRecommendationUtils.addToolRecommendations(result,
+				"fiji_log_scijava_read");
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -117,7 +119,8 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 					ErrorOptions.withTool("fiji_log_scijava_start_capture"));
 			}
 			final JsonObject result = sciJavaLogResult(capture.getLogs());
-			addToolRecommendations(result, "fiji_log_scijava_stop_capture");
+			ToolRecommendationUtils.addToolRecommendations(result,
+				"fiji_log_scijava_stop_capture");
 			return result.toString();
 		}
 		catch (RuntimeException e) {

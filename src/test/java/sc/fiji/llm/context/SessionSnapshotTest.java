@@ -33,6 +33,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.Test;
 import org.scijava.Context;
 
@@ -41,8 +43,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import sc.fiji.llm.Setup;
+import sc.fiji.llm.image.ImageMetaContextItem;
 import sc.fiji.llm.image.ImageToolPlugin;
+import sc.fiji.llm.script.ScriptContextItem;
 import sc.fiji.llm.script.ScriptEditorToolPlugin;
+import sc.fiji.llm.script.ScriptID;
 import sc.fiji.llm.tools.AiToolService;
 
 public class SessionSnapshotTest {
@@ -91,6 +96,25 @@ public class SessionSnapshotTest {
 		assertEquals(SessionSnapshot.MAX_IMAGES, kept.size());
 		assertEquals(5, capped.get("omitted_images").getAsInt());
 		assertTrue(kept.get(0).getAsJsonObject().get("active").getAsBoolean());
+	}
+
+	@Test
+	public void testFormatsRecommendationsForAttachedScriptsAndImages() {
+		final String recommendations = PromptRecommendations.format(List.of(
+			new ScriptContextItem("test.py", "print(1)", new ScriptID(0, 0),
+				List.of(), "Python"), new ImageMetaContextItem("blobs.gif", 1,
+				List.of(new ImageMetaContextItem.Dimension("X", 10)), "uint8")));
+
+		assertTrue(recommendations, recommendations.contains("\"guide_recommendations\""));
+		assertTrue(recommendations, recommendations.contains("\"guide_id\":\"scripting\""));
+		assertTrue(recommendations, recommendations.contains("\"guide_id\":\"image-types\""));
+		assertTrue(recommendations, recommendations.contains("\"fiji_script_*\""));
+		assertTrue(recommendations, recommendations.contains("\"fiji_image_*\""));
+	}
+
+	@Test
+	public void testOmitsRecommendationsWithoutSupportedContext() {
+		assertEquals("", PromptRecommendations.format(List.of()));
 	}
 
 	@Test

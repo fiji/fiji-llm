@@ -154,7 +154,7 @@ public class DefaultAiToolServiceTest {
 	@Test
 	public void testSuccessResponsesSupportToolRecommendations() {
 		final JsonObject result = new JsonObject();
-		AbstractAiToolPlugin.addToolRecommendations(result, "fiji_next", " ", null,
+		ToolRecommendationUtils.addToolRecommendations(result, "fiji_next", " ", null,
 			"fiji_follow_up");
 
 		assertEquals("fiji_next", result.getAsJsonArray("recommended_tools").get(0)

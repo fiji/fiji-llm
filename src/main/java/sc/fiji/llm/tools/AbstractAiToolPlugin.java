@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -80,7 +79,8 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 		if (options != null && options.recommendedTool != null && !options.recommendedTool.isEmpty()) {
 			err.addProperty("recommended_tool", options.recommendedTool);
 		}
-		if (options != null) addGuideRecommendations(err, options.guideIds);
+		if (options != null) ToolRecommendationUtils.addGuideRecommendations(err,
+			options.guideIds);
 		return err.toString();
 	}
 
@@ -114,37 +114,6 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 			final String normalized = value.trim();
 			return normalized.isEmpty() ? null : normalized;
 		}
-	}
-
-	protected static void addGuideRecommendations(final JsonObject result,
-		final String... guideIds)
-	{
-		if (guideIds == null || guideIds.length == 0) return;
-		final JsonArray recommendations = new JsonArray();
-		for (final String guideId : guideIds) {
-			if (guideId == null || guideId.trim().isEmpty()) continue;
-			final JsonObject recommendation = new JsonObject();
-			recommendation.addProperty("tool", "fiji_guide_read");
-			final JsonObject arguments = new JsonObject();
-			arguments.addProperty("guide_id", guideId.trim());
-			recommendation.add("arguments", arguments);
-			recommendations.add(recommendation);
-		}
-		if (recommendations.size() > 0) result.add("guide_recommendations",
-			recommendations);
-	}
-
-	public static void addToolRecommendations(final JsonObject result,
-		final String... toolNames)
-	{
-		if (toolNames == null || toolNames.length == 0) return;
-		final JsonArray recommendations = new JsonArray();
-		for (final String toolName : toolNames) {
-			if (toolName != null && !toolName.trim().isEmpty()) recommendations.add(
-				toolName.trim());
-		}
-		if (recommendations.size() > 0) result.add("recommended_tools",
-			recommendations);
 	}
 
 	protected String stringProp(String key, JsonElement element) {

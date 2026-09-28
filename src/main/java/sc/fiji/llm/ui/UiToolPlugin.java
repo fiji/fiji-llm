@@ -45,6 +45,7 @@ import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolRecommendationUtils;
 
 /** AI tools for inspecting Fiji's visible UI. */
 @Plugin(type = AiToolPlugin.class)
@@ -144,7 +145,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			final JsonObject result = new JsonObject();
 			if (dialogs.size() > 0) {
 				result.add("dialogs", dialogs);
-				addToolRecommendations(result, "fiji_ui_dialog_respond",
+				ToolRecommendationUtils.addToolRecommendations(result, "fiji_ui_dialog_respond",
 					"fiji_ui_dialog_close");
 			}
 			result.addProperty("count", dialogs.size());
@@ -177,7 +178,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				result.addProperty("action_command", response.getActionCommand());
 			result.addProperty("dialog_visible_after", response
 				.isDialogVisibleAfter());
-			if (response.isDialogVisibleAfter()) addToolRecommendations(result,
+			if (response.isDialogVisibleAfter()) ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_ui_dialogs_read");
 			return result.toString();
 		}
@@ -200,7 +201,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			result.addProperty("dialog_class_name", response.getDialogClassName());
 			result.addProperty("dialog_visible_after", response
 				.isDialogVisibleAfter());
-			if (response.isDialogVisibleAfter()) addToolRecommendations(result,
+			if (response.isDialogVisibleAfter()) ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_ui_dialogs_read");
 			return result.toString();
 		}

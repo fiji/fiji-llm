@@ -55,6 +55,7 @@ import sc.fiji.llm.script.ScriptExecutionService;
 import sc.fiji.llm.script.ScriptID;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolRecommendationUtils;
 import sc.fiji.llm.tools.ToolScope;
 import sc.fiji.llm.ui.TextEditorUtils;
 
@@ -99,7 +100,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				categories.add(category);
 			}
 			final JsonObject result = jsonProp("categories", categories);
-			if (categories.size() > 0) addToolRecommendations(result,
+			if (categories.size() > 0) ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_macro_list_functions");
 			return result.toString();
 		}
@@ -152,7 +153,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			}
 			JsonObject result = new JsonObject();
 			result.addProperty("recorder_started", true);
-					addToolRecommendations(result,
+					ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_macro_recorder_state");
 			return result.toString();
 		}
@@ -175,7 +176,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				if (state.getBuffer() != null && !state.getBuffer().isBlank()) result
 					.addProperty("buffer", state.getBuffer());
 				if (state.getBuffer() != null && !state.getBuffer().isBlank())
-								addToolRecommendations(result,
+								ToolRecommendationUtils.addToolRecommendations(result,
 						"fiji_macro_create_script");
 			}
 			return result.toString();
@@ -265,7 +266,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			JsonObject result = new JsonObject();
 			result.addProperty("macro_transferred", true);
 			result.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
-					addToolRecommendations(result,
+					ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_script_read_content");
 			return result.toString();
 		}

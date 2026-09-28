@@ -60,6 +60,7 @@ import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolRecommendationUtils;
 import sc.fiji.llm.tools.ToolScope;
 
 /**
@@ -135,7 +136,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			result.addProperty("status", "success");
 			final JsonObject environment = capture.finish().toJson();
 			if (environment.size() > 0) result.add("environment_impact", environment);
-			if (hasOpenedDialogs(environment)) addToolRecommendations(
+			if (hasOpenedDialogs(environment)) ToolRecommendationUtils.addToolRecommendations(
 				result, "fiji_ui_dialog_respond", "fiji_ui_dialog_close");
 			return result.toString();
 		}
@@ -245,7 +246,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			JsonObject searchResult = new JsonObject();
 			searchResult.addProperty("search_name", query);
 			searchResult.add("commands", commands);
-			if (hasRunnableCommand) addToolRecommendations(searchResult,
+			if (hasRunnableCommand) ToolRecommendationUtils.addToolRecommendations(searchResult,
 				"fiji_command_run");
 			return searchResult.toString();
 		}
