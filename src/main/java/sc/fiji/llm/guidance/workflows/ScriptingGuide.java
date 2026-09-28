@@ -132,7 +132,8 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			1. Inspect the current Fiji script state with `fiji_script_list`.
 			2. Do not overwrite an existing script unless the user asks for it; create a new editor or script otherwise.
 			3. Use `fiji_script_rename` to set the filename extension to the requested language; use your judgement if not specified
-			4. Use the appropriate `fiji_script_*` tools to replace, edit, delete or read the complete script or selected line ranges, as needed.
+			4. Use `fiji_script_replace_content` for full rewrites; use
+			   `fiji_script_delete_lines` and `fiji_script_insert_content` for range edits.
 			5. Start a script run with `fiji_script_run`. Poll with `fiji_script_run_status` using the returned `run_id` until the run reaches a terminal state.
 			6. Verify script behavior using observable Fiji results appropriate to the script's goal, such as image, ROI, or Results Table changes.
 			7. If a concrete failure is identified, attempt repair: use the smallest script edit that addresses the diagnostic, then rerun from (5) above.
