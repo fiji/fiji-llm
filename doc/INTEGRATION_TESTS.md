@@ -56,6 +56,35 @@ binary content, and context-specific recommendations from being included. When
 practical, repeat the test with multiple attachments and with a new
 conversation.
 
+## Cross-Cutting Evaluation Criteria
+
+Apply these checks while reviewing tool specifications and observing live tool
+calls. Record a failure when a tool's description, parameters, or result makes
+the workflow ambiguous even if the underlying operation succeeds.
+
+- [ ] Tool names are clear, consistent, and describe the operation without
+      requiring model-specific or implementation-specific knowledge.
+- [ ] Every parameter has a meaningful name and description, with required or
+      optional status, valid values, units, defaults, and index conventions
+      stated where applicable.
+- [ ] Tool descriptions identify relevant scope, side effects, prerequisites,
+      and the expected result or state change.
+- [ ] Results use structured fields for status, outputs, errors, and relevant
+      state changes. Optional empty data is omitted when it is not meaningful.
+- [ ] Multi-stage workflows identify the next action when one is needed. Verify
+      that `recommended_tools`, `recommended_tool`, or `guide_recommendations`
+      names an available follow-up tool or guide, includes enough context to
+      continue, and is omitted when no follow-up is needed.
+- [ ] Paused, asynchronous, dialog-driven, and stateful workflows expose the
+      identifiers and status fields needed to resume or inspect the operation.
+- [ ] Errors explain what failed and provide a useful recovery path without
+      claiming success or hiding relevant partial state.
+- [ ] Destructive or broadly state-changing operations expose appropriate
+      confirmation, scope, or impact metadata.
+- [ ] Model-facing descriptions do not duplicate details already present in
+      structured result JSON, and irrelevant logs, fields, and tool listings
+      are not included merely for completeness.
+
 ## Image Content
 
 With at least two visible images open, use the MCP server as an external client
