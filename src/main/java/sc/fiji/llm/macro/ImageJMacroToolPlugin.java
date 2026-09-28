@@ -91,7 +91,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		return "Macro Writing Tools";
 	}
 
-	@Tool(value = { "List the built-in ImageJ macro function categories. Use fiji_macro_list_functions with one of these categories to see its functions." }, name = "fiji_macro_list_categories")
+	@Tool(value = { "List the built-in ImageJ macro function categories." }, name = "fiji_macro_list_categories")
 	public String listMacroCategories() {
 		try {
 			JsonArray categories = new JsonArray();
@@ -105,7 +105,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "List the built-in ImageJ macro functions for a category. Use fiji_macro_list_categories first to find valid categories; each result includes the function signature and description" }, name = "fiji_macro_list_functions")
+	@Tool(value = { "List the built-in ImageJ macro functions for a category; each result includes the function signature and description." }, name = "fiji_macro_list_functions")
 	public String listMacroFunctionsByCategory(@P(name = "category", value = "Category from fiji_macro_list_categories") String category) {
 		try {
 			if (category == null || category.trim().isEmpty()) {
