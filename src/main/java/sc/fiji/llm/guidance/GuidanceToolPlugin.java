@@ -75,15 +75,15 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Returns the contents of one specified guide." }, name = "fiji_guide_read")
-	public String read(@P(name = "id", value = "Guide ID") final String id) {
+	public String read(@P(name = "guide_id", value = "Guide ID from fiji_guide_list") final String guideId) {
 		try {
-			final var document = agentGuidanceService.read(id);
+			final var document = agentGuidanceService.read(guideId);
 
 			final AgentGuideMetadata metadata = agentGuidanceService.listDocuments().stream()
-				.filter(candidate -> candidate.id().equals(id == null ? "" : id.trim()))
+				.filter(candidate -> candidate.id().equals(guideId == null ? "" : guideId.trim()))
 				.findFirst().orElse(null);
 			if (document.isEmpty() || metadata == null) return jsonError(
-				"No guide found for ID: " + id, ErrorOptions.withTool("fiji_guide_list"));
+				"No guide found for ID: " + guideId, ErrorOptions.withTool("fiji_guide_list"));
 
 			final JsonObject result = metadataJson(metadata);
 			result.addProperty("content", document.get());

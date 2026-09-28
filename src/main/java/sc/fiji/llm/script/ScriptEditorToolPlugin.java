@@ -349,7 +349,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Poll an asynchronous non-macro script run by run_id. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_script_run_status")
-	public String scriptRunStatus(@P(name = "run_id", value = "Run ID returned when the run was started") final String runID) {
+	public String scriptRunStatus(@P(name = "run_id", value = "Run ID from fiji_script_run") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");
 		}

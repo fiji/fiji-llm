@@ -95,21 +95,21 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Read the exact geometry for one ROI Manager entry, including its shape, bounding box, and polygon coordinates." }, name = "fiji_rois_read_details")
-	public String readRoiDetails(@P(name = "index", value = "0-based ROI index from fiji_rois_read") final int index) {
+	public String readRoiDetails(@P(name = "roi_index", value = "0-based ROI index from fiji_rois_read") final int roiIndex) {
 		try {
 			final Object manager = invokeLegacyRoiManager();
 			if (manager == null) return jsonError("ROI Manager is not open",
 				ErrorOptions.withTool("fiji_rois_read"));
 
 			final int count = (int) invoke(manager, "getCount");
-			if (index < 0 || index >= count) return jsonError("ROI index must be between 0 and " +
-				(count - 1) + ": " + index, ErrorOptions.withTool("fiji_rois_read"));
+			if (roiIndex < 0 || roiIndex >= count) return jsonError("ROI index must be between 0 and " +
+				(count - 1) + ": " + roiIndex, ErrorOptions.withTool("fiji_rois_read"));
 
-			final Object roiObject = invoke(manager, "getRoi", index);
+			final Object roiObject = invoke(manager, "getRoi", roiIndex);
 			if (roiObject == null) return jsonError("ROI Manager entry has no ROI object: " +
-				index);
+				roiIndex);
 
-			final JsonObject result = roiSummary(manager, index, roiObject);
+			final JsonObject result = roiSummary(manager, roiIndex, roiObject);
 			result.addProperty("shape", roiObject.getClass().getSimpleName());
 			result.add("bounds", boundsJson(invoke(roiObject, "getBounds")));
 			result.add("coordinates", coordinatesJson(invoke(roiObject,

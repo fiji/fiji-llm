@@ -172,10 +172,10 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	@Tool(value = { "Search for available ImageJ commands whose name matches the given term, sorted by descending relevance. Returns matching command names and menu paths." },
 		name = "fiji_command_search" )
-	public String searchCommands(@P(name = "search_name", value = "Term to match against command names") String searchName) {
+	public String searchCommands(@P(name = "query", value = "Term to match against command names") String query) {
 		try {
-			if (searchName == null || searchName.trim().isEmpty()) {
-				return jsonError("Command name cannot be empty");
+			if (query == null || query.trim().isEmpty()) {
+				return jsonError("Search query cannot be empty");
 			}
 
 			// Collect results with a timeout
@@ -210,7 +210,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 				// Start the search operation
 				SearchOperation operation = searchService.search(listener);
-				operation.search(searchName);
+				operation.search(query);
 
 				// Wait for results with timeout (2 seconds should be plenty)
 				searchComplete.await(2, TimeUnit.SECONDS);
@@ -232,7 +232,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			}
 
 			JsonObject searchResult = new JsonObject();
-			searchResult.addProperty("search_name", searchName);
+			searchResult.addProperty("search_name", query);
 			searchResult.add("commands", commands);
 			return searchResult.toString();
 		}

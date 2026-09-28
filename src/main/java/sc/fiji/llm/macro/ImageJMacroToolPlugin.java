@@ -288,7 +288,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 	}
 
 	@Tool(value = { "Poll an asynchronous macro run by run_id. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_macro_run_status")
-	public String macroRunStatus(@P(name = "run_id", value = "Run ID returned when the run was started") final String runID) {
+	public String macroRunStatus(@P(name = "run_id", value = "Run ID from fiji_macro_run") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");
 		}
