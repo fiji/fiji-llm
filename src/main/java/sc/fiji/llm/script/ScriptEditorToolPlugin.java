@@ -323,7 +323,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return output and errors produced by this run, plus console stdout/stderr and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running or blocked by a dialog, the result identifies the next action." }, name = "fiji_script_run")
+	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return output and errors produced by this run, plus console stdout/stderr and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog." }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
