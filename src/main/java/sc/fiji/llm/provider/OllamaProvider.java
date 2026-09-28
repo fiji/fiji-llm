@@ -39,6 +39,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.scijava.Priority;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -49,7 +50,7 @@ import org.scijava.ui.UIService;
  * Allows users to choose from available installed models and download remote
  * models from the Ollama library.
  */
-@Plugin(type = LLMProvider.class, name = "Ollama")
+@Plugin(type = LLMProvider.class, name = "Ollama", priority = Priority.HIGH - 4)
 public class OllamaProvider extends AbstractOllamaProvider {
 
 	private static final String MODEL_URL =

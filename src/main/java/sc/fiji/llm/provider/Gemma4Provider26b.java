@@ -29,13 +29,14 @@
 
 package sc.fiji.llm.provider;
 
+import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
 /**
  * LLM provider plugin for Ollama Gemma4:26B model.
  * See: https://huggingface.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf
  */
-@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:26B)")
+@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4:26B)", priority = Priority.HIGH - 2)
 public class Gemma4Provider26b extends AbstractSingletonOllamaProvider {
 
 	private static final String MODEL_NAME = "hf.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf:latest";
@@ -46,7 +47,7 @@ public class Gemma4Provider26b extends AbstractSingletonOllamaProvider {
 
 	@Override
 	public String getName() {
-		return "Gemma4 - medium (Ollama)";
+		return "Gemma4 - M (Ollama)";
 	}
 
 	@Override

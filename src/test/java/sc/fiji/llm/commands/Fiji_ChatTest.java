@@ -41,8 +41,8 @@ public class Fiji_ChatTest {
 	@Test
 	public void testChoiceLabelMarksOnlyCuratedProviders() {
 		final Gemma4Provider12b curated = new Gemma4Provider12b();
-		assertEquals("Gemma4 - small (Ollama)", curated.getName());
-		assertEquals("*Gemma4 - small (Ollama)", Fiji_Chat.choiceLabel(curated));
+		assertEquals("Gemma4 - S (Ollama)", curated.getName());
+		assertEquals("*Gemma4 - S (Ollama)", Fiji_Chat.choiceLabel(curated));
 		assertEquals("Claude", Fiji_Chat.choiceLabel(new AnthropicProvider()));
 	}
 }
