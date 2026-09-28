@@ -367,9 +367,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Rename the active script." },
-		name = "fiji_script_rename")
-	public String renameScript(@P(name = "script_name", value = "New script name, including its file extension; a recognized extension determines the script language") final String scriptName)
+	@Tool(value = { "Rename the active script." }, name = "fiji_script_rename")
+	public String renameScript(@P(name = "script_name", value = "New script name, including its file extension; See fiji_script_list_languages for supported extensions") final String scriptName)
 	{
 		try {
 			// Validate filename
