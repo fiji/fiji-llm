@@ -240,8 +240,7 @@ public class ChatMessagePanel extends JPanel {
 
 	private JLabel createLabelWithFixedSize(final ImageIcon icon) {
 		final JLabel label = new JLabel(icon);
-		label.setOpaque(true);
-		label.setBackground(getIconBackground());
+		label.setOpaque(false);
 		setFixedSize(label, ICON_SIZE, ICON_SIZE);
 		return label;
 	}
