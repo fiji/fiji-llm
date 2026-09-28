@@ -55,6 +55,7 @@ import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentImpact;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.log.TextLogs;
+import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.ui.AWTDialogUtils;
 import sc.fiji.llm.ui.TextEditorUtils;
 
@@ -489,15 +490,12 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				addGuideRecommendation(result, execution.kind == RunKind.MACRO ?
 					"creating-macros" : "scripting");
 			}
-			if (execution.status == Status.BLOCKED_BY_DIALOG) result.addProperty(
-				"recommended_action",
-				"Inspect the dialog with fiji_ui_dialogs_read, then use " +
-					"fiji_ui_dialog_respond with its exact title and button text, or " +
-					"fiji_ui_dialog_close with its exact title. " +
-					"This run remains active.");
+			if (execution.status == Status.BLOCKED_BY_DIALOG) AbstractAiToolPlugin
+				.addToolRecommendations(result, "fiji_ui_dialog_respond",
+					"fiji_ui_dialog_close");
 			if (waitExpired && execution.status == Status.RUNNING) {
-				result.addProperty("recommended_action",
-					"The run is still active. Poll the corresponding run-status tool with run_id; do not start the script again.");
+				AbstractAiToolPlugin.addToolRecommendations(result, execution.kind ==
+					RunKind.MACRO ? "fiji_macro_run_status" : "fiji_script_run_status");
 			}
 			return result;
 		}

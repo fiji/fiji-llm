@@ -85,7 +85,8 @@ public class ScriptExecutionServiceTest {
 		assertFalse(json.has("errors"));
 		assertFalse(json.has("environment"));
 		assertFalse(json.has("environment_impact"));
-		assertTrue(json.get("recommended_action").getAsString().contains("Poll"));
+		assertEquals("fiji_script_run_status", json.getAsJsonArray("recommended_tools")
+			.get(0).getAsString());
 	}
 
 	@Test
@@ -101,6 +102,18 @@ public class ScriptExecutionServiceTest {
 			.get(0).getAsJsonObject().get("tool").getAsString());
 		assertEquals("scripting", json.getAsJsonArray("guide_recommendations").get(0)
 			.getAsJsonObject().getAsJsonObject("arguments").get("guide_id").getAsString());
+	}
+
+	@Test
+	public void testBlockedRunRecommendsDialogActions() throws Exception {
+		final JsonObject json = createExecutionResult(
+			ScriptExecutionService.Status.BLOCKED_BY_DIALOG, false, null, null).toJson();
+
+		assertEquals("fiji_ui_dialog_respond", json.getAsJsonArray("recommended_tools")
+			.get(0).getAsString());
+		assertEquals("fiji_ui_dialog_close", json.getAsJsonArray("recommended_tools")
+			.get(1).getAsString());
+		assertFalse(json.has("recommended_action"));
 	}
 
 	@Test

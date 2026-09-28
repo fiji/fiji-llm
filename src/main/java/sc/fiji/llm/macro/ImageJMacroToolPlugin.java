@@ -149,6 +149,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			}
 			JsonObject result = new JsonObject();
 			result.addProperty("recorder_started", true);
+					addToolRecommendations(result,
+				"fiji_macro_recorder_state");
 			return result.toString();
 		}
 		catch (Exception e) {
@@ -169,6 +171,9 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				result.addProperty("script_mode", state.isScriptMode());
 				if (state.getBuffer() != null && !state.getBuffer().isBlank()) result
 					.addProperty("buffer", state.getBuffer());
+				if (state.getBuffer() != null && !state.getBuffer().isBlank())
+								addToolRecommendations(result,
+						"fiji_macro_create_script");
 			}
 			return result.toString();
 		}
@@ -177,7 +182,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Close the ImageJ macro recorder and stop recording. Use fiji_macro_create_script first if the current macro should be transferred to the script editor." }, name = "fiji_macro_close_recorder")
+	@Tool(value = { "Close the ImageJ macro recorder and stop recording." }, name = "fiji_macro_close_recorder")
 	public String closeRecorder() {
 		try {
 			String[] errors = new String[1];
@@ -214,7 +219,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Transfer the current macro recorder state to the script editor. Use fiji_script_* tools for script interaction" }, name = "fiji_macro_create_script")
+	@Tool(value = { "Transfer the current macro recorder state to the script editor." }, name = "fiji_macro_create_script")
 	public String createScript() {
 		try {
 			String[] errors = new String[1];
@@ -257,6 +262,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			JsonObject result = new JsonObject();
 			result.addProperty("macro_transferred", true);
 			result.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
+					addToolRecommendations(result,
+				"fiji_script_read_content");
 			return result.toString();
 		}
 		catch (Exception e) {
@@ -265,7 +272,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. This call waits up to 30 seconds for the macro to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_macro_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_macro_run")
+	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. This call waits up to 30 seconds for the macro to finish or pause on a new modal dialog. If it is still running or blocked by a dialog, the result identifies the next action." }, name = "fiji_macro_run")
 	public String runMacro() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -290,7 +297,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Poll an asynchronous macro run. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_macro_run_status")
+	@Tool(value = { "Poll an asynchronous macro run. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Continue polling until the run reaches a terminal state." }, name = "fiji_macro_run_status")
 	public String macroRunStatus(@P(name = "run_id", value = "Run ID from fiji_macro_run") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");

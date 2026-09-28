@@ -241,8 +241,10 @@ changes what the assistant should do next. Omit optional empty, default, and
 failure-only fields unless their absence would hide actionable state. Include a
 boolean only when its false value carries real information; use field presence
 as meaningful, and retain counts or status fields when they explain an empty or
-unsuccessful result. Put detailed diagnostics and recovery context on the
-failure path rather than in every successful response.
+unsuccessful result. Successful multi-stage operations may include a
+`recommended_tools` array only when a concrete next step is available. Put
+detailed diagnostics and recovery context on the failure path rather than in
+every successful response.
 
 **Script Writing** - Ask the assistant to write scripts in Python, Groovy, JavaScript, or other SciJava-compatible languages. Describe the context of your analysis task and the assistant can generate executable scripts.
 

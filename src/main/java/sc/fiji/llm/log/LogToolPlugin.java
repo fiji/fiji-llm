@@ -96,6 +96,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			}
 			final JsonObject result = new JsonObject();
 			result.addProperty("capture_started", true);
+			addToolRecommendations(result, "fiji_log_scijava_read");
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -104,7 +105,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Read the SciJava log messages captured since fiji_log_scijava_start_capture" }, name = "fiji_log_scijava_read")
+	@Tool(value = { "Read the currently captured SciJava log messages" }, name = "fiji_log_scijava_read")
 	public String readSciJavaLog() {
 		try {
 			final SciJavaLogUtils.LogCapture capture;
@@ -115,7 +116,9 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 				return jsonError("No SciJava log capture is active",
 					ErrorOptions.withTool("fiji_log_scijava_start_capture"));
 			}
-			return sciJavaLogResult(capture.getLogs()).toString();
+			final JsonObject result = sciJavaLogResult(capture.getLogs());
+			addToolRecommendations(result, "fiji_log_scijava_stop_capture");
+			return result.toString();
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_log_scijava_read: " + e.getMessage());

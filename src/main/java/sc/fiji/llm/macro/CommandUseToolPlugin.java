@@ -97,7 +97,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		return "Command Interaction Tools";
 	}
 
-	@Tool(value = { "Execute an ImageJ command. This tool does not select or activate a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Call fiji_image_activate if you need to change the target image. Returns command status, environment impact, and produced log output." },
+	@Tool(value = { "Execute an ImageJ command without changing the active image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and produced log output." },
 		name = "fiji_command_run" )
 	public String runCommand(@P(name = "menu_path", value = "Exact menu path from fiji_command_search") String menuPath) {
 		EnvironmentSnapshotService.EnvironmentCapture capture = null;
@@ -135,6 +135,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			result.addProperty("status", "success");
 			final JsonObject environment = capture.finish().toJson();
 			if (environment.size() > 0) result.add("environment_impact", environment);
+			if (hasOpenedDialogs(environment)) addToolRecommendations(
+				result, "fiji_ui_dialog_respond", "fiji_ui_dialog_close");
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -143,6 +145,11 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			}
 			return jsonError("Failed to run fiji_command_run: " + e.getMessage());
 		}
+	}
+
+	private static boolean hasOpenedDialogs(final JsonObject environment) {
+		return environment.has("changes") && environment.getAsJsonObject("changes")
+			.has("dialogs_opened");
 	}
 
 	private void waitForUiToSettle() {

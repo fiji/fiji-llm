@@ -151,6 +151,18 @@ public class DefaultAiToolServiceTest {
 			.getAsString());
 	}
 
+	@Test
+	public void testSuccessResponsesSupportToolRecommendations() {
+		final JsonObject result = new JsonObject();
+		AbstractAiToolPlugin.addToolRecommendations(result, "fiji_next", " ", null,
+			"fiji_follow_up");
+
+		assertEquals("fiji_next", result.getAsJsonArray("recommended_tools").get(0)
+			.getAsString());
+		assertEquals("fiji_follow_up", result.getAsJsonArray("recommended_tools")
+			.get(1).getAsString());
+	}
+
 	@SuppressWarnings( "unused" )
 	private static ToolSpecification spec() {
 		for (final var method : DefaultAiToolServiceTest.class

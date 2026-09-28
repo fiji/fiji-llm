@@ -323,7 +323,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_script_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_script_run")
+	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running or blocked by a dialog, the result identifies the next action." }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -348,7 +348,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Poll an asynchronous non-macro script run. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_script_run_status")
+	@Tool(value = { "Poll an asynchronous non-macro script run. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Continue polling until the run reaches a terminal state." }, name = "fiji_script_run_status")
 	public String scriptRunStatus(@P(name = "run_id", value = "Run ID from fiji_script_run") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");

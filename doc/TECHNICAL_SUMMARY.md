@@ -98,7 +98,9 @@ Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensit
 Structured tool responses omit optional empty, default, and failure-only fields
 unless their absence would hide actionable state. Field presence is therefore
 meaningful; counts and status fields remain available when they explain an empty
-or unsuccessful result.
+or unsuccessful result. Multi-stage success responses may include a
+`recommended_tools` string array when a concrete next tool is indicated. Error
+responses retain the singular `recommended_tool` field for recovery guidance.
 
 Built-in tools include:
 - **`ImageJMacroToolPlugin`** — macro recorder integration, macro function discovery

@@ -134,6 +134,19 @@ public abstract class AbstractAiToolPlugin implements AiToolPlugin {
 			recommendations);
 	}
 
+	public static void addToolRecommendations(final JsonObject result,
+		final String... toolNames)
+	{
+		if (toolNames == null || toolNames.length == 0) return;
+		final JsonArray recommendations = new JsonArray();
+		for (final String toolName : toolNames) {
+			if (toolName != null && !toolName.trim().isEmpty()) recommendations.add(
+				toolName.trim());
+		}
+		if (recommendations.size() > 0) result.add("recommended_tools",
+			recommendations);
+	}
+
 	protected String stringProp(String key, JsonElement element) {
 		return jsonProp(key, element).toString();
 	}
