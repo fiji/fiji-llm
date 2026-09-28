@@ -44,18 +44,18 @@ public class Conversation {
 
 	private final List<Message> messages;
 	private final String id;
-	private final String name;
+	private volatile String displayName;
 	private final SystemMessage systemMessage;
 
 	/**
 	 * @param id A unique, stable identifier, which is also the file name used
 	 *          to save the conversation
-	 * @param name A display name, which need not be unique
+	 * @param displayName An optional display name, which need not be unique
 	 * @param systemMessage The system message for the conversation
 	 */
-	public Conversation(String id, String name, SystemMessage systemMessage) {
+	public Conversation(String id, String displayName, SystemMessage systemMessage) {
 		this.id = id;
-		this.name = name;
+		this.displayName = displayName;
 		messages = new ArrayList<>();
 		this.systemMessage = systemMessage;
 	}
@@ -112,10 +112,14 @@ public class Conversation {
 	}
 
 	/**
-	 * @return A display name for this conversation
+	 * @return The display name for this conversation, or null when it is unset
 	 */
-	public String name() {
-		return name;
+	public String displayName() {
+		return displayName;
+	}
+
+	void setDisplayName(final String displayName) {
+		this.displayName = displayName;
 	}
 
 	/**

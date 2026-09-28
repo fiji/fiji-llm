@@ -56,6 +56,18 @@ binary content, and context-specific recommendations from being included. When
 practical, repeat the test with multiple attachments and with a new
 conversation.
 
+- [ ] Start a new conversation and verify that its UUID is stable while its
+      display label initially falls back to that UUID.
+- [ ] Send the first message and verify that the outgoing request contains one
+      `conversation_recommendation` with `tool: "fiji_conversation_name"` and
+      the new conversation's `conversation_id`.
+- [ ] Verify that the assistant can name the conversation from its history, the
+      result contains the same conversation ID and a timestamped display name,
+      and the chat selector updates without reopening the conversation.
+- [ ] Verify that the name persists after restarting or reloading the
+      conversation, that later messages do not repeat the naming recommendation,
+      and that a second naming attempt returns an error.
+
 ## Cross-Cutting Evaluation Criteria
 
 Apply these checks while reviewing tool specifications and observing live tool

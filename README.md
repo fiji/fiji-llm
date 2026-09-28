@@ -174,7 +174,7 @@ execution, diagnosis, repair, and verification workflows.
 
 **API Keys** - Credentials that authenticate you with an AI service provider. Often require per-token pay-as-you-go or a subscription plan.
 
-**Conversations** - Your chat history with an AI assistant, independent of model. Conversations are saved locally and loaded when Fiji starts, so you can continue working where you left off. In long conversations, the model may not "see" the whole chat history.
+**Conversations** - Your chat history with an AI assistant, independent of model. Conversations are saved locally and loaded when Fiji starts, so you can continue working where you left off. Each conversation has a stable UUID identity and an optional display name; new conversations initially show their UUID and can be named once by the assistant from their history. In long conversations, the model may not "see" the whole chat history.
 
 **Context Items** - Information you can attach to chat message that helps the assistant understand your Fiji environment. For example, you could attach an open image or script.
 

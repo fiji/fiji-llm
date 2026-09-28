@@ -111,6 +111,7 @@ Built-in tools include:
 - **`RoiManagerToolPlugin`** — ROI Manager inspection and explicit ROI selection
 - **`SystemInfoToolPlugin`** — read-only host, JVM, application version, and update-site inspection
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
+- **`ConversationToolPlugin`** — one-time conversation naming from a supplied UUID, with an automatic timestamp
 - **`UiToolPlugin`** — visible AWT and Swing window/control inspection, screenshots, dialog inspection, exact button responses, and explicit dialog closing
 - **`ScriptExecutionService`** — shared Script Editor execution, bounded initial waits, state snapshots, and dialog-aware run status for scripts and `.ijm` macros
 
@@ -190,7 +191,7 @@ ImageJ ROI when the legacy bridge is available.
 
 `Conversation` holds a list of `Message` pairs — a **display string** (rendered in the UI) and a **`ChatMessage`** (stored in LangChain4j memory). This dual representation allows UI formatting to diverge from what the model sees. An assistant message may also carry an `ActivityRecord` of the thinking and tool calls that produced it (tool results truncated); it is display-only and never added to chat memory. It is stored as an optional `activity` field, so conversation files without it still load.
 
-`ConversationService` persists conversations to disk as JSON (`SerializedConversation`/`SerializedMessage`) and manages their lifecycle (create, load, delete). Each conversation has a unique ID (a UUID for new conversations) that keys the service and names its file, `<id>.json`; display names need not be unique. Files saved before IDs existed use their file name as their ID, so they load and save in place.
+`ConversationService` persists conversations to disk as JSON (`SerializedConversation`/`SerializedMessage`) and manages their lifecycle (create, load, delete, and one-time naming). Each conversation has a stable ID (a UUID for new conversations) that keys the service and names its file, `<id>.json`, plus an optional display name. New conversations begin unnamed and the integrated chat shows the UUID until `fiji_conversation_name` assigns a timestamped display name using the conversation UUID supplied in the first-message recommendation. Files saved before IDs existed use their file name as their ID, so they load and save in place.
 
 ---
 

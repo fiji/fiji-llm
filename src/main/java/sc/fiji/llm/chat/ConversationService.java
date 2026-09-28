@@ -55,12 +55,23 @@ public interface ConversationService extends ImageJService {
 	/**
 	 * Creates and registers a new conversation with a new unique ID.
 	 *
-	 * @param name The conversation's display name
+	 * @param displayName The conversation's optional display name
 	 * @param systemMessage The system message for the conversation
 	 * @return The created conversation
 	 */
-	Conversation createConversation(String name,
+	Conversation createConversation(String displayName,
 		dev.langchain4j.data.message.SystemMessage systemMessage);
+
+	/**
+	 * Assigns the display name of an unnamed conversation and persists it.
+	 *
+	 * @param id The conversation ID
+	 * @param displayName The display name to assign
+	 * @return The renamed conversation
+	 * @throws IllegalArgumentException if the conversation does not exist, the
+	 *           display name is blank, or the conversation is already named
+	 */
+	Conversation nameConversation(String id, String displayName);
 
 	/**
 	 * Adds a conversation, replacing any with the same ID.

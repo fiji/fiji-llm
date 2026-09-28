@@ -79,12 +79,37 @@ public class DefaultConversationService extends AbstractService implements
 	}
 
 	@Override
-	public Conversation createConversation(String name,
+	public Conversation createConversation(String displayName,
 		SystemMessage systemMessage)
 	{
 		Conversation conversation = new Conversation(UUID.randomUUID().toString(),
-			name, systemMessage);
+			displayName, systemMessage);
 		addConversation(conversation);
+		return conversation;
+	}
+
+	@Override
+	public synchronized Conversation nameConversation(final String id,
+		final String displayName)
+	{
+		if (id == null || id.isBlank()) {
+			throw new IllegalArgumentException("Conversation ID cannot be blank");
+		}
+		if (displayName == null || displayName.isBlank()) {
+			throw new IllegalArgumentException("Conversation display name cannot be blank");
+		}
+
+		final Conversation conversation = conversationsById.get(id);
+		if (conversation == null) {
+			throw new IllegalArgumentException("No conversation found with ID: " + id);
+		}
+		if (conversation.displayName() != null && !conversation.displayName().isBlank()) {
+			throw new IllegalArgumentException("Conversation already has a display name: " +
+				conversation.displayName());
+		}
+
+		conversation.setDisplayName(displayName.trim());
+		saveConversation(conversation);
 		return conversation;
 	}
 
@@ -188,7 +213,7 @@ public class DefaultConversationService extends AbstractService implements
 						final String id = isValidId(serialized.getId()) ? serialized.getId()
 							: file.getName().replaceFirst("\\.json$", "");
 						Conversation conversation = new Conversation(id, serialized
-							.getName(), systemMessage);
+							.getDisplayName(), systemMessage);
 
 						for (SerializedConversation.SerializedConversationMessage msg : serialized
 							.getMessages())
@@ -239,7 +264,7 @@ public class DefaultConversationService extends AbstractService implements
 
 			SerializedConversation serialized = new SerializedConversation();
 			serialized.setId(conversation.id());
-			serialized.setName(conversation.name());
+			serialized.setDisplayName(conversation.displayName());
 			serialized.setSystemMessage(conversation.systemMessage().text());
 
 			List<SerializedConversation.SerializedConversationMessage> messages =
@@ -261,7 +286,7 @@ public class DefaultConversationService extends AbstractService implements
 		}
 		catch (IOException e) {
 			getContext().getService(org.scijava.log.LogService.class).error(
-				"Failed to save conversation: " + conversation.name(), e);
+				"Failed to save conversation: " + conversation.displayName(), e);
 		}
 	}
 

@@ -44,10 +44,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -84,8 +81,8 @@ import org.scijava.prefs.PrefService;
 import org.scijava.thread.ThreadService;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.SystemMessage;
@@ -154,6 +151,7 @@ In addition to chat text, user messages may include:
 - User-attached context items, indicating likely areas of focus
 - A point-in-time environment snapshot of the active and open scripts and images at the time the message was sent; it is not live and may become stale
 - An optional recommended-resources block for attached context; use its guide recommendations when relevant. Its tool-family entries are prefixes, not callable tool names, and do not require automatic calls
+- An optional conversation-naming recommendation on the first message; use it to name the conversation from its history when appropriate
 
 Treat the active image and active script as Fiji's current implicit targets. Tools and commands
 without an explicit image_id or script_id may operate on those active targets. Use
@@ -274,7 +272,8 @@ Be concise, patient, humble, and collaborative.
 				final boolean isSelected, final boolean cellHasFocus)
 			{
 				final Object displayValue = value instanceof Conversation conversation
-					? conversation.name() : "<no conversation>";
+					? conversation.displayName() == null ? conversation.id() : conversation
+						.displayName() : "<no conversation>";
 				return super.getListCellRendererComponent(list, displayValue, index,
 					isSelected, cellHasFocus);
 			}
@@ -824,15 +823,15 @@ Be concise, patient, humble, and collaborative.
 		// Switch to stop mode
 		setStopMode();
 		final AtomicBoolean aiMessageStarted = new AtomicBoolean();
-		final AtomicBoolean cancelConversation = new AtomicBoolean();
 		final int updateDelay = 200;
 
 		// Process chat in background thread (LLM calls happen OFF the EDT)
 		Future<?> msgThread = threadService.run(() -> {
 			try {
-				// If this is the first message in a new conversation, auto-name it
+				// If this is the first message in a new conversation, create it with an
+				// unset display name. The model may name it using the recommended tool.
 				if (currentConversation == null) {
-					createNewConversation(userText, cancelConversation);
+					createNewConversation();
 				}
 				if (currentConversation == null) {
 					// Message was canceled before the conversation was created
@@ -851,6 +850,12 @@ Be concise, patient, humble, and collaborative.
 					+ "\n=== END USER-ATTACHED CONTEXT ===";
 				final String recommendations = PromptRecommendations.format(mergedContextItems);
 				if (!recommendations.isEmpty()) requestText += "\n\n" + recommendations;
+				if (requestConversation.messages().isEmpty() && requestConversation
+					.displayName() == null)
+				{
+					requestText += "\n\n" + formatConversationRecommendation(
+						requestConversation);
+				}
 				final String snapshot = buildSessionSnapshot();
 				if (!snapshot.isEmpty()) requestText += "\n\n" + snapshot;
 				userContents.add(new TextContent(requestText));
@@ -896,6 +901,12 @@ Be concise, patient, humble, and collaborative.
 						currentStreamingPanel.toolFinished(execution.request().name(),
 							execution.hasFailed(), execution.duration().toMillis(), execution
 								.result());
+						if ("fiji_conversation_name".equals(execution.request().name())) {
+							SwingUtilities.invokeLater(() -> {
+								conversationComboBox.revalidate();
+								conversationComboBox.repaint();
+							});
+						}
 					})
 					.onPartialThinkingWithContext((thinking, context) -> {
 						if (stopRequested) {
@@ -979,7 +990,6 @@ Be concise, patient, humble, and collaborative.
 			while (!aiMessageStarted.get()) {
 				if (stopRequested && !stopped) {
 					stopped = true;
-					cancelConversation.set(true);
 					msgThread.cancel(false);
 					stopRequested = false;
 					SwingUtilities.invokeLater(() -> {
@@ -1770,64 +1780,16 @@ Be concise, patient, humble, and collaborative.
 	}
 
 	/**
-	 * Create a new the conversation based on the user's first message. Sends a
-	 * separate request to the LLM to summarize the message.
+	 * Creates a new conversation with an unset display name. The first chat
+	 * request may name it through the recommended conversation tool.
 	 */
-	private void createNewConversation(String userMessage,
-		final AtomicBoolean cancelConversation)
+	private void createNewConversation()
 	{
 		SystemMessage systemMessage = new SystemMessage(buildSystemMessage());
-		ChatMemory chatMemory = buildAssistant(systemMessage);
-		String textToTruncate = userMessage;
-		String conversationName;
-		try {
-			// Create a simple request to summarize the user's message into a brief
-			// name
-			final String namingPrompt =
-				"Following is the first message of a new conversation. Respond " +
-				"with ONLY a 3-5 word summary of this message, suitable for a " +
-				"conversation title: \"" +
-					userMessage + "\"";
-			final AiMessage response = assistant.chat(List.of(new TextContent(
-				namingPrompt)));
-			chatMemory.clear();
-			textToTruncate = response.text();
-		}
-		catch (Exception e) {
-			chatMemory.clear();
-			chatMemory.add(systemMessage);
-			handleAssistantFailure(e,
-				"Unable to generate a conversation name; using the first message instead",
-				true);
-		}
-
-		// Check if the message was interrupted while we were waiting for the LLM.
-		if (cancelConversation.get()) {
-			return;
-		}
-
-		// Truncate to the the first few words
-		textToTruncate = textToTruncate.trim();
-		String[] words = textToTruncate.split("\\s+");
-		if (words.length <= 5) {
-			conversationName = textToTruncate;
-		}
-		else {
-			conversationName = String.join(" ", Arrays.copyOf(words, 5)) + "...";
-		}
-		// Truncate conversation name to 30 characters max
-		final int maxNameLength = 30;
-		if (conversationName.length() > maxNameLength) {
-			conversationName = conversationName.substring(0, maxNameLength - 1) +
-				"...";
-		}
-
-		final String timestampedName = conversationName + new SimpleDateFormat(
-			" [dd.MMM.yyyy]").format(new Date());
-		// Create the conversation with the auto-generated name
-		final Conversation conversation = conversationService.createConversation(
-			timestampedName, systemMessage);
+		final Conversation conversation = conversationService.createConversation(null,
+			systemMessage);
 		currentConversation = conversation;
+		buildAssistant(systemMessage);
 
 		SwingUtilities.invokeLater(() -> {
 			conversationComboBox.insertItemAt(conversation, 0);
@@ -1835,6 +1797,20 @@ Be concise, patient, humble, and collaborative.
 			deleteConversationButton.setEnabled(true);
 			newConversationButton.setEnabled(true);
 		});
+	}
+
+	private static String formatConversationRecommendation(
+		final Conversation conversation)
+	{
+		final JsonObject recommendation = new JsonObject();
+		recommendation.addProperty("tool", "fiji_conversation_name");
+		final JsonObject arguments = new JsonObject();
+		arguments.addProperty("conversation_id", conversation.id());
+		recommendation.add("arguments", arguments);
+		final JsonObject block = new JsonObject();
+		block.add("conversation_recommendation", recommendation);
+		return "=== RECOMMENDED FIJI ACTION ===\n" + block +
+			"\n=== END RECOMMENDED FIJI ACTION ===";
 	}
 
 	/**
@@ -1846,7 +1822,8 @@ Be concise, patient, humble, and collaborative.
 		}
 
 		final Conversation conversation = currentConversation;
-		final String conversationName = conversation.name();
+		final String conversationName = conversation.displayName() == null ? conversation
+			.id() : conversation.displayName();
 
 		// Confirm deletion with user
 		final int response = javax.swing.JOptionPane.showConfirmDialog(frame,

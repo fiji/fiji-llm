@@ -55,7 +55,7 @@ public class ChatMessageConverterTest {
 		assertEquals("USER", serialized.getType());
 		assertEquals("Describe this image", serialized.getContent());
 		final SerializedConversation conversation = new SerializedConversation();
-		conversation.setName("test");
+		conversation.setDisplayName("test");
 		conversation.setSystemMessage("system");
 		final SerializedConversation.SerializedConversationMessage serializedMessage =
 			new SerializedConversation.SerializedConversationMessage();

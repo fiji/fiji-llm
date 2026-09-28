@@ -33,13 +33,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Serializable container for a Conversation, used for JSON persistence.
  */
 public class SerializedConversation {
 
 	private String id;
-	private String name;
+	@SerializedName(value = "displayName", alternate = { "name" })
+	private String displayName;
 	private String systemMessage;
 	private List<SerializedConversationMessage> messages = new ArrayList<>();
 
@@ -54,12 +57,12 @@ public class SerializedConversation {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	public String getDisplayName() {
+		return displayName;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
 	}
 
 	public String getSystemMessage() {
@@ -83,14 +86,14 @@ public class SerializedConversation {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		SerializedConversation that = (SerializedConversation) o;
-		return Objects.equals(id, that.id) && Objects.equals(name, that.name) &&
+		return Objects.equals(id, that.id) && Objects.equals(displayName, that.displayName) &&
 			Objects.equals(systemMessage, that.systemMessage) && Objects.equals(
 				messages, that.messages);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, systemMessage, messages);
+		return Objects.hash(id, displayName, systemMessage, messages);
 	}
 
 	/**

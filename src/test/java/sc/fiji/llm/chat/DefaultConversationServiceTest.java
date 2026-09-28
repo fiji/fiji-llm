@@ -111,13 +111,35 @@ public class DefaultConversationServiceTest {
 		service.setConversationDirectory(dir);
 
 		final Conversation legacy = service.getConversation("Count_cells");
-		assertEquals("Count cells", legacy.name());
+		assertEquals("Count cells", legacy.displayName());
 		legacy.addMessage("more", UserMessage.from("more"));
 
 		// Saving writes back to the same file rather than creating another.
 		service.setConversationDirectory(dir);
 		assertEquals(1, dir.listFiles().length);
 		assertEquals(2, service.getConversation("Count_cells").messages().size());
+	}
+
+	@Test
+	public void testUnnamedConversationCanBeNamedOnceAndPersisted() {
+		final Conversation conversation = service.createConversation(null,
+			SystemMessage.from("sys"));
+		assertNull(conversation.displayName());
+
+		service.nameConversation(conversation.id(), "Count cells [2026-09-28 12:00]");
+		assertEquals("Count cells [2026-09-28 12:00]", conversation.displayName());
+
+		try {
+			service.nameConversation(conversation.id(), "Different name");
+			throw new AssertionError("Expected already-named conversation to fail");
+		}
+		catch (IllegalArgumentException expected) {
+			assertTrue(expected.getMessage().contains("already has a display name"));
+		}
+
+		service.setConversationDirectory(dir);
+		assertEquals("Count cells [2026-09-28 12:00]", service.getConversation(
+			conversation.id()).displayName());
 	}
 
 	private Conversation createWithMessage(final String name,
