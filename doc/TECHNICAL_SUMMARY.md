@@ -87,7 +87,9 @@ AiServices.builder(FijiAssistant.class)
 
 `AiToolPlugin` is a SciJava `SingletonPlugin` interface. Implementations annotate methods with LangChain4j's `@Tool` to define callable tools. `AiToolService` aggregates all discovered `AiToolPlugin` instances and exposes their `ToolSpecification` / `ToolExecutor` maps. Tool parameters must be named with `@P(name = ...)`, which a unit test enforces; `@P("...")` alone sets only the description, leaving the parameter named `arg0`, `arg1`, etc. When a tool call fails, `DefaultAiToolService` returns an error to the model naming any missing or unexpected parameters and listing the expected ones, so the model can correct its call.
 
-Tool behavior and usage guidance are declared in each `@Tool` description.
+Tool behavior and workflow guidance are declared in each `@Tool` description;
+parameter-specific input requirements belong in the corresponding `@P(value =
+...)` description.
 The plugin contract does not include a separate namespace-level usage string;
 shared Fiji workflow guidance is maintained in the packaged guidance catalog.
 

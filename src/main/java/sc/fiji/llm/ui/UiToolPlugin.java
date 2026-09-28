@@ -75,7 +75,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Inspect supported visible controls in one exact window. Provide an exact window title and optionally its exact class name; leave the title blank to inspect the active window" }, name = "fiji_ui_controls_read")
+	@Tool(value = { "Inspect supported visible controls in one exact window." }, name = "fiji_ui_controls_read")
 	public String readControls(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read; blank for the active window", required = false) final String windowTitle,
 		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName)
 	{
@@ -95,7 +95,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Capture a PNG screenshot of one visible window or component using current screen pixels. Provide an exact window_title, using class if needed to differentiate duplicate window titles. The optional component_path allows cropping to that component. Screenshot may include overlapping or occluding windows; set activate_and_restore to true to attempt focusing the target window before capture and restoring prior focus after (behavior not guaranteed)" }, name = "fiji_ui_screenshot")
+	@Tool(value = { "Capture a PNG screenshot of one visible window or component using current screen pixels. The capture may include overlapping or occluding windows, and requested focus changes are best effort." }, name = "fiji_ui_screenshot")
 	public List<Content> screenshot(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read") final String windowTitle,
 		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName,
 		@P(name = "component_path", value = "Component path from fiji_ui_controls_read, to crop to that component", required = false) final String componentPath,
@@ -152,7 +152,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Click an exact enabled button in one visible dialog with the exact title. This tool rejects missing or ambiguous dialogs and never chooses a button implicitly" }, name = "fiji_ui_dialog_respond")
+	@Tool(value = { "Click an exact enabled button in one visible dialog. This tool rejects missing or ambiguous dialogs and never chooses a button implicitly" }, name = "fiji_ui_dialog_respond")
 	public String respondToDialog(@P(name = "dialog_title", value = "Dialog title from fiji_ui_dialogs_read") final String dialogTitle,
 		@P(name = "button_text", value = "Button text from the same dialog") final String buttonText)
 	{
@@ -181,7 +181,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Request the normal window-manager close action for one visible dialog with the exact title. This tool rejects missing or ambiguous dialogs, does not choose a button, and reports whether the dialog remains visible" }, name = "fiji_ui_dialog_close")
+	@Tool(value = { "Request the normal window-manager close action for one visible dialog. This tool rejects missing or ambiguous dialogs, does not choose a button, and reports whether the dialog remains visible" }, name = "fiji_ui_dialog_close")
 	public String closeDialog(@P(name = "dialog_title", value = "Dialog title from fiji_ui_dialogs_read") final String dialogTitle) {
 		if (dialogTitle == null || dialogTitle.isBlank()) {
 			return jsonError("dialog_title cannot be null or blank");

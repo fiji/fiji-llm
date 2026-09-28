@@ -74,7 +74,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Returns the contents of one specified guide." }, name = "fiji_guide_read")
+	@Tool(value = { "Return the contents of a guide." }, name = "fiji_guide_read")
 	public String read(@P(name = "guide_id", value = "Guide ID from fiji_guide_list") final String guideId) {
 		try {
 			final var document = agentGuidanceService.read(guideId);

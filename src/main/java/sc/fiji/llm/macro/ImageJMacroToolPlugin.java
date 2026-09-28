@@ -105,7 +105,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "List the built-in ImageJ macro functions for a category; each result includes the function signature and description." }, name = "fiji_macro_list_functions")
+	@Tool(value = { "List the built-in ImageJ macro functions; each result includes the function signature and description." }, name = "fiji_macro_list_functions")
 	public String listMacroFunctionsByCategory(@P(name = "category", value = "Category from fiji_macro_list_categories") String category) {
 		try {
 			if (category == null || category.trim().isEmpty()) {
@@ -287,7 +287,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Poll an asynchronous macro run by run_id. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_macro_run_status")
+	@Tool(value = { "Poll an asynchronous macro run. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title, then poll again." }, name = "fiji_macro_run_status")
 	public String macroRunStatus(@P(name = "run_id", value = "Run ID from fiji_macro_run") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");

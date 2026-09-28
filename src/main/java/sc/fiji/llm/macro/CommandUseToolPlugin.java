@@ -97,9 +97,9 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		return "Command Interaction Tools";
 	}
 
-	@Tool(value = { "Execute a command using its full menu path. This tool does not select or activate a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Call fiji_image_activate if you need to change the target image. Returns command status, environment impact, and produced log output." },
+	@Tool(value = { "Execute an ImageJ command. This tool does not select or activate a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Call fiji_image_activate if you need to change the target image. Returns command status, environment impact, and produced log output." },
 		name = "fiji_command_run" )
-	public String runCommand(@P(name = "menu_path", value = "Menu path from fiji_command_search") String menuPath) {
+	public String runCommand(@P(name = "menu_path", value = "Exact menu path from fiji_command_search") String menuPath) {
 		EnvironmentSnapshotService.EnvironmentCapture capture = null;
 		try {
 			if (menuPath == null || menuPath.isEmpty()) {
@@ -170,7 +170,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		return result.toString();
 	}
 
-	@Tool(value = { "Search for available ImageJ commands whose name matches the given term, sorted by descending relevance. Returns matching command names and menu paths." },
+	@Tool(value = { "Search for available ImageJ commands, sorted by descending relevance. Returns matching command names and menu paths." },
 		name = "fiji_command_search" )
 	public String searchCommands(@P(name = "query", value = "Term to match against command names") String query) {
 		try {

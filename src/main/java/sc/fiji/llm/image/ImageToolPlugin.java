@@ -99,7 +99,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Select the active image by image_id. Use this when a specific image should be the target; commands and tools operating on an unspecified image use the active image." }, name = "fiji_image_activate")
+	@Tool(value = { "Select a specific image as active. Commands and tools operating on an unspecified image use the active image." }, name = "fiji_image_activate")
 	public String activateImage(@P(name = "image_id", value = "Image ID from fiji_image_list") final int imageId) {
 		try {
 			final String[] result = new String[1];
@@ -147,7 +147,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		return jsonProp("activated_image", activatedImage).toString();
 	}
 
-	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, dimensions, and whether it is the active image." }, name = "fiji_image_details")
+	@Tool(value = { "Return metadata for an open image, including title, pixel type, dimensions, and whether it is the active image." }, name = "fiji_image_details")
 	public String getImageDetails(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		try {
 			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
@@ -192,13 +192,13 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "For an open image specified by image id, return its rendered image content." }, name = "fiji_image_view")
+	@Tool(value = { "Return rendered image content for an open image." }, name = "fiji_image_view")
 	public Content viewImage(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(), false,
 			"fiji_image_view").get(0);
 	}
 
-	@Tool(value = { "For an open image specified by image id, return its rendered image content with any visible annotations (e.g. ROIs) included." }, name = "fiji_image_view_annotated")
+	@Tool(value = { "Return rendered image content for an open image with visible annotations, such as ROIs, included." }, name = "fiji_image_view_annotated")
 	public List<Content> viewImageAnnotated(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(
 			ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true), true,
