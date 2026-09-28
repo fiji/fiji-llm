@@ -459,20 +459,22 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 				dialogJson.addProperty("active", dialog.isActive());
 				dialogJson.addProperty("modal", dialog.isModal());
 				dialogJson.addProperty("modality_type", dialog.getModalityType());
-				dialogJson.addProperty("owner_name", dialog.getOwnerName());
+				if (!dialog.getOwnerName().isBlank()) dialogJson.addProperty("owner_name",
+					dialog.getOwnerName());
 				final JsonArray messages = new JsonArray();
 				for (final String message : dialog.getMessages()) messages.add(message);
-				dialogJson.add("messages", messages);
+				if (messages.size() > 0) dialogJson.add("messages", messages);
 				final JsonArray buttons = new JsonArray();
 				for (final AWTDialogUtils.ButtonInfo button : dialog.getButtons()) {
 					final JsonObject buttonJson = new JsonObject();
 							buttonJson.addProperty("button_text", button.getText());
-					buttonJson.addProperty("action_command", button.getActionCommand());
+					if (button.getActionCommand() != null && !button.getActionCommand().isBlank())
+						buttonJson.addProperty("action_command", button.getActionCommand());
 					buttonJson.addProperty("enabled", button.isEnabled());
 					buttonJson.addProperty("visible", button.isVisible());
 					buttons.add(buttonJson);
 				}
-				dialogJson.add("buttons", buttons);
+				if (buttons.size() > 0) dialogJson.add("buttons", buttons);
 				dialogs.add(dialogJson);
 			}
 			if (dialogs.size() > 0) result.add("dialogs", dialogs);

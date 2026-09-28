@@ -226,8 +226,8 @@ Fiji instance with the ImageJ legacy layer active.
       `column_count`, `columns`, and `rows`. Confirm the returned row values
       and headings match the visible Results Table.
 - [ ] Results Table empty state: clear or reset the table, call
-      `fiji_results_read`, and verify the returned row and column arrays
-      reflect the cleared state.
+      `fiji_results_read`, and verify `present: false` and omitted empty row
+      and column arrays.
 - [ ] ROI Manager: open the ROI Manager, add at least two named ROIs, and call
       `fiji_rois_read`. Verify `present`, `count`, and each ROI's
       `index`, `name`, `selected`, `type`, and `bounds` fields. Verify each
@@ -236,8 +236,8 @@ Fiji instance with the ImageJ legacy layer active.
       index and verify the returned `shape`, `bounds`, and `coordinates`.
       Call it with an invalid index and verify that it returns a useful error.
 - [ ] ROI Manager unavailable state: close the ROI Manager, call
-      `fiji_rois_read`, and verify it reports `present: false` without
-      throwing an error.
+      `fiji_rois_read`, and verify it reports `present: false` without empty
+      `count` or `rois` fields.
 
 ## System Information
 

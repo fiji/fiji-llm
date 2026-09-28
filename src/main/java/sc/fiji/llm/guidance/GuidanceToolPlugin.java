@@ -102,7 +102,7 @@ public class GuidanceToolPlugin extends AbstractAiToolPlugin {
 		result.addProperty("summary", document.summary());
 		final JsonArray topics = new JsonArray();
 		for (final String topic : document.topics()) topics.add(topic);
-		result.add("topics", topics);
+		if (topics.size() > 0) result.add("topics", topics);
 		result.addProperty("authority", document.authority().name().toLowerCase(Locale.ROOT)
 			.replace('_', '-'));
 		return result;

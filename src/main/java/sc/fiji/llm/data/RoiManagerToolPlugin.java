@@ -67,8 +67,6 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 			final JsonObject result = new JsonObject();
 			result.addProperty("present", manager != null);
 			if (manager == null) {
-				result.addProperty("count", 0);
-				result.add("rois", new JsonArray());
 				return result.toString();
 			}
 
@@ -83,7 +81,7 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 				else roi.add("bounds", boundsJson(invoke(roiObject, "getBounds")));
 				rois.add(roi);
 			}
-			result.add("rois", rois);
+			if (rois.size() > 0) result.add("rois", rois);
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -129,10 +127,13 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 	{
 		final JsonObject roi = new JsonObject();
 		roi.addProperty("roi_index", index);
-		roi.addProperty("name", safeString(invoke(manager, "getName", index)));
+		final String name = safeString(invoke(manager, "getName", index));
+		if (!name.isBlank()) roi.addProperty("name", name);
 		roi.addProperty("selected", isSelected(manager, index));
-		roi.addProperty("type", roiObject == null ? "" : safeString(invoke(roiObject,
-			"getType")));
+		if (roiObject != null) {
+			final String type = safeString(invoke(roiObject, "getType"));
+			if (!type.isBlank()) roi.addProperty("type", type);
+		}
 		return roi;
 	}
 

@@ -66,7 +66,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			for (final AWTDialogUtils.WindowInfo window : AWTDialogUtils
 				.getVisibleWindows()) windows.add(windowJson(window));
 			final JsonObject result = new JsonObject();
-			result.add("windows", windows);
+			if (windows.size() > 0) result.add("windows", windows);
 			result.addProperty("count", windows.size());
 			return result.toString();
 		}
@@ -85,8 +85,9 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				.getVisibleControls(windowTitle, windowClassName)) controls.add(controlJson(
 					control));
 			final JsonObject result = new JsonObject();
-			result.addProperty("window_title", windowTitle == null ? "" : windowTitle);
-			result.add("controls", controls);
+			if (windowTitle != null && !windowTitle.isBlank()) result.addProperty("window_title",
+				windowTitle);
+			if (controls.size() > 0) result.add("controls", controls);
 			result.addProperty("count", controls.size());
 			return result.toString();
 		}
@@ -104,21 +105,24 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			final AWTDialogUtils.ScreenshotResult screenshot = AWTDialogUtils
 				.captureScreenshot(windowTitle, windowClassName, componentPath);
 			final JsonObject metadata = new JsonObject();
-			metadata.addProperty("captured", true);
 			metadata.add("window", windowJson(screenshot.getWindowInfo()));
 			if (screenshot.getControlInfo() != null) metadata.add("control", controlJson(
 				screenshot.getControlInfo()));
 			metadata.add("capture_bounds", boundsJson(screenshot.getBounds()));
-			metadata.addProperty("focus_requested", screenshot.isFocusRequested());
-			metadata.addProperty("focus_restored", screenshot.isRestored());
-			metadata.addProperty("previous_window_title", screenshot
-				.getPreviousWindowTitle());
-			metadata.addProperty("previous_window_class_name", screenshot
-				.getPreviousWindowClassName());
-			metadata.addProperty("previous_focus_owner_class_name", screenshot
-				.getPreviousFocusOwnerClassName());
-			metadata.addProperty("previous_focus_owner_name", screenshot
-				.getPreviousFocusOwnerName());
+			if (screenshot.isFocusRequested()) {
+				metadata.addProperty("focus_requested", true);
+				metadata.addProperty("focus_restored", screenshot.isRestored());
+				if (!screenshot.isRestored()) {
+					metadata.addProperty("previous_window_title", screenshot
+						.getPreviousWindowTitle());
+					metadata.addProperty("previous_window_class_name", screenshot
+						.getPreviousWindowClassName());
+					metadata.addProperty("previous_focus_owner_name", screenshot
+						.getPreviousFocusOwnerName());
+					metadata.addProperty("previous_focus_owner_class_name", screenshot
+						.getPreviousFocusOwnerClassName());
+				}
+			}
 			return List.of(TextContent.from(metadata.toString()), ImageContent.from(Base64
 				.getEncoder().encodeToString(screenshot.getPngBytes()), "image/png"));
 		}
@@ -138,7 +142,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				dialogs.add(dialogJson(dialog));
 			}
 			final JsonObject result = new JsonObject();
-			result.add("dialogs", dialogs);
+			if (dialogs.size() > 0) result.add("dialogs", dialogs);
 			result.addProperty("count", dialogs.size());
 			return result.toString();
 		}
@@ -162,11 +166,11 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			final AWTDialogUtils.DialogResponse response = AWTDialogUtils
 				.respondToDialog(dialogTitle, buttonText);
 			final JsonObject result = new JsonObject();
-			result.addProperty("acted", true);
 			result.addProperty("dialog_title", response.getDialogTitle());
 			result.addProperty("dialog_class_name", response.getDialogClassName());
 			result.addProperty("button_text", response.getButtonText());
-			result.addProperty("action_command", response.getActionCommand());
+			if (response.getActionCommand() != null && !response.getActionCommand().isBlank())
+				result.addProperty("action_command", response.getActionCommand());
 			result.addProperty("dialog_visible_after", response
 				.isDialogVisibleAfter());
 			return result.toString();
@@ -186,7 +190,6 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			final AWTDialogUtils.DialogCloseResponse response = AWTDialogUtils
 				.closeDialog(dialogTitle);
 			final JsonObject result = new JsonObject();
-			result.addProperty("action_requested", "window_close");
 			result.addProperty("dialog_title", response.getDialogTitle());
 			result.addProperty("dialog_class_name", response.getDialogClassName());
 			result.addProperty("dialog_visible_after", response
@@ -202,26 +205,27 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		final JsonObject result = new JsonObject();
 		result.addProperty("dialog_title", dialog.getTitle());
 		result.addProperty("dialog_class_name", dialog.getClassName());
-		result.addProperty("visible", dialog.isVisible());
 		result.addProperty("active", dialog.isActive());
 		result.addProperty("modal", dialog.isModal());
 		result.addProperty("modality_type", dialog.getModalityType());
-		result.addProperty("owner_name", dialog.getOwnerName());
+		if (!dialog.getOwnerName().isBlank()) result.addProperty("owner_name", dialog
+			.getOwnerName());
 
 		final JsonArray messages = new JsonArray();
 		for (final String message : dialog.getMessages()) messages.add(message);
-		result.add("messages", messages);
+		if (messages.size() > 0) result.add("messages", messages);
 
 		final JsonArray buttons = new JsonArray();
 		for (final AWTDialogUtils.ButtonInfo button : dialog.getButtons()) {
 			final JsonObject buttonJson = new JsonObject();
 			buttonJson.addProperty("button_text", button.getText());
-			buttonJson.addProperty("action_command", button.getActionCommand());
+			if (button.getActionCommand() != null && !button.getActionCommand().isBlank())
+				buttonJson.addProperty("action_command", button.getActionCommand());
 			buttonJson.addProperty("enabled", button.isEnabled());
 			buttonJson.addProperty("visible", button.isVisible());
 			buttons.add(buttonJson);
 		}
-		result.add("buttons", buttons);
+		if (buttons.size() > 0) result.add("buttons", buttons);
 		return result;
 	}
 
@@ -230,13 +234,12 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		result.addProperty("window_title", window.getTitle());
 		result.addProperty("window_class_name", window.getClassName());
 		result.addProperty("type", window.getType());
-		result.addProperty("visible", window.isVisible());
-		result.addProperty("showing", window.isShowing());
 		result.addProperty("active", window.isActive());
 		result.addProperty("focused", window.isFocused());
 		result.addProperty("modal", window.isModal());
 		result.addProperty("modality_type", window.getModalityType());
-		result.addProperty("owner_title", window.getOwnerTitle());
+		if (!window.getOwnerTitle().isBlank()) result.addProperty("owner_title", window
+			.getOwnerTitle());
 		if (window.getBounds() != null) result.add("bounds", boundsJson(window
 			.getBounds()));
 		return result;
@@ -253,12 +256,11 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			.isSelected());
 		if (control.isEditable() != null) result.addProperty("editable", control
 			.isEditable());
-		result.addProperty("value_redacted", control.isValueRedacted());
+		if (control.isValueRedacted()) result.addProperty("value_redacted", true);
 		result.addProperty("enabled", control.isEnabled());
-		result.addProperty("visible", control.isVisible());
 		result.addProperty("showing", control.isShowing());
-		if (control.getActionCommand() != null) result.addProperty("action_command",
-			control.getActionCommand());
+		if (control.getActionCommand() != null && !control.getActionCommand().isBlank())
+			result.addProperty("action_command", control.getActionCommand());
 		if (control.getBounds() != null) result.add("bounds", boundsJson(control
 			.getBounds()));
 		return result;

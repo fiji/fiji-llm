@@ -29,7 +29,6 @@
 
 package sc.fiji.llm.macro;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -69,9 +68,15 @@ public class ImageJMacroToolPluginTest {
 			.getAsJsonObject();
 
 		assertTrue(json.has("recorder_open"));
-		assertTrue(json.has("recording"));
-		assertTrue(json.has("script_mode"));
-		assertNotNull(json.get("buffer").getAsString());
+		if (json.get("recorder_open").getAsBoolean()) {
+			assertTrue(json.has("recording"));
+			assertTrue(json.has("script_mode"));
+		}
+		else {
+			assertTrue(!json.has("recording"));
+			assertTrue(!json.has("script_mode"));
+			assertTrue(!json.has("buffer"));
+		}
 	}
 
 	private static void setField(final Object target, final String name,

@@ -74,9 +74,9 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		try {
 			final ImageJLogUtils.ImageJLog log = ImageJLogUtils.getLog(legacyService);
 			final JsonObject result = new JsonObject();
-			result.addProperty("source", "imagej");
 			result.addProperty("log_window_open", log.isOpen());
-			result.addProperty("text", log.getText());
+			if (log.getText() != null && !log.getText().isBlank()) result.addProperty("text",
+				log.getText());
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -96,7 +96,6 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			}
 			final JsonObject result = new JsonObject();
 			result.addProperty("capture_started", true);
-			result.addProperty("source", "scijava");
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -116,7 +115,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 				return jsonError("No SciJava log capture is active",
 					ErrorOptions.withTool("fiji_log_scijava_start_capture"));
 			}
-			return sciJavaLogResult(capture.getLogs(), true).toString();
+			return sciJavaLogResult(capture.getLogs()).toString();
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_log_scijava_read: " + e.getMessage());
@@ -142,7 +141,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 			finally {
 				capture.close();
 			}
-			return sciJavaLogResult(logs, false).toString();
+			return sciJavaLogResult(logs).toString();
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_log_scijava_stop_capture: " + e
@@ -150,8 +149,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	private JsonObject sciJavaLogResult(final SciJavaLogUtils.LogMessages logs,
-		final boolean captureActive)
+	private JsonObject sciJavaLogResult(final SciJavaLogUtils.LogMessages logs)
 	{
 		final JsonArray messages = new JsonArray();
 		for (final LogMessage message : logs.getMessages()) {
@@ -168,12 +166,13 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		}
 
 		final JsonObject result = new JsonObject();
-		result.addProperty("source", "scijava");
-		result.addProperty("capture_active", captureActive);
-		result.addProperty("text", logs.getText());
-		result.addProperty("console_stdout", logs.getStdout());
-		result.addProperty("console_stderr", logs.getStderr());
-		result.add("messages", messages);
+		if (logs.getText() != null && !logs.getText().isBlank()) result.addProperty("text",
+			logs.getText());
+		if (logs.getStdout() != null && !logs.getStdout().isBlank()) result.addProperty(
+			"console_stdout", logs.getStdout());
+		if (logs.getStderr() != null && !logs.getStderr().isBlank()) result.addProperty(
+			"console_stderr", logs.getStderr());
+		if (messages.size() > 0) result.add("messages", messages);
 		return result;
 	}
 }

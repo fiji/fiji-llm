@@ -236,6 +236,14 @@ You can use `Help > Assistants > Manage API Keys...` to manage your key(s) at an
 
 The benefit of having an assistant integrated into Fiji is that it can *perform actions*, beyond just conversation:
 
+**Tool Design Best Practice** - Keep tool responses focused on information that
+changes what the assistant should do next. Omit optional empty, default, and
+failure-only fields unless their absence would hide actionable state. Include a
+boolean only when its false value carries real information; use field presence
+as meaningful, and retain counts or status fields when they explain an empty or
+unsuccessful result. Put detailed diagnostics and recovery context on the
+failure path rather than in every successful response.
+
 **Script Writing** - Ask the assistant to write scripts in Python, Groovy, JavaScript, or other SciJava-compatible languages. Describe the context of your analysis task and the assistant can generate executable scripts.
 
 **Script Editing** - Attach scripts as context and ask the assistant to improve, debug, or adapt them for your specific needs.
@@ -248,7 +256,7 @@ The benefit of having an assistant integrated into Fiji is that it can *perform 
 
 **ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability, ROI summaries, and bounding boxes. Use `fiji_rois_read_details` with an ROI index when exact shape and polygon coordinates are needed. These tools are read-only.
 
-**UI Inspection and Vision** - Use `fiji_ui_windows_read` to list visible AWT and Swing windows, then `fiji_ui_controls_read` with an exact window title to inspect supported controls and their state. Use `fiji_ui_screenshot` for a PNG screenshot that can be provided to vision-capable models. Screenshots request best-effort focus only when the target is not already active, and report `focus_requested` and `focus_restored`; they do not guarantee an unobstructed capture or successful restoration.
+**UI Inspection and Vision** - Use `fiji_ui_windows_read` to list visible AWT and Swing windows, then `fiji_ui_controls_read` with an exact window title to inspect supported controls and their state. Use `fiji_ui_screenshot` for a PNG screenshot that can be provided to vision-capable models. Screenshots request best-effort focus only when the target is not already active, and report `focus_requested` and `focus_restored`; they do not guarantee an unobstructed capture or successful restoration. Tool responses omit optional empty, default, and failure-only fields unless their absence would hide actionable state.
 
 **System Information** - Use `fiji_system_read` to inspect ImageJ 1.x and application versions, Java and operating system details, JVM memory information, and active update sites. Use `fiji_system_list_update_sites` to list all available update sites and their active status.
 

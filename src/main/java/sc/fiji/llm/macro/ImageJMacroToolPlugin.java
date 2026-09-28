@@ -164,9 +164,12 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 					.closed() : imageJ1HelperService.getMacroRecorderState();
 			final JsonObject result = new JsonObject();
 			result.addProperty("recorder_open", state.isOpen());
-			result.addProperty("recording", state.isRecording());
-			result.addProperty("script_mode", state.isScriptMode());
-			result.addProperty("buffer", state.getBuffer());
+			if (state.isOpen()) {
+				result.addProperty("recording", state.isRecording());
+				result.addProperty("script_mode", state.isScriptMode());
+				if (state.getBuffer() != null && !state.getBuffer().isBlank()) result
+					.addProperty("buffer", state.getBuffer());
+			}
 			return result.toString();
 		}
 		catch (RuntimeException e) {

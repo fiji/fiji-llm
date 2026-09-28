@@ -507,8 +507,10 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final TextLogs cleanedLogs = logs[0].withoutStartedBanners();
 			JsonObject scriptLog = getTabJson(scriptID);
-			scriptLog.addProperty(ERROR_KEY, cleanedLogs.getErrors());
-			scriptLog.addProperty(OUTPUT_KEY, cleanedLogs.getOutput());
+			if (!cleanedLogs.getErrors().isBlank()) scriptLog.addProperty(ERROR_KEY,
+				cleanedLogs.getErrors());
+			if (!cleanedLogs.getOutput().isBlank()) scriptLog.addProperty(OUTPUT_KEY,
+				cleanedLogs.getOutput());
 			return stringProp("read_logs", scriptLog);
 		}
 		catch (Exception e) {

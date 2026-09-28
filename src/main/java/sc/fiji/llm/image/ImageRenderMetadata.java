@@ -176,14 +176,14 @@ public final class ImageRenderMetadata {
 		for (final Map.Entry<String, Long> entry : planePosition.entrySet()) {
 			position.addProperty(entry.getKey(), entry.getValue());
 		}
-		result.add("plane_position", position);
+		if (position.size() > 0) result.add("plane_position", position);
 		result.addProperty("channel_index", channelIndex);
 		result.addProperty("channel_count", channelCount);
-		result.addProperty("color_mode", colorMode);
-		result.addProperty("roi_included", roiIncluded);
+		if (!colorMode.isEmpty()) result.addProperty("color_mode", colorMode);
+		if (roiIncluded) result.addProperty("roi_included", true);
 		if (!roiType.isEmpty()) result.addProperty("roi_type", roiType);
-		result.addProperty("overlay_included", overlayIncluded);
-		result.addProperty("overlay_count", overlayCount);
+		if (overlayIncluded) result.addProperty("overlay_included", true);
+		if (overlayCount > 0) result.addProperty("overlay_count", overlayCount);
 		return result;
 	}
 

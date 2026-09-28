@@ -100,7 +100,7 @@ public class DataToolPluginTest {
 			.getAsJsonObject();
 
 		assertTrue(!json.get("present").getAsBoolean());
-		assertEquals(0, json.get("row_count").getAsInt());
+		assertTrue(!json.has("row_count"));
 	}
 
 	@Test
@@ -116,7 +116,7 @@ public class DataToolPluginTest {
 			.getAsJsonObject();
 
 		assertTrue(json.has("present"));
-		assertTrue(json.has("count"));
+		assertTrue(!json.has("count"));
 	}
 
 	@Test

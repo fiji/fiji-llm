@@ -95,6 +95,11 @@ shared Fiji workflow guidance is maintained in the packaged guidance catalog.
 
 Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensitive filtering.
 
+Structured tool responses omit optional empty, default, and failure-only fields
+unless their absence would hide actionable state. Field presence is therefore
+meaningful; counts and status fields remain available when they explain an empty
+or unsuccessful result.
+
 Built-in tools include:
 - **`ImageJMacroToolPlugin`** — macro recorder integration, macro function discovery
 - **`CommandUseToolPlugin`** — ImageJ command discovery and execution with a lightweight before/after environment report
@@ -111,7 +116,8 @@ Built-in tools include:
 
 `fiji_macro_recorder_state` is a read-only snapshot of the current recorder,
 including whether it is open, whether it is recording, its script mode, and the
-current buffer text.
+current buffer text. Recording and script-mode fields are omitted when the
+recorder is closed, and an empty buffer is omitted.
 
 `fiji_ui_windows_read` and `fiji_ui_controls_read` inspect visible Java-owned
 AWT and Swing UI state on the event-dispatch thread. Control paths are snapshot
@@ -127,9 +133,10 @@ captured semantically or visually; inspect the returned `focus_requested` and
 
 `fiji_results_read` returns structured Results Table metadata and numeric
 rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and
-`rows`. `fiji_rois_read` returns the current manager availability and
-ROI summaries including index, name, selection state, and type. Both tools are
-read-only. ImageJ 1.x access for these tools and image compatibility helpers is
+`rows`; empty `columns` and `rows` are omitted. `fiji_rois_read` returns the
+current manager availability and ROI summaries including index, name, selection
+state, and type. Both tools are read-only; an absent manager omits empty count
+and list fields. ImageJ 1.x access for these tools and image compatibility helpers is
 centralized in the high-priority `ImageJ1HelperService`.
 
 `fiji_system_read` returns ImageJ 1.x and application versions, the Java

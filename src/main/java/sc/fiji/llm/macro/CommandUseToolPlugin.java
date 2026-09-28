@@ -164,7 +164,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		final JsonObject result = new JsonObject();
 		result.add("executed_command", command);
 		result.addProperty("status", "infrastructure_error");
-		result.addProperty("diagnostic", diagnostic == null ? "" : diagnostic);
+		if (diagnostic != null && !diagnostic.isBlank()) result.addProperty("diagnostic",
+			diagnostic);
 		final JsonObject environment = impact.toJson();
 		if (environment.size() > 0) result.add("environment_impact", environment);
 		return result.toString();

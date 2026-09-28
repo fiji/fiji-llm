@@ -68,10 +68,6 @@ public class ResultsTableToolPlugin extends AbstractAiToolPlugin {
 			if (table == null || !imageJ1HelperService.getResultsTableState().isPresent()) {
 				final JsonObject empty = new JsonObject();
 				empty.addProperty("present", false);
-				empty.addProperty("row_count", 0);
-				empty.addProperty("column_count", 0);
-				empty.add("columns", new JsonArray());
-				empty.add("rows", new JsonArray());
 				return empty.toString();
 			}
 
@@ -85,7 +81,7 @@ public class ResultsTableToolPlugin extends AbstractAiToolPlugin {
 			for (final String heading : headings) {
 				if (heading != null && !heading.isBlank()) columns.add(heading);
 			}
-			result.add("columns", columns);
+			if (columns.size() > 0) result.add("columns", columns);
 			result.addProperty("column_count", columns.size());
 
 			final JsonArray rows = new JsonArray();
@@ -98,7 +94,7 @@ public class ResultsTableToolPlugin extends AbstractAiToolPlugin {
 				}
 				rows.add(row);
 			}
-			result.add("rows", rows);
+			if (rows.size() > 0) result.add("rows", rows);
 			return result.toString();
 		}
 		catch (ReflectiveOperationException e) {
