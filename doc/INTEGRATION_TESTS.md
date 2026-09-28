@@ -34,9 +34,27 @@ from each currently supported context category:
       ask the model to account for the annotation.
 
 For each category, verify that the attachment appears in the chat window, the
-model receives the attached content, and removing the attachment before sending
-prevents it from being included. When practical, repeat the test with multiple
-attachments and with a new conversation.
+model receives the attached content, and the outgoing request contains the
+matching item under `USER-ATTACHED CONTEXT (JSON)`. Verify that the request also
+contains the automatically attached `FIJI SESSION SNAPSHOT` when live scripts or
+images are available, including the expected `fiji_script_list` and/or
+`fiji_image_list` data and active-item state. Distinguish this automatic
+snapshot from the items explicitly attached through the chat window.
+
+When a script is attached, verify that the recommendations contain the
+`scripting` guide and the `fiji_script_*` tool-family prefix. When an image or
+annotated image is attached, verify that they contain the `image-types` guide
+and the `fiji_image_*` prefix. With both a script and an image attached, verify
+that one recommendation block contains both guide IDs and both tool-family
+prefixes, without an exhaustive listing of individual tools. Verify that an
+ordinary message, or a message after removing all attached items, does not add
+the context-specific recommendation block. The automatic session snapshot may
+still be present when live scripts or images are available.
+
+Removing an attachment before sending must prevent its user-attached JSON,
+binary content, and context-specific recommendations from being included. When
+practical, repeat the test with multiple attachments and with a new
+conversation.
 
 ## Image Content
 
