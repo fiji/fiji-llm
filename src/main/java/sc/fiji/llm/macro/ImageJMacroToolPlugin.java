@@ -98,7 +98,10 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			for (String category : MacroFunctionRegistry.getCategories()) {
 				categories.add(category);
 			}
-			return jsonProp("categories", categories).toString();
+			final JsonObject result = jsonProp("categories", categories);
+			if (categories.size() > 0) addToolRecommendations(result,
+				"fiji_macro_list_functions");
+			return result.toString();
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_macro_list_categories: " + e.getMessage());

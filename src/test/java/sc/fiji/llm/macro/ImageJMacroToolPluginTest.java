@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.macro;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -77,6 +78,17 @@ public class ImageJMacroToolPluginTest {
 			assertTrue(!json.has("script_mode"));
 			assertTrue(!json.has("buffer"));
 		}
+	}
+
+	@Test
+	public void testMacroCategoriesRecommendFunctionLookup() {
+		final ImageJMacroToolPlugin plugin = new ImageJMacroToolPlugin();
+		final JsonObject json = JsonParser.parseString(plugin.listMacroCategories())
+			.getAsJsonObject();
+
+		assertTrue(json.getAsJsonArray("categories").size() > 0);
+		assertEquals("fiji_macro_list_functions", json.getAsJsonArray(
+			"recommended_tools").get(0).getAsString());
 	}
 
 	private static void setField(final Object target, final String name,

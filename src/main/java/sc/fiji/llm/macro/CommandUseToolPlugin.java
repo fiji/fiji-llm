@@ -233,15 +233,20 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			}
 
 			JsonArray commands = new JsonArray();
+			boolean hasRunnableCommand = false;
 			for (SearchResult result : results) {
 				if (result instanceof ModuleSearchResult msr) {
-					commands.add(formatModuleResult(msr));
+					final JsonObject command = formatModuleResult(msr);
+					commands.add(command);
+					if (command.has("menu_path")) hasRunnableCommand = true;
 				}
 			}
 
 			JsonObject searchResult = new JsonObject();
 			searchResult.addProperty("search_name", query);
 			searchResult.add("commands", commands);
+			if (hasRunnableCommand) addToolRecommendations(searchResult,
+				"fiji_command_run");
 			return searchResult.toString();
 		}
 		catch (InterruptedException e) {

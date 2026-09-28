@@ -142,7 +142,11 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				dialogs.add(dialogJson(dialog));
 			}
 			final JsonObject result = new JsonObject();
-			if (dialogs.size() > 0) result.add("dialogs", dialogs);
+			if (dialogs.size() > 0) {
+				result.add("dialogs", dialogs);
+				addToolRecommendations(result, "fiji_ui_dialog_respond",
+					"fiji_ui_dialog_close");
+			}
 			result.addProperty("count", dialogs.size());
 			return result.toString();
 		}
@@ -173,6 +177,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				result.addProperty("action_command", response.getActionCommand());
 			result.addProperty("dialog_visible_after", response
 				.isDialogVisibleAfter());
+			if (response.isDialogVisibleAfter()) addToolRecommendations(result,
+				"fiji_ui_dialogs_read");
 			return result.toString();
 		}
 		catch (RuntimeException e) {
@@ -194,6 +200,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			result.addProperty("dialog_class_name", response.getDialogClassName());
 			result.addProperty("dialog_visible_after", response
 				.isDialogVisibleAfter());
+			if (response.isDialogVisibleAfter()) addToolRecommendations(result,
+				"fiji_ui_dialogs_read");
 			return result.toString();
 		}
 		catch (RuntimeException e) {
