@@ -101,7 +101,7 @@ To use the Fiji LLM tools from an external harness:
 
 ### Overview
 
-All LLM tools in Fiji are accessible via an [MCP Server](https://en.wikipedia.org/wiki/Model_Context_Protocol). This can allow access to hosted models through external harness applications, potentially bypassing the need for an API key or local model.
+Most LLM tools in Fiji are accessible via an [MCP Server](https://en.wikipedia.org/wiki/Model_Context_Protocol). Tools scoped for integrated chat only are not exposed to external MCP clients. This can allow access to hosted models through external harness applications, potentially bypassing the need for an API key or local model.
 
 The MCP server is tied to a live Fiji application, which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (using the default port 9090)
 
@@ -310,6 +310,8 @@ When adding an `AiToolPlugin`:
 
 * **Use scoped tool names.** Give every `@Tool` an explicit lower-case `snake_case` name following the `fiji_<scope>_<operation>` pattern, such as `fiji_script_read_content`. The scope prevents collisions between plugins. Preserve an existing name when modifying a tool and use the exact name consistently in descriptions, errors, and recommendations.
 
+* **Choose the exposure scope.** Tools normally use the default `ANY` scope. Use `ToolScope.CHAT` for tools that support the integrated chat but must not be exposed through the external MCP server.
+
 * **Choose useful parameter names.** Use `@P(name = ..., value = ...)` to give each parameter a descriptive, stable `snake_case` name and a short description, even when the Java parameter uses `camelCase`: `@P(name = "image_id", value = "Image ID from fiji_image_list")`. Always set `name`: `@P("image_id")` sets only the description, so the LLM would see the parameter as `arg0`. Mark optional parameters `required = false` and use boxed types (`Integer`, `Boolean`) for them, since the model may omit them. Put units, indexing conventions, source-tool links, defaults, and other parameter-specific constraints in the `@P(value = ...)` description.
 
 * **Keep descriptions at the right level.** Put each tool's action, preconditions, safety restrictions, related tools, and return value in its `@Tool(value = { ... })` description. Shared Fiji workflow guidance belongs in the curated `AgentGuide` plugins and should be exposed through guidance tools rather than duplicated in each plugin.
@@ -346,7 +348,7 @@ For developing chatbots in particular UI environments.
 
 ### [MCPService](src/main/java/sc/fiji/llm/mcp/MCPService.java)
 
-An MCP (Model Context Protocol) server exposes all registered `AiToolPlugin` implementations via local HTTP, making them accessible to external clients.
+An MCP (Model Context Protocol) server exposes registered `AiToolPlugin` implementations via local HTTP, except for tools using the `CHAT` scope. Those chat-only tools remain available to the integrated assistant.
 
 ## Development Philosophy
 

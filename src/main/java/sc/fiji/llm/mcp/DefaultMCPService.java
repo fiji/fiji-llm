@@ -90,6 +90,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import sc.fiji.llm.tools.AiToolService;
+import sc.fiji.llm.tools.ToolScope;
 
 /**
  * Default implementation of MCPService.
@@ -258,7 +259,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 
 			// Start MCP server in a daemon thread
 			serverThread = new Thread(() -> runMcpServerWithRecovery(
-				aiToolService.getToolsWithExecutors(), port, startupException));
+				getMcpTools(), port, startupException));
 			serverThread.setDaemon(true);
 			serverThread.setName("MCP-Server-Thread");
 			serverThread.start();
@@ -291,6 +292,15 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			logService.error("Failed to initialize Fiji MCP server", e);
 			throw new RuntimeException("Failed to initialize Fiji MCP server", e);
 		}
+	}
+
+	private Map<ToolSpecification, ToolExecutor> getMcpTools() {
+		final Map<ToolSpecification, ToolExecutor> tools = new LinkedHashMap<>(
+			aiToolService.getToolsWithExecutors());
+		final List<ToolSpecification> chatTools = aiToolService.getToolsForContext(
+			ToolScope.CHAT);
+		if (chatTools != null) tools.keySet().removeAll(chatTools);
+		return tools;
 	}
 
 	/**

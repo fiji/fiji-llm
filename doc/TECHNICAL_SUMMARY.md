@@ -93,7 +93,7 @@ parameter-specific input requirements belong in the corresponding `@P(value =
 The plugin contract does not include a separate namespace-level usage string;
 shared Fiji workflow guidance is maintained in the packaged guidance catalog.
 
-Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensitive filtering.
+Tools are scoped via a `ToolScope` string (e.g. `MACRO`) to allow context-sensitive filtering. The `CHAT` scope is reserved for tools used by the integrated chat and is excluded from MCP registration.
 
 Structured tool responses omit optional empty, default, and failure-only fields
 unless their absence would hide actionable state. Field presence is therefore
@@ -158,6 +158,8 @@ status, names, and URLs.
 `DefaultMCPService` runs an **embedded Jetty HTTP server** (default port 9090) that exposes `AiToolPlugin` tools as a MCP server using `io.modelcontextprotocol.sdk` (`1.1.2`). A LangChain4j `McpClient` then connects back to this server over `StreamableHttpMcpTransport`, and the resulting `McpToolProvider` is injected into `AiServices`.
 
 This self-loopback MCP pattern allows the same tools to be accessed by external MCP-compatible clients (e.g., Claude Desktop) as well as the internal LangChain4j assistant. The bridge preserves text and base64-backed image tool results as MCP content blocks; `fiji_image_view` returns plain PNG image content, while `fiji_image_view_annotated` returns PNG image content plus structured render metadata for visible ROI and overlay state.
+
+MCP registration excludes tools with the `CHAT` scope. Those tools remain available to the integrated assistant through `AiToolService` but are not exposed to external clients.
 
 The MCP server instructions retain only MCP and live-session behavior and
 direct clients to read the shared `onboarding` guidance document for

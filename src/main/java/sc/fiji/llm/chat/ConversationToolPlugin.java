@@ -40,6 +40,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
+import sc.fiji.llm.tools.ToolScope;
 
 /** Tools for naming persisted Fiji conversations. */
 @Plugin(type = AiToolPlugin.class)
@@ -58,6 +59,11 @@ public class ConversationToolPlugin extends AbstractAiToolPlugin {
 	@Override
 	public String getName() {
 		return "Conversation Tools";
+	}
+
+	@Override
+	public String getToolScope() {
+		return ToolScope.CHAT;
 	}
 
 	@Tool(value = { "Name a conversation based on its conversation history. Use this when a conversation naming recommendation is provided; do not include a timestamp in the name because one is added automatically." }, name = "fiji_conversation_name")

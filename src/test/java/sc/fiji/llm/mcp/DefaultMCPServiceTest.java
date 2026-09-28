@@ -164,6 +164,9 @@ public class DefaultMCPServiceTest {
 			.sorted().toList());
 		assertTrue(mcpService.getToolNames().stream().allMatch(name -> name.startsWith(
 			"fiji_")));
+		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream().anyMatch(
+			specification -> "fiji_conversation_name".equals(specification.name())));
+		assertFalse(mcpService.getToolNames().contains("fiji_conversation_name"));
 	}
 
 	@Test

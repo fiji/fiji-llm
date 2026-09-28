@@ -46,6 +46,7 @@ import com.google.gson.JsonParser;
 
 import dev.langchain4j.data.message.SystemMessage;
 import sc.fiji.llm.Setup;
+import sc.fiji.llm.tools.ToolScope;
 
 public class ConversationToolPluginTest {
 
@@ -84,6 +85,11 @@ public class ConversationToolPluginTest {
 			"Count cells \\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\]"));
 		assertEquals(result.get("display_name").getAsString(), conversation
 			.displayName());
+	}
+
+	@Test
+	public void testUsesChatToolScope() {
+		assertEquals(ToolScope.CHAT, tool.getToolScope());
 	}
 
 	@Test
