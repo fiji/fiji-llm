@@ -89,16 +89,28 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 
 ## MCP Server
 
-All LLM tools in Fiji are accessed via an [MCP Server](https://en.wikipedia.org/wiki/Model_Context_Protocol). While we provide a basic, integrated chat interface, this also allows external applications ("harnesses") to interact with Fiji through this local server.
+### Quick Start
 
-Currently, the MCP server is tied to a running Fiji application - which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (note the default port 9090)
+To use the Fiji LLM tools from an external harness:
+1. From an open Fiji, run `Help > Assistants > Manage Fiji MCP Server...`
+1. Change the port from default 9090 if necessary
+1. Click `Start Server` if it's not already running
+1. Turn on `Launch MCP on Startup`
+1. Add the Fiji MCP server configuration to the harness of your choices
+1. Optionally, use the `Copy` selector appropriate to your use case. If you're not sure how to set this up, the agent in your particular harness application can often help.
 
-### Available Configuration
-- **Set Port**: Use `Help > Assistants > Manage Fiji MCP Server...` or preferences key `sc.fiji.mcp.port`
-- **Start Manually**: Click "Start Server" in the Manage Fiji MCP Server dialog
-- **Auto-Launch**: Enable `Launch MCP on Startup` in the Manage Fiji MCP Server dialog, or set preferences key `sc.fiji.mcp.launchOnStartup` to true
-- **View Tools**: Click "View tools..." to browse the tools exposed by the running server, grouped by category
-- **Copy Connection Details**: Once the server is running, use the dialog's `Copy:` selector to copy the URL, a Claude Code registration command, or a VS Code `mcp.json` configuration
+### Overview
+
+All LLM tools in Fiji are accessible via an [MCP Server](https://en.wikipedia.org/wiki/Model_Context_Protocol). This can allow access to hosted models through external harness applications, potentially bypassing the need for an API key or local model.
+
+The MCP server is tied to a live Fiji application, which is where any tools will execute. When Fiji and the MCP server are running, it can be accessed at `http://localhost:9090/mcp` (using the default port 9090)
+
+In the `Manage Fiji MCP Server...` dialog, the following settings and actions are available
+- **Set Port** (or set preferences key `sc.fiji.mcp.port`)
+- **Start Server**
+- **Launch on startup** (or set preferences key `sc.fiji.mcp.launchOnStartup` to true)
+- **View Tools...**: browse available tools, grouped by category
+- **Copy Connection Details**: Copy the URL, a Claude Code registration command, or a VS Code `mcp.json` configuration, as needed for your environment
 
 ### VS Code
 
@@ -119,18 +131,11 @@ You should run `MCP: Reset Tool Caches` any time deployed tools are revised.
 
 You can manually check and manage MCP server status with `MCP: List Servers`, as well.
 
-**NB**: If you change the Fiji port, copy the VS Code configuration again or update the configured URL.
 **NB**: Your local Fiji application must be running first for the MCP server to be findable by VS Code. For best results, (re)start the server from `mcp.json` after launching Fiji.
 
 ### Claude Code
 
-Claude Code can register the running Fiji server from a terminal. See the [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp) for HTTP server setup, configuration scopes, and server management:
-
-```bash
-claude mcp add --transport http fiji --scope user http://localhost:9090/mcp
-```
-
-Use the current URL from the Manage MCP Server dialog when a non-default port is configured.
+Claude Code can register the running Fiji server from a terminal, or in a local `.mcp.json`, or `~/.claude.json`. See the [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp) for HTTP server setup, configuration scopes, and server management.
 
 #### Custom Agent and Skill
 
