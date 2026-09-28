@@ -135,7 +135,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Use this tool first, if needed, to set the active script by its script_id" }, name = "fiji_script_activate")
+	@Tool(value = { "Select the active script by script_id. Use this when a specific script should be the target; tools operating on an unspecified script use the active script." }, name = "fiji_script_activate")
 	public String setActiveScript(@P(name = "script_id", value = "Script ID from fiji_script_list") final String scriptId)
 	{
 		try {
