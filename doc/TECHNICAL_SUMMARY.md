@@ -117,11 +117,11 @@ current buffer text.
 AWT and Swing UI state on the event-dispatch thread. Control paths are snapshot
 selectors and should be re-read before any future state-changing UI action.
 `fiji_ui_screenshot` captures the current screen pixels for a visible window or
-showing component as an MCP image content block. Another window may overlap or
-occlude the target, and native UI is not guaranteed to be captured semantically
-or visually. `activate_and_restore` requests activation and focus restoration,
-but both are best effort and do not guarantee an unobstructed capture or
-successful restoration; inspect the returned metadata for the actual result.
+showing component as an MCP image content block. It requests focus and restores
+the previous focus only when the target is not already active. Another window may
+still overlap or occlude the target, and native UI is not guaranteed to be
+captured semantically or visually; inspect the returned `focus_requested` and
+`focus_restored` metadata.
 
 `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `EnvironmentSnapshotService` for lightweight operation-impact reporting, serialized in the optional `environment_impact` field. The report omits unchanged and empty values, and includes only changed image, active-image, Results table, and dialog metadata, plus non-empty ImageJ/SciJava log deltas and run-scoped ConsoleService stdout/stderr. Audited command and script captures also include bounded SHA-256 fingerprints of ImgLib2 native storage or pixel values; live snapshots defer pixel hashing and report `pixel_changes: "deferred"`. Large samples report `pixel_changes: "inconclusive"` when their sampled prefix matches, and lazy cell-backed images are skipped. No image pixels are copied into the report. Script execution also includes captured stderr in its `errors` field.
 

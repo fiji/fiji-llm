@@ -116,15 +116,14 @@ public final class AWTDialogUtils {
 			windowClassName)));
 	}
 
-	/** Captures a visible window or component, optionally restoring focus afterward. */
+	/** Captures a visible window or component, restoring the previous focus afterward. */
 	public static ScreenshotResult captureScreenshot(final String windowTitle,
-		final String windowClassName, final String componentPath,
-		final boolean activateAndRestore)
+		final String windowClassName, final String componentPath)
 	{
 		final CaptureTarget target = invokeOnEdt(() -> prepareCapture(windowTitle,
-			windowClassName, componentPath, activateAndRestore));
+			windowClassName, componentPath));
 		byte[] pngBytes;
-		boolean restored = !activateAndRestore;
+		boolean restored = !target.focusRequested;
 		try {
 			final Robot robot = new Robot();
 			robot.setAutoWaitForIdle(true);
@@ -136,10 +135,11 @@ public final class AWTDialogUtils {
 			throw new IllegalStateException("Could not capture the target UI", e);
 		}
 		finally {
-			if (activateAndRestore) restored = invokeOnEdt(() -> restoreFocus(target));
+			if (target.focusRequested) restored = invokeOnEdt(() -> restoreFocus(target));
 		}
 		return new ScreenshotResult(pngBytes, target.windowInfo, target.controlInfo,
-			target.bounds, target.previousWindow, target.previousFocusOwner, restored);
+			target.bounds, target.previousWindow, target.previousFocusOwner,
+			target.focusRequested, restored);
 	}
 
 	private static <T> T invokeOnEdt(final EdtOperation<T> operation) {
@@ -347,8 +347,7 @@ public final class AWTDialogUtils {
 	}
 
 	private static CaptureTarget prepareCapture(final String windowTitle,
-		final String windowClassName, final String componentPath,
-		final boolean activateAndRestore)
+		final String windowClassName, final String componentPath)
 	{
 		final Window targetWindow = findVisibleWindow(windowTitle, windowClassName);
 		final Component targetComponent = findComponent(targetWindow, componentPath);
@@ -358,7 +357,8 @@ public final class AWTDialogUtils {
 			.getActiveWindow();
 		final Component previousFocusOwner = KeyboardFocusManager
 			.getCurrentKeyboardFocusManager().getFocusOwner();
-		if (activateAndRestore) {
+		final boolean focusRequested = !targetWindow.isActive();
+		if (focusRequested) {
 			targetWindow.toFront();
 			if (targetComponent != targetWindow && targetComponent.isFocusable()) targetComponent
 				.requestFocusInWindow();
@@ -369,7 +369,8 @@ public final class AWTDialogUtils {
 			"Target component has no usable screen bounds");
 		return new CaptureTarget(bounds, describeWindow(targetWindow), targetComponent ==
 			targetWindow ? null : describeControl(
-				targetComponent, normalize(componentPath)), previousWindow, previousFocusOwner);
+				targetComponent, normalize(componentPath)), previousWindow, previousFocusOwner,
+			focusRequested);
 	}
 
 	private static boolean restoreFocus(final CaptureTarget target) {
@@ -681,16 +682,18 @@ public final class AWTDialogUtils {
 		private final ControlInfo controlInfo;
 		private final Window previousWindow;
 		private final Component previousFocusOwner;
+		private final boolean focusRequested;
 
 		private CaptureTarget(final Rectangle bounds, final WindowInfo windowInfo,
 			final ControlInfo controlInfo, final Window previousWindow,
-			final Component previousFocusOwner)
+			final Component previousFocusOwner, final boolean focusRequested)
 		{
 			this.bounds = new Rectangle(bounds);
 			this.windowInfo = windowInfo;
 			this.controlInfo = controlInfo;
 			this.previousWindow = previousWindow;
 			this.previousFocusOwner = previousFocusOwner;
+			this.focusRequested = focusRequested;
 		}
 	}
 
@@ -869,12 +872,13 @@ public final class AWTDialogUtils {
 		private final Rectangle bounds;
 		private final Window previousWindow;
 		private final Component previousFocusOwner;
+		private final boolean focusRequested;
 		private final boolean restored;
 
 		private ScreenshotResult(final byte[] pngBytes, final WindowInfo windowInfo,
 			final ControlInfo controlInfo, final Rectangle bounds,
 			final Window previousWindow, final Component previousFocusOwner,
-			final boolean restored)
+			final boolean focusRequested, final boolean restored)
 		{
 			this.pngBytes = pngBytes.clone();
 			this.windowInfo = windowInfo;
@@ -882,6 +886,7 @@ public final class AWTDialogUtils {
 			this.bounds = new Rectangle(bounds);
 			this.previousWindow = previousWindow;
 			this.previousFocusOwner = previousFocusOwner;
+			this.focusRequested = focusRequested;
 			this.restored = restored;
 		}
 
@@ -899,6 +904,10 @@ public final class AWTDialogUtils {
 
 		public Rectangle getBounds() {
 			return new Rectangle(bounds);
+		}
+
+		public boolean isFocusRequested() {
+			return focusRequested;
 		}
 
 		public String getPreviousWindowTitle() {

@@ -98,24 +98,19 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 	@Tool(value = { "Capture a PNG screenshot of one visible window or component using current screen pixels. The capture may include overlapping or occluding windows, and requested focus changes are best effort." }, name = "fiji_ui_screenshot")
 	public List<Content> screenshot(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read") final String windowTitle,
 		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName,
-		@P(name = "component_path", value = "Component path from fiji_ui_controls_read, to crop to that component", required = false) final String componentPath,
-		@P(name = "activate_and_restore", value = "Whether to focus the window before capture and restore focus after; defaults to false", required = false) final Boolean activateAndRestoreArg)
+		@P(name = "component_path", value = "Component path from fiji_ui_controls_read, to crop to that component", required = false) final String componentPath)
 	{
-		final boolean activateAndRestore = Boolean.TRUE.equals(activateAndRestoreArg);
 		try {
 			final AWTDialogUtils.ScreenshotResult screenshot = AWTDialogUtils
-				.captureScreenshot(windowTitle, windowClassName, componentPath,
-					activateAndRestore);
+				.captureScreenshot(windowTitle, windowClassName, componentPath);
 			final JsonObject metadata = new JsonObject();
 			metadata.addProperty("captured", true);
 			metadata.add("window", windowJson(screenshot.getWindowInfo()));
 			if (screenshot.getControlInfo() != null) metadata.add("control", controlJson(
 				screenshot.getControlInfo()));
 			metadata.add("capture_bounds", boundsJson(screenshot.getBounds()));
-			metadata.addProperty("activation_requested", activateAndRestore);
-			metadata.addProperty("focus_restore_requested", activateAndRestore);
-			metadata.addProperty("focus_restored", activateAndRestore && screenshot
-				.isRestored());
+			metadata.addProperty("focus_requested", screenshot.isFocusRequested());
+			metadata.addProperty("focus_restored", screenshot.isRestored());
 			metadata.addProperty("previous_window_title", screenshot
 				.getPreviousWindowTitle());
 			metadata.addProperty("previous_window_class_name", screenshot

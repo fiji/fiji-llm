@@ -97,16 +97,12 @@ With Fiji showing at least one ordinary AWT or Swing window:
 2. Call `fiji_ui_controls_read` with one exact window title and verify that
       supported labels, buttons, text fields, checkboxes, choices, combo boxes, and
       menu entries include roles and state metadata.
-3. Call `fiji_ui_screenshot` with `activate_and_restore: false` and verify the
-      result contains JSON metadata plus an MCP `image` content block with PNG
-      data. Screenshots use the current screen pixels, so another visible window
-      may overlap or occlude the requested window or component.
-4. Call it again with `activate_and_restore: true` for a non-destructive window
-      and verify that the metadata reports the requested activation and whether
-      focus restoration succeeded. Activation and focus restoration are best
-      effort and do not guarantee an unobstructed capture or successful focus
-      restoration.
-5. Use a returned showing component path to capture a component crop, and
+3. Call `fiji_ui_screenshot` and verify the result contains JSON metadata plus
+      an MCP `image` content block with PNG data. Screenshots request focus
+      automatically only when the target is not already active; verify the
+      `focus_requested` and `focus_restored` metadata. Focus activation and
+      restoration are best effort and do not guarantee an unobstructed capture.
+4. Use a returned showing component path to capture a component crop, and
       verify that a hidden or ambiguous target returns a text error rather than an
       image block.
 
