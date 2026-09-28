@@ -262,7 +262,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. This call waits up to 30 seconds for the macro to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_macro_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_macro_run")
+	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return the output, errors, and logs produced by this run. This operates on the currently active script; use fiji_script_activate with the target script_id first if needed. This call waits up to 30 seconds for the macro to finish or pause on a new modal dialog. If it is still running, the result has status running; use the run_id with fiji_macro_run_status to poll. Use fiji_ui_dialog_respond with the exact title and button or fiji_ui_dialog_close with the exact title for blocking dialogs." }, name = "fiji_macro_run")
 	public String runMacro() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();

@@ -53,7 +53,11 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 			## Active Image
 
 			One of the most important concepts in Fiji usage is the "active image": the most recently selected
-			image window is the default target for almost all image-related commands.
+			image window is the default target for almost all image-related commands. Use `fiji_image_activate`
+			with the target image id to select a different image. `fiji_command_run` does not select an image;
+			verify the active image again before
+			running a command. `fiji_macro_run` can also select an image with `selectImage(...)` or
+			`selectWindow(...)` in an ImageJ macro.
 
 			## Interactive commands
 

@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import javax.swing.SwingUtilities;
+
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
@@ -95,6 +97,54 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_image_list: " + e.getMessage());
 		}
+	}
+
+	@Tool(value = { "Make the open image specified by image_id the active image for Fiji commands and active-image tools. Use fiji_image_list to find image ids and verify the target. This changes Fiji's active image but does not modify pixel data." }, name = "fiji_image_activate")
+	public String activateImage(@P(name = "image_id", value = "Image ID from fiji_image_list") final int imageId) {
+		try {
+			final String[] result = new String[1];
+			final Runnable activate = () -> result[0] = performActivateImage(imageId);
+			if (SwingUtilities.isEventDispatchThread()) {
+				activate.run();
+			}
+			else {
+				SwingUtilities.invokeAndWait(activate);
+			}
+			return result[0];
+		}
+		catch (Exception e) {
+			return jsonError("Failed to run fiji_image_activate: " + e.getMessage());
+		}
+	}
+
+	private String performActivateImage(final int imageId) {
+		if (!imageJ1HelperService.isImageVisible(imageId)) {
+			return jsonError("No visible open image found with id: " + imageId,
+				ErrorOptions.withTool("fiji_image_list"));
+		}
+
+		final Optional<ImageDisplay> display = findImageDisplay(imageDisplayService
+			.getImageDisplays(), imageId);
+		if (display.isEmpty()) {
+			return jsonError("No open image found with id: " + imageId,
+				ErrorOptions.withTool("fiji_image_list"));
+		}
+
+		final ImageDisplay target = display.get();
+		imageDisplayService.getDisplayService().setActiveDisplay(target);
+		imageJ1HelperService.getIJ1Helper().ifPresent(helper -> helper
+			.syncActiveImage(target));
+
+		if (!isActiveImage(imageId)) {
+			return jsonError("Unable to activate image with id: " + imageId);
+		}
+
+		final JsonObject activatedImage = new JsonObject();
+		activatedImage.addProperty("id", imageId);
+		activatedImage.addProperty("title", imageJ1HelperService.getImageTitle(
+			imageId));
+		activatedImage.addProperty("active", true);
+		return jsonProp("activated_image", activatedImage).toString();
 	}
 
 	@Tool(value = { "For an open image specified by image id, return metadata including title, pixel type, dimensions, and whether it is the active image. fiji_image_list can be used to find image id's." }, name = "fiji_image_details")

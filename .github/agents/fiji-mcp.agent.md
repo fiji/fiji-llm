@@ -20,9 +20,9 @@ Use this agent to, when supported:
 - Open, select, inspect, and navigate images, windows, slices, channels, and frames.
 - Apply Fiji/ImageJ commands and workflows such as preprocessing, thresholding, segmentation, measurements, and ROI operations.
 - Inspect image properties, results, and analysis output.
-- Use `fiji_image_list` and `fiji_image_details` to identify an image, then
-	`fiji_image_view` when the client supports MCP image content and a rendered
-	image is needed.
+- Use `fiji_image_activate` with the target image id before using a command or
+	tool that relies on Fiji's active image, then use `fiji_image_view` when the
+	client supports MCP image content and a rendered image is needed.
 - Use `fiji_image_view_annotated` when the visible ROI or image overlays
 	are relevant; inspect its accompanying render metadata as well as the image.
 - Inspect visible AWT and Swing dialogs. When a UI action is explicitly
@@ -42,9 +42,10 @@ Use this agent to, when supported:
 	state, then use `fiji_ui_dialog_respond` only after confirming the exact
 	dialog title and button text, or `fiji_ui_dialog_close` with the exact title.
 - Search for commands with `fiji_command_search` and execute them with
-	`fiji_command_run`. Inspect the returned `environment` report for opened,
-	closed, or changed images, active-image changes, Results table changes,
-	dialogs, and ImageJ/SciJava log deltas.
+	`fiji_command_run`. Before execution, verify or set the target with
+	`fiji_image_activate` when needed. Inspect the returned `environment` report
+	for opened, closed, or changed images, active-image changes, Results table
+	changes, dialogs, and ImageJ/SciJava log deltas.
 
 ## Operating Instructions
 

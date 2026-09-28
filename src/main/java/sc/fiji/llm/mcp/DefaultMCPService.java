@@ -120,7 +120,11 @@ reading guides and querying relevant Fiji application state.
 
 Tool calls may modify application state, scripts, images, or other workspace artifacts.
 
-State-query tools provide a snapshot of application state. Users may interact with Fiji between tool calls; so re-query information before acting on it.
+The active image and active script are Fiji's current implicit targets.
+Use fiji_script_activate or fiji_image_activate when a specific target must be
+selected before acting.
+
+Re-query state because users may interact with Fiji between tool calls.
 
 Use the narrowest applicable tool, and avoid modifying state unless it is necessary to fulfill the user's request.
 """;

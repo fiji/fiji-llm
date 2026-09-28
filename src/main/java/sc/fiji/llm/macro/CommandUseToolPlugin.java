@@ -97,7 +97,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		return "Command Interaction Tools";
 	}
 
-	@Tool(value = { "Execute a command using its full menu path. This tool does not select a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and produced log output. Use fiji_command_search to find a command's menu path." },
+	@Tool(value = { "Execute a command using its full menu path. This tool does not select or activate a target image. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Call fiji_image_activate if you need to change the target image. Returns command status, environment impact, and produced log output. Use fiji_command_search to find a command's menu path." },
 		name = "fiji_command_run" )
 	public String runCommand(@P(name = "menu_path", value = "Full menu path from fiji_command_search") String menuPath) {
 		EnvironmentSnapshotService.EnvironmentCapture capture = null;
