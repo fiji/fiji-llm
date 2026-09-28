@@ -257,6 +257,8 @@ public class DefaultMCPServiceTest {
 			.anyMatch(specification -> "fiji_image_list".equals(specification.name())));
 		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
 			.anyMatch(specification -> "fiji_image_view".equals(specification.name())));
+		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
+			.anyMatch(specification -> "fiji_image_preview".equals(specification.name())));
 	}
 
 	@Test

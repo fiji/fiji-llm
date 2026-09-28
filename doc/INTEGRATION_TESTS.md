@@ -120,15 +120,20 @@ would:
 3. Call `fiji_image_list` again and verify that the selected image is now active.
 4. Call `fiji_image_details` with that `image_id` and verify the title, active
       state, pixel type, and dimension metadata.
+
 5. Call `fiji_image_view` with that `image_id`.
-6. Verify that the result contains an MCP `image` content block with MIME type
-      `image/png` and non-empty base64 data.
-7. Add a visible ROI or image overlay, then call
-      `fiji_image_view_annotated` with the same `image_id`.
-8. Verify that the annotated result contains a text metadata content block with
-      `render_mode`, `roi_included`, and `overlay_included`, as well as the MCP
-      `image` content block.
-9. Verify that an unknown image id returns a useful text error instead of an
+6. Verify that the result contains a text render-metadata content block and an
+      MCP `image` content block with MIME type `image/png` and non-empty base64
+      data.
+7. Call `fiji_image_preview` with the same `image_id`.
+8. Verify that the preview result contains an MCP `image` content block and no
+      render-metadata content block.
+9. Add a visible ROI or image overlay, then call `fiji_image_view` again with
+      the same `image_id`.
+10. Verify that the view result's metadata includes `render_mode`,
+      `roi_included`, and `overlay_included`, as well as the MCP `image` content
+      block.
+11. Verify that an unknown image id returns a useful text error instead of an
       image block or a server failure.
 
 ## Tool Sequence and Common Checks

@@ -192,17 +192,17 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Return rendered image content for an open image." }, name = "fiji_image_view")
-	public Content viewImage(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
+	@Tool(value = { "Return a minimal rendering of an open image for a quick visual peek without ROIs, overlays, or render metadata. Use this only when Fiji display adjustments and annotation context are not important." }, name = "fiji_image_preview")
+	public Content viewImagePreview(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(), false,
-			"fiji_image_view").get(0);
+			"fiji_image_preview").get(0);
 	}
 
-	@Tool(value = { "Return rendered image content for an open image with visible annotations, such as ROIs, included." }, name = "fiji_image_view_annotated")
-	public List<Content> viewImageAnnotated(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
+	@Tool(value = { "Return a faithful rendering of an open image for analysis, preserving Fiji display adjustments such as LUTs and including visible ROIs and overlays. Use this by default for image interpretation or whenever display context matters; the result also includes render metadata." }, name = "fiji_image_view")
+	public List<Content> viewImage(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(
 			ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true), true,
-			"fiji_image_view_annotated");
+			"fiji_image_view");
 	}
 
 	private List<Content> renderImage(final int imageId,

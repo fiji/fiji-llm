@@ -100,8 +100,8 @@ public class ImagesInFiji extends AbstractAgentGuide {
 
 			## Image inspection
 
-			- Use `fiji_image_view` to inspect base image content
-			- Use `fiji_image_view_annotated` when visible ROIs or other overlays are relevant
+			- Use `fiji_image_view` by default for image analysis; it preserves Fiji display adjustments such as LUTs and includes visible ROIs, overlays, and render metadata
+			- Use `fiji_image_preview` only for a quick visual peek when annotation context and display fidelity are not important
 			- Never assume that dimension index 2 is always Z or that a dataset is only
 				X/Y/Z/C/T. Inspect `numDimensions()`, `dimension(i)`, and `axis(i).type()` on
 				Dataset or `ImgPlus`; use channel/slice/frame methods on `ImagePlus`.
