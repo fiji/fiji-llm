@@ -106,7 +106,7 @@ Built-in tools include:
 - **`ScriptEditorToolPlugin`** — script editor interaction
 - **`ImageToolPlugin`** — open image listing, metadata, and rendered image content
 - **`ResultsTableToolPlugin`** — read-only Results Table inspection
-- **`RoiManagerToolPlugin`** — read-only ROI Manager inspection
+- **`RoiManagerToolPlugin`** — ROI Manager inspection and explicit ROI selection
 - **`SystemInfoToolPlugin`** — read-only host, JVM, application version, and update-site inspection
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
 - **`UiToolPlugin`** — visible AWT and Swing window/control inspection, screenshots, dialog inspection, exact button responses, and explicit dialog closing
@@ -135,9 +135,12 @@ captured semantically or visually; inspect the returned `focus_requested` and
 rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and
 `rows`; empty `columns` and `rows` are omitted. `fiji_rois_read` returns the
 current manager availability and ROI summaries including index, name, selection
-state, and type. Both tools are read-only; an absent manager omits empty count
-and list fields. ImageJ 1.x access for these tools and image compatibility helpers is
-centralized in the high-priority `ImageJ1HelperService`.
+state, and type. `fiji_rois_read_details` returns exact geometry for one entry,
+and `fiji_rois_select` selects an entry and restores it to the active image,
+potentially changing the active stack position. The read and details tools are
+read-only; an absent manager omits empty count and list fields. ImageJ 1.x
+access for these tools and image compatibility helpers is centralized in the
+high-priority `ImageJ1HelperService`.
 
 `fiji_system_read` returns ImageJ 1.x and application versions, the Java
 version, operating system details, JVM memory values in bytes, and active update

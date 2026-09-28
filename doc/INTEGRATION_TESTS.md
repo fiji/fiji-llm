@@ -235,6 +235,10 @@ Fiji instance with the ImageJ legacy layer active.
 - [ ] ROI Manager details: call `fiji_rois_read_details` with a valid ROI
       index and verify the returned `shape`, `bounds`, and `coordinates`.
       Call it with an invalid index and verify that it returns a useful error.
+- [ ] ROI Manager selection: call `fiji_rois_select` with a valid zero-based
+      index and verify the selected index, `selected`, and
+      `applied_to_active_image` state. With an active image, verify the ROI is
+      restored there and any reported slice change is expected.
 - [ ] ROI Manager unavailable state: close the ROI Manager, call
       `fiji_rois_read`, and verify it reports `present: false` without empty
       `count` or `rois` fields.

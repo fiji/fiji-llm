@@ -147,6 +147,17 @@ public class DataToolPluginTest {
 			assertEquals(30, roi.getAsJsonObject("bounds").get("width").getAsInt());
 			assertEquals(40, roi.getAsJsonObject("bounds").get("height").getAsInt());
 
+			final JsonObject invalid = JsonParser.parseString(plugin.selectRoi(1))
+				.getAsJsonObject();
+			assertTrue(invalid.has("error"));
+			assertEquals("fiji_rois_read", invalid.get("recommended_tool").getAsString());
+
+			final JsonObject selected = JsonParser.parseString(plugin.selectRoi(0))
+				.getAsJsonObject();
+			assertEquals(0, selected.get("roi_index").getAsInt());
+			assertTrue(selected.get("selected").getAsBoolean());
+			assertTrue(selected.has("applied_to_active_image"));
+
 			final JsonObject details = JsonParser.parseString(plugin.readRoiDetails(0))
 				.getAsJsonObject();
 			assertEquals(0, details.get("roi_index").getAsInt());

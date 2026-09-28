@@ -88,17 +88,20 @@ public class RoisGuide extends AbstractAgentGuide {
 
 			## `RoiManagerToolPlugin`
 
-			The Fiji-LLM ROI tools are currently read-only:
+			The Fiji-LLM ROI tools provide read-only inspection plus one explicit selection action:
 
 			- `fiji_rois_read` reports whether the manager exists, its count, and each
 			  entry's index, name, selection state, type, and bounds.
 			- `fiji_rois_read_details` returns the exact shape, bounds, and polygon
 			  coordinates for one entry. Call `fiji_rois_read` first and use its current
 			  zero-based index.
+			- `fiji_rois_select` selects one entry by its zero-based index and restores it
+			  to the active ImageJ image. This can change the active stack position; verify
+			  the target image and the returned application state before measuring.
 
-			Use an ImageJ command or script for ROI creation, addition, selection, or
-			measurement; use these tools to inspect the resulting shared state and verify
-			that the intended ROI and image are involved.
+			Use an ImageJ command or script for ROI creation, addition, or measurement;
+			use these tools to inspect the shared state and select an existing manager
+			entry when the target image has been verified.
 			""".strip();
 
 	public RoisGuide() {

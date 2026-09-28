@@ -30,7 +30,10 @@
 package sc.fiji.llm.data;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import javax.swing.SwingUtilities;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -89,6 +92,33 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		}
 		catch (ReflectiveOperationException e) {
 			return jsonError("Failed to run fiji_rois_read: " + e.getMessage());
+		}
+	}
+
+	@Tool(value = { "Select one ROI Manager entry by zero-based index and restore it to the active ImageJ image. This may change the active stack position." }, name = "fiji_rois_select")
+	public String selectRoi(@P(name = "roi_index", value = "0-based ROI index from fiji_rois_read") final int roiIndex) {
+		try {
+			final Object manager = invokeLegacyRoiManager();
+			if (manager == null) return jsonError("ROI Manager is not open",
+				ErrorOptions.withTool("fiji_rois_read"));
+
+			final int count = (int) invoke(manager, "getCount");
+			if (roiIndex < 0 || roiIndex >= count) return jsonError("ROI index is out of range: " +
+				roiIndex + " (count: " + count + ")", ErrorOptions.withTool(
+					"fiji_rois_read"));
+
+			selectOnEventDispatchThread(manager, roiIndex);
+			return selectionJson(manager, roiIndex).toString();
+		}
+		catch (RuntimeException e) {
+			return jsonError("Failed to run fiji_rois_select: " + e.getMessage());
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return jsonError("Failed to run fiji_rois_select: " + e.getMessage());
+		}
+		catch (ReflectiveOperationException e) {
+			return jsonError("Failed to run fiji_rois_select: " + e.getMessage());
 		}
 	}
 
@@ -194,6 +224,53 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		throws ReflectiveOperationException
 	{
 		return (boolean) invoke(manager, "isSelected", index);
+	}
+
+	private static void selectOnEventDispatchThread(final Object manager,
+		final int roiIndex) throws ReflectiveOperationException, InterruptedException,
+		InvocationTargetException
+	{
+		final ReflectiveOperationException[] failure = new ReflectiveOperationException[1];
+		final Runnable select = () -> {
+			try {
+				invoke(manager, "select", roiIndex);
+			}
+			catch (ReflectiveOperationException e) {
+				failure[0] = e;
+			}
+		};
+		if (SwingUtilities.isEventDispatchThread()) select.run();
+		else SwingUtilities.invokeAndWait(select);
+		if (failure[0] != null) throw failure[0];
+	}
+
+	private static JsonObject selectionJson(final Object manager, final int roiIndex)
+		throws ReflectiveOperationException
+	{
+		final JsonObject result = new JsonObject();
+		result.addProperty("roi_index", roiIndex);
+		result.addProperty("selected", isSelected(manager, roiIndex));
+
+		final Object image = invokeStatic("ij.WindowManager", "getCurrentImage");
+		result.addProperty("applied_to_active_image", image != null && invoke(image,
+			"getRoi") != null);
+		if (image != null) {
+			final Object imageId = invoke(image, "getID");
+			if (imageId instanceof Number) result.addProperty("image_id", ((Number) imageId)
+				.intValue());
+			final String title = safeString(invoke(image, "getTitle"));
+			if (!title.isBlank()) result.addProperty("title", title);
+			final Object slice = invoke(image, "getCurrentSlice");
+			if (slice instanceof Number) result.addProperty("slice", ((Number) slice)
+				.intValue());
+		}
+		return result;
+	}
+
+	private static Object invokeStatic(final String className, final String methodName)
+		throws ReflectiveOperationException
+	{
+		return Class.forName(className).getMethod(methodName).invoke(null);
 	}
 
 	private static Object invoke(final Object target, final String methodName,

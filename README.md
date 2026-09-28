@@ -29,7 +29,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 * **Extensible Model Engine:** Separates model connectivity from agentic functionality, allowing new local or remote model providers to be added through plugins.
 
 * **Context-Aware Analysis Tools:** Give agents structured access to Fiji’s environment, including installed commands, open images, analysis metadata, the Script Editor, and macro recorder.
-* **ImageJ Data Inspection:** Provide read-only access to common ImageJ data objects, including Results Tables and the ROI Manager.
+* **ImageJ Data Inspection:** Provide structured access to common ImageJ data objects, including Results Tables and the ROI Manager.
 * **Shared Fiji Guidance:** Provide bounded, curated onboarding and workflow guidance to both integrated chat and external MCP clients without injecting the full documentation corpus into every request.
 
 ## Table of Contents
@@ -254,7 +254,7 @@ failure path rather than in every successful response.
 
 **Command Execution** - Use `fiji_image_activate` to select a different image when needed, then use `fiji_command_search` to find a menu path and call `fiji_command_run`; command execution itself does not select an image. The result includes the command status and an optional changes-only `environment_impact` report covering opened, closed, or changed images, active-image changes, bounded SHA-256 pixel fingerprints, Results table changes, visible dialogs, and ImageJ and SciJava log deltas. Empty fields are omitted. Live environment snapshots defer pixel hashing; large samples and lazy images report inconclusive pixel comparisons explicitly.
 
-**ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability, ROI summaries, and bounding boxes. Use `fiji_rois_read_details` with an ROI index when exact shape and polygon coordinates are needed. These tools are read-only.
+**ImageJ Data Inspection** - Use `fiji_results_read` to inspect Results Table headings and numeric rows, and `fiji_rois_read` to inspect ROI Manager availability, ROI summaries, and bounding boxes. Use `fiji_rois_read_details` with an ROI index when exact shape and polygon coordinates are needed. Use `fiji_rois_select` to select a manager entry and restore it to the active image; this may change the active stack position. The read and details tools are read-only.
 
 **UI Inspection and Vision** - Use `fiji_ui_windows_read` to list visible AWT and Swing windows, then `fiji_ui_controls_read` with an exact window title to inspect supported controls and their state. Use `fiji_ui_screenshot` for a PNG screenshot that can be provided to vision-capable models. Screenshots request best-effort focus only when the target is not already active, and report `focus_requested` and `focus_restored`; they do not guarantee an unobstructed capture or successful restoration. Tool responses omit optional empty, default, and failure-only fields unless their absence would hide actionable state.
 
