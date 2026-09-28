@@ -51,6 +51,7 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -344,7 +345,8 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 			return stringProp("ran_script", execution.toJson());
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_script_run: " + e.getMessage());
+			return jsonError("Failed to run fiji_script_run: " + e.getMessage(),
+				ErrorOptions.withGuides(ScriptingGuide.ID));
 		}
 	}
 

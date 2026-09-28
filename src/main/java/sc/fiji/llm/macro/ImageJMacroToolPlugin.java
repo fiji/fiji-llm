@@ -49,6 +49,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.data.ImageJ1HelperService;
+import sc.fiji.llm.guidance.workflows.CreatingMacrosGuide;
 import sc.fiji.llm.script.ScriptContextItem;
 import sc.fiji.llm.script.ScriptContextUtilities;
 import sc.fiji.llm.script.ScriptExecutionService;
@@ -297,7 +298,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				ScriptExecutionService.RunKind.MACRO, true).toJson().toString();
 		}
 		catch (Exception e) {
-			return jsonError("Failed to run fiji_macro_run: " + e.getMessage());
+			return jsonError("Failed to run fiji_macro_run: " + e.getMessage(),
+				ErrorOptions.withGuides(CreatingMacrosGuide.ID));
 		}
 	}
 

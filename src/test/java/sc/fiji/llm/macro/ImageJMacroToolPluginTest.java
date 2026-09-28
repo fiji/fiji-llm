@@ -44,6 +44,8 @@ import com.google.gson.JsonParser;
 
 import sc.fiji.llm.Setup;
 import sc.fiji.llm.data.ImageJ1HelperService;
+import sc.fiji.llm.execution.EnvironmentSnapshotService;
+import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
 
 public class ImageJMacroToolPluginTest {
 
@@ -89,6 +91,27 @@ public class ImageJMacroToolPluginTest {
 		assertTrue(json.getAsJsonArray("categories").size() > 0);
 		assertEquals("fiji_macro_list_functions", json.getAsJsonArray(
 			"recommended_tools").get(0).getAsString());
+	}
+
+	@Test
+	public void testCommandFailuresRecommendCommandGuide() {
+		final EnvironmentSnapshotService snapshotService = context.getService(
+			EnvironmentSnapshotService.class);
+		final JsonObject json = JsonParser.parseString(CommandUseToolPlugin.commandError(
+			"Plugins > Missing", snapshotService.capture(PixelChangeTracking.NONE)
+			.finish(), "Command failed")).getAsJsonObject();
+
+		assertEquals("running-commands", json.getAsJsonArray("guide_recommendations")
+			.get(0).getAsJsonObject().getAsJsonObject("arguments").get("guide_id")
+			.getAsString());
+	}
+
+	@Test
+	public void testCommandErrorLogsRecommendCommandGuide() {
+		final JsonObject environment = new JsonObject();
+		environment.addProperty("console_stderr", "Syntax error");
+
+		assertTrue(CommandUseToolPlugin.hasErrorLog(environment));
 	}
 
 	private static void setField(final Object target, final String name,

@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +59,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
+import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolRecommendationUtils;
@@ -119,7 +121,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 				.findFirst().orElse(null);
 
 			if (moduleInfo == null) {
-				return jsonError("Command not found at path: " + menuPath);
+				return jsonError("Command not found at path: " + menuPath,
+					ErrorOptions.with("fiji_command_search", RunningCommandsGuide.ID));
 			}
 
 			capture = environmentSnapshotService.capture(PixelChangeTracking.FINAL_SHA256);
@@ -138,19 +141,41 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			if (environment.size() > 0) result.add("environment_impact", environment);
 			if (hasOpenedDialogs(environment)) ToolRecommendationUtils.addToolRecommendations(
 				result, "fiji_ui_dialog_respond", "fiji_ui_dialog_close");
+			if (hasErrorLog(environment)) ToolRecommendationUtils.addGuideRecommendations(
+				result, RunningCommandsGuide.ID);
 			return result.toString();
 		}
 		catch (RuntimeException e) {
 			if (capture != null) {
 				return commandError(menuPath, capture.finish(), e.getMessage());
 			}
-			return jsonError("Failed to run fiji_command_run: " + e.getMessage());
+			return jsonError("Failed to run fiji_command_run: " + e.getMessage(),
+				ErrorOptions.withGuides(RunningCommandsGuide.ID));
 		}
 	}
 
 	private static boolean hasOpenedDialogs(final JsonObject environment) {
 		return environment.has("changes") && environment.getAsJsonObject("changes")
 			.has("dialogs_opened");
+	}
+
+	static boolean hasErrorLog(final JsonObject environment) {
+		if (hasText(environment, "console_stderr")) return true;
+		return hasDiagnosticText(environment, "imagej_log") || hasDiagnosticText(
+			environment, "scijava_log");
+	}
+
+	private static boolean hasText(final JsonObject environment, final String key) {
+		return environment.has(key) && !environment.get(key).getAsString().isBlank();
+	}
+
+	private static boolean hasDiagnosticText(final JsonObject environment,
+		final String key)
+	{
+		if (!hasText(environment, key)) return false;
+		final String log = environment.get(key).getAsString().toLowerCase(Locale.ROOT);
+		return log.contains("error") || log.contains("exception") || log.contains(
+			"syntax") || log.contains("traceback");
 	}
 
 	private void waitForUiToSettle() {
@@ -163,7 +188,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	private String commandError(final String menuPath,
+	static String commandError(final String menuPath,
 		final EnvironmentSnapshotService.EnvironmentImpact impact,
 		final String diagnostic)
 	{
@@ -176,6 +201,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			diagnostic);
 		final JsonObject environment = impact.toJson();
 		if (environment.size() > 0) result.add("environment_impact", environment);
+		ToolRecommendationUtils.addGuideRecommendations(result,
+			RunningCommandsGuide.ID);
 		return result.toString();
 	}
 
