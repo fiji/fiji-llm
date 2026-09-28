@@ -69,7 +69,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		return "Log Tools";
 	}
 
-	@Tool(value = { "Read the current contents of ImageJ's Log window, including whether the window is open" }, name = "fiji_log_imagej_read")
+	@Tool(value = { "Read the current contents of ImageJ's Log window, including whether the window is open; the log is user-clearable" }, name = "fiji_log_imagej_read")
 	public String readImageJLog() {
 		try {
 			final ImageJLogUtils.ImageJLog log = ImageJLogUtils.getLog(legacyService);
@@ -84,7 +84,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start capturing structured SciJava log messages. Call this before running an operation whose SciJava messages should be inspected" }, name = "fiji_log_scijava_start_capture")
+	@Tool(value = { "Start a SciJava log capture that remains active until stopped" }, name = "fiji_log_scijava_start_capture")
 	public String startSciJavaCapture() {
 		try {
 			synchronized (captureStateLock) {
@@ -105,7 +105,7 @@ public class LogToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Read the currently captured SciJava log messages" }, name = "fiji_log_scijava_read")
+	@Tool(value = { "Read messages captured during the active SciJava log capture" }, name = "fiji_log_scijava_read")
 	public String readSciJavaLog() {
 		try {
 			final SciJavaLogUtils.LogCapture capture;

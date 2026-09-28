@@ -323,7 +323,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return per-run output, errors, console stdout/stderr, and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running or blocked by a dialog, the result identifies the next action." }, name = "fiji_script_run")
+	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return output and errors produced by this run, plus console stdout/stderr and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog. If it is still running or blocked by a dialog, the result identifies the next action." }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -348,7 +348,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Poll an asynchronous non-macro script run. This action is read-only, returning its status and current per-run output, errors, logs, and any blocking dialog. Continue polling until the run reaches a terminal state." }, name = "fiji_script_run_status")
+	@Tool(value = { "Poll an asynchronous non-macro script run. This action is read-only, returning its status and the output and errors from that run, plus logs and any blocking dialog. Continue polling until the run reaches a terminal state." }, name = "fiji_script_run_status")
 	public String scriptRunStatus(@P(name = "run_id", value = "Run ID from fiji_script_run") final String runID) {
 		if (runID == null || runID.isBlank()) {
 			return jsonError("run_id cannot be null or blank");
@@ -484,7 +484,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Return the cumulative output and error logs retained by the active Script Editor across runs." }, name = "fiji_script_read_logs")
+	@Tool(value = { "Return the cumulative output and error logs currently retained by the active Script Editor across runs; the user can clear them." }, name = "fiji_script_read_logs")
 	public String readLogs() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
