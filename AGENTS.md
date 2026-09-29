@@ -50,9 +50,14 @@ architecture.
   update-site users as externally visible behavior. Call out changes affecting
   them even when Java API compatibility is not required.
 - When changing a public API or agent-facing tool contract, update the relevant
-  files under `.github/agents/`, `.github/skills/`, `doc/INTEGRATION_TESTS.md`,
-  and `README.md`
-  in the same change.
+  guidance and documentation in the same change. Explicitly inspect the
+  registered guides under `src/main/java/sc/fiji/llm/guidance/`, including
+  workflow guides for scripts, macros, commands, and UI behavior, and update
+  every affected guide. Also update the relevant files under `.github/agents/`,
+  `.github/skills/`, `doc/INTEGRATION_TESTS.md`, and `README.md`. The `.github`
+  files are routing or agent-facing documentation; update them when their
+  contract is affected, not merely because an API changed. If no guide or
+  documentation update is needed, state the impact check and why.
 - When changing extension points, provider/tool/context/MCP architecture,
   conversation persistence, or dependency versions described in the technical
   summary, update `doc/TECHNICAL_SUMMARY.md` and the relevant README sections
