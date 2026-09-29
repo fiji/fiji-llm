@@ -336,12 +336,11 @@ These read-only tools inspect common ImageJ data objects directly. Use a live
 Fiji instance with the ImageJ legacy layer active.
 
 - [ ] Results Table: create at least one measurement row, call
-      `fiji_results_read`, and verify `present`, `row_count`,
+      `fiji_results_read`, and verify `row_count`,
       `column_count`, `columns`, and `rows`. Confirm the returned row values
       and headings match the visible Results Table.
 - [ ] Results Table empty state: clear or reset the table, call
-      `fiji_results_read`, and verify `present: false` and omitted empty row
-      and column arrays.
+      `fiji_results_read`, and verify it returns `{}`.
 - [ ] ROI Manager: open the ROI Manager, add at least two named ROIs, and call
       `fiji_rois_read`. Verify `present`, `count`, and each ROI's
       `roi_index`, `name`, `selected`, `type`, and `bounds` fields. Verify each

@@ -88,11 +88,13 @@ public class ResultsTableGuide extends AbstractAgentGuide {
 			## `ResultsTableToolPlugin`
 
 			The Fiji-LLM Results tools are currently read-only. `fiji_results_read` reads
-			ImageJ's default Results Table through `ImageJ1HelperService` and reports:
+			ImageJ's default Results Table through `ImageJ1HelperService`. When there are
+			no result rows, it returns `{}`. Otherwise, it reports:
 
-			- whether a table is present;
 			- the current row count and actual non-empty column headings; and
 			- each row's numeric values, text values, and row labels when available.
+
+			A populated result does not include a separate `present` field.
 
 			It does not measure an image, clear or modify the table, identify the source
 			image or ROI for a row, or read every independently created or displayed table.

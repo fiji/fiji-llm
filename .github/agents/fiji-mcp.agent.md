@@ -23,17 +23,19 @@ Use this agent to, when supported:
 - Use `fiji_image_activate` with the target image id before using a command or
 	tool that relies on Fiji's active image, then use `fiji_image_view` when the
 	client supports MCP image content and a rendered image is needed.
-- Use `fiji_image_view_annotated` when the visible ROI or image overlays
-	are relevant; inspect its accompanying render metadata as well as the image.
+- Use `fiji_image_view` when the visible ROI, image overlays, or Fiji display
+	adjustments are relevant; inspect its accompanying render metadata as well as
+	the image. Use `fiji_image_preview` only for a quick visual peek when that
+	context is not important.
 - Inspect visible AWT and Swing dialogs. When a UI action is explicitly
 	requested, read the dialog first; use `fiji_ui_dialog_respond` with the exact
 	title and button, or `fiji_ui_dialog_close` with the exact title.
 - Inspect visible Java-owned windows with `fiji_ui_windows_read` and supported
 	controls with `fiji_ui_controls_read` before reasoning about general Fiji UI
 	state.
-- Use `fiji_ui_screenshot` when visual context is useful. Request
-	`activate_and_restore` explicitly, and report whether focus restoration
-	succeeded from the returned metadata.
+- Use `fiji_ui_screenshot` when visual context is useful. It captures current
+	screen pixels and may include overlapping windows; requested focus changes
+	are best effort and the returned metadata reports whether focus was restored.
 - Save or export requested images, ROIs, tables, and other results to user-specified locations.
 - Run non-`.ijm` scripts with `fiji_script_run`; run `.ijm` macros with
 	`fiji_macro_run` through the visible Script Editor. When either run returns
@@ -56,8 +58,7 @@ Use this agent to, when supported:
 	`fiji_ui_dialog_close` as state-changing actions and use them only after the
 	requested action is clear.
 - Treat screenshot activation as a state-affecting operation: use it only when
-	needed, and prefer `activate_and_restore: false` for passive inspection.
-	Screenshots capture current screen pixels, so overlapping or occluding windows
-	may appear. Activation and focus restoration are best effort and do not
-	guarantee an unobstructed capture or successful focus restoration.
+	needed. Screenshots capture current screen pixels, so overlapping or occluding
+	windows may appear. Activation and focus restoration are best effort and do
+	not guarantee an unobstructed capture or successful focus restoration.
 - Verify the final state and summarize what was done, including key parameters, outputs, and limitations.
