@@ -122,6 +122,12 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			if (category == null || category.trim().isEmpty()) {
 				return jsonError("Category cannot be empty");
 			}
+			final boolean knownCategory = MacroFunctionRegistry.getCategories().stream()
+				.anyMatch(available -> available.equalsIgnoreCase(category));
+			if (!knownCategory) {
+				return jsonError("Unknown macro function category: " + category,
+					ErrorOptions.withTool("fiji_macro_list_categories"));
+			}
 
 			JsonArray functions = new JsonArray();
 			for (MacroFunctionRegistry.MacroFunction function : MacroFunctionRegistry

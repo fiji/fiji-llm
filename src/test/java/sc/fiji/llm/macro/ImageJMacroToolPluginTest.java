@@ -94,6 +94,17 @@ public class ImageJMacroToolPluginTest {
 	}
 
 	@Test
+	public void testUnknownMacroCategoryRecommendsCategoryLookup() {
+		final ImageJMacroToolPlugin plugin = new ImageJMacroToolPlugin();
+		final JsonObject json = JsonParser.parseString(plugin
+			.listMacroFunctionsByCategory("does-not-exist")).getAsJsonObject();
+
+		assertTrue(json.has("error"));
+		assertEquals("fiji_macro_list_categories", json.get("recommended_tool")
+			.getAsString());
+	}
+
+	@Test
 	public void testCommandFailuresRecommendCommandGuide() {
 		final EnvironmentSnapshotService snapshotService = context.getService(
 			EnvironmentSnapshotService.class);
