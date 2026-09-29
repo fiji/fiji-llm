@@ -202,17 +202,17 @@ public class ActivityLog extends JPanel {
 		setExpanded(false);
 	}
 
-	/** @return a short summary, such as "Thought and used 2 tools (12s)" */
+	/** @return a short summary, such as "Thoughts and 2 tool uses (12s)" */
 	String summary() {
 		final List<Step> steps = record.getSteps();
 		final long toolCount = steps.stream().filter(s -> !s.isThinking()).count();
 		final long failures = steps.stream().filter(Step::isFailed).count();
 		final boolean thought = steps.stream().anyMatch(Step::isThinking);
 		final StringBuilder sb = new StringBuilder();
-		if (thought) sb.append("Thought");
+		if (thought) sb.append("Thoughts");
 		if (toolCount > 0) {
-			sb.append(thought ? " and used " : "Used ").append(toolCount).append(
-				toolCount == 1 ? " tool" : " tools");
+			sb.append(thought ? " and " : "").append(toolCount).append(toolCount == 1
+				? " tool use" : " tool uses");
 			if (failures > 0) sb.append(", ").append(failures).append(" failed");
 		}
 		if (finished) sb.append(" (").append(record.getElapsedSeconds()).append("s)");

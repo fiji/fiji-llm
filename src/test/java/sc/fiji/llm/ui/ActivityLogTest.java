@@ -50,10 +50,10 @@ public class ActivityLogTest {
 		log.toolStarted("fiji_image_view", "{\"image_id\": 3}");
 		log.toolFinished("fiji_image_view", true, 5, "No such image");
 		assertFalse(log.isEmpty());
-		assertEquals("Thought and used 2 tools, 1 failed", log.summary());
+		assertEquals("Thoughts and 2 tool uses, 1 failed", log.summary());
 
 		log.finish(7);
-		assertEquals("Thought and used 2 tools, 1 failed (7s)", log.summary());
+		assertEquals("Thoughts and 2 tool uses, 1 failed (7s)", log.summary());
 	}
 
 	@Test
@@ -96,6 +96,6 @@ public class ActivityLogTest {
 	public void testSummaryForToolsWithoutThinking() {
 		final ActivityLog log = new ActivityLog(13f);
 		log.toolStarted("fiji_image_list", "{}");
-		assertEquals("Used 1 tool", log.summary());
+		assertEquals("1 tool use", log.summary());
 	}
 }
