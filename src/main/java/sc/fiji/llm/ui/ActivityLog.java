@@ -55,9 +55,10 @@ import sc.fiji.llm.chat.ActivityRecord.Step;
 
 /**
  * A collapsible view of an {@link ActivityRecord}: what the assistant did while producing a response:
- * its thinking and each tool call with arguments, outcome, and result. It is
- * collapsed by default so it does not distract from the response itself. Must
- * be used on the EDT.
+ * its thinking and each tool call with arguments, outcome, and result. Live
+ * activity is expanded while a response is in progress; completed activity is
+ * collapsed so it does not distract from the response itself. Must be used on
+ * the EDT.
  */
 public class ActivityLog extends JPanel {
 
@@ -74,7 +75,7 @@ public class ActivityLog extends JPanel {
 	private final Timer renderTimer;
 	private final boolean arrowsSupported;
 	private final float detailsFontSize;
-	private boolean expanded;
+	private boolean expanded = true;
 	private boolean finished;
 
 	public ActivityLog(final float fontSize) {
@@ -125,7 +126,7 @@ public class ActivityLog extends JPanel {
 				180), 0.70f)));
 		detailsScroll.setOpaque(false);
 		detailsScroll.getViewport().setOpaque(false);
-		detailsScroll.setVisible(false);
+		detailsScroll.setVisible(expanded);
 
 		renderTimer = new Timer(RENDER_DELAY_MS, e -> render());
 		renderTimer.setRepeats(false);
@@ -180,8 +181,8 @@ public class ActivityLog extends JPanel {
 	public void finish(final long seconds) {
 		finished = true;
 		record.setElapsedSeconds(seconds);
-		updateToggle();
 		render();
+		setExpanded(false);
 	}
 
 	public boolean isEmpty() {
@@ -198,7 +199,7 @@ public class ActivityLog extends JPanel {
 		record = completed;
 		finished = true;
 		setVisible(!record.isEmpty());
-		updateToggle();
+		setExpanded(false);
 	}
 
 	/** @return a short summary, such as "Thought and used 2 tools (12s)" */

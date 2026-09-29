@@ -33,6 +33,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.awt.Component;
+
 import org.junit.Test;
 
 public class ActivityLogTest {
@@ -52,6 +54,18 @@ public class ActivityLogTest {
 
 		log.finish(7);
 		assertEquals("Thought and used 2 tools, 1 failed (7s)", log.summary());
+	}
+
+	@Test
+	public void testLiveActivityExpandsAndCompletedActivityCollapses() {
+		final ActivityLog log = new ActivityLog(13f);
+		final Component details = log.getComponent(1);
+
+		log.appendThinking("Let me check.");
+		assertTrue(details.isVisible());
+
+		log.finish(7);
+		assertFalse(details.isVisible());
 	}
 
 	@Test
