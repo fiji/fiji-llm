@@ -125,6 +125,16 @@ public class ImageJMacroToolPluginTest {
 		assertTrue(CommandUseToolPlugin.hasErrorLog(environment));
 	}
 
+	@Test
+	public void testUnknownCommandRunStatusReportsError() {
+		final CommandUseToolPlugin plugin = new CommandUseToolPlugin();
+		final JsonObject json = JsonParser.parseString(plugin.commandRunStatus("missing"))
+			.getAsJsonObject();
+
+		assertEquals("No command run found for run_id: missing", json.get("error")
+			.getAsString());
+	}
+
 	private static void setField(final Object target, final String name,
 		final Object value) throws Exception
 	{

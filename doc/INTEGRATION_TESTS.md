@@ -338,6 +338,13 @@ inspected together.
       metadata in `changes.results_table`.
 - [ ] Run a command that emits ImageJ or SciJava log output and verify the
       corresponding log delta in `environment_impact`.
+- [ ] Run `File > New > Image...` with `fiji_command_run` and verify the initial
+      result reports `status: "blocked_by_dialog"`, a `run_id`, the New Image
+      dialog details, and recommendations for `fiji_ui_dialog_respond` or
+      `fiji_ui_dialog_close`. Call `fiji_command_run_status` without interacting
+      and verify the command is still blocked. Respond with the exact observed
+      dialog title and button, then poll the status until a terminal result and
+      verify the final image and `environment_impact`.
 
 ## ImageJ Data Objects
 

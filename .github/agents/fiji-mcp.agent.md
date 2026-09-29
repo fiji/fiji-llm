@@ -45,9 +45,13 @@ Use this agent to, when supported:
 	dialog title and button text, or `fiji_ui_dialog_close` with the exact title.
 - Search for commands with `fiji_command_search` and execute them with
 	`fiji_command_run`. Before execution, verify or set the target with
-	`fiji_image_activate` when needed. Inspect the returned `environment` report
-	for opened, closed, or changed images, active-image changes, Results table
-	changes, dialogs, and ImageJ/SciJava log deltas.
+	`fiji_image_activate` when needed. If the result is `blocked_by_dialog` or
+	`running`, retain its `run_id`; inspect a blocked dialog and use
+	`fiji_ui_dialog_respond` or `fiji_ui_dialog_close`, then poll with
+	`fiji_command_run_status` until terminal. Inspect the returned
+	`environment_impact` report for opened, closed, or changed images,
+	active-image changes, Results table changes, dialogs, and ImageJ/SciJava log
+	deltas.
 
 ## Operating Instructions
 

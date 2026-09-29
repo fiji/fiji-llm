@@ -35,10 +35,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.scijava.MenuPath;
+import org.scijava.module.Module;
 import org.scijava.module.ModuleInfo;
 import org.scijava.module.ModuleService;
 import org.scijava.plugin.Parameter;
@@ -58,6 +64,8 @@ import com.google.gson.JsonObject;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import sc.fiji.llm.execution.EnvironmentSnapshotService;
+import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentCapture;
+import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentImpact;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
 import sc.fiji.llm.guidance.workflows.RunningCommandsGuide;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
@@ -72,7 +80,8 @@ import sc.fiji.llm.tools.ToolScope;
 public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	private static final int MAX_RESULTS = 10;
-	private static final long UI_SETTLE_DELAY_MS = 250;
+	private static final long COMMAND_WAIT_TIMEOUT_MS = 30000;
+	private static final long COMMAND_POLL_INTERVAL_MS = 50;
 
 	@Parameter
 	private SearchService searchService;
@@ -85,6 +94,8 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private EnvironmentSnapshotService environmentSnapshotService;
+
+	private final Map<String, CommandExecution> executions = new ConcurrentHashMap<>();
 
 	public CommandUseToolPlugin() {
 		super(CommandUseToolPlugin.class);
@@ -128,22 +139,12 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			capture = environmentSnapshotService.capture(PixelChangeTracking.FINAL_SHA256);
 			// Run the module - this goes through the same path as the search panel
 			// and includes automatic recorder integration.
-			moduleService.run(moduleInfo, true);
-			waitForUiToSettle();
-
-			JsonObject command = new JsonObject();
-			command.addProperty("name", moduleInfo.getTitle());
-			command.addProperty("menu_path", menuString);
-			JsonObject result = new JsonObject();
-			result.add("executed_command", command);
-			result.addProperty("status", "success");
-			final JsonObject environment = capture.finish().toJson();
-			if (environment.size() > 0) result.add("environment_impact", environment);
-			if (hasOpenedDialogs(environment)) ToolRecommendationUtils.addToolRecommendations(
-				result, "fiji_ui_dialog_respond", "fiji_ui_dialog_close");
-			if (hasErrorLog(environment)) ToolRecommendationUtils.addGuideRecommendations(
-				result, RunningCommandsGuide.ID);
-			return result.toString();
+			final String runID = newRunID();
+			final Future<Module> future = moduleService.run(moduleInfo, true);
+			final CommandExecution execution = new CommandExecution(runID, moduleInfo,
+				menuString, future, capture);
+			executions.put(runID, execution);
+			return awaitCommand(execution);
 		}
 		catch (RuntimeException e) {
 			if (capture != null) {
@@ -154,9 +155,129 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	private static boolean hasOpenedDialogs(final JsonObject environment) {
-		return environment.has("changes") && environment.getAsJsonObject("changes")
-			.has("dialogs_opened");
+	@Tool(value = { "Poll an asynchronous Fiji command run. Returns its current status, environment impact, and any blocking dialog. Continue polling until the command reaches a terminal status." },
+		name = "fiji_command_run_status" )
+	public String commandRunStatus(@P(name = "run_id", value = "Run ID from fiji_command_run") final String runID) {
+		if (runID == null || runID.isBlank()) {
+			return jsonError("run_id cannot be null or blank");
+		}
+
+		final CommandExecution execution = executions.get(runID);
+		if (execution == null) {
+			return jsonError("No command run found for run_id: " + runID);
+		}
+		return execution.future.isDone() ? finishCommand(execution) : currentCommandState(
+			execution, false);
+	}
+
+	private String awaitCommand(final CommandExecution execution) {
+		final long deadline = System.currentTimeMillis() + COMMAND_WAIT_TIMEOUT_MS;
+		while (!execution.future.isDone()) {
+			if (hasNewDialogs(execution.capture.current())) return currentCommandState(
+				execution, false);
+
+			final long remaining = deadline - System.currentTimeMillis();
+			if (remaining <= 0) return currentCommandState(execution, true);
+			try {
+				Thread.sleep(Math.min(COMMAND_POLL_INTERVAL_MS, remaining));
+			}
+			catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return currentCommandState(execution, true);
+			}
+		}
+		return finishCommand(execution);
+	}
+
+	private String finishCommand(final CommandExecution execution) {
+		synchronized (execution) {
+			if (execution.finishedResult != null) return execution.finishedResult;
+
+			String status = "success";
+			String error = null;
+			try {
+				execution.future.get();
+			}
+			catch (final CancellationException | ExecutionException e) {
+				status = "finished_with_errors";
+				error = e.getCause() == null ? e.getMessage() : e.getCause().toString();
+			}
+			catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				status = "infrastructure_error";
+				error = "Interrupted while waiting for command completion";
+			}
+
+			final EnvironmentImpact impact = execution.capture.finish();
+			execution.finishedResult = commandResult(execution, status, impact, false,
+				error);
+			return execution.finishedResult;
+		}
+	}
+
+	private String currentCommandState(final CommandExecution execution,
+		final boolean waitExpired)
+	{
+		final EnvironmentImpact impact = execution.capture.current();
+		final String status = hasNewDialogs(impact) ? "blocked_by_dialog" : "running";
+		return commandResult(execution, status, impact, waitExpired, null);
+	}
+
+	private static String newRunID() {
+		return UUID.randomUUID().toString().substring(0, 12);
+	}
+
+	private static boolean hasNewDialogs(final EnvironmentImpact impact) {
+		return !impact.getNewModalDialogs().isEmpty();
+	}
+
+	private static String commandResult(final CommandExecution execution,
+		final String status, final EnvironmentImpact impact, final boolean waitExpired,
+		final String error)
+	{
+		final JsonObject command = new JsonObject();
+		command.addProperty("name", execution.moduleInfo.getTitle());
+		command.addProperty("menu_path", execution.menuPath);
+		final JsonObject result = new JsonObject();
+		result.add("executed_command", command);
+		result.addProperty("status", status);
+		result.addProperty("run_id", execution.runID);
+		result.addProperty("duration_ms", System.currentTimeMillis() - execution.startedAt);
+		if (waitExpired) result.addProperty("wait_expired", true);
+		if (error != null && !error.isBlank()) result.addProperty("errors", error);
+		final JsonObject environment = impact.toJson();
+		if (environment.size() > 0) result.add("environment_impact", environment);
+		if ("blocked_by_dialog".equals(status)) ToolRecommendationUtils
+			.addToolRecommendations(result, "fiji_ui_dialog_respond", "fiji_ui_dialog_close");
+		else if ("running".equals(status)) ToolRecommendationUtils
+			.addToolRecommendations(result, "fiji_command_run_status");
+		else if (hasNewDialogs(impact)) ToolRecommendationUtils.addToolRecommendations(result,
+			"fiji_ui_dialog_respond", "fiji_ui_dialog_close");
+		if (hasErrorLog(environment)) ToolRecommendationUtils.addGuideRecommendations(
+			result, RunningCommandsGuide.ID);
+		return result.toString();
+	}
+
+	private static final class CommandExecution {
+		private final String runID;
+		private final ModuleInfo moduleInfo;
+		private final String menuPath;
+		private final Future<Module> future;
+		private final EnvironmentCapture capture;
+		private final long startedAt;
+		private String finishedResult;
+
+		private CommandExecution(final String runID, final ModuleInfo moduleInfo,
+			final String menuPath, final Future<Module> future,
+			final EnvironmentCapture capture)
+		{
+			this.runID = runID;
+			this.moduleInfo = moduleInfo;
+			this.menuPath = menuPath;
+			this.future = future;
+			this.capture = capture;
+			this.startedAt = System.currentTimeMillis();
+		}
 	}
 
 	static boolean hasErrorLog(final JsonObject environment) {
@@ -176,16 +297,6 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		final String log = environment.get(key).getAsString().toLowerCase(Locale.ROOT);
 		return log.contains("error") || log.contains("exception") || log.contains(
 			"syntax") || log.contains("traceback");
-	}
-
-	private void waitForUiToSettle() {
-		try {
-			Thread.sleep(UI_SETTLE_DELAY_MS);
-		}
-		catch (final InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new IllegalStateException("Interrupted while waiting for UI to settle", e);
-		}
 	}
 
 	static String commandError(final String menuPath,

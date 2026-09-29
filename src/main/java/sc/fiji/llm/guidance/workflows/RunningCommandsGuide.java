@@ -73,6 +73,12 @@ public class RunningCommandsGuide extends AbstractAgentGuide {
 			dialogs, whether informative or error related. To understand your options for dealing with these
 			dialogs, read Guide ID: `%2$s`.
 
+			`fiji_command_run` waits up to 30 seconds for a command to finish. If the command opens a modal dialog or continues
+			past the wait limit, it returns a non-terminal status and a `run_id`. For `blocked_by_dialog`, inspect the
+			dialog and use `fiji_ui_dialog_respond` or `fiji_ui_dialog_close`, then poll `fiji_command_run_status` until
+			the command reaches a terminal status. A wait expiry reports `running` with `wait_expired: true`; it does
+			not cancel the command.
+
 			When running commands, tools will make an effort to provide you information of what resulting application
 			state may have changed. Read Guide ID `%3$s` for an overview of communication channels.
 
