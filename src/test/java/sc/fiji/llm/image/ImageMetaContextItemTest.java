@@ -62,10 +62,12 @@ public class ImageMetaContextItemTest {
 			Collections.emptyList(), "UnsignedByteType", null, null, true);
 
 		assertFalse(plain.equals(annotated));
-		assertEquals("plain", plain.toJson().getAsJsonObject().get("render_mode")
+		assertEquals("plain", plain.toJson().getAsJsonObject().get("context_mode")
 			.getAsString());
 		assertEquals("annotated", annotated.toJson().getAsJsonObject().get(
-			"render_mode").getAsString());
+			"context_mode").getAsString());
+		assertFalse(plain.toJson().getAsJsonObject().has("render_mode"));
+		assertFalse(annotated.toJson().getAsJsonObject().has("render_mode"));
 	}
 
 	@Test

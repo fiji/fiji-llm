@@ -163,7 +163,7 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		obj.addProperty("type", getType());
 		obj.addProperty("title", imageTitle);
 		obj.addProperty("id", imageId);
-		obj.addProperty("render_mode", includesOverlays ? "annotated" : "plain");
+		obj.addProperty("context_mode", includesOverlays ? "annotated" : "plain");
 
 		if (!dimensions.isEmpty()) {
 			final JsonArray dimensionsArray = new JsonArray();
