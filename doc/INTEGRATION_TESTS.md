@@ -209,8 +209,7 @@ available language when practical.
       response reports the requested 1-indexed inclusive bounds and content.
       Verify that an invalid or out-of-range range returns a useful error.
 - [ ] After a run, call `fiji_script_read_logs` and verify that retained output
-      and errors are reported without internal start banners. Clear the Script
-      Editor logs and verify that the next read reflects the cleared state.
+      and errors are reported without internal start banners.
 - [ ] On a disposable script, use `fiji_script_insert_content`,
       `fiji_script_delete_lines`, and `fiji_script_replace_content`, reading
       the content after each operation to verify the requested source change
