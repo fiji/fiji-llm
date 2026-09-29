@@ -156,7 +156,10 @@ In addition to chat text, user messages may include:
 - User-attached context items, indicating likely areas of focus
 - A point-in-time environment snapshot of the active and open scripts and images at the time the message was sent; it is not live and may become stale
 - An optional recommended-resources block for attached context; use its guide recommendations when relevant. Its tool-family entries are prefixes, not callable tool names, and do not require automatic calls
-- An optional conversation-naming recommendation on the first message; use it to name the conversation from its history when appropriate
+- A required conversation-naming action at the beginning of a user message when the
+	session snapshot says `conversation_stats: unnamed`; call `fiji_conversation_name`
+	before addressing the user's request. Repeat this on later messages until the
+	snapshot says `conversation_stats: named`
 
 Treat the active image and active script as Fiji's current implicit targets. Tools and commands
 without an explicit image_id or script_id may operate on those active targets. Use
@@ -858,14 +861,12 @@ Be concise, patient, humble, and collaborative.
 					+ "\n=== END USER-ATTACHED CONTEXT ===";
 				final String recommendations = PromptRecommendations.format(mergedContextItems);
 				if (!recommendations.isEmpty()) requestText += "\n\n" + recommendations;
-				if (requestConversation.messages().isEmpty() && requestConversation
-					.displayName() == null)
-				{
-					requestText += "\n\n" + formatConversationRecommendation(
-						requestConversation);
-				}
-				final String snapshot = buildSessionSnapshot();
+				final String snapshot = buildSessionSnapshot(requestConversation);
 				if (!snapshot.isEmpty()) requestText += "\n\n" + snapshot;
+				if (isUnnamedConversation(requestConversation)) {
+					requestText = formatConversationNamingAction(requestConversation) +
+						"\n\n" + requestText;
+				}
 				userContents.add(new TextContent(requestText));
 				final UserMessage.Builder msgBuilder = UserMessage.builder()
 						.addContent(new TextContent(userText));
@@ -1018,14 +1019,17 @@ Be concise, patient, humble, and collaborative.
 	/**
 	 * Lists the open scripts and images, so the model knows what it can inspect.
 	 */
-	private String buildSessionSnapshot() {
+	private String buildSessionSnapshot(final Conversation conversation) {
 		try {
 			final ScriptEditorToolPlugin scripts = aiToolService.getInstance(
 				ScriptEditorToolPlugin.class);
 			final ImageToolPlugin images = aiToolService.getInstance(
 				ImageToolPlugin.class);
+			final String conversationStats = isUnnamedConversation(conversation) ?
+				"unnamed" : "named";
 			final String snapshot = SessionSnapshot.format(scripts == null ? null
-				: scripts.listOpenScripts(), images == null ? null : images.listImages());
+				: scripts.listOpenScripts(), images == null ? null : images.listImages(),
+				conversationStats);
 			logService.debug("Fiji session snapshot:\n" + snapshot);
 			return snapshot;
 		}
@@ -1807,18 +1811,27 @@ Be concise, patient, humble, and collaborative.
 		});
 	}
 
-	private static String formatConversationRecommendation(
+	private static boolean isUnnamedConversation(final Conversation conversation) {
+		return conversation != null && (conversation.displayName() == null || conversation
+			.displayName().isBlank());
+	}
+
+	private static String formatConversationNamingAction(
 		final Conversation conversation)
 	{
-		final JsonObject recommendation = new JsonObject();
-		recommendation.addProperty("tool", "fiji_conversation_name");
+		final JsonObject action = new JsonObject();
+		action.addProperty("tool", "fiji_conversation_name");
 		final JsonObject arguments = new JsonObject();
 		arguments.addProperty("conversation_id", conversation.id());
-		recommendation.add("arguments", arguments);
+		action.add("arguments", arguments);
+		final JsonArray requiredToolCalls = new JsonArray();
+		requiredToolCalls.add(action);
 		final JsonObject block = new JsonObject();
-		block.add("conversation_recommendation", recommendation);
-		return "=== RECOMMENDED FIJI ACTION ===\n" + block +
-			"\n=== END RECOMMENDED FIJI ACTION ===";
+		block.add("required_tool_calls", requiredToolCalls);
+		return "=== REQUIRED FIJI ACTION: CALL BEFORE ANSWERING ===\n" +
+			"Call the required tool before addressing the user's request. Choose a " +
+			"concise name from the conversation history.\n" + block +
+			"\n=== END REQUIRED FIJI ACTION ===";
 	}
 
 	/**

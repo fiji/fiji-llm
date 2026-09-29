@@ -50,15 +50,17 @@ For each category, send this prompt:
 ### Conversation renaming testing
 - [ ] Start a new conversation and verify that its UUID is stable while its
       display label initially falls back to that UUID.
-- [ ] Send the first message and verify that the outgoing request contains one
-      `conversation_recommendation` with `tool: "fiji_conversation_name"` and
+- [ ] Send a message and verify that the outgoing request contains
+      `conversation_stats: unnamed` and a top-level `required_tool_calls` array
+      before the user's text, containing `tool: "fiji_conversation_name"` and
       the new conversation's `conversation_id`.
 - [ ] Verify that the assistant can name the conversation from its history, the
       result contains the same conversation ID and a timestamped display name,
       and the chat selector updates without reopening the conversation.
 - [ ] Verify that the name persists after restarting or reloading the
-      conversation, that later messages do not repeat the naming recommendation,
-      and that a second naming attempt returns an error.
+      conversation, that later messages contain `conversation_stats: named` and
+      do not repeat the required naming action, and that a second naming attempt
+      returns an error.
 
 ## Cross-Cutting Evaluation Criteria
 

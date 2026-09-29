@@ -62,10 +62,28 @@ public final class SessionSnapshot {
 	 * @return the snapshot, or an empty string if neither listing is usable
 	 */
 	public static String format(final String scriptList, final String imageList) {
+		return format(scriptList, imageList, null);
+	}
+
+	/**
+	 * Formats the snapshot from listing results and conversation state.
+	 *
+	 * @param scriptList result of fiji_script_list, or null if unavailable
+	 * @param imageList result of fiji_image_list, or null if unavailable
+	 * @param conversationStats conversation status such as {@code unnamed} or
+	 *          {@code named}, or null when unavailable
+	 * @return the snapshot, or an empty string if no information is usable
+	 */
+	public static String format(final String scriptList, final String imageList,
+		final String conversationStats)
+	{
 		final JsonObject scripts = parse(scriptList);
 		final JsonObject images = parse(imageList);
-		if (scripts == null && images == null) return "";
+		if (scripts == null && images == null && (conversationStats == null ||
+			conversationStats.isBlank())) return "";
 		final StringBuilder sb = new StringBuilder(HEADER).append("\n");
+		if (conversationStats != null && !conversationStats.isBlank()) sb.append(
+			"conversation_stats: ").append(conversationStats).append("\n");
 		if (scripts != null) sb.append("fiji_script_list: ").append(scripts).append(
 			"\n");
 		if (images != null) sb.append("fiji_image_list: ").append(capImages(images))

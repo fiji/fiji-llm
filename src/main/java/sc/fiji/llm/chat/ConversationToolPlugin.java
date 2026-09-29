@@ -66,9 +66,9 @@ public class ConversationToolPlugin extends AbstractAiToolPlugin {
 		return ToolScope.CHAT;
 	}
 
-	@Tool(value = { "Name a conversation based on its conversation history. Use this when a conversation naming recommendation is provided; do not include a timestamp in the name because one is added automatically." }, name = "fiji_conversation_name")
+	@Tool(value = { "Name a conversation based on its conversation history. When a required conversation-naming action is provided, call this tool before addressing the user's request. Do not include a timestamp in the name because one is added automatically." }, name = "fiji_conversation_name")
 	public String nameConversation(
-		@P(name = "conversation_id", value = "Conversation UUID from the naming recommendation") final String conversationId,
+		@P(name = "conversation_id", value = "Conversation UUID from the required naming action") final String conversationId,
 		@P(name = "name", value = "A concise name based on the conversation history, without a timestamp") final String name)
 	{
 		try {

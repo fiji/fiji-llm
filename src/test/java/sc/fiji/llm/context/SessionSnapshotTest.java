@@ -68,6 +68,12 @@ public class SessionSnapshotTest {
 	}
 
 	@Test
+	public void testIncludesConversationStatsWithoutListings() {
+		final String snapshot = SessionSnapshot.format(null, null, "unnamed");
+		assertTrue(snapshot, snapshot.contains("conversation_stats: unnamed"));
+	}
+
+	@Test
 	public void testSkipsErrorsAndMissingListings() {
 		final String snapshot = SessionSnapshot.format("{\"error\":\"boom\"}",
 			IMAGES);
