@@ -144,7 +144,9 @@ would:
       `overlay_included` when applicable, as well as the MCP `image` content
       block. It should not include a `render_mode` field.
 11. Verify that an unknown image id returns a useful text error instead of an
-      image block or a server failure.
+      image block or a server failure. The error should identify the requested
+      id and recommend `fiji_image_list`, both when no images are open and when
+      a different image is open.
 
 ## Tool Sequence and Common Checks
 

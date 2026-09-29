@@ -155,11 +155,9 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 			if (display.isPresent()) {
 				final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display
 					.get());
-				if (datasetView == null) return jsonError("No open image found with id: " +
-					imageId);
+				if (datasetView == null) return imageNotFoundError(imageId);
 				final Dataset dataset = datasetView.getData();
-				if (dataset == null) return jsonError("No open image found with id: " +
-					imageId);
+				if (dataset == null) return imageNotFoundError(imageId);
 
 				JsonObject result = new JsonObject();
 				result.addProperty("image_id", imageId);
@@ -183,9 +181,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 				result.add("dimensions", dims);
 				return result.toString();
 			}
-			if (displays == null || displays.isEmpty()) return jsonError(
-				"No images are currently open");
-			return jsonError("No open image found with id: " + imageId);
+			return imageNotFoundError(imageId);
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_image_details: " + e.getMessage());
@@ -225,9 +221,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 				return List.of(TextContent.from(metadata.toString()), rendered.get()
 					.getImageContent());
 			}
-			if (displays == null || displays.isEmpty()) return textContents(
-				jsonError("No images are currently open"));
-			return textContents(jsonError("No open image found with id: " + imageId));
+			return textContents(imageNotFoundError(imageId));
 		}
 		catch (IOException | RuntimeException e) {
 			return textContents(jsonError("Failed to run " + toolName + ": " + e
@@ -243,6 +237,11 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 				display);
 		}
 		return imageJ1HelperService.getOrCreateImageDisplay(imageId);
+	}
+
+	private String imageNotFoundError(final int imageId) {
+		return jsonError("No open image found with id: " + imageId,
+			ErrorOptions.withTool("fiji_image_list"));
 	}
 
 	private boolean isActiveImage(final int imageId) {
