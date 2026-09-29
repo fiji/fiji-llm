@@ -98,6 +98,7 @@ import sc.fiji.llm.assistant.FijiAssistant;
 import sc.fiji.llm.chat.ActivityRecord;
 import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationService;
+import sc.fiji.llm.chat.ToolResultFormatter;
 import sc.fiji.llm.commands.Fiji_Chat;
 import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
@@ -906,8 +907,8 @@ Be concise, patient, humble, and collaborative.
 					.onToolExecuted(execution -> {
 						aiToolService.processToolExecution(execution);
 						currentStreamingPanel.toolFinished(execution.request().name(),
-							execution.hasFailed(), execution.duration().toMillis(), execution
-								.result());
+							execution.hasFailed(), execution.duration().toMillis(),
+							ToolResultFormatter.format(execution.resultContents()));
 						if ("fiji_conversation_name".equals(execution.request().name())) {
 							SwingUtilities.invokeLater(() -> {
 								conversationComboBox.revalidate();

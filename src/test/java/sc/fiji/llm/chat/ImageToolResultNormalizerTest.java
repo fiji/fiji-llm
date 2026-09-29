@@ -98,4 +98,13 @@ public class ImageToolResultNormalizerTest {
 
 		assertSame(request, ImageToolResultNormalizer.normalize(request));
 	}
+
+	@Test
+	public void testFormatsTextAndImageResultsWithoutFlatteningImageData() {
+		final ImageContent image = ImageContent.from("AQID", "image/png");
+
+		assertEquals("image rendered\n[image content]", ToolResultFormatter.format(
+			List.of(TextContent.from("image rendered"), image)));
+		assertEquals("[image content]", ToolResultFormatter.format(List.of(image)));
+	}
 }

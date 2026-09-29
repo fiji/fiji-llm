@@ -38,17 +38,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-
 import org.scijava.Priority;
 import org.scijava.log.LogService;
 import org.scijava.plugin.AbstractSingletonService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.Service;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -59,6 +59,7 @@ import dev.langchain4j.service.tool.ToolErrorContext;
 import dev.langchain4j.service.tool.ToolErrorHandlerResult;
 import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolExecutor;
+import sc.fiji.llm.chat.ToolResultFormatter;
 import sc.fiji.llm.log.LogUtils;
 
 /**
@@ -112,7 +113,8 @@ public class DefaultAiToolService extends AbstractSingletonService<AiToolPlugin>
 	public void processToolExecution(ToolExecution toolExecutionEvent) {
 		if (!logService.isDebug()) return;
 		final String name = toolExecutionEvent.request().name();
-		final String result = toolExecutionEvent.result();
+		final String result = ToolResultFormatter.format(toolExecutionEvent
+			.resultContents());
 		logService.debug("Tool " + name + (toolExecutionEvent.hasFailed()
 			? " failed" : " finished") + " in " + toolExecutionEvent.duration()
 				.toMillis() + " ms: " + LogUtils.abbreviate(result,
