@@ -37,6 +37,8 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.SwingUtilities;
 
@@ -72,6 +74,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 	private static final String MACRO_RECORDER_MODE = "Macro";
 	private static final long RECORDER_OPEN_TIMEOUT_MS = 5000;
 	private static final long RECORDER_POLL_INTERVAL_MS = 100;
+	private static final long SCRIPT_CREATION_TIMEOUT_MS = 5000;
+	private static final long SCRIPT_CREATION_POLL_INTERVAL_MS = 100;
 
 	@Parameter
 	private LegacyService legacyService;
@@ -276,6 +280,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		try {
 			String[] errors = new String[1];
 			boolean[] modeRestored = new boolean[] { true };
+			Set<ScriptID> existingScriptIDs = new HashSet<>();
 			Runnable createAction = () -> {
 				Frame recorder = findRecorderFrame();
 				if (recorder == null) {
@@ -297,6 +302,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				}
 
 				try {
+					existingScriptIDs.addAll(getAvailableScriptIDs());
 					Button createButton = findButton(recorder, "Create");
 					if (createButton == null) {
 						logService.debug("fiji_macro_create_script failure: The macro recorder does not have a Create button");
@@ -323,9 +329,9 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				return errors[0];
 			}
 
-			ScriptID scriptID = TextEditorUtils.getActiveScriptID();
-			if (scriptID == null) {
-				return jsonError("Macro was created, but no script editor is active",
+			ScriptContextItem createdScript = waitForCreatedMacro(existingScriptIDs);
+			if (createdScript == null) {
+				return jsonError("Macro was created, but its new .ijm script did not become active",
 					ErrorOptions.withTool("fiji_script_list"));
 			}
 
@@ -333,7 +339,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			result.addProperty("macro_transferred", true);
 			result.addProperty("script_language", "ijm");
 			result.addProperty("recorder_mode_restored", modeRestored[0]);
-			result.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
+			result.addProperty(ScriptContextItem.SCRIPT_ID_KEY, createdScript.getId()
+				.toString());
 					ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_script_read_content");
 			return result.toString();
@@ -398,6 +405,50 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			}
 		}
 		return null;
+	}
+
+	private static Set<ScriptID> getAvailableScriptIDs() {
+		final Set<ScriptID> scriptIDs = new HashSet<>();
+		for (ScriptContextItem script : ScriptContextUtilities.getAvailableScripts()) {
+			scriptIDs.add(script.getId());
+		}
+		return scriptIDs;
+	}
+
+	private static ScriptContextItem waitForCreatedMacro(
+		final Set<ScriptID> existingScriptIDs) throws Exception
+	{
+		ScriptContextItem createdScript = findCreatedMacro(existingScriptIDs);
+		if (createdScript != null || SwingUtilities.isEventDispatchThread()) return createdScript;
+
+		final long startTime = System.currentTimeMillis();
+		while (System.currentTimeMillis() - startTime < SCRIPT_CREATION_TIMEOUT_MS) {
+			Thread.sleep(SCRIPT_CREATION_POLL_INTERVAL_MS);
+			createdScript = findCreatedMacro(existingScriptIDs);
+			if (createdScript != null) return createdScript;
+		}
+		return null;
+	}
+
+	private static ScriptContextItem findCreatedMacro(
+		final Set<ScriptID> existingScriptIDs) throws Exception
+	{
+		final ScriptContextItem[] createdScript = new ScriptContextItem[1];
+		final Runnable findAction = () -> {
+			final ScriptID activeScriptID = TextEditorUtils.getActiveScriptID();
+			for (ScriptContextItem script : ScriptContextUtilities.getAvailableScripts()) {
+				if (!existingScriptIDs.contains(script.getId()) &&
+					ScriptExecutionService.isMacroScript(script.getScriptName()) &&
+					script.getId().equals(activeScriptID))
+				{
+					createdScript[0] = script;
+					return;
+				}
+			}
+		};
+		if (SwingUtilities.isEventDispatchThread()) findAction.run();
+		else SwingUtilities.invokeAndWait(findAction);
+		return createdScript[0];
 	}
 
 	private static Frame waitForRecorderFrame() throws InterruptedException {
