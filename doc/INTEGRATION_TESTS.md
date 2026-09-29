@@ -300,11 +300,14 @@ inspected together.
       generic Script Editor failure.
 - [ ] Macro error after partial image processing: verify that the partial
       image state and the later error are both observable.
-- [ ] Command requiring `Close All` confirmation: verify the confirmation
-      dialog's title, message, buttons, and modal state with
-      `fiji_ui_dialogs_read`; when proceeding is intentional, respond with
+- [ ] Command invoking `Close All`: when possible, first create a disposable
+      dirty or unsaved image to exercise the confirmation path. If Fiji shows a
+      confirmation dialog, verify its title, message, buttons, and modal state
+      with `fiji_ui_dialogs_read`; when proceeding is intentional, respond with
       `fiji_ui_dialog_respond` using the exact title and button, then verify
-      that the dialog state changed.
+      that the dialog state changed. If there is no dirty or unsaved state, the
+      command may proceed without a dialog; treat that as a valid result rather
+      than a failed confirmation test.
 - [ ] Console exception: trigger a macro exception or error after `print()`
       output and compare the Script Editor, ImageJ Log, and SciJava results.
 - [ ] Long-running macro: run a macro longer than 30 seconds and verify the
