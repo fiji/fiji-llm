@@ -185,8 +185,7 @@ public final class ImageJ1HelperService extends AbstractService implements
 
 		final int rows = asInt(invoke(table, "getCounter"));
 		final String headings = asString(invoke(table, "getColumnHeadings"));
-		final boolean present = invokeStatic("ij.WindowManager", "getFrame", "Results") !=
-			null || rows > 0 || !headings.trim().isEmpty();
+		final boolean present = rows > 0;
 		return new ResultsTableState(present, rows, headings);
 	}
 

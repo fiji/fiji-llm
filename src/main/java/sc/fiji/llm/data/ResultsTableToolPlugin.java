@@ -61,18 +61,15 @@ public class ResultsTableToolPlugin extends AbstractAiToolPlugin {
 		return "Results Tools";
 	}
 
-	@Tool(value = { "Read the current Results Table state, including whether a table is present, its actual headings, row count, row labels, numeric values, and text values." }, name = "fiji_results_read")
+	@Tool(value = { "Read the current Results Table rows, including actual headings, row labels, numeric values, and text values. Returns an empty object when there are no result rows." }, name = "fiji_results_read")
 	public String readResultsTable() {
 		try {
 			final Object table = imageJ1HelperService == null ? null : imageJ1HelperService.getResultsTable();
 			if (table == null || !imageJ1HelperService.getResultsTableState().isPresent()) {
-				final JsonObject empty = new JsonObject();
-				empty.addProperty("present", false);
-				return empty.toString();
+				return new JsonObject().toString();
 			}
 
 			final JsonObject result = new JsonObject();
-			result.addProperty("present", true);
 			result.addProperty("title", "Results");
 			result.addProperty("row_count", asInt(invoke(table, "getCounter")));
 

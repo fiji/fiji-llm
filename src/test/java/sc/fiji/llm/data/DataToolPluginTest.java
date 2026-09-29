@@ -67,7 +67,7 @@ public class DataToolPluginTest {
 		final JsonObject json = JsonParser.parseString(plugin.readResultsTable())
 			.getAsJsonObject();
 
-		assertTrue(json.get("present").getAsBoolean());
+		assertTrue(!json.has("present"));
 		assertEquals(1, json.get("row_count").getAsInt());
 		assertTrue(json.get("columns").getAsJsonArray().size() >= 2);
 		assertEquals(42.0, json.getAsJsonArray("rows").get(0).getAsJsonObject()
@@ -99,8 +99,7 @@ public class DataToolPluginTest {
 		final JsonObject json = JsonParser.parseString(plugin.readResultsTable())
 			.getAsJsonObject();
 
-		assertTrue(!json.get("present").getAsBoolean());
-		assertTrue(!json.has("row_count"));
+		assertTrue(json.entrySet().isEmpty());
 	}
 
 	@Test
