@@ -42,6 +42,9 @@ import net.imglib2.display.ColorTable;
 /** Metadata describing the display state used to render an image. */
 public final class ImageRenderMetadata {
 
+	public static final String SCREEN_RENDER_MODE = "screen";
+	public static final String FLATTENED_RENDER_MODE = "flattened";
+
 	private final String title;
 	private final int imageId;
 	private final int sourceWidth;
@@ -57,6 +60,7 @@ public final class ImageRenderMetadata {
 	private final String roiType;
 	private final boolean overlayIncluded;
 	private final int overlayCount;
+	private final String renderMode;
 
 	public ImageRenderMetadata(final String title, final int imageId,
 		final int sourceWidth, final int sourceHeight, final int renderedWidth,
@@ -77,6 +81,20 @@ public final class ImageRenderMetadata {
 		final List<ChannelMetadata> channels, final boolean roiIncluded,
 		final String roiType, final boolean overlayIncluded, final int overlayCount)
 	{
+		this(title, imageId, sourceWidth, sourceHeight, renderedWidth,
+			renderedHeight, planePosition, channelIndex, channelCount, colorMode,
+			channels, roiIncluded, roiType, overlayIncluded, overlayCount,
+			SCREEN_RENDER_MODE);
+	}
+
+	public ImageRenderMetadata(final String title, final int imageId,
+		final int sourceWidth, final int sourceHeight, final int renderedWidth,
+		final int renderedHeight, final Map<String, Long> planePosition,
+		final long channelIndex, final int channelCount, final String colorMode,
+		final List<ChannelMetadata> channels, final boolean roiIncluded,
+		final String roiType, final boolean overlayIncluded, final int overlayCount,
+		final String renderMode)
+	{
 		this.title = title == null ? "" : title;
 		this.imageId = imageId;
 		this.sourceWidth = sourceWidth;
@@ -93,6 +111,7 @@ public final class ImageRenderMetadata {
 		this.roiType = roiType == null ? "" : roiType;
 		this.overlayIncluded = overlayIncluded;
 		this.overlayCount = overlayCount;
+		this.renderMode = renderMode == null ? SCREEN_RENDER_MODE : renderMode;
 	}
 
 	public String getTitle() {
@@ -155,6 +174,10 @@ public final class ImageRenderMetadata {
 		return overlayCount;
 	}
 
+	public String getRenderMode() {
+		return renderMode;
+	}
+
 	/** Returns a concise JSON description of the rendered display state. */
 	public JsonObject toJson() {
 		final JsonObject result = new JsonObject();
@@ -164,6 +187,7 @@ public final class ImageRenderMetadata {
 		result.addProperty("source_height", sourceHeight);
 		result.addProperty("rendered_width", renderedWidth);
 		result.addProperty("rendered_height", renderedHeight);
+		result.addProperty("render_mode", renderMode);
 		final JsonObject position = new JsonObject();
 		for (final Map.Entry<String, Long> entry : planePosition.entrySet()) {
 			position.addProperty(entry.getKey(), entry.getValue());

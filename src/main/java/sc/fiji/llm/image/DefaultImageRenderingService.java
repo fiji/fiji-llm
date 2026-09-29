@@ -97,6 +97,8 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 			imageJ1HelperService.getFlattenedImage(display) : Optional.empty();
 		final BufferedImage source = flattened.map(DefaultImageRenderingService::copyImage)
 			.orElseGet(() -> copyImage(screenImage.image()));
+		final String renderMode = flattened.isPresent() ? ImageRenderMetadata
+			.FLATTENED_RENDER_MODE : ImageRenderMetadata.SCREEN_RENDER_MODE;
 		final Optional<Object> roi = options.isIncludeRoi() ? imageJ1HelperService
 			.getRoi(display) : Optional.empty();
 		final boolean roiIncluded = roi.isPresent();
@@ -111,7 +113,7 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		final byte[] pngBytes = encodePng(bounded);
 		final ImageRenderMetadata metadata = createMetadata(display, view,
 			source.getWidth(), source.getHeight(), bounded.getWidth(), bounded.getHeight(),
-			roiIncluded, roiType, overlayIncluded, overlayCount);
+			roiIncluded, renderMode, roiType, overlayIncluded, overlayCount);
 		return Optional.of(new RenderedImageResult(pngBytes, metadata));
 	}
 
@@ -177,7 +179,8 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 	private ImageRenderMetadata createMetadata(final ImageDisplay display,
 		final DatasetView view, final int sourceWidth, final int sourceHeight,
 		final int renderedWidth, final int renderedHeight, final boolean roiIncluded,
-		final String roiType, final boolean overlayIncluded, final int overlayCount)
+		final String renderMode, final String roiType, final boolean overlayIncluded,
+		final int overlayCount)
 	{
 		final Dataset dataset = view.getData();
 		final Map<String, Long> planePosition = createPlanePosition(view, dataset);
@@ -190,7 +193,7 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		return new ImageRenderMetadata(imageJ1HelperService.getImageTitle(imageId),
 			imageId, sourceWidth, sourceHeight, renderedWidth, renderedHeight,
 			planePosition, channelIndex, view.getChannelCount(), colorMode, channels,
-			roiIncluded, roiType, overlayIncluded, overlayCount);
+			roiIncluded, roiType, overlayIncluded, overlayCount, renderMode);
 	}
 
 	private static Map<String, Long> createPlanePosition(final DatasetView view,

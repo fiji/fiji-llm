@@ -93,7 +93,7 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		List<Dimension> dimensions, String pixelType, ImageContent imageContent,
 		ImageRenderMetadata renderMetadata, boolean includesOverlays)
 	{
-		super("Image", includesOverlays ? imageName + " + overlays" : imageName);
+		super("Image", includesOverlays ? imageName + " (flattened)" : imageName);
 		this.imageTitle = imageName;
 		this.imageId = imageId;
 		this.dimensions = dimensions != null ? Collections.unmodifiableList(dimensions)
@@ -135,7 +135,8 @@ public class ImageMetaContextItem extends AbstractContextItem {
 	@Override
 	public String getTooltipText() {
 		return includesOverlays ?
-			"image, including its ROIs and overlays" : "image";
+			"flattened image, including its display LUT, ROIs, and overlays" :
+			"screen-rendered image";
 	}
 
 	@Override
@@ -163,7 +164,10 @@ public class ImageMetaContextItem extends AbstractContextItem {
 		obj.addProperty("type", getType());
 		obj.addProperty("title", imageTitle);
 		obj.addProperty("id", imageId);
-		obj.addProperty("context_mode", includesOverlays ? "annotated" : "plain");
+		final String contextMode = renderMetadata == null ? includesOverlays ?
+			ImageRenderMetadata.FLATTENED_RENDER_MODE : ImageRenderMetadata.SCREEN_RENDER_MODE :
+			renderMetadata.getRenderMode();
+		obj.addProperty("context_mode", contextMode);
 
 		if (!dimensions.isEmpty()) {
 			final JsonArray dimensionsArray = new JsonArray();

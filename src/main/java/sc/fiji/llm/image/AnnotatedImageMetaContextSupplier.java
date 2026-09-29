@@ -34,13 +34,13 @@ import org.scijava.plugin.Plugin;
 
 import sc.fiji.llm.ui.ContextItemSupplier;
 
-/** Supplies image context items rendered with visible ROIs and overlays. */
+/** Supplies flattened image context items with visible ROIs and overlays. */
 @Plugin(type = ContextItemSupplier.class, priority = Priority.LOW - 1)
 public class AnnotatedImageMetaContextSupplier extends ImageMetaContextSupplier {
 
 	@Override
 	public String getDisplayName() {
-		return "Annotated image";
+		return "Flattened image";
 	}
 
 	@Override

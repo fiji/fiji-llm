@@ -55,30 +55,30 @@ public class ImageMetaContextItemTest {
 	}
 
 	@Test
-	public void testPlainAndAnnotatedItemsAreDistinct() {
-		final ImageMetaContextItem plain = new ImageMetaContextItem("image", 7,
+	public void testScreenAndFlattenedItemsAreDistinct() {
+		final ImageMetaContextItem screen = new ImageMetaContextItem("image", 7,
 			Collections.emptyList(), "UnsignedByteType", null, null, false);
-		final ImageMetaContextItem annotated = new ImageMetaContextItem("image", 7,
+		final ImageMetaContextItem flattened = new ImageMetaContextItem("image", 7,
 			Collections.emptyList(), "UnsignedByteType", null, null, true);
 
-		assertFalse(plain.equals(annotated));
-		assertEquals("plain", plain.toJson().getAsJsonObject().get("context_mode")
+		assertFalse(screen.equals(flattened));
+		assertEquals("screen", screen.toJson().getAsJsonObject().get("context_mode")
 			.getAsString());
-		assertEquals("annotated", annotated.toJson().getAsJsonObject().get(
+		assertEquals("flattened", flattened.toJson().getAsJsonObject().get(
 			"context_mode").getAsString());
-		assertFalse(plain.toJson().getAsJsonObject().has("render_mode"));
-		assertFalse(annotated.toJson().getAsJsonObject().has("render_mode"));
+		assertFalse(screen.toJson().getAsJsonObject().has("render_mode"));
+		assertFalse(flattened.toJson().getAsJsonObject().has("render_mode"));
 	}
 
 	@Test
-	public void testTooltipTextDescribesImageAnnotations() {
-		final ImageMetaContextItem plain = new ImageMetaContextItem("image", 7,
+	public void testTooltipTextDescribesRenderModes() {
+		final ImageMetaContextItem screen = new ImageMetaContextItem("image", 7,
 			Collections.emptyList(), "UnsignedByteType", null, null, false);
-		final ImageMetaContextItem annotated = new ImageMetaContextItem("image", 7,
+		final ImageMetaContextItem flattened = new ImageMetaContextItem("image", 7,
 			Collections.emptyList(), "UnsignedByteType", null, null, true);
 
-		assertEquals("image", plain.getTooltipText());
-		assertEquals("image, including its ROIs and overlays", annotated
+		assertEquals("screen-rendered image", screen.getTooltipText());
+		assertEquals("flattened image, including its display LUT, ROIs, and overlays", flattened
 			.getTooltipText());
 	}
 
@@ -86,11 +86,11 @@ public class ImageMetaContextItemTest {
 	public void testRenderMetadataReportsAnnotations() {
 		final ImageRenderMetadata metadata = new ImageRenderMetadata("image", 7, 10,
 			20, 10, 20, Map.of("Z", 2L), 0, 1, "COMPOSITE", Collections.emptyList(),
-			true, "ij.gui.Roi", true, 3);
+			true, "ij.gui.Roi", true, 3, ImageRenderMetadata.FLATTENED_RENDER_MODE);
 
 		assertTrue(metadata.toJson().get("roi_included").getAsBoolean());
 		assertTrue(metadata.toJson().get("overlay_included").getAsBoolean());
 		assertEquals(3, metadata.toJson().get("overlay_count").getAsInt());
-		assertFalse(metadata.toJson().has("render_mode"));
+		assertEquals("flattened", metadata.toJson().get("render_mode").getAsString());
 	}
 }
