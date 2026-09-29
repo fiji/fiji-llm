@@ -156,12 +156,25 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 	private List<ImageState> snapshotImages(final PixelSnapshotMode pixelSnapshotMode) {
 		final List<ImageState> images = new ArrayList<>();
 		final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-		if (displays == null) return images;
-		for (final ImageDisplay display : displays) {
-			final ImageState image = snapshotImage(display, pixelSnapshotMode);
-			if (image != null) images.add(image);
+		if (displays != null) for (final ImageDisplay display : displays) {
+			addImage(images, snapshotImage(display, pixelSnapshotMode));
+		}
+
+		// Legacy commands can create an ImagePlus before its ImageDisplay is
+		// registered. Reconcile the legacy IDs so those images are not omitted.
+		for (final int imageId : imageJ1HelperService.getImageIds()) {
+			if (!imageJ1HelperService.isImageVisible(imageId)) continue;
+			if (findImage(images, "id:" + imageId) != null) continue;
+			imageJ1HelperService.getOrCreateImageDisplay(imageId).ifPresent(display ->
+				addImage(images, snapshotImage(display, pixelSnapshotMode)));
 		}
 		return images;
+	}
+
+	private static void addImage(final List<ImageState> images,
+		final ImageState image)
+	{
+		if (image != null && findImage(images, image.key()) == null) images.add(image);
 	}
 
 	private ImageState snapshotActiveImage(final List<ImageState> images) {

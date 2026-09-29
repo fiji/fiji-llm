@@ -80,6 +80,7 @@ import sc.fiji.llm.tools.ToolScope;
 public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 
 	private static final int MAX_RESULTS = 10;
+	private static final long UI_SETTLE_DELAY_MS = 250;
 	private static final long COMMAND_WAIT_TIMEOUT_MS = 30000;
 	private static final long COMMAND_POLL_INTERVAL_MS = 50;
 
@@ -208,6 +209,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 				error = "Interrupted while waiting for command completion";
 			}
 
+			waitForUiToSettle();
 			final EnvironmentImpact impact = execution.capture.finish();
 			execution.finishedResult = commandResult(execution, status, impact, false,
 				error);
@@ -256,6 +258,15 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		if (hasErrorLog(environment)) ToolRecommendationUtils.addGuideRecommendations(
 			result, RunningCommandsGuide.ID);
 		return result.toString();
+	}
+
+	private static void waitForUiToSettle() {
+		try {
+			Thread.sleep(UI_SETTLE_DELAY_MS);
+		}
+		catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	private static final class CommandExecution {
