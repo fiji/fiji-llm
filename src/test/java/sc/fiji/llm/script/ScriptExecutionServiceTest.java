@@ -46,6 +46,14 @@ import sc.fiji.llm.log.TextLogs;
 public class ScriptExecutionServiceTest {
 
 	@Test
+	public void testReadLinesPreservesPlatformIndependentLineBreaks() {
+		assertEquals("first\nsecond\nthird", ScriptEditorToolPlugin.extractLines(
+			"first\r\nsecond\rthird", 1, 3));
+		assertEquals("second\nthird", ScriptEditorToolPlugin.extractLines(
+			"first\nsecond\nthird", 2, 3));
+	}
+
+	@Test
 	public void testStructuredErrorControlsFinalStatusAfterDialogDismissal() {
 		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
 			DefaultScriptExecutionService.classifyFinishedStatus("", "", "Type mismatch", null));

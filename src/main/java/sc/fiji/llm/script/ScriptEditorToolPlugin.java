@@ -441,7 +441,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Return selected lines from the active script." }, name = "fiji_script_read_lines")
+	@Tool(value = { "Return selected lines from the active script, preserving line breaks between returned lines." }, name = "fiji_script_read_lines")
 	public String readLines(@P(name = "start_line", value = "First line, 1-indexed and inclusive") final int startLine, @P(name = "end_line", value = "Last line, 1-indexed and inclusive") final int endLine)
 	{
 		try {
@@ -461,7 +461,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			final EditorPane editorPane = (EditorPane) tab.getEditorPane();
 			final String content = editorPane.getText();
-			final String[] lines = content.split("\n", -1);
+			final String[] lines = content.split("\\R", -1);
 
 			// Validate that requested lines exist
 			if (startLine > lines.length) {
@@ -470,20 +470,29 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 
 			// Extract the requested lines (1-indexed)
 			final int actualEndLine = Math.min(endLine, lines.length);
-			final StringBuilder extractedContent = new StringBuilder();
-			for (int i = startLine - 1; i < actualEndLine; i++) {
-				extractedContent.append(lines[i]);
-			}
+			final String extractedContent = extractLines(content, startLine,
+				actualEndLine);
 
 			JsonObject readState = getTabJson(scriptID);
 			readState.addProperty("start_line", startLine);
 			readState.addProperty("end_line", actualEndLine);
-			readState.addProperty("content", extractedContent.toString());
+			readState.addProperty("content", extractedContent);
 			return stringProp("read_lines", readState);
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_script_read_lines: " + e.getMessage());
 		}
+	}
+
+	static String extractLines(final String content, final int startLine,
+		final int endLine)
+	{
+		final String[] lines = content.split("\\R", -1);
+		final StringJoiner extractedContent = new StringJoiner("\n");
+		for (int i = startLine - 1; i < Math.min(endLine, lines.length); i++) {
+			extractedContent.add(lines[i]);
+		}
+		return extractedContent.toString();
 	}
 
 	@Tool(value = { "Return the cumulative output and error logs currently retained by the active Script Editor across runs; the user can clear them." }, name = "fiji_script_read_logs")
