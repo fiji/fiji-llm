@@ -260,15 +260,22 @@ returns a useful error.
 
 1. Call `fiji_macro_start_recorder` and verify the recorder state with
       `fiji_macro_recorder_state`, including an empty buffer when no commands
-      have been recorded yet.
+      have been recorded yet and `script_mode: false` for Macro (IJM) mode.
+      When the recorder was previously set to another language, verify that an
+      empty recorder is switched to Macro mode and that the prior language is
+      restored after transfer or recorder close.
 2. Run a small image-processing workflow through Fiji, using the normal Fiji
       UI or `fiji_command_search` and `fiji_command_run`. Include commands that
       create or modify an image so the recorded macro has a useful baseline.
       Call `fiji_macro_recorder_state` again and verify the recorded buffer has
             changed.
 3. Call `fiji_macro_create_script` to transfer the recorder contents into an
-      `.ijm` tab in the Script Editor. Verify the new tab with
-      `fiji_script_list` and inspect its source with `fiji_script_read_content`.
+      `.ijm` tab in the Script Editor. Verify the result reports
+      `script_language: "ijm"` and `recorder_mode_restored: true`, then verify
+      the new tab with `fiji_script_list` and inspect its source with
+      `fiji_script_read_content`. Also verify that a non-empty recorder buffer
+      recorded in another language returns a useful conversion error instead of
+      creating a misleading `.ijm` tab.
 4. Stop the recorder with `fiji_macro_close_recorder`.
 5. Use the transferred macro as the successful baseline, then edit copies of
       it to create the error, dialog, and timeout cases below. Run every case with

@@ -30,10 +30,12 @@
 package sc.fiji.llm.macro;
 
 import java.awt.Button;
+import java.awt.Choice;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 
 import javax.swing.SwingUtilities;
@@ -67,6 +69,8 @@ import sc.fiji.llm.ui.TextEditorUtils;
 @Plugin(type = AiToolPlugin.class)
 public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
+	private static final String MACRO_RECORDER_MODE = "Macro";
+
 	@Parameter
 	private LegacyService legacyService;
 
@@ -78,6 +82,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private ScriptExecutionService scriptExecutionService;
+
+	private String recorderModeBeforeMacro;
 
 	public ImageJMacroToolPlugin() {
 		super(ImageJMacroToolPlugin.class);
@@ -137,9 +143,12 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the ImageJ macro recorder, or bring the existing recorder to the front. For each recordable command run while the recorder is open, a parameterized macro invocation is recorded." }, name = "fiji_macro_start_recorder" )
+	@Tool(value = { "Start the ImageJ macro recorder in Macro (IJM) mode, or bring the existing recorder to the front. An empty recorder is switched to Macro mode so recorded commands can be transferred as .ijm. A non-empty buffer recorded in another language is rejected because ImageJ cannot convert it to IJM." }, name = "fiji_macro_start_recorder" )
 	public String startRecorder() {
 		try {
+			String[] errors = new String[1];
+			final boolean recorderWasOpen = findRecorderFrame() != null;
+			if (!recorderWasOpen) recorderModeBeforeMacro = null;
 			// Run the macro recorder command through ImageJ
 			// The Recorder class will automatically handle bringing the existing
 			// instance to front if it's already open (see ij.plugin.frame.Recorder
@@ -152,8 +161,35 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 					legacyService.runLegacyCommand("ij.plugin.frame.Recorder", "");
 				});
 			}
+
+			Frame recorder = findRecorderFrame();
+			if (recorder == null) {
+				errors[0] = jsonError("ImageJ macro recorder could not be opened");
+			}
+			else {
+				Choice mode = findRecorderMode(recorder);
+				if (mode == null) {
+					errors[0] = jsonError(
+						"Could not locate the Macro Recorder's language selector; cannot guarantee IJM output.");
+				}
+				else if (!MACRO_RECORDER_MODE.equals(mode.getSelectedItem())) {
+					if (hasRecorderContent()) {
+						errors[0] = jsonError("The Macro Recorder already contains commands recorded in " +
+							mode.getSelectedItem() + " mode. ImageJ cannot convert that buffer to IJM; " +
+							"close the recorder and start a new recording in Macro mode.");
+					}
+					else {
+						recorderModeBeforeMacro = mode.getSelectedItem();
+						selectRecorderMode(mode, MACRO_RECORDER_MODE);
+					}
+				}
+			}
+
+			if (errors[0] != null) return errors[0];
+
 			JsonObject result = new JsonObject();
 			result.addProperty("recorder_started", true);
+			result.addProperty("recorder_language", "ijm");
 					ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_macro_recorder_state");
 			return result.toString();
@@ -187,10 +223,11 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Close the ImageJ macro recorder and stop recording." }, name = "fiji_macro_close_recorder")
+	@Tool(value = { "Close the ImageJ macro recorder and stop recording. Restore the recorder language that was selected before this workflow switched an empty recorder to Macro (IJM) mode." }, name = "fiji_macro_close_recorder")
 	public String closeRecorder() {
 		try {
 			String[] errors = new String[1];
+			boolean[] modeRestored = new boolean[] { true };
 			Runnable closeAction = () -> {
 				Frame recorder = findRecorderFrame();
 				if (recorder == null) {
@@ -199,6 +236,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 					return;
 				}
 
+				modeRestored[0] = restoreRecorderMode(recorder);
 				recorder.dispatchEvent(new WindowEvent(recorder,
 					WindowEvent.WINDOW_CLOSING));
 			};
@@ -216,6 +254,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 			JsonObject result = new JsonObject();
 			result.addProperty("recorder_closed", true);
+			result.addProperty("recorder_mode_restored", modeRestored[0]);
 			return result.toString();
 		}
 		catch (Exception e) {
@@ -224,10 +263,11 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Transfer the current macro recorder state to the script editor." }, name = "fiji_macro_create_script")
+	@Tool(value = { "Transfer the current Macro Recorder buffer to the Script Editor as an .ijm ImageJ macro. The recorder must be in Macro mode because ImageJ does not convert an existing JavaScript, BeanShell, Python, or Java buffer; restore the previously selected recorder language after transfer when applicable." }, name = "fiji_macro_create_script")
 	public String createScript() {
 		try {
 			String[] errors = new String[1];
+			boolean[] modeRestored = new boolean[] { true };
 			Runnable createAction = () -> {
 				Frame recorder = findRecorderFrame();
 				if (recorder == null) {
@@ -236,15 +276,32 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 					return;
 				}
 
-				Button createButton = findButton(recorder, "Create");
-				if (createButton == null) {
-					logService.debug("fiji_macro_create_script failure: The macro recorder does not have a Create button");
-					errors[0] = jsonError("Could not locate the Macro Recorder's Create button. Please instruct user to click Create manually.");
+				Choice mode = findRecorderMode(recorder);
+				if (mode == null) {
+					errors[0] = jsonError(
+						"Could not locate the Macro Recorder's language selector; cannot guarantee IJM output.");
+					return;
+				}
+				if (!MACRO_RECORDER_MODE.equals(mode.getSelectedItem())) {
+					errors[0] = jsonError("The Macro Recorder is set to " + mode.getSelectedItem() +
+						" mode. Its existing buffer cannot be converted to IJM; start a new recording in Macro mode.");
 					return;
 				}
 
-				createButton.dispatchEvent(new ActionEvent(createButton,
-					ActionEvent.ACTION_PERFORMED, createButton.getActionCommand()));
+				try {
+					Button createButton = findButton(recorder, "Create");
+					if (createButton == null) {
+						logService.debug("fiji_macro_create_script failure: The macro recorder does not have a Create button");
+						errors[0] = jsonError("Could not locate the Macro Recorder's Create button. Please instruct user to click Create manually.");
+						return;
+					}
+
+					createButton.dispatchEvent(new ActionEvent(createButton,
+						ActionEvent.ACTION_PERFORMED, createButton.getActionCommand()));
+				}
+				finally {
+					modeRestored[0] = restoreRecorderMode(recorder);
+				}
 			};
 
 			if (SwingUtilities.isEventDispatchThread()) {
@@ -266,6 +323,8 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 			JsonObject result = new JsonObject();
 			result.addProperty("macro_transferred", true);
+			result.addProperty("script_language", "ijm");
+			result.addProperty("recorder_mode_restored", modeRestored[0]);
 			result.addProperty(ScriptContextItem.SCRIPT_ID_KEY, scriptID.toString());
 					ToolRecommendationUtils.addToolRecommendations(result,
 				"fiji_script_read_content");
@@ -331,6 +390,50 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			}
 		}
 		return null;
+	}
+
+	private boolean hasRecorderContent() {
+		if (imageJ1HelperService == null) return false;
+		final ImageJ1HelperService.MacroRecorderState state = imageJ1HelperService
+			.getMacroRecorderState();
+		return state.isOpen() && !state.getBuffer().isBlank();
+	}
+
+	private boolean restoreRecorderMode(final Frame recorder) {
+		if (recorderModeBeforeMacro == null) return true;
+		final Choice mode = findRecorderMode(recorder);
+		if (mode == null) return false;
+		selectRecorderMode(mode, recorderModeBeforeMacro);
+		final boolean restored = recorderModeBeforeMacro.equals(mode.getSelectedItem());
+		if (restored) recorderModeBeforeMacro = null;
+		return restored;
+	}
+
+	private static Choice findRecorderMode(final Container container) {
+		for (Component component : container.getComponents()) {
+			if (component instanceof Choice choice && hasChoiceItem(choice,
+				MACRO_RECORDER_MODE)) return choice;
+			if (component instanceof Container) {
+				Choice mode = findRecorderMode((Container) component);
+				if (mode != null) return mode;
+			}
+		}
+		return null;
+	}
+
+	private static boolean hasChoiceItem(final Choice choice, final String item) {
+		for (int i = 0; i < choice.getItemCount(); i++) {
+			if (item.equals(choice.getItem(i))) return true;
+		}
+		return false;
+	}
+
+	private static void selectRecorderMode(final Choice mode,
+		final String selectedMode)
+	{
+		mode.select(selectedMode);
+		mode.dispatchEvent(new ItemEvent(mode, ItemEvent.ITEM_STATE_CHANGED,
+			selectedMode, ItemEvent.SELECTED));
 	}
 
 	private static Button findButton(final Container container,
