@@ -91,7 +91,7 @@ public class RoisGuide extends AbstractAgentGuide {
 			The Fiji-LLM ROI tools provide read-only inspection plus one explicit selection action:
 
 			- `fiji_rois_read` reports whether the manager exists, its count, and each
-			  entry's index, name, selection state, type, and bounds.
+			  entry's index, name, selection state, descriptive type, and bounds.
 			- `fiji_rois_read_details` returns the exact shape, bounds, and polygon
 			  coordinates for one entry. Call `fiji_rois_read` first and use its current
 			  zero-based index.

@@ -63,7 +63,7 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		return "ROI Tools";
 	}
 
-	@Tool(value = { "Read the current ROI Manager state, including whether it is open, and if so how many ROIs are present, and summary data for each ROI." }, name = "fiji_rois_read")
+	@Tool(value = { "Read the current ROI Manager state, including whether it is open, and if so how many ROIs are present, and summary data for each ROI including its descriptive type." }, name = "fiji_rois_read")
 	public String readRoiManager() {
 		try {
 			final Object manager = invokeLegacyRoiManager();
@@ -161,7 +161,7 @@ public class RoiManagerToolPlugin extends AbstractAiToolPlugin {
 		if (!name.isBlank()) roi.addProperty("name", name);
 		roi.addProperty("selected", isSelected(manager, index));
 		if (roiObject != null) {
-			final String type = safeString(invoke(roiObject, "getType"));
+			final String type = safeString(invoke(roiObject, "getTypeAsString"));
 			if (!type.isBlank()) roi.addProperty("type", type);
 		}
 		return roi;

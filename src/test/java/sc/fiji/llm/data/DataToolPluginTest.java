@@ -140,7 +140,7 @@ public class DataToolPluginTest {
 			final JsonObject roi = json.getAsJsonArray("rois").get(0).getAsJsonObject();
 			assertEquals(0, roi.get("roi_index").getAsInt());
 			assertEquals("named rectangle", roi.get("name").getAsString());
-			assertEquals("0", roi.get("type").getAsString());
+			assertEquals("Rectangle", roi.get("type").getAsString());
 			assertEquals(10, roi.getAsJsonObject("bounds").get("x").getAsInt());
 			assertEquals(20, roi.getAsJsonObject("bounds").get("y").getAsInt());
 			assertEquals(30, roi.getAsJsonObject("bounds").get("width").getAsInt());
