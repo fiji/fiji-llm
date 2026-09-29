@@ -140,9 +140,9 @@ would:
       render-metadata content block.
 9. Add a visible ROI or image overlay, then call `fiji_image_view` again with
       the same `image_id`.
-10. Verify that the view result's metadata includes `render_mode`,
-      `roi_included`, and `overlay_included`, as well as the MCP `image` content
-      block.
+10. Verify that the view result's metadata includes `roi_included` and
+      `overlay_included` when applicable, as well as the MCP `image` content
+      block. It should not include a `render_mode` field.
 11. Verify that an unknown image id returns a useful text error instead of an
       image block or a server failure.
 

@@ -57,7 +57,6 @@ public final class ImageRenderMetadata {
 	private final String roiType;
 	private final boolean overlayIncluded;
 	private final int overlayCount;
-	private final String renderMode;
 
 	public ImageRenderMetadata(final String title, final int imageId,
 		final int sourceWidth, final int sourceHeight, final int renderedWidth,
@@ -68,7 +67,7 @@ public final class ImageRenderMetadata {
 	{
 		this(title, imageId, sourceWidth, sourceHeight, renderedWidth,
 			renderedHeight, planePosition, channelIndex, channelCount, colorMode,
-			channels, roiIncluded, roiType, false, 0, "plain");
+			channels, roiIncluded, roiType, false, 0);
 	}
 
 	public ImageRenderMetadata(final String title, final int imageId,
@@ -76,8 +75,7 @@ public final class ImageRenderMetadata {
 		final int renderedHeight, final Map<String, Long> planePosition,
 		final long channelIndex, final int channelCount, final String colorMode,
 		final List<ChannelMetadata> channels, final boolean roiIncluded,
-		final String roiType, final boolean overlayIncluded, final int overlayCount,
-		final String renderMode)
+		final String roiType, final boolean overlayIncluded, final int overlayCount)
 	{
 		this.title = title == null ? "" : title;
 		this.imageId = imageId;
@@ -95,7 +93,6 @@ public final class ImageRenderMetadata {
 		this.roiType = roiType == null ? "" : roiType;
 		this.overlayIncluded = overlayIncluded;
 		this.overlayCount = overlayCount;
-		this.renderMode = renderMode == null ? "plain" : renderMode;
 	}
 
 	public String getTitle() {
@@ -158,16 +155,11 @@ public final class ImageRenderMetadata {
 		return overlayCount;
 	}
 
-	public String getRenderMode() {
-		return renderMode;
-	}
-
 	/** Returns a concise JSON description of the rendered display state. */
 	public JsonObject toJson() {
 		final JsonObject result = new JsonObject();
 		result.addProperty("title", title);
 		result.addProperty("image_id", imageId);
-		result.addProperty("render_mode", renderMode);
 		result.addProperty("source_width", sourceWidth);
 		result.addProperty("source_height", sourceHeight);
 		result.addProperty("rendered_width", renderedWidth);

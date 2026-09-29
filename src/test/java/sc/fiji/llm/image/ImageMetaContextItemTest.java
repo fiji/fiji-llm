@@ -84,10 +84,11 @@ public class ImageMetaContextItemTest {
 	public void testRenderMetadataReportsAnnotations() {
 		final ImageRenderMetadata metadata = new ImageRenderMetadata("image", 7, 10,
 			20, 10, 20, Map.of("Z", 2L), 0, 1, "COMPOSITE", Collections.emptyList(),
-			true, "ij.gui.Roi", true, 3, "annotated");
+			true, "ij.gui.Roi", true, 3);
 
 		assertTrue(metadata.toJson().get("roi_included").getAsBoolean());
 		assertTrue(metadata.toJson().get("overlay_included").getAsBoolean());
 		assertEquals(3, metadata.toJson().get("overlay_count").getAsInt());
+		assertFalse(metadata.toJson().has("render_mode"));
 	}
 }

@@ -111,7 +111,7 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		final byte[] pngBytes = encodePng(bounded);
 		final ImageRenderMetadata metadata = createMetadata(display, view,
 			source.getWidth(), source.getHeight(), bounded.getWidth(), bounded.getHeight(),
-			roiIncluded, roiType, overlayIncluded, overlayCount, options);
+			roiIncluded, roiType, overlayIncluded, overlayCount);
 		return Optional.of(new RenderedImageResult(pngBytes, metadata));
 	}
 
@@ -177,8 +177,7 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 	private ImageRenderMetadata createMetadata(final ImageDisplay display,
 		final DatasetView view, final int sourceWidth, final int sourceHeight,
 		final int renderedWidth, final int renderedHeight, final boolean roiIncluded,
-		final String roiType, final boolean overlayIncluded, final int overlayCount,
-		final ImageRenderOptions options)
+		final String roiType, final boolean overlayIncluded, final int overlayCount)
 	{
 		final Dataset dataset = view.getData();
 		final Map<String, Long> planePosition = createPlanePosition(view, dataset);
@@ -191,8 +190,7 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		return new ImageRenderMetadata(imageJ1HelperService.getImageTitle(imageId),
 			imageId, sourceWidth, sourceHeight, renderedWidth, renderedHeight,
 			planePosition, channelIndex, view.getChannelCount(), colorMode, channels,
-			roiIncluded, roiType, overlayIncluded, overlayCount, options
-				.isIncludeOverlays() ? "annotated" : "plain");
+			roiIncluded, roiType, overlayIncluded, overlayCount);
 	}
 
 	private static Map<String, Long> createPlanePosition(final DatasetView view,
