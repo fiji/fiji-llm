@@ -21,7 +21,14 @@ live Fiji instance with the Script Editor and MCP tools available.
       changes-only metadata and a nested `changes` object; verify those fields for command cases that open,
       close, or modify images or Results table metadata.
 
-## Integrated Chat Window
+## Integrated Chat Window (Out of Scope for Fiji-MCP Testing)
+
+This section applies only to the integrated Fiji chat window, not to testing
+the exposed `fiji-mcp` tool surface. Chat attachment actions and their context
+suppliers are in-process Fiji UI functionality; they are not exposed as MCP
+tools. Skip this section when evaluating `fiji-mcp` tool availability or
+MCP-only workflows, and do not treat the absence of attachment tools as a
+failure. Run these checks separately when testing the integrated chat window.
 
 Manually test the Fiji chat window's attachment workflow with at least one item
 from each currently supported context category:
