@@ -128,17 +128,6 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			Script parameters completely replace ImageJ 1.x GenericDialog usage: NEVER use
 			`ij.gui.GenericDialog` to gather script or macro inputs.
 
-			## Script development workflow
-			1. Inspect the current Fiji script state with `fiji_script_list`.
-			2. Do not overwrite an existing script unless the user asks for it; create a new editor or script otherwise.
-			3. Use `fiji_script_rename` to set the filename extension to the requested language; use your judgement if not specified
-			4. Use `fiji_script_replace_content` for full rewrites; use
-			   `fiji_script_delete_lines` and `fiji_script_insert_content` for range edits.
-			5. Start a script run with `fiji_script_run`. Poll with `fiji_script_run_status` using the returned `run_id` until the run reaches a terminal state.
-			6. Verify script behavior using observable Fiji results appropriate to the script's goal, such as image, ROI, or Results Table changes.
-			7. If a concrete failure is identified, attempt repair: use the smallest script edit that addresses the diagnostic, then rerun from (5) above.
-			8. Stop and report the blocker if success cannot be attained after two focused repair attempts, or if the same infrastructure failure persists.
-
 			## Diagnostic guidance
 			- Treat `running`, `success`, `finished_with_warnings`, `finished_with_errors`, `blocked_by_dialog`, and `infrastructure_error` as distinct outcomes. A completed run with only known non-fatal diagnostics reports `finished_with_warnings` and includes them in `warnings`.
 			- A `running` result with `wait_expired: true` is still active; poll its run status instead of retrying.
