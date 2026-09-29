@@ -90,4 +90,13 @@ public class LogUtilsTest {
 		assertEquals("output\n", cleaned.getOutput());
 		assertEquals("error\n", cleaned.getErrors());
 	}
+
+	@Test
+	public void testTextLogsSeparatesAutoImportWarnings() {
+		final String warning = "[WARNING] Auto-imports not available for language 'ImageJ Macro'.";
+		final TextLogs logs = new TextLogs("", warning + "\nactual error\n");
+
+		assertEquals(warning, logs.getWarnings());
+		assertEquals("actual error", logs.withoutKnownWarnings().getErrors().trim());
+	}
 }

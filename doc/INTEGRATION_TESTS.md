@@ -81,8 +81,11 @@ the workflow ambiguous even if the underlying operation succeeds.
       stated where applicable.
 - [ ] Tool descriptions identify relevant scope, side effects, prerequisites,
       and the expected result or state change.
-- [ ] Results use structured fields for status, outputs, errors, and relevant
-      state changes. Optional empty data is omitted when it is not meaningful.
+- [ ] Results use structured fields for status, outputs, errors, warnings, and
+      relevant state changes. A completed run with only known non-fatal
+      diagnostics reports `status: "finished_with_warnings"` and does not put
+      those diagnostics in `errors`. Optional empty data is omitted when it is
+      not meaningful.
 - [ ] Multi-stage workflows identify the next action when one is needed. Verify
       that `recommended_tools`, `recommended_tool`, or `guide_recommendations`
       names an available follow-up tool or guide, includes enough context to
@@ -216,8 +219,10 @@ For each script case, repeat this tool sequence:
       editor tab and the exact source under test.
 4. For cases that should produce SciJava diagnostics, start a capture with
       `fiji_log_scijava_start_capture`.
-5. Call `fiji_script_run` and check `status` plus optional `output` and
-      `errors`. If a parameter or other modal dialog appears,
+5. Call `fiji_script_run` and check `status` plus optional `output`, `errors`,
+      and `warnings`. A completed run with only known non-fatal diagnostics
+      reports `status: "finished_with_warnings"`; actionable failures report
+      `status: "finished_with_errors"`. If a parameter or other modal dialog appears,
       inspect it with `fiji_ui_dialogs_read`, respond with
       `fiji_ui_dialog_respond` or close with `fiji_ui_dialog_close`, and poll
       with `fiji_script_run_status`. Do not
@@ -267,8 +272,11 @@ returns a useful error.
 4. Stop the recorder with `fiji_macro_close_recorder`.
 5. Use the transferred macro as the successful baseline, then edit copies of
       it to create the error, dialog, and timeout cases below. Run every case with
-      `fiji_macro_run`; do not bypass the Script Editor with direct ImageJ macro
-      execution.
+      `fiji_macro_run`; verify optional `warnings` separately from `errors`.
+      A completed run with only known non-fatal diagnostics reports
+      `status: "finished_with_warnings"`; actionable failures report
+      `status: "finished_with_errors"`. Do not bypass the Script Editor with
+      direct ImageJ macro execution.
 
 This workflow keeps the recorded command syntax grounded in the Fiji instance
 under test while allowing the Script Editor, ImageJ Log, and UI dialogs to be

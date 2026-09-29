@@ -57,6 +57,17 @@ public class ScriptExecutionServiceTest {
 	}
 
 	@Test
+	public void testWarningsUseDistinctStatusAndErrorsTakePrecedence() {
+		final String warning = "Auto-import warning";
+		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_WARNINGS,
+			DefaultScriptExecutionService.classifyFinishedStatus("", "", null, null,
+				warning));
+		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
+			DefaultScriptExecutionService.classifyFinishedStatus("", "", "Failure", null,
+				warning));
+	}
+
+	@Test
 	public void testOnlyKnownMacroErrorDialogsAreClassifiedAsErrors() {
 		assertTrue(DefaultScriptExecutionService.isMacroErrorDialog(
 			"ij.gui.GenericDialog", "Macro Error"));
@@ -139,6 +150,19 @@ public class ScriptExecutionServiceTest {
 		assertEquals("", cleaned.getErrors());
 	}
 
+	@Test
+	public void testAutoImportWarningIsReportedSeparately() throws Exception {
+		final String warning = "[WARNING] Auto-imports not available for language 'ImageJ Macro'.";
+		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
+			ScriptExecutionService.Status.FINISHED_WITH_WARNINGS, false, null, null,
+			ScriptExecutionService.RunKind.MACRO, new TextLogs("", warning + "\n"));
+		final JsonObject json = result.toJson();
+
+		assertEquals("finished_with_warnings", json.get("status").getAsString());
+		assertEquals(warning, json.get("warnings").getAsString());
+		assertFalse(json.has("errors"));
+	}
+
 	private static ScriptExecutionService.ExecutionResult createExecutionResult(
 		final ScriptExecutionService.Status status,
 		final boolean waitExpired,
@@ -156,6 +180,18 @@ public class ScriptExecutionServiceTest {
 		final String errorDialog,
 		final ScriptExecutionService.RunKind kind) throws Exception
 	{
+		return createExecutionResult(status, waitExpired, primaryError, errorDialog, kind,
+			null);
+	}
+
+	private static ScriptExecutionService.ExecutionResult createExecutionResult(
+		final ScriptExecutionService.Status status,
+		final boolean waitExpired,
+		final String primaryError,
+		final String errorDialog,
+		final ScriptExecutionService.RunKind kind,
+		final TextLogs logs) throws Exception
+	{
 		final Constructor<?> executionCtor = Class.forName(
 			"sc.fiji.llm.script.DefaultScriptExecutionService$Execution")
 			.getDeclaredConstructor(String.class, ScriptID.class,
@@ -170,6 +206,7 @@ public class ScriptExecutionServiceTest {
 
 		setOptionalField(execution, "primaryError", primaryError);
 		setOptionalField(execution, "errorDialog", errorDialog);
+		setOptionalField(execution, "logs", logs);
 
 		final Method snapshot = execution.getClass().getDeclaredMethod("snapshot",
 			boolean.class);
@@ -179,7 +216,7 @@ public class ScriptExecutionServiceTest {
 	}
 
 	private static void setOptionalField(final Object execution,
-		final String fieldName, final String value) throws Exception
+		final String fieldName, final Object value) throws Exception
 	{
 		try {
 			final Field field = execution.getClass().getDeclaredField(fieldName);

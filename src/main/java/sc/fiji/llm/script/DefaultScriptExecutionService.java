@@ -300,9 +300,17 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		final String consoleStderr, final String primaryError,
 		final String errorDialog)
 	{
-		return hasText(logErrors) || hasText(consoleStderr) ||
-			hasText(primaryError) || hasText(errorDialog) ?
-			Status.FINISHED_WITH_ERRORS : Status.SUCCESS;
+		return classifyFinishedStatus(logErrors, consoleStderr, primaryError,
+			errorDialog, "");
+	}
+
+	static Status classifyFinishedStatus(final String logErrors,
+		final String consoleStderr, final String primaryError,
+		final String errorDialog, final String warnings)
+	{
+		if (hasText(logErrors) || hasText(consoleStderr) || hasText(primaryError) ||
+			hasText(errorDialog)) return Status.FINISHED_WITH_ERRORS;
+		return hasText(warnings) ? Status.FINISHED_WITH_WARNINGS : Status.SUCCESS;
 	}
 
 	private static boolean hasText(final String value) {
@@ -314,17 +322,19 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			final TextLogs finalLogs = readLogs(execution);
 			final TextLogs delta = finalLogs.deltaFrom(execution.logsBefore)
 				.withoutStartedBanners();
+			final TextLogs cleanedLogs = delta.withoutGenericMacroInterpreterMessages();
+			final String warnings = cleanedLogs.getWarnings().trim();
 			refreshEnvironment(execution);
 			final String consoleStderr = execution.environment == null ? "" : execution
 				.environment.getConsoleStderr().trim();
-			final String diagnostic = delta.getErrors().trim();
+			final String diagnostic = cleanedLogs.withoutKnownWarnings().getErrors().trim();
 			if (!diagnostic.isEmpty() && (execution.primaryError == null ||
 				execution.primaryError.isBlank())) execution.primaryError = diagnostic;
 			if (!consoleStderr.isEmpty() && (execution.primaryError == null ||
 				execution.primaryError.isBlank())) execution.primaryError = consoleStderr.lines()
 				.findFirst().orElse(consoleStderr);
 			finish(execution, classifyFinishedStatus(diagnostic, consoleStderr,
-				execution.primaryError, execution.errorDialog), null, delta);
+				execution.primaryError, execution.errorDialog, warnings), null, delta);
 		}
 		catch (final Throwable t) {
 			finishWithInfrastructureError(execution, t);
@@ -411,8 +421,8 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 	}
 
 	private static boolean isTerminal(final Status status) {
-		return status == Status.SUCCESS || status == Status.FINISHED_WITH_ERRORS ||
-			status == Status.INFRASTRUCTURE_ERROR;
+		return status == Status.SUCCESS || status == Status.FINISHED_WITH_WARNINGS ||
+			status == Status.FINISHED_WITH_ERRORS || status == Status.INFRASTRUCTURE_ERROR;
 	}
 
 	private static String newRunID() {
@@ -441,12 +451,14 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 
 			final TextLogs logs = execution.logs == null ? new TextLogs("", "") :
 				execution.logs.withoutGenericMacroInterpreterMessages();
+			final TextLogs logsWithoutWarnings = logs.withoutKnownWarnings();
 			final EnvironmentImpact environment = execution.environment;
 			final String consoleStderr = environment == null ? "" : environment
 				.getConsoleStderr();
 			addTextProperty(result, "output", logs.getOutput());
-			addTextProperty(result, "errors", appendDiagnostic(logs.getErrors(),
+			addTextProperty(result, "errors", appendDiagnostic(logsWithoutWarnings.getErrors(),
 				consoleStderr));
+			addTextProperty(result, "warnings", logs.getWarnings());
 			addTextProperty(result, "error_dialog", execution.errorDialog);
 
 			final JsonArray dialogs = new JsonArray();

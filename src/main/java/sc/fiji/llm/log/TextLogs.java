@@ -29,8 +29,14 @@
 
 package sc.fiji.llm.log;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /** A pair of text channels captured from an execution surface. */
 public final class TextLogs {
+
+	private static final Pattern AUTO_IMPORT_WARNING = Pattern.compile(
+		"(?im)^\\[WARNING\\] Auto-imports not available for language '[^\\r\\n']+'.*$");
 
 	private final String output;
 	private final String errors;
@@ -48,6 +54,16 @@ public final class TextLogs {
 		return errors;
 	}
 
+	public String getWarnings() {
+		final Matcher matcher = AUTO_IMPORT_WARNING.matcher(errors);
+		final StringBuilder warnings = new StringBuilder();
+		while (matcher.find()) {
+			if (warnings.length() > 0) warnings.append(System.lineSeparator());
+			warnings.append(matcher.group());
+		}
+		return warnings.toString();
+	}
+
 	public TextLogs deltaFrom(final TextLogs initial) {
 		return new TextLogs(LogUtils.delta(initial == null ? "" : initial.output,
 			output), LogUtils.delta(initial == null ? "" : initial.errors, errors));
@@ -59,6 +75,10 @@ public final class TextLogs {
 
 	public TextLogs withoutGenericMacroInterpreterMessages() {
 		return withoutKnownNoise();
+	}
+
+	public TextLogs withoutKnownWarnings() {
+		return new TextLogs(output, stripKnownWarnings(errors));
 	}
 
 	private TextLogs withoutKnownNoise() {
@@ -78,5 +98,10 @@ public final class TextLogs {
 		if (logs == null || logs.isBlank()) return logs == null ? "" : logs;
 		return logs.replaceAll("(?im)^[^\\r\\n]*execution errors handled by the macro " +
 			"interpreter[^\\r\\n]*(?:\\r?\\n|$)", "");
+	}
+
+	private static String stripKnownWarnings(final String logs) {
+		if (logs == null || logs.isBlank()) return logs == null ? "" : logs;
+		return AUTO_IMPORT_WARNING.matcher(logs).replaceAll("");
 	}
 }

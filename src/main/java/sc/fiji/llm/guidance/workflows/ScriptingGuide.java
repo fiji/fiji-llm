@@ -140,7 +140,7 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			8. Stop and report the blocker if success cannot be attained after two focused repair attempts, or if the same infrastructure failure persists.
 
 			## Diagnostic guidance
-			- Treat `running`, `success`, `finished_with_errors`, `blocked_by_dialog`, and `infrastructure_error` as distinct outcomes.
+			- Treat `running`, `success`, `finished_with_warnings`, `finished_with_errors`, `blocked_by_dialog`, and `infrastructure_error` as distinct outcomes. A completed run with only known non-fatal diagnostics reports `finished_with_warnings` and includes them in `warnings`.
 			- A `running` result with `wait_expired: true` is still active; poll its run status instead of retrying.
 			- If an error is indicated, classify the `errors` field:
 				- Syntax or compilation failure: parser, compiler, expected-token, or source-location messages.
@@ -150,6 +150,7 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			## Reporting
 			Summarize the final script name, language, actions taken, diagnostic classification, repair attempts, and verification result. Distinguish clearly between:
 			- confirmed success,
+			- execution completed with non-fatal warnings,
 			- execution completed but not verified,
 			- script failure with actionable diagnostics, and
 			- Tool or Fiji infrastructure failure.

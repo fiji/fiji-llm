@@ -44,6 +44,7 @@ public interface ScriptExecutionService extends ImageJService {
 	enum Status {
 		RUNNING("running"),
 		SUCCESS("success"),
+		FINISHED_WITH_WARNINGS("finished_with_warnings"),
 		FINISHED_WITH_ERRORS("finished_with_errors"),
 		BLOCKED_BY_DIALOG("blocked_by_dialog"),
 		INFRASTRUCTURE_ERROR("infrastructure_error");
