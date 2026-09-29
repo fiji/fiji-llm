@@ -70,6 +70,8 @@ import sc.fiji.llm.ui.TextEditorUtils;
 public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 	private static final String MACRO_RECORDER_MODE = "Macro";
+	private static final long RECORDER_OPEN_TIMEOUT_MS = 5000;
+	private static final long RECORDER_POLL_INTERVAL_MS = 100;
 
 	@Parameter
 	private LegacyService legacyService;
@@ -168,7 +170,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 				});
 			}
 
-			Frame recorder = findRecorderFrame();
+			Frame recorder = waitForRecorderFrame();
 			if (recorder == null) {
 				errors[0] = jsonError("ImageJ macro recorder could not be opened");
 			}
@@ -394,6 +396,19 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 			{
 				return frame;
 			}
+		}
+		return null;
+	}
+
+	private static Frame waitForRecorderFrame() throws InterruptedException {
+		Frame recorder = findRecorderFrame();
+		if (recorder != null || SwingUtilities.isEventDispatchThread()) return recorder;
+
+		final long startTime = System.currentTimeMillis();
+		while (System.currentTimeMillis() - startTime < RECORDER_OPEN_TIMEOUT_MS) {
+			Thread.sleep(RECORDER_POLL_INTERVAL_MS);
+			recorder = findRecorderFrame();
+			if (recorder != null) return recorder;
 		}
 		return null;
 	}
