@@ -113,8 +113,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 				while (System.currentTimeMillis() - startTime < timeoutMs) {
 					textEditor = TextEditorUtils.getMostRecentVisibleEditor();
 					if (textEditor != null) {
-						return jsonError("Script editor is not open",
-							ErrorOptions.withTool("fiji_script_open_editor"));
+						break;
 					}
 					Thread.sleep(100);
 				}
