@@ -67,6 +67,12 @@ public class ProviderVisionSupportTest {
 	}
 
 	@Test
+	public void testHostedProviderMemoryLimits() {
+		assertEquals(691_500, OpenAIProvider.getMemoryTokenLimit());
+		assertEquals(786_432, GeminiProvider.getMemoryTokenLimit());
+	}
+
+	@Test
 	public void testHostedVisionSupport() {
 		final GeminiProvider gemini = new GeminiProvider();
 		for (final String model : gemini.getAvailableModels()) {

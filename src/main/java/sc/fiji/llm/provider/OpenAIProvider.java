@@ -50,6 +50,8 @@ import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 @Plugin(type = LLMProvider.class, name = "ChatGPT", priority = ProviderPriority.OPENAI)
 public class OpenAIProvider extends AbstractLLMProvider {
 
+	private static final int MAX_INPUT_TOKENS = 922_000;
+	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
 	private static final List<String> MODEL_ALIASES = List.of("Luna 5.6", "Luna 6",
 		"Sol 6");
 	private static final Map<String, String> MODEL_NAMES = Map.of("Luna 5.6",
@@ -108,8 +110,12 @@ public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-		return TokenWindowChatMemory.withMaxTokens(8000,
+		return TokenWindowChatMemory.withMaxTokens(getMemoryTokenLimit(),
 			new OpenAiTokenCountEstimator(resolveModelName(modelName)));
+	}
+
+	static int getMemoryTokenLimit() {
+		return MAX_INPUT_TOKENS * MEMORY_CONTEXT_PERCENTAGE / 100;
 	}
 
 	@Override

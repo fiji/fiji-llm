@@ -50,6 +50,8 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
 @Plugin(type = LLMProvider.class, name = "Gemini", priority = ProviderPriority.GEMINI)
 public class GeminiProvider extends AbstractLLMProvider {
 
+	private static final int MAX_INPUT_TOKENS = 1_048_576;
+	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
 	private static final List<String> AVAILABLE_MODELS = List.of("gemini-3.5-flash-lite",
 		"gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash",
 		"gemini-3.8-flash");
@@ -107,9 +109,13 @@ public class GeminiProvider extends AbstractLLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-		return TokenWindowChatMemory.withMaxTokens(8000,
+		return TokenWindowChatMemory.withMaxTokens(getMemoryTokenLimit(),
 			GoogleAiGeminiTokenCountEstimator.builder().apiKey(apiKey()).modelName(
 				modelName).build());
+	}
+
+	static int getMemoryTokenLimit() {
+		return MAX_INPUT_TOKENS * MEMORY_CONTEXT_PERCENTAGE / 100;
 	}
 
 	@Override
