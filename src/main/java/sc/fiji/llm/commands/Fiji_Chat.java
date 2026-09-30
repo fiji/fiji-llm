@@ -293,7 +293,7 @@ public class Fiji_Chat extends DynamicCommand {
 			return;
 		}
 
-		prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, validatedModel);
+		prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
 		if (selectedProvider.requiresApiKey()) {
 			Map<String, Object> params = new HashMap<>();
 			params.put("startChatbot", true);

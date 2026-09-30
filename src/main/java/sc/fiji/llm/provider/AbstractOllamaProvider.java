@@ -148,9 +148,17 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
-		return TokenWindowChatMemory.withMaxTokens(getContextSize() *
+		return TokenWindowChatMemory.withMaxTokens(getContextSize(modelName) *
 			MEMORY_CONTEXT_PERCENTAGE / 100,
 			new OllamaTokenCountEstimator());
+	}
+
+	/**
+	 * @param modelName the model for which a context size is needed
+	 * @return the context size configured for the model
+	 */
+	protected int getContextSize(String modelName) {
+		return getContextSize();
 	}
 
 	/**
@@ -163,7 +171,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	@Override
 	public ChatModel createChatModel(final String modelName) {
 		return OllamaChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL).modelName(
-			modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
+			modelName).numCtx(getContextSize(modelName)).timeout(DEFAULT_TIMEOUT)
 			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES)
 			.returnThinking(true).listeners(listeners()).build();
 	}
@@ -171,7 +179,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OllamaStreamingChatModel.builder().baseUrl(OllamaProcessManager.LOCAL_SERVER_URL)
-			.modelName(modelName).numCtx(getContextSize()).timeout(DEFAULT_TIMEOUT)
+			.modelName(modelName).numCtx(getContextSize(modelName)).timeout(DEFAULT_TIMEOUT)
 			.logRequests(LOG_REQUESTS).logResponses(LOG_RESPONSES)
 			.returnThinking(true).listeners(listeners()).build();
 	}
@@ -277,6 +285,16 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	 */
 	protected String appendRemoteString(String model) {
 		return model + REMOTE_STRING;
+	}
+
+	/**
+	 * Remove the remote suffix from a model name.
+	 *
+	 * @param model the model name with remote suffix
+	 * @return the model name without the remote suffix
+	 */
+	protected String removeRemoteString(String model) {
+		return model.substring(0, model.length() - REMOTE_STRING.length());
 	}
 
 	/**

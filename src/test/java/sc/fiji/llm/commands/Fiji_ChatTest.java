@@ -34,15 +34,15 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import sc.fiji.llm.provider.AnthropicProvider;
-import sc.fiji.llm.provider.Gemma4Provider12b;
+import sc.fiji.llm.provider.Gemma4Provider;
 
 public class Fiji_ChatTest {
 
 	@Test
 	public void testChoiceLabelMarksOnlyCuratedProviders() {
-		final Gemma4Provider12b curated = new Gemma4Provider12b();
-		assertEquals("Gemma4 - S (Ollama)", curated.getName());
-		assertEquals("*Gemma4 - S (Ollama)", Fiji_Chat.choiceLabel(curated));
+		final Gemma4Provider curated = new Gemma4Provider();
+		assertEquals("Gemma4 (Ollama)", curated.getName());
+		assertEquals("*Gemma4 (Ollama)", Fiji_Chat.choiceLabel(curated));
 		assertEquals("Claude", Fiji_Chat.choiceLabel(new AnthropicProvider()));
 	}
 }

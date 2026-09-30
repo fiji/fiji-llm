@@ -76,7 +76,7 @@ Fiji-LLM was developed to help users access Fiji's capabilities through natural-
 	**Option A: Local Models (Recommended for beginners)**
 	- These are open models which run on your machine.
 	- Download and install [Ollama](https://ollama.com/download) now (no Fiji restart needed)
-	- We recommend starting with the curated `Gemma4 - small (Ollama)` service, which auto-selects a model aimed at maximizing hardware compatibility.
+  - We recommend starting with the curated `Gemma4 (Ollama)` service, which offers XS, S, M, and L aliases for different hardware configurations.
 	- The general `Ollama` service allows for full model exploration.
 	- Click `OK` to start chatting. You will need to wait for the selected model to download (only on first chat with a model)
 
