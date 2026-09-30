@@ -42,18 +42,28 @@ import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 
 public class ProviderVisionSupportTest {
 
 	@Test
 	public void testOpenAiVisionSupport() {
 		final OpenAIProvider provider = new OpenAIProvider();
-		assertEquals(LLMProvider.VisionSupport.SUPPORTED, provider
-			.getVisionSupport("gpt-4o"));
-		assertEquals(LLMProvider.VisionSupport.UNSUPPORTED, provider
-			.getVisionSupport("gpt-4"));
+		assertEquals(List.of("Luna 5.6", "Luna 6", "Sol 6"), provider
+			.getAvailableModels());
+		for (final String model : provider.getAvailableModels()) {
+			assertEquals(model, LLMProvider.VisionSupport.SUPPORTED, provider
+				.getVisionSupport(model));
+		}
 		assertEquals(LLMProvider.VisionSupport.UNKNOWN, provider
 			.getVisionSupport("future-model"));
+	}
+
+	@Test
+	public void testOpenAiDisablesReasoningForToolCalls() {
+		final OpenAiChatRequestParameters parameters = (OpenAiChatRequestParameters) new OpenAIProvider()
+			.defaultChatRequestParameters();
+		assertEquals("none", parameters.reasoningEffort());
 	}
 
 	@Test

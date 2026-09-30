@@ -31,17 +31,16 @@ package sc.fiji.llm.provider;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Map;
 
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModelName;
+import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 
@@ -51,14 +50,10 @@ import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 @Plugin(type = LLMProvider.class, name = "ChatGPT", priority = ProviderPriority.OPENAI)
 public class OpenAIProvider extends AbstractLLMProvider {
 
-	private static final Set<String> VISION_MODELS = Set.of("gpt-4-turbo",
-		"gpt-4-turbo-2024-04-09", "gpt-4o", "gpt-4o-2024-05-13",
-		"gpt-4o-2024-08-06", "gpt-4o-2024-11-20", "gpt-4o-mini",
-		"gpt-4o-mini-2024-07-18", "o1", "o1-2024-12-17", "o3",
-		"o3-2025-04-16", "o4-mini", "o4-mini-2025-04-16", "gpt-4.1",
-		"gpt-4.1-2025-04-14", "gpt-4.1-mini", "gpt-4.1-mini-2025-04-14",
-		"gpt-4.1-nano", "gpt-4.1-nano-2025-04-14", "gpt-5", "gpt-5-mini",
-		"gpt-5-nano", "gpt-5.1");
+	private static final List<String> MODEL_ALIASES = List.of("Luna 5.6", "Luna 6",
+		"Sol 6");
+	private static final Map<String, String> MODEL_NAMES = Map.of("Luna 5.6",
+		"gpt-5.6-luna", "Luna 6", "gpt-6-luna", "Sol 6", "gpt-6.1-sol");
 
 	@Override
 	public String getName() {
@@ -71,21 +66,24 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	}
 
 	@Override
+	public ChatRequestParameters defaultChatRequestParameters() {
+		return OpenAiChatRequestParameters.builder().frequencyPenalty(0.0)
+			.presencePenalty(0.0).temperature(0.1).reasoningEffort("none").build();
+	}
+
+	@Override
 	public VisionSupport getVisionSupport(final String modelName) {
-		if (modelName == null || modelName.isBlank()) return VisionSupport.UNKNOWN;
-		if (VISION_MODELS.contains(modelName)) return VisionSupport.SUPPORTED;
-		final boolean knownModel = Stream.of(OpenAiChatModelName.values()).map(
-			OpenAiChatModelName::toString).anyMatch(modelName::equals);
-		return knownModel ? VisionSupport.UNSUPPORTED : VisionSupport.UNKNOWN;
+		return MODEL_NAMES.containsValue(resolveModelName(modelName)) ?
+			VisionSupport.SUPPORTED : VisionSupport.UNKNOWN;
 	}
 
 	@Override
 	public List<String> getAvailableModels() {
-		// Use the models from langchain4j's OpenAiChatModelName enum
-		// Filter to show only the main/latest models to avoid overwhelming users
-		return Stream.of(OpenAiChatModelName.values()).map(
-			OpenAiChatModelName::toString).filter(this::isMainChatModel).collect(
-				Collectors.toUnmodifiableList());
+		return MODEL_ALIASES;
+	}
+
+	private String resolveModelName(final String modelName) {
+		return modelName == null ? null : MODEL_NAMES.getOrDefault(modelName, modelName);
 	}
 
 	@Override
@@ -103,19 +101,6 @@ public class OpenAIProvider extends AbstractLLMProvider {
 		return LocalDate.of(2026, 9, 30);
 	}
 
-	/**
-	 * Check if a model ID represents a main chat model we want to show. Filters
-	 * out preview models and dated versions, keeping only the main model names.
-	 */
-	private boolean isMainChatModel(final String modelId) {
-		// Exclude preview models
-		if (modelId.contains("preview")) {
-			return false;
-		}
-		// Exclude dated versions (models with dates like YYYY-MM-DD or YYYY_MM_DD)
-		return !modelId.matches(".*\\d{4}[_-]\\d{2}[_-]\\d{2}.*");
-	}
-
 	@Override
 	public String getApiKeyUrl() {
 		return "https://platform.openai.com/api-keys";
@@ -124,12 +109,14 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	@Override
 	public TokenWindowChatMemory createTokenChatMemory(String modelName) {
 		return TokenWindowChatMemory.withMaxTokens(8000,
-			new OpenAiTokenCountEstimator(modelName));
+			new OpenAiTokenCountEstimator(resolveModelName(modelName)));
 	}
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return OpenAiChatModel.builder().apiKey(apiKey()).modelName(modelName)
+		return OpenAiChatModel.builder().apiKey(apiKey()).modelName(resolveModelName(
+			modelName))
+			.defaultRequestParameters(defaultChatRequestParameters())
 			.maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
 			.listeners(listeners()).build();
 	}
@@ -137,7 +124,8 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OpenAiStreamingChatModel.builder().apiKey(apiKey()).modelName(
-			modelName).timeout(DEFAULT_TIMEOUT).listeners(listeners())
-			.build();
+			resolveModelName(modelName)).defaultRequestParameters(
+				defaultChatRequestParameters()).timeout(DEFAULT_TIMEOUT).listeners(
+					listeners()).build();
 	}
 }
