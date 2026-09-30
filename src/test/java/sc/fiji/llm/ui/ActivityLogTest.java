@@ -31,9 +31,13 @@ package sc.fiji.llm.ui;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.awt.Component;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.swing.SwingUtilities;
 
 import org.junit.Test;
 
@@ -97,5 +101,26 @@ public class ActivityLogTest {
 		final ActivityLog log = new ActivityLog(13f);
 		log.toolStarted("fiji_image_list", "{}");
 		assertEquals("1 tool use", log.summary());
+	}
+
+	@Test
+	public void testLookAndFeelUpdateCanBeRequestedOffEdt() throws Exception {
+		final ChatMessagePanel[] panel = new ChatMessagePanel[1];
+		SwingUtilities.invokeAndWait(() -> panel[0] = new ChatMessagePanel(
+			ChatMessagePanel.MessageType.ASSISTANT, "response"));
+		final AtomicReference<Throwable> failure = new AtomicReference<>();
+		final Thread worker = new Thread(() -> {
+			try {
+				SwingUtilities.updateComponentTreeUI(panel[0]);
+			}
+			catch (final Throwable error) {
+				failure.set(error);
+			}
+		}, "laf-update-test");
+		worker.start();
+		worker.join(5000);
+		assertFalse("LAF update worker did not finish", worker.isAlive());
+		SwingUtilities.invokeAndWait(() -> {});
+		assertNull(failure.get());
 	}
 }

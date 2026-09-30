@@ -101,7 +101,7 @@ public class ActivityLog extends JPanel {
 			COLLAPSED) == -1;
 
 		details = createDetailsPane(fontSize - 2);
-		detailsScroll = new JScrollPane(details,
+		detailsScroll = new ChatMessagePanel.EdtScrollPane(details,
 			ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 			ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER)
 		{
@@ -122,8 +122,8 @@ public class ActivityLog extends JPanel {
 			}
 		};
 		detailsScroll.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0,
-			ChatMessagePanel.blend(ChatMessagePanel.uiBackground(), new Color(58, 140,
-				180), 0.70f)));
+			ChatMessagePanel.blend(ChatMessagePanel.uiBackground(), ChatMessagePanel
+				.accentColor(ChatMessagePanel.MessageType.ASSISTANT), 0.70f)));
 		detailsScroll.setOpaque(false);
 		detailsScroll.getViewport().setOpaque(false);
 		detailsScroll.setVisible(expanded);
@@ -139,6 +139,10 @@ public class ActivityLog extends JPanel {
 
 	@Override
 	public void updateUI() {
+		if (!SwingUtilities.isEventDispatchThread()) {
+			SwingUtilities.invokeLater(this::updateUI);
+			return;
+		}
 		super.updateUI();
 		if (toggle == null || details == null || detailsScroll == null) return;
 		SwingUtilities.invokeLater(this::refreshLookAndFeel);
@@ -149,7 +153,8 @@ public class ActivityLog extends JPanel {
 		final Color background = ChatMessagePanel.uiBackground();
 		toggle.setForeground(ChatMessagePanel.readableTextColor(background));
 		detailsScroll.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0,
-			ChatMessagePanel.blend(background, new Color(58, 140, 180), 0.70f)));
+			ChatMessagePanel.blend(background, ChatMessagePanel.accentColor(
+				ChatMessagePanel.MessageType.ASSISTANT), 0.70f)));
 		if (details.getEditorKit() instanceof HTMLEditorKit kit) {
 			applyDetailsStyles(kit.getStyleSheet());
 			details.setText(details.getText());
@@ -304,7 +309,7 @@ public class ActivityLog extends JPanel {
 	}
 
 	private JTextPane createDetailsPane(final float fontSize) {
-		final JTextPane pane = new JTextPane() {
+		final JTextPane pane = new ChatMessagePanel.EdtTextPane() {
 
 			// Note: always wrap prose, even when a code line is wider than the view.
 			@Override

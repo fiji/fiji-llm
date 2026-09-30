@@ -40,6 +40,7 @@ import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
@@ -51,6 +52,8 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -97,6 +100,10 @@ public class ChatMessagePanel extends JPanel {
 	private static final int MIN_AVAILABLE_WIDTH = 200;
 	private static final int DEFAULT_AVAILABLE_WIDTH = 600;
 	private static final int THINKING_STAGES = 4;
+	private static final Color USER_ACCENT = new Color(213, 94, 0);
+	private static final Color ASSISTANT_ACCENT = new Color(0, 114, 178);
+	private static final Color SYSTEM_ACCENT = new Color(190, 145, 20);
+	private static final Color ERROR_ACCENT = new Color(190, 55, 55);
 	private final float textFontSize;
 	private JTextPane textPane;
 	private JPanel messageBubble;
@@ -125,6 +132,74 @@ public class ChatMessagePanel extends JPanel {
 			USER, ASSISTANT, SYSTEM, ERROR
 	}
 
+	static class EdtTextPane extends JTextPane {
+
+		@Override
+		public void updateUI() {
+			updateUIOnEdt(() -> super.updateUI());
+		}
+	}
+
+	static class EdtScrollBar extends JScrollBar {
+
+		EdtScrollBar(final int orientation) {
+			super(orientation);
+		}
+
+		@Override
+		public void updateUI() {
+			updateUIOnEdt(() -> super.updateUI());
+		}
+	}
+
+	static class EdtScrollPane extends JScrollPane {
+
+		EdtScrollPane() {
+			super();
+		}
+
+		EdtScrollPane(final Component view) {
+			super(view);
+		}
+
+		EdtScrollPane(final Component view, final int vsbPolicy,
+			final int hsbPolicy)
+		{
+			super(view, vsbPolicy, hsbPolicy);
+		}
+
+		@Override
+		public JScrollBar createVerticalScrollBar() {
+			return new EdtScrollBar(JScrollBar.VERTICAL);
+		}
+
+		@Override
+		public JScrollBar createHorizontalScrollBar() {
+			return new EdtScrollBar(JScrollBar.HORIZONTAL);
+		}
+
+		@Override
+		public void updateUI() {
+			updateUIOnEdt(() -> super.updateUI());
+		}
+	}
+
+	private static void updateUIOnEdt(final Runnable update) {
+		if (SwingUtilities.isEventDispatchThread()) {
+			update.run();
+			return;
+		}
+		try {
+			SwingUtilities.invokeAndWait(update);
+		}
+		catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		catch (final InvocationTargetException e) {
+			throw new RuntimeException(e.getCause());
+		}
+	}
+
 	public ChatMessagePanel(final MessageType type, final String message) {
 		this(type, message, 13f);
 	}
@@ -146,6 +221,10 @@ public class ChatMessagePanel extends JPanel {
 
 	@Override
 	public void updateUI() {
+		if (!SwingUtilities.isEventDispatchThread()) {
+			SwingUtilities.invokeLater(this::updateUI);
+			return;
+		}
 		super.updateUI();
 		if (messageBubble == null || textPane == null) return;
 		SwingUtilities.invokeLater(this::refreshLookAndFeel);
@@ -336,27 +415,25 @@ public class ChatMessagePanel extends JPanel {
 
 	private Color getBackgroundColor(final MessageType type) {
 		final Color background = uiBackground();
-		return switch (type) {
-			case USER -> blend(background, new Color(76, 114, 176), 0.16f);
-			case ASSISTANT -> blend(background, new Color(58, 140, 180), 0.16f);
-			case SYSTEM -> blend(background, new Color(190, 145, 20), 0.16f);
-			case ERROR -> blend(background, new Color(190, 55, 55), 0.16f);
-		};
+		return blend(background, accentColor(type), 0.16f);
 	}
 
 	private Color getBorderColor(final MessageType type) {
-		final Color accent = switch (type) {
-			case USER -> new Color(76, 114, 176);
-			case ASSISTANT -> new Color(58, 140, 180);
-			case SYSTEM -> new Color(190, 145, 20);
-			case ERROR -> new Color(190, 55, 55);
+		return blend(uiBackground(), accentColor(type), 0.70f);
+	}
+
+	static Color accentColor(final MessageType type) {
+		return switch (type) {
+			case USER -> USER_ACCENT;
+			case ASSISTANT -> ASSISTANT_ACCENT;
+			case SYSTEM -> SYSTEM_ACCENT;
+			case ERROR -> ERROR_ACCENT;
 		};
-		return blend(uiBackground(), accent, 0.70f);
 	}
 
 	private JTextPane createTextPane(final MessageType type) {
 		// create the pane and configure basic properties
-		textPane = new JTextPane();
+		textPane = new EdtTextPane();
 		textPane.setEditable(false);
 		textPane.setFocusable(true); // Allow highlighting and copying
 		textPane.setOpaque(false);

@@ -430,7 +430,7 @@ Be concise, patient, humble, and collaborative.
 		bottomSpacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
 		chatPanel.add(bottomSpacer, "growx, height 8!");
 
-		chatScrollPane = new JScrollPane(chatPanel);
+		chatScrollPane = new ChatMessagePanel.EdtScrollPane(chatPanel);
 		chatScrollPane.setPreferredSize(new Dimension(INITIAL_CHAT_WIDTH, 400));
 		chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
@@ -485,7 +485,7 @@ Be concise, patient, humble, and collaborative.
 		tagsContainer.add(contextPlaceholderLabel);
 
 		// Create scrollable container for tags
-		contextTagsScrollPane = new JScrollPane(tagsContainer);
+		contextTagsScrollPane = new ChatMessagePanel.EdtScrollPane(tagsContainer);
 		contextTagsScrollPane.setVerticalScrollBarPolicy(
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		contextTagsScrollPane.setHorizontalScrollBarPolicy(
@@ -568,7 +568,7 @@ Be concise, patient, humble, and collaborative.
 		inputArea.setLineWrap(true);
 		inputArea.setWrapStyleWord(true);
 		inputArea.setFont(inputArea.getFont().deriveFont(CHAT_FONT_SIZE));
-		final JScrollPane inputScrollPane = new JScrollPane(inputArea);
+		final JScrollPane inputScrollPane = new ChatMessagePanel.EdtScrollPane(inputArea);
 		inputScrollPane.setVerticalScrollBarPolicy(
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		inputScrollPane.setHorizontalScrollBarPolicy(

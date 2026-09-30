@@ -107,7 +107,7 @@ public class SwingMCPToolViewer extends AbstractService implements MCPToolViewer
 		final JTree toolsTree = new JTree(root);
 		toolsTree.setRootVisible(false);
 		toolsTree.setShowsRootHandles(true);
-		final JScrollPane scrollPane = new JScrollPane(toolsTree);
+		final JScrollPane scrollPane = new ChatMessagePanel.EdtScrollPane(toolsTree);
 		scrollPane.setPreferredSize(new Dimension(420, 360));
 
 		final JDialog dialog = new JDialog(owner, "Fiji MCP Tools",
