@@ -26,36 +26,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-
 package sc.fiji.llm.provider;
 
-import org.scijava.plugin.Plugin;
+import org.scijava.Priority;
 
-/**
- * LLM provider plugin for Ollama Muse Glimmer:30B IQ2_XS model.
- * See: https://huggingface.co/unsloth/Muse-Glimmer-30B-GGUF
- */
-@Plugin(type = LLMProvider.class, name = "Ollama (Glimmer:30B)", priority = ProviderPriority.GLIMMER)
-public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
+final class ProviderPriority {
 
-	private static final String MODEL_NAME = "hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS";
+	static final double GEMMA4 = Priority.HIGH - 0;
+	static final double GEMINI = Priority.HIGH - 1;
+	static final double ANTHROPIC = Priority.HIGH - 2;
+	static final double OPENAI = Priority.HIGH - 3;
+	static final double OLLAMA = Priority.HIGH - 4;
+	static final double GLIMMER = Priority.HIGH - 5;
 
-	public GlimmerProviderIQ2() {
-		super(MODEL_NAME);
-	}
-
-	@Override
-	public String getName() {
-		return "Muse Glimmer - extra small (Ollama)";
-	}
-
-	@Override
-	public String getDescription() {
-		return "Local Muse Glimmer model - smallest parameter count and memory footprint.";
-	}
-
-	@Override
-	protected int getContextSize() {
-		return 32 * 1024;
-	}
+	private ProviderPriority() {}
 }

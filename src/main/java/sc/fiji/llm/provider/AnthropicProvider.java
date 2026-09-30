@@ -33,7 +33,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -46,7 +45,7 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
 /**
  * LLM provider plugin for Anthropic (Claude).
  */
-@Plugin(type = LLMProvider.class, name = "Claude", priority = Priority.HIGH - 2)
+@Plugin(type = LLMProvider.class, name = "Claude", priority = ProviderPriority.ANTHROPIC)
 public class AnthropicProvider extends AbstractLLMProvider {
 
 	private static final List<String> MODEL_ALIASES = List.of("Haiku", "Sonnet", "Opus");

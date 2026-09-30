@@ -48,7 +48,7 @@ import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 /**
  * LLM provider plugin for OpenAI (ChatGPT).
  */
-@Plugin(type = LLMProvider.class, name = "ChatGPT")
+@Plugin(type = LLMProvider.class, name = "ChatGPT", priority = ProviderPriority.OPENAI)
 public class OpenAIProvider extends AbstractLLMProvider {
 
 	private static final Set<String> VISION_MODELS = Set.of("gpt-4-turbo",

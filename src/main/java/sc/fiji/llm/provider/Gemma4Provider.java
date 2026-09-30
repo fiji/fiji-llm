@@ -32,14 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
 /**
  * LLM provider plugin for the locally hosted Gemma4 Ollama models.
  * See: https://huggingface.co/collections/google/gemma-4-69c2f5b8d6a5f
  */
-@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4)", priority = Priority.HIGH)
+@Plugin(type = LLMProvider.class, name = "Ollama (Gemma4)", priority = ProviderPriority.GEMMA4)
 public class Gemma4Provider extends AbstractOllamaProvider {
 
 	private static final String XS_MODEL =

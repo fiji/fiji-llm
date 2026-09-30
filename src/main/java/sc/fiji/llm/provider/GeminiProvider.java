@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -48,7 +47,7 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
 /**
  * LLM provider plugin for Google AI (Gemini).
  */
-@Plugin(type = LLMProvider.class, name = "Gemini", priority =  Priority.HIGH - 1)
+@Plugin(type = LLMProvider.class, name = "Gemini", priority = ProviderPriority.GEMINI)
 public class GeminiProvider extends AbstractLLMProvider {
 
 	private static final List<String> AVAILABLE_MODELS = List.of("gemini-3.5-flash-lite",
