@@ -96,7 +96,7 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			The following are points of extensibility in LLM capabilities.
 
 			- `AgentGuidanceService`: Agentic knowledge base.
-			- `ProviderService`: Model vendors and versions.
+			- `ProviderService`: Model vendors, versions, and optional model metadata such as standard token pricing.
 			- `AiToolService`: Tools for agentic use.
 			- `ContextItemService`: UI items for user-selected context.
 			- `ConversationService`: manages saved conversations and their history.

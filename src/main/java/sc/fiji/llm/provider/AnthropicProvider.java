@@ -32,6 +32,7 @@ package sc.fiji.llm.provider;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.scijava.plugin.Plugin;
 
@@ -54,6 +55,11 @@ public class AnthropicProvider extends AbstractLLMProvider {
 		"Opus", "claude-opus-5-5",
 		"Sonnet", "claude-sonnet-5-5",
 		"Haiku", "claude-haiku-4-5-20251001");
+	private static final Map<String, ModelCost> MODEL_COSTS = Map.of(
+		"claude-fable-5-1", new ModelCost(10.0, 50.0),
+		"claude-opus-5-5", new ModelCost(4.0, 20.0),
+		"claude-sonnet-5-5", new ModelCost(2.0, 10.0),
+		"claude-haiku-4-5-20251001", new ModelCost(1.0, 5.0));
 
 	@Override
 	public String getName() {
@@ -79,6 +85,12 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	@Override
 	public List<String> getAvailableModels() {
 		return MODEL_ALIASES;
+	}
+
+	@Override
+	public Optional<ModelCost> getCost(final String modelName) {
+		if (modelName == null) return Optional.empty();
+		return Optional.ofNullable(MODEL_COSTS.get(resolveModelName(modelName)));
 	}
 
 	private String resolveModelName(final String modelName) {

@@ -32,6 +32,7 @@ package sc.fiji.llm.commands;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.scijava.command.Command;
@@ -137,6 +138,10 @@ public class Fiji_Chat extends DynamicCommand {
 	@Parameter(label = "Chat Model →", choices = {}, callback = "modelChanged",
 		persist = false)
 	private String model;
+
+	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
+		persist = false, required = false)
+	private String modelCostMessage = "";
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
@@ -262,14 +267,35 @@ public class Fiji_Chat extends DynamicCommand {
 			modelItem.setValue(this, NO_MODELS_AVAILABLE);
 		}
 		modelMessage = models.size() == 1 ? SINGLE_MODEL_MESSAGE : MULTIPLE_MODEL_MESSAGE;
+		modelChanged();
 	}
 
 	/**
 	 * Callback triggered when the model selection changes.
 	 */
 	protected void modelChanged() {
-		// This is called when model changes - currently just a placeholder
-		// Could be used to display model-specific info
+		if (provider == null || provider.isEmpty() || model == null) {
+			modelCostMessage = "";
+			return;
+		}
+
+		final LLMProvider selectedProvider = providerService.getProvider(
+			providerName());
+		if (selectedProvider == null) {
+			modelCostMessage = "";
+			return;
+		}
+
+		modelCostMessage = selectedProvider.getCost(model).map(
+			Fiji_Chat::formatCost).orElse("");
+	}
+
+	static String formatCost(final LLMProvider.ModelCost cost) {
+		return String.format(Locale.ROOT,
+			"<html><body style='width: %s px'><p><b>Approximate API Cost →</b> " +
+				"<b>$%.2f</b> input / " +
+				"<b>$%.2f</b> output per 1M tokens.</p></body></html>", WIDTH,
+			cost.inputPerMillionTokens(), cost.outputPerMillionTokens());
 	}
 
 	@Override

@@ -30,11 +30,13 @@
 package sc.fiji.llm.commands;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 import sc.fiji.llm.provider.AnthropicProvider;
 import sc.fiji.llm.provider.Gemma4Provider;
+import sc.fiji.llm.provider.LLMProvider;
 
 public class Fiji_ChatTest {
 
@@ -44,5 +46,15 @@ public class Fiji_ChatTest {
 		assertEquals("Gemma4 (Ollama)", curated.getName());
 		assertEquals("*Gemma4 (Ollama)", Fiji_Chat.choiceLabel(curated));
 		assertEquals("Claude", Fiji_Chat.choiceLabel(new AnthropicProvider()));
+	}
+
+	@Test
+	public void testFormatCost() {
+		final String message = Fiji_Chat.formatCost(new LLMProvider.ModelCost(0.2,
+			1.2));
+		assertTrue(message.contains("Approximate API Cost"));
+		assertTrue(message.contains("$0.20"));
+		assertTrue(message.contains("$1.20"));
+		assertTrue(message.contains("per 1M tokens"));
 	}
 }

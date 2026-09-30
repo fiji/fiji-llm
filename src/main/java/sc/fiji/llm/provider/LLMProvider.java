@@ -68,6 +68,14 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
+	 * Standard token pricing in US dollars per million tokens.
+	 *
+	 * @param inputPerMillionTokens input token price
+	 * @param outputPerMillionTokens output token price
+	 */
+	record ModelCost(double inputPerMillionTokens, double outputPerMillionTokens) {}
+
+	/**
 	 * Reports whether a model accepts image content in chat messages.
 	 *
 	 * @param modelName the model name
@@ -157,6 +165,16 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 */
 	default boolean supportsModelSelection() {
 		return true;
+	}
+
+	/**
+	 * Get the standard input and output token pricing for a model.
+	 *
+	 * @param modelName the model name
+	 * @return the model pricing, if known
+	 */
+	default Optional<ModelCost> getCost(final String modelName) {
+		return Optional.empty();
 	}
 
 	/**

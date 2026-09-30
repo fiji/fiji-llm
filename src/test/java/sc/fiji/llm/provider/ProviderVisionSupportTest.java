@@ -67,6 +67,26 @@ public class ProviderVisionSupportTest {
 	}
 
 	@Test
+	public void testHostedProviderCosts() {
+		final OpenAIProvider openAI = new OpenAIProvider();
+		assertEquals(new LLMProvider.ModelCost(0.20, 1.20), openAI.getCost(
+			"Luna 5.6").get());
+		assertEquals(new LLMProvider.ModelCost(2.00, 10.00), openAI.getCost(
+			"Sol 6").get());
+		assertEquals(Optional.empty(), openAI.getCost("future-model"));
+
+		final AnthropicProvider anthropic = new AnthropicProvider();
+		assertEquals(new LLMProvider.ModelCost(1.00, 5.00), anthropic.getCost(
+			"Haiku").get());
+		assertEquals(new LLMProvider.ModelCost(4.00, 20.00), anthropic.getCost(
+			"Opus").get());
+		assertEquals(Optional.empty(), anthropic.getCost("future-model"));
+		assertEquals(Optional.empty(), anthropic.getCost(null));
+
+		assertEquals(Optional.empty(), new GeminiProvider().getCost("Gemini"));
+	}
+
+	@Test
 	public void testHostedProviderMemoryLimits() {
 		assertEquals(691_500, OpenAIProvider.getMemoryTokenLimit());
 		assertEquals(786_432, GeminiProvider.getMemoryTokenLimit());
