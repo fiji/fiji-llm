@@ -67,8 +67,12 @@ public class ProviderVisionSupportTest {
 			.getVisionSupport("future-model"));
 
 		final AnthropicProvider anthropic = new AnthropicProvider();
-		assertEquals(LLMProvider.VisionSupport.SUPPORTED, anthropic
-			.getVisionSupport(anthropic.getAvailableModels().get(0)));
+		assertEquals(List.of("Haiku", "Sonnet", "Opus"), anthropic
+			.getAvailableModels());
+		for (final String model : anthropic.getAvailableModels()) {
+			assertEquals(model, LLMProvider.VisionSupport.SUPPORTED, anthropic
+				.getVisionSupport(model));
+		}
 		assertEquals(LLMProvider.VisionSupport.UNKNOWN, anthropic
 			.getVisionSupport("future-model"));
 	}

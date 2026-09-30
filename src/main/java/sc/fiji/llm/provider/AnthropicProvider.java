@@ -30,18 +30,14 @@
 package sc.fiji.llm.provider;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
+import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
-import dev.langchain4j.model.anthropic.AnthropicChatModelName;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -50,11 +46,15 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
 /**
  * LLM provider plugin for Anthropic (Claude).
  */
-@Plugin(type = LLMProvider.class, name = "Claude")
+@Plugin(type = LLMProvider.class, name = "Claude", priority = Priority.HIGH - 2)
 public class AnthropicProvider extends AbstractLLMProvider {
 
-	private Map<String, AnthropicChatModelName> models = null;
-	private List<String> modelList;
+	private static final List<String> MODEL_ALIASES = List.of("Haiku", "Sonnet", "Opus");
+	private static final Map<String, String> MODEL_NAMES = Map.of(
+		"Fable", "claude-fable-5-1",
+		"Opus", "claude-opus-5-5",
+		"Sonnet", "claude-sonnet-5-5",
+		"Haiku", "claude-haiku-4-5-20251001");
 
 	@Override
 	public String getName() {
@@ -68,51 +68,22 @@ public class AnthropicProvider extends AbstractLLMProvider {
 
 	@Override
 	public VisionSupport getVisionSupport(final String modelName) {
-		return getModel(modelName) == null ? VisionSupport.UNKNOWN :
-			VisionSupport.SUPPORTED;
+		return MODEL_NAMES.containsValue(resolveModelName(modelName)) ?
+			VisionSupport.SUPPORTED : VisionSupport.UNKNOWN;
 	}
 
 	@Override
 	public ChatRequestParameters defaultChatRequestParameters() {
-		return ChatRequestParameters.builder().temperature(0.1).build();
+		return ChatRequestParameters.builder().build();
 	}
 
 	@Override
 	public List<String> getAvailableModels() {
-		if (models == null) initModelMap();
-		return modelList;
+		return MODEL_ALIASES;
 	}
 
-	private synchronized void initModelMap() {
-		if (models == null) {
-			Map<String, AnthropicChatModelName> tmpModels = new HashMap<>();
-			List<String> modelNames = new ArrayList<>();
-			Stream.of(AnthropicChatModelName.values()).forEach(n -> {
-				String s = sanitize(n);
-				tmpModels.put(s, n);
-				modelNames.add(s);
-			});
-			modelList = Collections.unmodifiableList(modelNames);
-			models = tmpModels;
-		}
-	}
-
-	private String sanitize(AnthropicChatModelName name) {
-		String n = name.toString();
-		// Remove the date stamp
-		n = n.substring(0, n.lastIndexOf('-'));
-		// Replace #-# with #.#
-		n = n.replaceAll("(\\d)-(\\d)", "$1.$2");
-		// Replace remaining '-' with spaces
-		n = n.replace('-', ' ');
-		return n;
-	}
-
-	private AnthropicChatModelName getModel(final String sanitized) {
-		if (models == null) {
-			initModelMap();
-		}
-		return models.get(sanitized);
+	private String resolveModelName(final String modelName) {
+		return modelName == null ? null : MODEL_NAMES.getOrDefault(modelName, modelName);
 	}
 
 	@Override
@@ -142,15 +113,15 @@ public class AnthropicProvider extends AbstractLLMProvider {
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return AnthropicChatModel.builder().apiKey(apiKey()).modelName(getModel(
-			modelName)).maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
+		return AnthropicChatModel.builder().apiKey(apiKey()).modelName(
+			resolveModelName(modelName)).maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
 			.listeners(listeners()).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return AnthropicStreamingChatModel.builder().apiKey(apiKey()).modelName(
-			getModel(modelName)).timeout(DEFAULT_TIMEOUT)
+			resolveModelName(modelName)).timeout(DEFAULT_TIMEOUT)
 			.listeners(listeners()).build();
 	}
 }
