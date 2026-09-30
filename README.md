@@ -186,6 +186,19 @@ bridge is available.
 
 ### Supported AI Providers
 
+#### Provider health
+
+These badges are updated daily by the [provider health workflow](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml).
+`review models` means that the provider documentation changed or its URL state
+changed; re-evaluate the models supplied by that provider and update its recorded
+documentation date.
+
+| Provider | Status |
+| --- | --- |
+| ChatGPT | [![ChatGPT provider health](https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/chatgpt.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) |
+| Claude | [![Claude provider health](https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/claude.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) |
+| Gemini | [![Gemini provider health](https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/gemini.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) |
+
 #### Google (Gemini)
 - **Note:** Gemini is currently the only supported provider that provides API Keys at no charge.
 - Using a "free" API Key is subject to Google's rate limits and availability. It is suitable for testing and assessment, but not regular use.
@@ -208,8 +221,8 @@ bridge is available.
 
 #### Anthropic (Claude)
 - **Getting an API Key**:
-  1. Create an account at [console.anthropic.com](https://console.anthropic.com)
-  2. Go to **Account settings > API keys** (or [click here](https://console.anthropic.com/settings/keys))
+    1. Create an account at [platform.claude.com](https://platform.claude.com)
+    2. Go to **Account settings > API keys** (or [click here](https://platform.claude.com/settings/keys))
   3. Click **Create Key** and copy it
 
 #### OpenAI (ChatGPT)

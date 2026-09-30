@@ -30,6 +30,7 @@
 package sc.fiji.llm.provider;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -185,6 +186,24 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * @return URL to the models documentation page
 	 */
 	String getModelsDocumentationUrl();
+
+	/**
+	 * Get the CSS selector for the semantic element containing the provider's
+	 * model documentation.
+	 *
+	 * @return a selector suitable for comparing documentation content
+	 */
+	default String getModelsDocumentationContentSelector() {
+		return "main";
+	}
+
+	/**
+	 * Get the date on which the models documentation was last checked against the
+	 * models supplied by this provider.
+	 *
+	 * @return the date recorded by the provider maintainer
+	 */
+	LocalDate getModelsDocumentationLastModified();
 
 	/**
 	 * Recommended models are used to provide default guides towards model selection.

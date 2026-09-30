@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.provider;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,7 +90,17 @@ public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public String getModelsDocumentationUrl() {
-		return "https://platform.openai.com/docs/models/";
+		return "https://developers.openai.com/api/docs/models";
+	}
+
+	@Override
+	public String getModelsDocumentationContentSelector() {
+		return "main";
+	}
+
+	@Override
+	public LocalDate getModelsDocumentationLastModified() {
+		return LocalDate.of(2026, 9, 30);
 	}
 
 	/**

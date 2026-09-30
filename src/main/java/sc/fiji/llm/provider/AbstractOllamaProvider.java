@@ -32,6 +32,7 @@ package sc.fiji.llm.provider;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -133,6 +134,11 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	@Override
 	public String getModelsDocumentationUrl() {
 		return "https://ollama.com/";
+	}
+
+	@Override
+	public LocalDate getModelsDocumentationLastModified() {
+		return LocalDate.of(2026, 9, 30);
 	}
 
 	/**

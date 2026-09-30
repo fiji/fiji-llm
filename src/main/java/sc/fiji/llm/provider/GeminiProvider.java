@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.provider;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -81,6 +82,16 @@ public class GeminiProvider extends AbstractLLMProvider {
 	@Override
 	public String getModelsDocumentationUrl() {
 		return "https://ai.google.dev/gemini-api/docs/models";
+	}
+
+	@Override
+	public String getModelsDocumentationContentSelector() {
+		return "article.devsite-article";
+	}
+
+	@Override
+	public LocalDate getModelsDocumentationLastModified() {
+		return LocalDate.of(2026, 9, 30);
 	}
 
 	@Override

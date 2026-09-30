@@ -53,6 +53,14 @@ add topic keywords without extending the enum.
 
 Ollama providers optionally manage the Ollama process lifecycle via `OllamaProcessManager`. `AbstractSingletonOllamaProvider` bakes in a specific model name, allowing each local model variant to be its own discoverable plugin.
 
+Each provider reports the date on which its models documentation was last checked
+against the models it supplies through `LLMProvider.getModelsDocumentationLastModified()`. The scheduled
+`HostedProviderModelHealthTest` checks provider documentation and API-key URLs,
+records HTTP revision metadata when available, and requests a model review when a
+documentation content changes. The GitHub Actions provider-health workflow
+publishes the resulting per-hosted-provider badges used in the README; local
+Ollama providers are intentionally excluded.
+
 Model preparation is asynchronous. `LLMProvider.prepare()` completes with an optional user-facing message while preparation failures complete exceptionally. Ollama uses `/api/ps` after preparation to compare `size_vram` with `size`; partial GPU residency produces a performance warning in the chat UI.
 
 Cloud providers extend `AbstractLLMProvider`, which retrieves API keys from `APIKeyService` (stored via SciJava `PrefService`).

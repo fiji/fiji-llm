@@ -1,0 +1,108 @@
+name: Provider health
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  provider-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Probe provider pages
+        shell: bash
+        run: |
+          set -uo pipefail
+          output="$RUNNER_TEMP/provider-status.json"
+          previous="$RUNNER_TEMP/provider-status-previous.json"
+
+          if git fetch origin provider-status; then
+            git show FETCH_HEAD:provider-status.json > "$previous" || printf '{}' > "$previous"
+          else
+            printf '{}' > "$previous"
+          fi
+
+          mvn -B -ntp -Dstyle.color=never -Djava.awt.headless=true \
+            -Dtest=HostedProviderModelHealthTest \
+            "-Dprovider.url.check.output=$output" \
+            "-Dprovider.url.check.previous-state=$previous" test
+          result=$?
+          printf 'probe_exit_code=%s\n' "$result" >> "$GITHUB_OUTPUT"
+
+          if [[ ! -s "$output" ]]; then
+            printf '{"checked_at":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$output"
+          fi
+
+      - name: Generate provider badges
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/provider-status.json"
+          badges="$RUNNER_TEMP/provider-badges"
+          mkdir -p "$badges"
+
+          jq -r 'keys[] | select(. != "checked_at")' "$output" | while IFS= read -r provider; do
+            slug="$(printf '%s' "$provider" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-//; s/-$//')"
+            message="$(jq -r --arg provider "$provider" '
+              def broken: (.error? != null) or (.content_error? != null) or
+                ((.status? | type) == "number" and (.status >= 400));
+              .[$provider] as $state |
+              if any([$state.models_documentation, $state.api_key][]; broken) then "unhealthy"
+              elif ($state.models_documentation.models_review_required? // false) or
+                ($state.models_documentation.changed_since_previous? // false) or
+                ($state.api_key.changed_since_previous? // false) then "review models"
+              else "healthy"
+              end' "$output")"
+            review_date="$(jq -r --arg provider "$provider" '.[$provider].models_documentation_last_modified // "unknown"' "$output")"
+
+            case "$message" in
+              unhealthy) color=red ;;
+              "review models") color=yellow ;;
+              *) color=brightgreen ;;
+            esac
+
+            jq -n --arg label "$provider" \
+              --arg message "$message (models $review_date)" \
+              --arg color "$color" \
+              '{schemaVersion: 1, label: $label, message: $message, color: $color}' \
+              > "$badges/$slug.json"
+          done
+
+      - name: Publish provider status
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch_dir="$RUNNER_TEMP/provider-status-branch"
+
+          if git show-ref --verify --quiet refs/remotes/origin/provider-status; then
+            git worktree add --detach "$branch_dir" refs/remotes/origin/provider-status
+          else
+            git worktree add --detach "$branch_dir" HEAD
+            git -C "$branch_dir" checkout --orphan provider-status
+          fi
+
+          git -C "$branch_dir" rm -rf . || true
+          cp "$RUNNER_TEMP/provider-status.json" "$branch_dir/provider-status.json"
+          cp "$RUNNER_TEMP/provider-badges"/*.json "$branch_dir/"
+
+          git -C "$branch_dir" config user.name "github-actions[bot]"
+          git -C "$branch_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$branch_dir" add -A
+          if git -C "$branch_dir" diff --cached --quiet; then
+            exit 0
+          fi
+          git -C "$branch_dir" commit -m "Update provider health status"
+          git -C "$branch_dir" push origin HEAD:provider-status

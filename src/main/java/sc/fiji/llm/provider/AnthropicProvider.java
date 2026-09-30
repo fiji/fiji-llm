@@ -29,6 +29,7 @@
 
 package sc.fiji.llm.provider;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,12 +117,22 @@ public class AnthropicProvider extends AbstractLLMProvider {
 
 	@Override
 	public String getModelsDocumentationUrl() {
-		return "https://docs.anthropic.com/en/docs/about-claude/models";
+		return "https://platform.claude.com/docs/en/models/overview";
+	}
+
+	@Override
+	public String getModelsDocumentationContentSelector() {
+		return "article#content-container";
+	}
+
+	@Override
+	public LocalDate getModelsDocumentationLastModified() {
+		return LocalDate.of(2026, 9, 30);
 	}
 
 	@Override
 	public String getApiKeyUrl() {
-		return "https://console.anthropic.com/settings/keys";
+		return "https://platform.claude.com/settings/keys";
 	}
 
 	@Override
