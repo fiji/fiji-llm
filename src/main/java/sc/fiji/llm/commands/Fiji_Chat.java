@@ -75,6 +75,8 @@ public class Fiji_Chat extends DynamicCommand {
 	private static final String SINGLE_MODEL_MESSAGE = "<html><body style='width: " + WIDTH + "px'>" +
 		"<p>See the <b>Service Info</b> page for more information about this model provider.</p>" +
 		"</body></html>";
+	private static final double MEDIUM_COST_THRESHOLD = 10.0;
+	private static final double HIGH_COST_THRESHOLD = 20.0;
 
 	@Parameter
 	private ProviderService providerService;
@@ -290,12 +292,50 @@ public class Fiji_Chat extends DynamicCommand {
 			Fiji_Chat::formatCost).orElse("");
 	}
 
+	private enum CostTier {
+		LOW(1, "Low", "#2e7d32"), MEDIUM(2, "Medium", "#c58a00"), HIGH(3,
+			"High", "#c62828");
+
+		private final int filledSegments;
+		private final String label;
+		private final String color;
+
+		CostTier(final int filledSegments, final String label, final String color) {
+			this.filledSegments = filledSegments;
+			this.label = label;
+			this.color = color;
+		}
+
+		private String meterCellsHtml() {
+			final StringBuilder meter = new StringBuilder();
+			for (int segmentIndex = 0; segmentIndex < 3; segmentIndex++) {
+				final boolean filled = segmentIndex < filledSegments;
+				final String cellLabel = segmentIndex == filledSegments - 1 ? label : "";
+				meter.append("<td bgcolor=\"").append(filled ? color :
+					"#d6d6d6").append("\" width='72' height='30' align='center'>")
+					.append("<font color=\"").append(filled ? "#ffffff" : "#555555")
+					.append("\"><b>").append(cellLabel).append(
+						"</b></font></td>");
+			}
+			return meter.toString();
+		}
+	}
+
+	private static CostTier costTier(final LLMProvider.ModelCost cost) {
+		final double totalCost = cost.inputPerMillionTokens() + cost
+			.outputPerMillionTokens();
+		if (totalCost <= MEDIUM_COST_THRESHOLD) return CostTier.LOW;
+		if (totalCost <= HIGH_COST_THRESHOLD) return CostTier.MEDIUM;
+		return CostTier.HIGH;
+	}
+
 	static String formatCost(final LLMProvider.ModelCost cost) {
+		final CostTier tier = costTier(cost);
 		return String.format(Locale.ROOT,
-			"<html><body style='width: %s px'><p><b>Approximate API Cost →</b> " +
-				"<b>$%.2f</b> input / " +
-				"<b>$%.2f</b> output per 1M tokens.</p></body></html>", WIDTH,
-			cost.inputPerMillionTokens(), cost.outputPerMillionTokens());
+			"<html><body style='width: %s px'><table border='0' cellpadding='0' " +
+				"cellspacing='0'><tr><td valign='middle'><b>Relative API Cost →</b>" +
+				"&nbsp;</td>%s</tr></table></body></html>", WIDTH,
+			tier.meterCellsHtml());
 	}
 
 	@Override
