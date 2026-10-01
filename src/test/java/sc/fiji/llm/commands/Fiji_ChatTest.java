@@ -30,6 +30,7 @@
 package sc.fiji.llm.commands;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -50,11 +51,35 @@ public class Fiji_ChatTest {
 
 	@Test
 	public void testFormatCost() {
-		final String message = Fiji_Chat.formatCost(new LLMProvider.ModelCost(0.2,
+		assertTrue(Fiji_Chat.formatCost(new LLMProvider.ModelCost(0.2, 1.2))
+			.contains("Relative API Cost"));
+		final String low = Fiji_Chat.formatCost(new LLMProvider.ModelCost(0.2,
 			1.2));
-		assertTrue(message.contains("Approximate API Cost"));
-		assertTrue(message.contains("$0.20"));
-		assertTrue(message.contains("$1.20"));
-		assertTrue(message.contains("per 1M tokens"));
+		assertTrue(low.contains(">Low</b>"));
+		assertFalse(low.contains(">Medium</b>"));
+		assertFalse(low.contains(">High</b>"));
+		assertTrue(low.contains("cellspacing='0'"));
+		assertTrue(low.contains("valign='middle'"));
+		assertTrue(low.contains("#2e7d32"));
+		assertFalse(low.contains("#c58a00"));
+		assertFalse(low.contains("#c62828"));
+
+		final String medium = Fiji_Chat.formatCost(new LLMProvider.ModelCost(2.0,
+			10.0));
+		assertFalse(medium.contains(">Low</b>"));
+		assertTrue(medium.contains(">Medium</b>"));
+		assertFalse(medium.contains(">High</b>"));
+		assertTrue(medium.contains("#c58a00"));
+		assertFalse(medium.contains("#2e7d32"));
+		assertFalse(medium.contains("#c62828"));
+
+		final String high = Fiji_Chat.formatCost(new LLMProvider.ModelCost(4.0,
+			20.0));
+		assertFalse(high.contains(">Low</b>"));
+		assertFalse(high.contains(">Medium</b>"));
+		assertTrue(high.contains(">High</b>"));
+		assertTrue(high.contains("#c62828"));
+		assertFalse(high.contains("#2e7d32"));
+		assertFalse(high.contains("#c58a00"));
 	}
 }
