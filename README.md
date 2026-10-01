@@ -1,5 +1,7 @@
 # Fiji Large Language Model (LLM) Integration
 
+**Model Support:** [![ChatGPT](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffiji%2Ffiji-llm%2Fprovider-status%2Fchatgpt.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) [![Claude](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffiji%2Ffiji-llm%2Fprovider-status%2Fclaude.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) [![Gemini](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffiji%2Ffiji-llm%2Fprovider-status%2Fgemini.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) [![Ollama](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffiji%2Ffiji-llm%2Fprovider-status%2Follama.json)](https://ollama.com/)
+
 This project brings extensible, reproducible AI assistance into Fiji, helping scientists discover tools, build image analysis workflows, and connect with both local and external language models.
 
 ## From a User's Perspective
@@ -186,18 +188,11 @@ bridge is available.
 
 ### Supported AI Providers
 
-#### Provider health
+#### Model Support
 
 These badges are updated daily by the [provider health workflow](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml).
-`review models` means that the provider documentation changed or its URL state
-changed; re-evaluate the models supplied by that provider and update its recorded
-documentation date.
-
-| Provider | Status |
-| --- | --- |
-| ChatGPT | [![ChatGPT provider health](https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/chatgpt.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) |
-| Claude | [![Claude provider health](https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/claude.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) |
-| Gemini | [![Gemini provider health](https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/gemini.json)](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml) |
+Badge colors indicate whether provider documentation needs review or could not be
+checked; Ollama is always shown in green because it is a local provider.
 
 #### Google (Gemini)
 - **Note:** Gemini is currently the only supported provider that provides API Keys at no charge.

@@ -28,10 +28,9 @@
  */
 package sc.fiji.llm.provider;
 
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -45,25 +44,25 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.prefs.PrefService;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 
-import sc.fiji.llm.Setup;
+import sc.fiji.llm.auth.APIKeyService;
 
-public class HostedProviderModelHealthTest {
+public final class ProviderHealthProbe {
 
 	private static final String OUTPUT_PROPERTY = "provider.url.check.output";
 	private static final String PREVIOUS_STATE_PROPERTY =
@@ -74,53 +73,56 @@ public class HostedProviderModelHealthTest {
 		.connectTimeout(REQUEST_TIMEOUT).followRedirects(HttpClient.Redirect.NORMAL)
 		.build();
 
-	private Context context;
+	private ProviderHealthProbe() {}
 
-	@Before
-	public void setUp() {
-		context = Setup.context();
-	}
-
-	@After
-	public void tearDown() {
-		context.dispose();
-	}
-
-	@Test
-	public void providerUrlsAreReachableAndUnchanged() throws Exception {
-		final String outputProperty = System.getProperty(OUTPUT_PROPERTY);
-		final String previousStateProperty = System.getProperty(
-			PREVIOUS_STATE_PROPERTY);
-		Assume.assumeTrue("This network check is enabled explicitly", outputProperty !=
-			null && previousStateProperty != null);
-
-		final JsonObject previousState = readState(Path.of(previousStateProperty));
+	public static void main(final String[] args) throws Exception {
+		final Path output = Path.of(requiredProperty(OUTPUT_PROPERTY));
+		final Path previous = Path.of(requiredProperty(PREVIOUS_STATE_PROPERTY));
+		final JsonObject previousState = readState(previous);
 		final JsonObject currentState = new JsonObject();
 		final List<String> failures = new ArrayList<>();
-		final ProviderService providerService = context.getService(
-			ProviderService.class);
+		try (Context context = new Context(ProviderService.class, APIKeyService.class,
+			PrefService.class)) {
+			final ProviderService providerService = context.getService(
+				ProviderService.class);
+			for (final LLMProvider provider : providerService.getInstances()) {
+				if (!provider.requiresApiKey()) continue;
 
-		for (final LLMProvider provider : providerService.getInstances()) {
-			if (!provider.requiresApiKey()) continue;
-
-			final JsonObject providerState = new JsonObject();
-			providerState.addProperty("models_documentation_last_modified", provider
-				.getModelsDocumentationLastModified().toString());
-			final JsonObject previousProviderState = previousState.has(provider
-				.getName()) ? previousState.getAsJsonObject(provider.getName()) : null;
-			checkUrl(provider, "models_documentation", provider
-				.getModelsDocumentationUrl(), providerState, previousProviderState,
-				failures);
-			checkUrl(provider, "api_key", provider.getApiKeyUrl(), providerState,
-				previousProviderState, failures);
-			carryForwardModelReview(provider, providerState, previousProviderState,
-				failures);
-			currentState.add(provider.getName(), providerState);
+				final JsonObject providerState = new JsonObject();
+				providerState.addProperty("models_documentation_last_modified", provider
+					.getModelsDocumentationLastModified().toString());
+				final JsonObject previousProviderState = previousState.has(provider
+					.getName()) ? previousState.getAsJsonObject(provider.getName()) : null;
+				checkUrl(provider, "models_documentation", provider
+					.getModelsDocumentationUrl(), providerState, previousProviderState,
+					failures);
+				checkUrl(provider, "api_key", provider.getApiKeyUrl(), providerState,
+					previousProviderState, failures);
+				carryForwardModelReview(provider, providerState, previousProviderState,
+					failures);
+				providerState.addProperty("health", healthStatus(providerState));
+				currentState.add(provider.getName(), providerState);
+			}
 		}
 
 		currentState.addProperty("checked_at", Instant.now().toString());
-		writeState(Path.of(outputProperty), currentState);
-		if (!failures.isEmpty()) fail(String.join(System.lineSeparator(), failures));
+		currentState.addProperty("status", overallStatus(currentState));
+		final JsonArray failureDetails = new JsonArray();
+		failures.forEach(failureDetails::add);
+		currentState.add("failures", failureDetails);
+		writeState(output, currentState);
+		if (!failures.isEmpty()) {
+			System.err.println("Provider health findings:");
+			failures.forEach(System.err::println);
+		}
+	}
+
+	private static String requiredProperty(final String name) {
+		final String value = System.getProperty(name);
+		if (value == null || value.isBlank()) {
+			throw new IllegalArgumentException("Missing system property: " + name);
+		}
+		return value;
 	}
 
 	private static void carryForwardModelReview(final LLMProvider provider,
@@ -208,9 +210,10 @@ public class HostedProviderModelHealthTest {
 			current.addProperty("content_hash", contentHash(content));
 		}
 		catch (final IOException | InterruptedException e) {
+			if (e instanceof InterruptedException) Thread.currentThread().interrupt();
 			current.addProperty("content_error", e.toString());
-			failures.add(provider.getName() + " models documentation content check failed: " +
-				e.getMessage());
+			failures.add(provider.getName() +
+				" models documentation content check failed: " + e.getMessage());
 		}
 	}
 
@@ -248,6 +251,22 @@ public class HostedProviderModelHealthTest {
 			status >= 500;
 	}
 
+	private static JsonElement comparableValue(final String field,
+		final JsonElement value)
+	{
+		if (!"final_url".equals(field) || !value.isJsonPrimitive() || !value
+			.getAsJsonPrimitive().isString()) return value;
+
+		final URI uri = URI.create(value.getAsString());
+		try {
+			return new JsonPrimitive(new URI(uri.getScheme(), uri.getRawAuthority(), uri
+				.getRawPath(), null, null).toString());
+		}
+		catch (final URISyntaxException e) {
+			return value;
+		}
+	}
+
 	private static void compareWithPrevious(final LLMProvider provider,
 		final String name, final JsonObject current,
 		final JsonObject previousProviderState, final List<String> failures)
@@ -261,7 +280,8 @@ public class HostedProviderModelHealthTest {
 				JsonNull.INSTANCE;
 			final JsonElement currentValue = current.has(field) ? current.get(field) :
 				JsonNull.INSTANCE;
-			if (!previousValue.equals(currentValue)) {
+			if (!comparableValue(field, previousValue).equals(comparableValue(field,
+				currentValue))) {
 				current.addProperty("changed_since_previous", true);
 				if ("models_documentation".equals(name) && ("last_modified".equals(
 					field) || "content_hash".equals(field)))
@@ -276,6 +296,44 @@ public class HostedProviderModelHealthTest {
 					" from " + previousValue + " to " + currentValue + action);
 			}
 		}
+	}
+
+	private static String healthStatus(final JsonObject providerState) {
+		for (final String name : List.of("models_documentation", "api_key")) {
+			final JsonObject check = providerState.getAsJsonObject(name);
+			if (check.has("error") || check.has("content_error")) return "unhealthy";
+			if (check.has("status") && check.get("status").isJsonPrimitive() &&
+				check.get("status").getAsJsonPrimitive().isNumber() && isBrokenStatus(
+					check.get("status").getAsInt())) return "unhealthy";
+		}
+		if (isTrue(providerState, "models_documentation", "models_review_required") ||
+			isTrue(providerState, "models_documentation", "changed_since_previous") ||
+			isTrue(providerState, "api_key", "changed_since_previous"))
+			return "review_required";
+		return "healthy";
+	}
+
+	private static boolean isTrue(final JsonObject providerState, final String checkName,
+		final String field)
+	{
+		final JsonObject check = providerState.getAsJsonObject(checkName);
+		return check.has(field) && check.get(field).getAsBoolean();
+	}
+
+	private static String overallStatus(final JsonObject currentState) {
+		boolean hasProvider = false;
+		boolean requiresReview = false;
+		for (final Map.Entry<String, JsonElement> entry : currentState.entrySet()) {
+			if (!entry.getValue().isJsonObject() || !entry.getValue().getAsJsonObject()
+			.has("health")) continue;
+			hasProvider = true;
+			final String status = entry.getValue().getAsJsonObject().get("health")
+				.getAsString();
+			if ("unhealthy".equals(status)) return "unhealthy";
+			if ("review_required".equals(status)) requiresReview = true;
+		}
+		if (!hasProvider) return "unknown";
+		return requiresReview ? "review_required" : "healthy";
 	}
 
 	private static JsonObject readState(final Path path) throws IOException {

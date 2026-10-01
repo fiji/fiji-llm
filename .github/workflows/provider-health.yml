@@ -5,6 +5,10 @@ on:
     - cron: "17 6 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: provider-health
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -23,6 +27,7 @@ jobs:
           cache: maven
 
       - name: Probe provider pages
+        id: probe
         shell: bash
         run: |
           set -uo pipefail
@@ -35,15 +40,26 @@ jobs:
             printf '{}' > "$previous"
           fi
 
-          mvn -B -ntp -Dstyle.color=never -Djava.awt.headless=true \
-            -Dtest=HostedProviderModelHealthTest \
-            "-Dprovider.url.check.output=$output" \
-            "-Dprovider.url.check.previous-state=$previous" test
-          result=$?
+          classpath_file="$RUNNER_TEMP/provider-health-classpath"
+          mvn_result=0
+          mvn -B -ntp -Dstyle.color=never \
+            test-compile dependency:build-classpath \
+            "-Dmdep.outputFile=$classpath_file" || mvn_result=$?
+
+          result=$mvn_result
+          if [[ $mvn_result -eq 0 ]]; then
+            java -Djava.awt.headless=true \
+              "-Dprovider.url.check.output=$output" \
+              "-Dprovider.url.check.previous-state=$previous" \
+              -cp "target/test-classes:target/classes:$(cat "$classpath_file")" \
+              sc.fiji.llm.provider.ProviderHealthProbe
+            result=$?
+          fi
           printf 'probe_exit_code=%s\n' "$result" >> "$GITHUB_OUTPUT"
 
           if [[ ! -s "$output" ]]; then
-            printf '{"checked_at":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$output"
+            printf '{"checked_at":"%s","status":"unknown","probe_exit_code":%s}\n' \
+              "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$result" > "$output"
           fi
 
       - name: Generate provider badges
@@ -54,32 +70,26 @@ jobs:
           badges="$RUNNER_TEMP/provider-badges"
           mkdir -p "$badges"
 
-          jq -r 'keys[] | select(. != "checked_at")' "$output" | while IFS= read -r provider; do
+          jq -r 'to_entries[] | select(.value | type == "object") |
+            select(.value.health? != null) | .key' "$output" | while IFS= read -r provider; do
             slug="$(printf '%s' "$provider" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-//; s/-$//')"
-            message="$(jq -r --arg provider "$provider" '
-              def broken: (.error? != null) or (.content_error? != null) or
-                ((.status? | type) == "number" and (.status >= 400));
-              .[$provider] as $state |
-              if any([$state.models_documentation, $state.api_key][]; broken) then "unhealthy"
-              elif ($state.models_documentation.models_review_required? // false) or
-                ($state.models_documentation.changed_since_previous? // false) or
-                ($state.api_key.changed_since_previous? // false) then "review models"
-              else "healthy"
-              end' "$output")"
-            review_date="$(jq -r --arg provider "$provider" '.[$provider].models_documentation_last_modified // "unknown"' "$output")"
+            health="$(jq -r --arg provider "$provider" '.[$provider].health // "unknown"' "$output")"
 
-            case "$message" in
+            case "$health" in
               unhealthy) color=red ;;
-              "review models") color=yellow ;;
+              review_required) color=yellow ;;
               *) color=brightgreen ;;
             esac
 
-            jq -n --arg label "$provider" \
-              --arg message "$message (models $review_date)" \
+            jq -n --arg message "$provider" \
               --arg color "$color" \
-              '{schemaVersion: 1, label: $label, message: $message, color: $color}' \
+              '{schemaVersion: 1, label: "", message: $message, color: $color}' \
               > "$badges/$slug.json"
           done
+
+          jq -n \
+            '{schemaVersion: 1, label: "", message: "Ollama", color: "brightgreen"}' \
+            > "$badges/ollama.json"
 
       - name: Publish provider status
         shell: bash
@@ -106,3 +116,25 @@ jobs:
           fi
           git -C "$branch_dir" commit -m "Update provider health status"
           git -C "$branch_dir" push origin HEAD:provider-status
+
+      - name: Report provider health
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(jq -r '.status // "unknown"' "$RUNNER_TEMP/provider-status.json")"
+          case "$status" in
+            healthy)
+              exit 0
+              ;;
+            review_required|unhealthy|unknown)
+              echo "Provider health status: $status"
+              jq -r '.failures[]? // empty' "$RUNNER_TEMP/provider-status.json"
+              echo "::error title=Provider health::$status"
+              exit 1
+              ;;
+            *)
+              echo "Unrecognized provider health status: $status" >&2
+              exit 1
+              ;;
+          esac
