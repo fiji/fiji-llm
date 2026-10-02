@@ -1,22 +1,20 @@
 {
   "Gemini": {
-    "models_documentation_last_modified": "2026-09-30",
+    "models_documentation_last_modified": "2026-10-01",
     "models_documentation": {
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
       "last_modified": "Thu, 01 Oct 2026 00:13:51 GMT",
       "content_selector": "article.devsite-article",
-      "content_hash": "2e4d06359f63115dba8bc60c72a9ada254bf6b4b747fd6dce1e6a4704de82775",
-      "changed_since_previous": true,
-      "models_review_required": true
+      "content_hash": "2e4d06359f63115dba8bc60c72a9ada254bf6b4b747fd6dce1e6a4704de82775"
     },
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1913551962:1790894833122772"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS103573373:1790944746322176"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-09-30",
@@ -50,10 +48,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-01T22:47:14.217021048Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini models_documentation changed last_modified from \"Thu, 24 Sep 2026 22:20:06 GMT\" to \"Thu, 01 Oct 2026 00:13:51 GMT\"; re-evaluate the provided models",
-    "Gemini models_documentation changed content_hash from \"a410429bf4a3164ff6b08f994609233e82346d46b7b7efd8ffe37ca86cea8e78\" to \"2e4d06359f63115dba8bc60c72a9ada254bf6b4b747fd6dce1e6a4704de82775\"; re-evaluate the provided models"
-  ]
+  "checked_at": "2026-10-02T12:39:08.131133617Z",
+  "status": "healthy",
+  "failures": []
 }
