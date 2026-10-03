@@ -130,6 +130,22 @@ public final class ImageJ1HelperService extends AbstractService implements
 		}
 	}
 
+	public boolean hasVirtualStack(final ImageDisplay display) {
+		if (display == null || legacyService == null || !legacyService.isActive()) {
+			return false;
+		}
+		try {
+			final var imageMap = legacyService.getImageMap();
+			if (imageMap == null) return false;
+			final var imagePlus = imageMap.lookupImagePlus(display);
+			return imagePlus != null && imagePlus.getStackSize() > 1 && imagePlus
+				.getStack().isVirtual();
+		}
+		catch (final RuntimeException e) {
+			return false;
+		}
+	}
+
 	public Optional<Object> getRoi(final ImageDisplay display) {
 		if (display == null || legacyService == null || !legacyService.isActive()) {
 			return Optional.empty();

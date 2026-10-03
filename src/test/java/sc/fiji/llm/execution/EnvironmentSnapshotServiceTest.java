@@ -33,6 +33,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,12 +48,17 @@ import org.scijava.log.LogService;
 
 import com.google.gson.JsonObject;
 
+import ij.ImagePlus;
+import ij.VirtualStack;
 import ij.measure.ResultsTable;
+import ij.process.ByteProcessor;
+import ij.process.ImageProcessor;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.axis.Axes;
 import net.imagej.axis.AxisType;
 import net.imagej.display.ImageDisplay;
+import net.imagej.legacy.LegacyService;
 import net.imglib2.Cursor;
 import net.imglib2.type.numeric.RealType;
 import sc.fiji.llm.Setup;
@@ -165,6 +173,50 @@ public class EnvironmentSnapshotServiceTest {
 		finally {
 			capture.close();
 			display.close();
+		}
+	}
+
+	@Test
+	public void testFinalPixelTrackingSkipsVirtualStacks() {
+		final RecordingVirtualStack stack = new RecordingVirtualStack(2, 2, 3);
+		final ImagePlus image = new ImagePlus("virtual test", stack);
+		final ImageDisplay display = context.getService(LegacyService.class)
+			.getImageMap().registerLegacyImage(image);
+		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
+		try {
+			final JsonObject environment = capture.finish().toJson();
+			final JsonObject changes = environment.getAsJsonObject("changes");
+			assertEquals("inconclusive", changes.get("pixel_changes").getAsString());
+			assertFalse(changes.has("images_changed"));
+			assertFalse(stack.requestedSlices.contains(stack.size()));
+		}
+		finally {
+			capture.close();
+			display.close();
+			image.close();
+		}
+	}
+
+	private static final class RecordingVirtualStack extends VirtualStack {
+
+		private final Set<Integer> requestedSlices = new HashSet<>();
+
+		private RecordingVirtualStack(final int width, final int height,
+			final int slices)
+		{
+			super(width, height, slices);
+		}
+
+		@Override
+		public ImageProcessor getProcessor(final int n) {
+			requestedSlices.add(n);
+			return new ByteProcessor(getWidth(), getHeight());
+		}
+
+		@Override
+		public Object getPixels(final int n) {
+			return getProcessor(n).getPixels();
 		}
 	}
 }
