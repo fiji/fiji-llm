@@ -246,6 +246,10 @@ Keep the execution path through the Script Editor for every case, including
 syntax failures, runtime failures, and timeouts.
 
 - [ ] Successful image-processing script that creates or modifies an image.
+- [ ] With a multi-plane ImageJ virtual stack open, run a short script that does
+      not access it. Verify the run returns promptly and final
+      `environment_impact.changes.pixel_changes` is `inconclusive`, without
+      loading every plane from the stack's backing source.
 - [ ] Malformed syntax: verify a non-success result and useful error text.
 - [ ] Runtime exception after partial image processing: verify that output or
       images produced before the exception remain observable and the error is

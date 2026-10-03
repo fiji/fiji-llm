@@ -207,7 +207,11 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 			PixelHashStatus pixelHashStatus = pixelSnapshotMode.hashStatus();
 			if (pixelSnapshotMode == PixelSnapshotMode.CAPTURED) {
 				try {
-					final PixelHashResult result = pixelHash(dataset);
+					// ImageJ wraps every legacy image as a PlanarImg, so a virtual stack
+					// would otherwise have each plane loaded from its source to be hashed.
+					final PixelHashResult result = imageJ1HelperService.hasVirtualStack(
+						display) ? PixelHashResult.skipped("lazy_container") : pixelHash(
+							dataset);
 					pixelHash = result.hash;
 					pixelHashEncoding = result.encoding;
 					pixelHashReason = result.reason;

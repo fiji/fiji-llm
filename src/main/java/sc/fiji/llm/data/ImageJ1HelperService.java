@@ -130,6 +130,28 @@ public final class ImageJ1HelperService extends AbstractService implements
 		}
 	}
 
+	/**
+	 * Checks whether the legacy image for a display uses a virtual stack.
+	 *
+	 * @param display the ImageJ2 display associated with the legacy image
+	 * @return whether the image has a virtual stack with multiple planes
+	 */
+	public boolean hasVirtualStack(final ImageDisplay display) {
+		final int imageId = getImageId(display);
+		if (imageId < 0) return false;
+		try {
+			final Optional<IJ1Helper> helper = getIJ1Helper();
+			if (helper.isEmpty()) return false;
+			final Object image = helper.get().getImage(imageId);
+			if (asInt(invoke(image, "getStackSize")) <= 1) return false;
+			final Object stack = invoke(image, "getStack");
+			return Boolean.TRUE.equals(invoke(stack, "isVirtual"));
+		}
+		catch (final RuntimeException e) {
+			return false;
+		}
+	}
+
 	public Optional<Object> getRoi(final ImageDisplay display) {
 		if (display == null || legacyService == null || !legacyService.isActive()) {
 			return Optional.empty();
