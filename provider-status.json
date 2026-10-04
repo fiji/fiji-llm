@@ -12,7 +12,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-398962781:1791027744400597"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS687907557:1791116685092857"
     },
     "health": "healthy"
   },
@@ -48,7 +48,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-03T11:42:26.433746815Z",
+  "checked_at": "2026-10-04T12:24:46.552745149Z",
   "status": "healthy",
   "failures": []
 }
