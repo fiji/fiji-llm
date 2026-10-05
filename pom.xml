@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -359,28 +357,13 @@
 								<configuration>
 									<target>
 										<!-- Rename Jackson 3 jars -->
-										<move
-											file="${scijava.app.directory}/jars/jackson-databind-${jackson3.version}.jar"
-											tofile="${scijava.app.directory}/jars/jackson3-databind-${jackson3.version}.jar"
-											failonerror="false" />
-										<move
-											file="${scijava.app.directory}/jars/jackson-core-${jackson3.version}.jar"
-											tofile="${scijava.app.directory}/jars/jackson3-core-${jackson3.version}.jar"
-											failonerror="false" />
-										<move
-											file="${scijava.app.directory}/jars/jackson-dataformat-yaml-${jackson3.version}.jar"
-											tofile="${scijava.app.directory}/jars/jackson3-dataformat-yaml-${jackson3.version}.jar"
-											failonerror="false" />
+										<move file="${scijava.app.directory}/jars/jackson-databind-${jackson3.version}.jar" tofile="${scijava.app.directory}/jars/jackson3-databind-${jackson3.version}.jar" failonerror="false" />
+										<move file="${scijava.app.directory}/jars/jackson-core-${jackson3.version}.jar" tofile="${scijava.app.directory}/jars/jackson3-core-${jackson3.version}.jar" failonerror="false" />
+										<move file="${scijava.app.directory}/jars/jackson-dataformat-yaml-${jackson3.version}.jar" tofile="${scijava.app.directory}/jars/jackson3-dataformat-yaml-${jackson3.version}.jar" failonerror="false" />
 
 										<!-- Restore Jackson 2 jars from target/dependency -->
-										<copy
-											file="${project.build.directory}/dependency/jackson-databind-${jackson2.version}.jar"
-											tofile="${scijava.app.directory}/jars/jackson-databind-${jackson2.version}.jar"
-											failonerror="false" />
-										<copy
-											file="${project.build.directory}/dependency/jackson-core-${jackson2.version}.jar"
-											tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar"
-											failonerror="false" />
+										<copy file="${project.build.directory}/dependency/jackson-databind-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-databind-${jackson2.version}.jar" failonerror="false" />
+										<copy file="${project.build.directory}/dependency/jackson-core-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar" failonerror="false" />
 									</target>
 								</configuration>
 							</execution>
