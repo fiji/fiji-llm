@@ -202,9 +202,9 @@ public class DefaultConversationService extends AbstractService implements
 			Arrays.sort(files, (a, b) -> Long.compare(b.lastModified(), a
 				.lastModified()));
 			for (File file : files) {
-				try {
-					SerializedConversation serialized = gson.fromJson(new FileReader(
-						file), SerializedConversation.class);
+				try (FileReader reader = new FileReader(file)) {
+					SerializedConversation serialized = gson.fromJson(reader,
+						SerializedConversation.class);
 
 					if (serialized != null) {
 						SystemMessage systemMessage = new SystemMessage(serialized
