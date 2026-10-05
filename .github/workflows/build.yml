@@ -1,27 +1,38 @@
-name: Build
+name: build
 
 on:
   push:
     branches:
       - main
-
-permissions:
-  contents: read
+    tags:
+      - "*-[0-9]+.*"
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
+      - uses: actions/checkout@v6
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
-
-      - name: Run unit tests
-        run: mvn -B -ntp -Dstyle.color=never -Djava.awt.headless=true test
+      - name: Set up CI environment
+        run: .github/setup.sh
+        shell: bash
+      - name: Execute the build
+        run: .github/build.sh
+        shell: bash
+        env:
+          GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_USER: ${{ secrets.MAVEN_USER }}
+          MAVEN_PASS: ${{ secrets.MAVEN_PASS }}
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASS: ${{ secrets.CENTRAL_PASS }}
+          SIGNING_ASC: ${{ secrets.SIGNING_ASC }}
