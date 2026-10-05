@@ -11,7 +11,7 @@
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>fiji-llm</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0</version>
 
 	<name>Fiji LLM Assistant</name>
 	<description>A Fiji plugin for integrating large language models.</description>
@@ -58,7 +58,7 @@
 	<scm>
 		<connection>scm:git:https://github.com/fiji/fiji-llm</connection>
 		<developerConnection>scm:git:git@github.com:fiji/fiji-llm</developerConnection>
-		<tag>HEAD</tag>
+		<tag>fiji-llm-0.1.0</tag>
 		<url>https://github.com/fiji/fiji-llm</url>
 	</scm>
 	<issueManagement>
