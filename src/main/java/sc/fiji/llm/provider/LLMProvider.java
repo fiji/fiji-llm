@@ -250,7 +250,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	String getApiKeyUrl();
 
 	/**
-	 * @param apiKey the API key for authentication
 	 * @return A {@link TokenWindowChatMemory} appropriate for the specified
 	 *         model, or {@code null} if not supported.
 	 */
@@ -259,7 +258,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	/**
 	 * Create a chat language model with the specified API key and model name.
 	 *
-	 * @param apiKey the API key for authentication
 	 * @param modelName the name of the model to use
 	 * @return a configured chat language model
 	 */
@@ -269,7 +267,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * Create a streaming chat language model with the specified API key and model
 	 * name.
 	 *
-	 * @param apiKey the API key for authentication
 	 * @param modelName the name of the model to use
 	 * @return a configured streaming chat language model
 	 */
