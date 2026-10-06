@@ -3,6 +3,17 @@ This is an experimental Fiji integration for LLM-assisted workflows. See
 `README.md` and `doc/TECHNICAL_SUMMARY.md` for the project goals and current
 architecture.
 
+## Coding Style
+- After creating a new Java source file, run `mvn license:update-file-header`.
+- Do not manually create or edit license headers.
+- Add Javadoc to every public and protected class, interface, enum, constructor, method, and field.
+- Document package-private or private code when its behavior or contract is non-obvious.
+- Use `@param`, `@return`, and `@throws` where applicable.
+- Always use import statements when referencing classes from other packages.
+- Never use fully qualified names like `java.util.List` in code (exception: strings for reflection)
+- Never add trailing whitespace to any line
+- Empty lines must be completely blank (no spaces or tabs)
+
 ## Architecture
 - Use SciJava plugins, services, and dependency injection where appropriate.
 - Prefer the existing SciJava extension mechanisms over creating parallel
@@ -23,45 +34,28 @@ architecture.
 ## Implementation choices
 - Before implementing new infrastructure, check whether SciJava, ImageJ, Fiji,
   langchain4j, MCP, or another well-maintained library already provides it.
-- When an external dependency API matters, check for a project- or
-  developer-defined convention for local source checkouts before using remote
-  artifacts. Treat a useful local checkout and an exact dependency version as
-  separate findings, and never inspect ~/.m2 or other dependency caches.
 - Prefer established APIs and extension points over de novo implementations.
-- Avoid adding a dependency when a small, clear local implementation would be
-  easier to maintain.
+- Prefer simplifying or correcting Java APIs over adding compatibility layers.
 - Prefer small, focused methods with descriptive names.
 - Consolidate duplicated logic when it represents a shared concept, but do not
   introduce abstractions solely to eliminate superficial repetition.
 - For non-trivial feature work, do a focused verification pass before settling on
   an implementation path: confirm the relevant upstream or foundational library APIs,
-  check whether the project already has a matching pattern, and compare a couple of
-  reasonable approaches. Avoid broad speculative exploration, but do not assume a
-  first idea is correct just because it seems plausible.
-- Prefer the project’s existing architecture over “novel” framework usage. A small,
-  well-placed local implementation is better than introducing a new abstraction or
-  framework pattern unless the existing design clearly does not fit.
+  check whether the project already has a matching pattern. Avoid broad speculative
+  exploration. If multiple plausible options are available, propose them with a pros
+  and cons list before making a choice.
 
 ## Compatibility
-- The project is experimental. Backward compatibility is not required unless
-  the task explicitly requests it.
-- Prefer simplifying or correcting Java APIs over adding compatibility layers.
-- Treat persisted conversations, preferences, MCP interoperability, and
-  update-site users as externally visible behavior. Call out changes affecting
-  them even when Java API compatibility is not required.
-- When changing a public API or agent-facing tool contract, update the relevant
-  guidance and documentation in the same change. Explicitly inspect the
-  registered guides under `src/main/java/sc/fiji/llm/guidance/`, including
-  workflow guides for scripts, macros, commands, and UI behavior, and update
-  every affected guide. Also update the relevant files under `.github/agents/`,
-  `.github/skills/`, `doc/INTEGRATION_TESTS.md`, and `README.md`. The `.github`
-  files are routing or agent-facing documentation; update them when their
-  contract is affected, not merely because an API changed. If no guide or
-  documentation update is needed, state the impact check and why.
-- When changing extension points, provider/tool/context/MCP architecture,
-  conversation persistence, or dependency versions described in the technical
-  summary, update `doc/TECHNICAL_SUMMARY.md` and the relevant README sections
-  in the same change.
+- Backward compatibility is not required unless the task explicitly requests it.
+- When changing an API or agent-facing tool contract, update Javadoc, guides, and documentation in the same change.
+- Inspect the affected files under:
+  - `src/main/java/sc/fiji/llm/guidance/`
+  - `doc/INTEGRATION_TESTS.md`
+  - `doc/TECHNICAL_SUMMARY.md`
+  - `README.md`
+  - `.github/agents/`
+  - `.github/skills/`
+- Update only the files whose documented behavior or contract is affected
 
 ## Validation
 - Much of the project requires a running Fiji installation and may depend on
@@ -78,9 +72,8 @@ architecture.
 ## Writing agent tools
 - Keep tools narrowly scoped, with clear names, descriptions, inputs, and
   outputs.
-- All discovered `AiToolPlugin` tools are intentionally exposed through the
-  MCP, while `ToolScope` should be used in integrated chats to allow filtering.
 - Prefer structured results over prose when results will be consumed by an LLM.
 - Do not expose destructive or broadly state-changing operations without clear
   safeguards.
 - Avoid embedding model-specific assumptions in tool implementations.
+- `AiToolPlugin`s are the single source of tools, but can have distinct views through MCP or integrated chat.

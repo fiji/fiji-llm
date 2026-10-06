@@ -43,7 +43,6 @@ local.properties
 .settings/
 .loadpath
 .recommenders
-.github/copilot-instructions.md
 
 # Visual Studio Code
 .vscode/
