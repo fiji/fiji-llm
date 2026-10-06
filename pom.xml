@@ -83,7 +83,7 @@
 		<scijava.jvm.build.version>[17,)</scijava.jvm.build.version>
 
 		<!-- Pinned version properties -->
-		<langchain4j.version>1.13.1</langchain4j.version>
+		<langchain4j.version>1.21.0</langchain4j.version>
 		<mcp-sdk.version>1.1.2</mcp-sdk.version>
 		<jackson2.version>2.19.2</jackson2.version>
 		<jackson3.version>3.0.3</jackson3.version>

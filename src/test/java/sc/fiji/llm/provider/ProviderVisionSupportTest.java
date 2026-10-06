@@ -42,7 +42,7 @@ import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
+import dev.langchain4j.model.openai.OpenAiResponsesChatRequestParameters;
 
 public class ProviderVisionSupportTest {
 
@@ -62,11 +62,13 @@ public class ProviderVisionSupportTest {
 	@Test
 	public void testOpenAiReasoningEffortByModel() {
 		final OpenAIProvider provider = new OpenAIProvider();
-		final OpenAiChatRequestParameters lunaParameters =
-			(OpenAiChatRequestParameters) provider.defaultChatRequestParameters(
+		final OpenAiResponsesChatRequestParameters lunaParameters =
+			(OpenAiResponsesChatRequestParameters) provider
+				.defaultChatRequestParameters(
 				"Luna 6");
-		final OpenAiChatRequestParameters solParameters =
-			(OpenAiChatRequestParameters) provider.defaultChatRequestParameters("Sol 6");
+		final OpenAiResponsesChatRequestParameters solParameters =
+			(OpenAiResponsesChatRequestParameters) provider
+				.defaultChatRequestParameters("Sol 6");
 
 		assertEquals("none", lunaParameters.reasoningEffort());
 		assertEquals("medium", solParameters.reasoningEffort());
@@ -74,8 +76,8 @@ public class ProviderVisionSupportTest {
 
 	@Test
 	public void testOpenAiProviderModelIdUsesSolReasoningEffort() {
-		final OpenAiChatRequestParameters parameters =
-			(OpenAiChatRequestParameters) new OpenAIProvider()
+		final OpenAiResponsesChatRequestParameters parameters =
+			(OpenAiResponsesChatRequestParameters) new OpenAIProvider()
 				.defaultChatRequestParameters("gpt-6.1-sol");
 		assertEquals("medium", parameters.reasoningEffort());
 	}

@@ -40,9 +40,9 @@ import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiResponsesChatModel;
+import dev.langchain4j.model.openai.OpenAiResponsesChatRequestParameters;
+import dev.langchain4j.model.openai.OpenAiResponsesStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 
 /**
@@ -77,7 +77,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	{
 		final String reasoningEffort = "gpt-6.1-sol".equals(resolveModelName(
 			modelName)) ? "medium" : "none";
-		return OpenAiChatRequestParameters.builder().frequencyPenalty(0.0)
+		return OpenAiResponsesChatRequestParameters.builder().frequencyPenalty(0.0)
 			.presencePenalty(0.0).temperature(0.1).reasoningEffort(reasoningEffort)
 			.build();
 	}
@@ -135,18 +135,17 @@ public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public ChatModel createChatModel(final String modelName) {
-		return OpenAiChatModel.builder().apiKey(apiKey()).modelName(resolveModelName(
+		return OpenAiResponsesChatModel.builder().apiKey(apiKey()).modelName(resolveModelName(
 			modelName))
 			.defaultRequestParameters(defaultChatRequestParameters(modelName))
-			.maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
 			.listeners(listeners()).build();
 	}
 
 	@Override
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
-		return OpenAiStreamingChatModel.builder().apiKey(apiKey()).modelName(
+		return OpenAiResponsesStreamingChatModel.builder().apiKey(apiKey()).modelName(
 			resolveModelName(modelName)).defaultRequestParameters(
-				defaultChatRequestParameters(modelName)).timeout(DEFAULT_TIMEOUT).listeners(
+				defaultChatRequestParameters(modelName)).listeners(
 					listeners()).build();
 	}
 }

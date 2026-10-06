@@ -237,7 +237,7 @@ While a response streams, `ChatMessagePanel` shows a `ThinkingIndicator` (animat
 
 | Library | Version | Role |
 |---|---|---|
-| `langchain4j` | 1.13.1 | LLM abstraction, tool use, memory, streaming |
+| `langchain4j` | 1.21.0 | LLM abstraction, tool use, memory, streaming |
 | `io.modelcontextprotocol.sdk:mcp` | 1.1.2 | MCP server implementation |
 | `langchain4j-mcp` | 1.13.1-beta23 | MCP client + `McpToolProvider` |
 | `scijava-common` | (pom-scijava) | Plugin system, services, DI |
