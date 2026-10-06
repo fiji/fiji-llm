@@ -1360,7 +1360,7 @@ Be concise, patient, humble, and collaborative.
 
 		setPreparationControlsEnabled(false);
 		preparationPanel = new ChatMessagePanel(ChatMessagePanel.MessageType.SYSTEM,
-			"*Getting your assistant ready*", CHAT_FONT_SIZE);
+			"*Getting your assistant ready...*", CHAT_FONT_SIZE);
 		addMessagePanelToChat(preparationPanel);
 
 		preparationTimer = new javax.swing.Timer(200, e -> {

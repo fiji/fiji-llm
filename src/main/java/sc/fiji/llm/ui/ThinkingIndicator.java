@@ -50,8 +50,7 @@ import javax.swing.Timer;
  */
 public class ThinkingIndicator extends JLabel {
 
-	private static final String[] STAR_FRAMES = { "·", "✢", "✳", "✶", "✻", "✽",
-		"✻", "✶", "✳", "✢" };
+	private static final String[] STAR_FRAMES = { "✢", "◇", "◆", "✶", "✳", "✻", "✽" };
 	private static final String[] ASCII_FRAMES = { "-", "\\", "|", "/" };
 	private static final int FRAME_MS = 120;
 	private static final int MESSAGE_MS = 4000;

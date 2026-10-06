@@ -99,7 +99,6 @@ public class ChatMessagePanel extends JPanel {
 		BUBBLE_PADDING + BUBBLE_HORIZONTAL_PADDING;
 	private static final int MIN_AVAILABLE_WIDTH = 200;
 	private static final int DEFAULT_AVAILABLE_WIDTH = 600;
-	private static final int THINKING_STAGES = 4;
 	private static final Color USER_ACCENT = new Color(213, 94, 0);
 	private static final Color ASSISTANT_ACCENT = new Color(0, 114, 178);
 	private static final Color SYSTEM_ACCENT = new Color(190, 145, 20);
@@ -616,15 +615,9 @@ public class ChatMessagePanel extends JPanel {
 
 	public void updateThinking(final String status) {
 		thinkingStage++;
-		if (thinkingStage == THINKING_STAGES) {
-			thinkingStage = 0;
-		}
 		StringBuilder sb = new StringBuilder(ThinkingIndicator.frame(textPane
 			.getFont(), thinkingStage)).append(" *").append(status);
-		for (int i = 0; i < thinkingStage; i++) {
-			sb.append(".");
-		}
-		sb.append("*");
+		sb.append("...*");
 		renderedHtml = renderMarkdownToSafeHtml(sb.toString());
 		textPane.setText(renderedHtml);
 	}
