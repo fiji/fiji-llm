@@ -75,10 +75,11 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 	@Override
 	public List<String> getAvailableModels() {
 		final List<String> installedModels = getAvailableLocalModels();
-		return MODEL_ALIASES.stream().map(alias -> {
+		final List<String> models = MODEL_ALIASES.stream().map(alias -> {
 			final String modelName = MODEL_NAMES.get(alias);
 			return installedModels.contains(modelName) ? alias : appendRemoteString(alias);
 		}).toList();
+		return prioritizeInstalledModels(models);
 	}
 
 	@Override

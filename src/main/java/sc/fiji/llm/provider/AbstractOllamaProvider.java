@@ -43,6 +43,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
@@ -306,6 +307,19 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	 */
 	protected List<String> getAvailableLocalModels() {
 		return processManager.getInstalledModels();
+	}
+
+	/**
+	 * Move installed models before remote models while preserving the original
+	 * order within each group.
+	 *
+	 * @param models model names, with remote models marked using the Ollama
+	 *        remote suffix
+	 * @return the models with installed models listed first
+	 */
+	protected List<String> prioritizeInstalledModels(final List<String> models) {
+		return Stream.concat(models.stream().filter(model -> !isRemoteModel(model)),
+			models.stream().filter(this::isRemoteModel)).toList();
 	}
 
 	/**
