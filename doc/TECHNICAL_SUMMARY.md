@@ -61,7 +61,10 @@ against the models it supplies through `LLMProvider.getModelsDocumentationLastMo
 records HTTP revision metadata when available, and requests a model review when a
 documentation content changes. The GitHub Actions provider-health workflow
 publishes the resulting per-hosted-provider badges used in the README; local
-Ollama providers are intentionally excluded.
+Ollama providers are intentionally excluded. The workflow commits the
+`provider-status` branch only when the overall status or a hosted provider's
+health status changes; diagnostic details and check timestamps alone do not
+create a commit.
 
 Model preparation is asynchronous. `LLMProvider.prepare()` completes with an optional user-facing message while preparation failures complete exceptionally. Ollama uses `/api/ps` after preparation to compare `size_vram` with `size`; partial GPU residency produces a performance warning in the chat UI.
 

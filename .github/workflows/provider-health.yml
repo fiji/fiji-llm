@@ -97,6 +97,29 @@ jobs:
           set -euo pipefail
           branch_dir="$RUNNER_TEMP/provider-status-branch"
 
+          status_snapshot() {
+            jq -cS '
+              {
+                status: (.status // "unknown"),
+                providers: [
+                  to_entries[]
+                  | select((.value | type) == "object")
+                  | select(.value.health? != null)
+                  | {name: .key, health: .value.health}
+                ] | sort_by(.name)
+              }
+            ' "$1"
+          }
+
+          if git show-ref --verify --quiet refs/remotes/origin/provider-status; then
+            current_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status.json")"
+            previous_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status-previous.json")"
+            if [[ "$current_statuses" == "$previous_statuses" ]]; then
+              echo "Provider health statuses unchanged; skipping status commit."
+              exit 0
+            fi
+          fi
+
           if git show-ref --verify --quiet refs/remotes/origin/provider-status; then
             git worktree add --detach "$branch_dir" refs/remotes/origin/provider-status
           else

@@ -37,6 +37,9 @@ clarify rather than silently reviewing a different provider.
    `https://raw.githubusercontent.com/fiji/fiji-llm/provider-status/provider-status.json`
    If it cannot be retrieved, state that the report is based on repository
    source only and do not present the status as current.
+   The branch is updated only when a status changes, so `checked_at` identifies
+   the last published status change, not necessarily the most recent scheduled
+   probe.
 2. For each requested provider, inspect its status entry and relevant entries
    in `failures`. Report the provider health, changed fields, request errors,
    content errors, HTTP status, final URL, content selector, and review flags

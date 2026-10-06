@@ -193,7 +193,10 @@ bridge is available.
 
 #### Model Support
 
-These badges are updated daily by the [provider health workflow](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml).
+These badges are updated by the [provider health workflow](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml)
+when one or more provider health statuses change. Diagnostic details and the
+check timestamp may change between runs without creating a `provider-status`
+commit.
 Badge colors indicate whether provider documentation needs review or could not be
 checked; Ollama is always shown in green because it is a local provider.
 
