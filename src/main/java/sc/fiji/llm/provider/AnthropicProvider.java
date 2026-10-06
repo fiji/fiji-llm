@@ -78,7 +78,9 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public ChatRequestParameters defaultChatRequestParameters() {
+	public ChatRequestParameters defaultChatRequestParameters(
+		final String modelName)
+	{
 		return ChatRequestParameters.builder().build();
 	}
 

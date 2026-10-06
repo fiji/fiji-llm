@@ -42,6 +42,8 @@ add topic keywords without extending the enum.
 ### Provider Plugin System
 
 `LLMProvider` is a **SciJava `SingletonPlugin`** interface. Each provider creates LangChain4j model instances on demand. Providers are discovered at runtime via SciJava's annotation-based plugin registry.
+Providers can supply model-specific default request parameters, which the
+integrated chat applies when constructing assistant requests.
 
 | Provider | Backend | Local/Cloud |
 |---|---|---|

@@ -304,6 +304,8 @@ This project provides [langchain4j](https://docs.langchain4j.dev/) integration t
 ### [LLMProvider](src/main/java/sc/fiji/llm/provider/LLMProvider.java)
 
 Determine which AI Services are available in chat.
+Providers can also customize default request parameters for the selected model
+when a provider API requires model-specific settings.
 
 ### [ContextItemSupplier](src/main/java/sc/fiji/llm/ui/ContextItemSupplier.java)
 

@@ -116,7 +116,9 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	}
 
 	@Override
-	public ChatRequestParameters defaultChatRequestParameters() {
+	public ChatRequestParameters defaultChatRequestParameters(
+		final String modelName)
+	{
 		return ChatRequestParameters.builder().temperature(DEFAULT_TEMPERATURE)
 			.build();
 	}

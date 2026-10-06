@@ -73,9 +73,13 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public ChatRequestParameters defaultChatRequestParameters() {
+	public ChatRequestParameters defaultChatRequestParameters(final String modelName)
+	{
+		final String reasoningEffort = "gpt-6.1-sol".equals(resolveModelName(
+			modelName)) ? "medium" : "none";
 		return OpenAiChatRequestParameters.builder().frequencyPenalty(0.0)
-			.presencePenalty(0.0).temperature(0.1).reasoningEffort("none").build();
+			.presencePenalty(0.0).temperature(0.1).reasoningEffort(reasoningEffort)
+			.build();
 	}
 
 	@Override
@@ -133,7 +137,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	public ChatModel createChatModel(final String modelName) {
 		return OpenAiChatModel.builder().apiKey(apiKey()).modelName(resolveModelName(
 			modelName))
-			.defaultRequestParameters(defaultChatRequestParameters())
+			.defaultRequestParameters(defaultChatRequestParameters(modelName))
 			.maxRetries(DEFAULT_MAX_RETRIES).timeout(DEFAULT_TIMEOUT)
 			.listeners(listeners()).build();
 	}
@@ -142,7 +146,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	public StreamingChatModel createStreamingChatModel(final String modelName) {
 		return OpenAiStreamingChatModel.builder().apiKey(apiKey()).modelName(
 			resolveModelName(modelName)).defaultRequestParameters(
-				defaultChatRequestParameters()).timeout(DEFAULT_TIMEOUT).listeners(
+				defaultChatRequestParameters(modelName)).timeout(DEFAULT_TIMEOUT).listeners(
 					listeners()).build();
 	}
 }

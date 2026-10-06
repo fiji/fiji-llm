@@ -127,10 +127,12 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
-	 * @return The base {@link ChatRequestParameters} recommended for this
-	 *         provider
+	 * @param modelName the name of the model to configure
+	 * @return the base {@link ChatRequestParameters} recommended for this model
 	 */
-	default ChatRequestParameters defaultChatRequestParameters() {
+	default ChatRequestParameters defaultChatRequestParameters(
+		final String modelName)
+	{
 		return ChatRequestParameters.builder().frequencyPenalty(0.0)
 			.presencePenalty(0.0).temperature(0.1).build();
 	}

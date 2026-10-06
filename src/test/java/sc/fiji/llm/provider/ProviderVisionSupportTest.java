@@ -60,10 +60,24 @@ public class ProviderVisionSupportTest {
 	}
 
 	@Test
-	public void testOpenAiDisablesReasoningForToolCalls() {
-		final OpenAiChatRequestParameters parameters = (OpenAiChatRequestParameters) new OpenAIProvider()
-			.defaultChatRequestParameters();
-		assertEquals("none", parameters.reasoningEffort());
+	public void testOpenAiReasoningEffortByModel() {
+		final OpenAIProvider provider = new OpenAIProvider();
+		final OpenAiChatRequestParameters lunaParameters =
+			(OpenAiChatRequestParameters) provider.defaultChatRequestParameters(
+				"Luna 6");
+		final OpenAiChatRequestParameters solParameters =
+			(OpenAiChatRequestParameters) provider.defaultChatRequestParameters("Sol 6");
+
+		assertEquals("none", lunaParameters.reasoningEffort());
+		assertEquals("medium", solParameters.reasoningEffort());
+	}
+
+	@Test
+	public void testOpenAiProviderModelIdUsesSolReasoningEffort() {
+		final OpenAiChatRequestParameters parameters =
+			(OpenAiChatRequestParameters) new OpenAIProvider()
+				.defaultChatRequestParameters("gpt-6.1-sol");
+		assertEquals("medium", parameters.reasoningEffort());
 	}
 
 	@Test

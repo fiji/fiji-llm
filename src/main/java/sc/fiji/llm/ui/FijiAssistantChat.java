@@ -251,7 +251,7 @@ Be concise, patient, humble, and collaborative.
 		this.modelName = modelName;
 
 		// Create default request parameters
-		requestParameters = llmProvider.defaultChatRequestParameters();
+		requestParameters = llmProvider.defaultChatRequestParameters(modelName);
 
 		// Create the frame
 		frame = new JFrame("Fiji Chat");
