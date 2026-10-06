@@ -77,9 +77,8 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	{
 		final String reasoningEffort = "gpt-6.1-sol".equals(resolveModelName(
 			modelName)) ? "medium" : "none";
-		return OpenAiResponsesChatRequestParameters.builder().frequencyPenalty(0.0)
-			.presencePenalty(0.0).temperature(0.1).reasoningEffort(reasoningEffort)
-			.build();
+		return OpenAiResponsesChatRequestParameters.builder()
+			.reasoningEffort(reasoningEffort).build();
 	}
 
 	@Override
