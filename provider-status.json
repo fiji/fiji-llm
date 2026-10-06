@@ -12,7 +12,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS772029197:1791211468014031"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1949539825:1791292877998512"
     },
     "health": "healthy"
   },
@@ -23,14 +23,16 @@
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
       "content_selector": "main",
-      "content_hash": "9b81201879fdcf5f3534c3a8d1bf559c0298d714ff76d8c7cbc4110f97a70a8f"
+      "content_hash": "0d088bf0a670f05772db7439887d101cf0bbc6e6c6ef71f70c31a18476da3e18",
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
   "Claude": {
     "models_documentation_last_modified": "2026-09-30",
@@ -39,16 +41,21 @@
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
       "content_selector": "article#content-container",
-      "content_hash": "fdfdd7198b10b945071e6617125397c70adca9d1b18b8f7a07930d2e8b21371d"
+      "content_hash": "24f6272639ead8c289111c4049d63d1b8b03e77d587801b7acc6f22231844da3",
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://platform.claude.com/settings/keys",
       "status": 200,
       "final_url": "https://platform.claude.com/settings/keys"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
-  "checked_at": "2026-10-05T14:44:29.997956899Z",
-  "status": "healthy",
-  "failures": []
+  "checked_at": "2026-10-06T13:21:19.214227234Z",
+  "status": "review_required",
+  "failures": [
+    "ChatGPT models_documentation changed content_hash from \"9b81201879fdcf5f3534c3a8d1bf559c0298d714ff76d8c7cbc4110f97a70a8f\" to \"0d088bf0a670f05772db7439887d101cf0bbc6e6c6ef71f70c31a18476da3e18\"; re-evaluate the provided models",
+    "Claude models_documentation changed content_hash from \"fdfdd7198b10b945071e6617125397c70adca9d1b18b8f7a07930d2e8b21371d\" to \"24f6272639ead8c289111c4049d63d1b8b03e77d587801b7acc6f22231844da3\"; re-evaluate the provided models"
+  ]
 }
