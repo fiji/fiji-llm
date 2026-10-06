@@ -364,6 +364,7 @@
 										<!-- Restore Jackson 2 jars from target/dependency -->
 										<copy file="${project.build.directory}/dependency/jackson-databind-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-databind-${jackson2.version}.jar" failonerror="false" />
 										<copy file="${project.build.directory}/dependency/jackson-core-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar" failonerror="false" />
+										<copy file="${project.build.directory}/dependency/jackson-dataformat-yaml-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar" failonerror="false" />
 									</target>
 								</configuration>
 							</execution>
