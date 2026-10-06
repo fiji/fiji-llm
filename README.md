@@ -148,6 +148,7 @@ repository is opened:
 - [`.github/agents/fiji-mcp.agent.md`](.github/agents/fiji-mcp.agent.md)
 - [`.github/skills/fiji-script-workflow/`](.github/skills/fiji-script-workflow/)
 - [`.github/skills/fiji-macro-workflow/`](.github/skills/fiji-macro-workflow/)
+- [`.github/skills/provider-health-review/`](.github/skills/provider-health-review/)
 
 Discovery makes the agent and skill available to this workspace; it does not
 automatically select the agent or load the skill for every conversation.
@@ -158,11 +159,13 @@ the VS Code user-level discovery paths:
 - `.github/agents/fiji-mcp.agent.md` -> `<VS Code user profile>/prompts/fiji-mcp.agent.md`
 - `.github/skills/fiji-script-workflow/` -> `~/.copilot/skills/fiji-script-workflow/`
 - `.github/skills/fiji-macro-workflow/` -> `~/.copilot/skills/fiji-macro-workflow/`
+- `.github/skills/provider-health-review/` -> `~/.copilot/skills/provider-health-review/`
 
 Prefer symlinking these destinations to the files in this checkout when the
 platform supports it, so updates are picked up immediately. Copy the files when
 symlinking is unavailable. The skills guide Fiji script and macro authoring,
-execution, diagnosis, repair, and verification workflows.
+execution, diagnosis, repair, verification, and hosted provider health review
+workflows.
 
 ## User Guide
 

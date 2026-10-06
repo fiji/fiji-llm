@@ -337,3 +337,4 @@ and live-state separation. Tests should not require exact model wording.
 - [Fiji MCP agent](../.github/agents/fiji-mcp.agent.md)
 - [Fiji script workflow](../.github/skills/fiji-script-workflow/SKILL.md)
 - [Fiji macro workflow](../.github/skills/fiji-macro-workflow/SKILL.md)
+- [Provider health review](../.github/skills/provider-health-review/SKILL.md)
