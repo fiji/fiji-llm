@@ -310,6 +310,16 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	}
 
 	/**
+	 * Gets the expected download size for a remote model when it is known.
+	 *
+	 * @param modelName the Ollama model name without the remote suffix
+	 * @return the expected download size in bytes, or empty when unknown
+	 */
+	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
+		return Optional.empty();
+	}
+
+	/**
 	 * Move installed models before remote models while preserving the original
 	 * order within each group.
 	 *
@@ -355,13 +365,16 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 			return modelToValidate;
 		}
 
+		String modelName = removeRemoteString(modelToValidate);
+		String downloadMessage = getRemoteModelDownloadSize(modelName).map(
+			size -> "The selected LLM model will download approximately " +
+				formatDownloadSize(size) + ".\nProceed?").orElse(
+				"The selected LLM model will be downloaded. This could take some time.\nProceed?");
 		if (uIService.showDialog(
-			"The selected LLM model will be downloaded. This could take some time.\nProceed?",
+			downloadMessage,
 			MessageType.WARNING_MESSAGE, OptionType.OK_CANCEL_OPTION).equals(
 				Result.OK_OPTION))
 		{
-			String modelName = modelToValidate.substring(0, modelToValidate
-				.length() - REMOTE_STRING.length());
 			try {
 				processManager.pullModel(modelName, taskService);
 			}
@@ -375,6 +388,10 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 		else {
 			return LLMProvider.VALIDATION_FAILED;
 		}
+	}
+
+	private static String formatDownloadSize(final long sizeBytes) {
+		return String.format(Locale.ROOT, "%.1f GB", sizeBytes / 1_000_000_000.0);
 	}
 
 	/**

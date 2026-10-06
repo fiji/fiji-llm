@@ -49,6 +49,33 @@ public class AbstractOllamaProviderTest {
 			.prioritizeInstalledModels(List.of(remoteXS, "S", remoteM, "L")));
 	}
 
+	@Test
+	public void testGemma4RemoteDownloadSizes() {
+		final Gemma4Provider provider = new Gemma4Provider();
+
+		assertEquals(Long.valueOf(6_146_493_536L), provider
+			.getRemoteModelDownloadSize(
+				"hf.co/google/gemma-4-E4B-it-qat-q4_0-gguf:latest").get());
+		assertEquals(Long.valueOf(7_150_994_912L), provider
+			.getRemoteModelDownloadSize(
+				"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest").get());
+		assertEquals(Long.valueOf(15_634_191_744L), provider
+			.getRemoteModelDownloadSize(
+				"hf.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf:latest").get());
+		assertEquals(Long.valueOf(18_851_727_936L), provider
+			.getRemoteModelDownloadSize(
+				"hf.co/google/gemma-4-31B-it-qat-q4_0-gguf:latest").get());
+	}
+
+	@Test
+	public void testGlimmerRemoteDownloadSize() {
+		final GlimmerProviderIQ2 provider = new GlimmerProviderIQ2();
+
+		assertEquals(Long.valueOf(12_913_433_344L), provider
+			.getRemoteModelDownloadSize(
+				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS").get());
+	}
+
 	private static final class TestOllamaProvider extends AbstractOllamaProvider {
 
 		@Override

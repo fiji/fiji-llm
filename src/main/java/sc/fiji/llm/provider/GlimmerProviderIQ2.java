@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.provider;
 
+import java.util.Optional;
+
 import org.scijava.plugin.Plugin;
 
 /**
@@ -39,6 +41,7 @@ import org.scijava.plugin.Plugin;
 public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 
 	private static final String MODEL_NAME = "hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS";
+	private static final long MODEL_DOWNLOAD_SIZE = 12_913_433_344L;
 
 	public GlimmerProviderIQ2() {
 		super(MODEL_NAME);
@@ -57,5 +60,17 @@ public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 	@Override
 	protected int getContextSize() {
 		return 32 * 1024;
+	}
+
+	/**
+	 * Gets the expected size of the pinned Hugging Face GGUF and mmproj files.
+	 *
+	 * @param modelName the Ollama model name without the remote suffix
+	 * @return the expected download size in bytes, or empty for another model
+	 */
+	@Override
+	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
+		return MODEL_NAME.equals(modelName) ? Optional.of(MODEL_DOWNLOAD_SIZE) :
+			Optional.empty();
 	}
 }

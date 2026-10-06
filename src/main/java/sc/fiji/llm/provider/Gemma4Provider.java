@@ -56,6 +56,15 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 		"S", S_MODEL,
 		"M", M_MODEL,
 		"L", L_MODEL);
+	/**
+	 * Current Hugging Face GGUF and projection-file sizes for the pinned model
+	 * references, in bytes.
+	 */
+	private static final Map<String, Long> MODEL_DOWNLOAD_SIZES = Map.of(
+		XS_MODEL, 6_146_493_536L,
+		S_MODEL, 7_150_994_912L,
+		M_MODEL, 15_634_191_744L,
+		L_MODEL, 18_851_727_936L);
 
 	@Override
 	public String getName() {
@@ -89,6 +98,17 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 			modelToValidate;
 		final String modelName = MODEL_NAMES.getOrDefault(alias, alias);
 		return remote ? super.validateModel(appendRemoteString(modelName)) : modelName;
+	}
+
+	/**
+	 * Gets the expected download size for a Gemma4 model.
+	 *
+	 * @param modelName the Ollama model name without the remote suffix
+	 * @return the expected download size in bytes, or empty when unknown
+	 */
+	@Override
+	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
+		return Optional.ofNullable(MODEL_DOWNLOAD_SIZES.get(modelName));
 	}
 
 	@Override
