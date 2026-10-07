@@ -32,8 +32,8 @@ package sc.fiji.llm.log;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.scijava.Context;
 import org.scijava.console.ConsoleService;
@@ -47,15 +47,15 @@ import sc.fiji.llm.log.SciJavaLogUtils.LogMessages;
 
 public class SciJavaLogUtilsTest {
 
-	private Context context;
+	private static Context context;
 
-	@Before
-	public void setUp() {
+	@BeforeClass
+	public static void setUp() {
 		context = Setup.context();
 	}
 
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void disposeContext() {
 		context.dispose();
 	}
 

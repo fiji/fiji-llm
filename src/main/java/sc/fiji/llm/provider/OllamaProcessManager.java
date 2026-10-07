@@ -436,47 +436,47 @@ public class OllamaProcessManager {
 
 		try {
 			// Read output in a thread-safe manner to avoid blocking
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-				process.getInputStream()));
-			String line;
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+				process.getInputStream())))
+			{
+				String line;
 
-			task.setProgressMaximum(100);
+				task.setProgressMaximum(100);
 
-			while ((line = reader.readLine()) != null) {
-				// Check if task was cancelled
-				if (task.isCanceled()) {
-					process.destroyForcibly();
-					reader.close();
-					wasCancelled = true;
-					break;
-				}
-
-				// Extract hash from output (format: "pulling <hash>:")
-				String hash = extractSegmentHash(line);
-				if (hash != null && !seenSegments.contains(hash)) {
-					// New segment encountered - reset progress for this segment
-					seenSegments.add(hash);
-					segmentProgress = 0;
-					task.setProgressValue(0);
-					lastSeenHash = hash;
-				}
-
-				// Only update progress if it's from the current segment
-				if (hash != null && hash.equals(lastSeenHash)) {
-					int progress = extractProgressPercentage(line);
-					if (progress >= 0) {
-						segmentProgress = progress;
-						task.setProgressValue(segmentProgress);
+				while ((line = reader.readLine()) != null) {
+					// Check if task was cancelled
+					if (task.isCanceled()) {
+						process.destroyForcibly();
+						wasCancelled = true;
+						break;
 					}
 
-					// Update task status with segment info (keep it simple and clean)
-					task.setStatusMessage("Downloading segment: " + lastSeenHash.substring(0,
-						Math.min(12, lastSeenHash.length())));
+					// Extract hash from output (format: "pulling <hash>:")
+					String hash = extractSegmentHash(line);
+					if (hash != null && !seenSegments.contains(hash)) {
+						// New segment encountered - reset progress for this segment
+						seenSegments.add(hash);
+						segmentProgress = 0;
+						task.setProgressValue(0);
+						lastSeenHash = hash;
+					}
+
+					// Only update progress if it's from the current segment
+					if (hash != null && hash.equals(lastSeenHash)) {
+						int progress = extractProgressPercentage(line);
+						if (progress >= 0) {
+							segmentProgress = progress;
+							task.setProgressValue(segmentProgress);
+						}
+
+						// Update task status with segment info (keep it simple and clean)
+						task.setStatusMessage("Downloading segment: " + lastSeenHash.substring(0,
+							Math.min(12, lastSeenHash.length())));
+					}
 				}
 			}
 
 			int exitCode = process.waitFor();
-			reader.close();
 
 			if (exitCode != 0) {
 				failureReason = "Failed to pull model: " + modelName + " (exit code: " +
@@ -629,16 +629,21 @@ public class OllamaProcessManager {
 	public void shutdown() {
 		if (ollamaProcess != null && ollamaProcess.isAlive()) {
 			try {
+				final ProcessBuilder stopCommand;
 				if (System.getProperty("os.name").toLowerCase().contains("win")) {
 					// Windows: use taskkill by PID
-					new ProcessBuilder("taskkill", "/PID", String.valueOf(ollamaProcess
-						.pid()), "/T", "/F").start();
+					stopCommand = new ProcessBuilder("taskkill", "/PID", String.valueOf(
+						ollamaProcess.pid()), "/T", "/F");
 				}
 				else {
 					// macOS/Linux: send SIGINT instead of SIGTERM
-					new ProcessBuilder("kill", "-2", String.valueOf(ollamaProcess.pid()))
-						.start();
+					stopCommand = new ProcessBuilder("kill", "-2", String.valueOf(
+						ollamaProcess.pid()));
 				}
+				stopCommand.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+				stopCommand.redirectError(ProcessBuilder.Redirect.DISCARD);
+				final Process stopProcess = stopCommand.start();
+				stopProcess.waitFor();
 
 				// Wait up to 5s for exit
 				for (int i = 0; i < 10; i++) {

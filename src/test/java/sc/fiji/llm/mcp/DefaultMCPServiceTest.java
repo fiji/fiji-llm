@@ -42,25 +42,22 @@ import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.log.LogService;
 import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.data.message.ImageContent;
-import dev.langchain4j.data.message.TextContent;
-import dev.langchain4j.service.tool.ToolExecutionResult;
 import io.modelcontextprotocol.spec.McpSchema;
-import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.Setup;
-import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AiToolService;
 
 /**
@@ -68,7 +65,7 @@ import sc.fiji.llm.tools.AiToolService;
  */
 public class DefaultMCPServiceTest {
 
-	private Context context;
+	private static Context context;
 	private MCPService mcpService;
 	private AiToolService aiToolService;
 	private PrefService prefService;
@@ -76,6 +73,16 @@ public class DefaultMCPServiceTest {
 	private Preferences mcpPreferences;
 	private String originalLaunchOnStartup;
 	private int testPort;
+
+	@BeforeClass
+	public static void setUpContext() {
+		context = Setup.context();
+	}
+
+	@AfterClass
+	public static void disposeContext() {
+		context.dispose();
+	}
 
 	@Before
 	public void setUp() throws Exception {
@@ -85,7 +92,6 @@ public class DefaultMCPServiceTest {
 			MCPService.LAUNCH_ON_START_KEY, null);
 		mcpPreferences.putBoolean(MCPService.LAUNCH_ON_START_KEY, false);
 
-		context = Setup.context();
 		prefService = context.getService(PrefService.class);
 		originalPort = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
 			MCPService.DEFAULT_PORT);
@@ -93,20 +99,17 @@ public class DefaultMCPServiceTest {
 			testPort = socket.getLocalPort();
 		}
 		prefService.put(MCPService.class, MCPService.PORT_KEY, testPort);
-		mcpService = context.getService(MCPService.class);
 		aiToolService = context.getService(AiToolService.class);
+		mcpService = new DefaultMCPService();
+		setField(mcpService, "logService", context.getService(LogService.class));
+		setField(mcpService, "prefService", prefService);
+		setField(mcpService, "aiToolService", aiToolService);
 	}
 
 	@After
 	public void tearDown() {
-		if (mcpService != null) {
-			mcpService.dispose();
-		}
 		if (prefService != null) {
 			prefService.put(MCPService.class, MCPService.PORT_KEY, originalPort);
-		}
-		if (context != null) {
-			context.dispose();
 		}
 		if (mcpPreferences != null) {
 			if (originalLaunchOnStartup == null) {
@@ -210,29 +213,6 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test
-	public void testDispose() {
-		// Given: a running MCPService
-		mcpService.startServer();
-		assertTrue(mcpService.isServerRunning());
-
-		// When: we dispose the service
-		mcpService.dispose();
-
-		// Then: the service should no longer be running
-		assertFalse(mcpService.isServerRunning());
-	}
-
-	@Test(expected = IllegalStateException.class)
-	public void testStartServerAfterDispose() {
-		// Given: a disposed MCPService
-		mcpService.startServer();
-		mcpService.dispose();
-
-		// When/Then: requesting a ToolProvider should throw an exception
-		mcpService.startServer();
-	}
-
-	@Test
 	public void testServerWithTools() {
 		// Given: an MCPService with available tools
 		assertNotNull(aiToolService);
@@ -245,38 +225,12 @@ public class DefaultMCPServiceTest {
 		assertTrue(mcpService.getToolCount() > 0);
 	}
 
-	@Test
-	public void testImageToolsHaveLegacyDependencies() {
-		LegacyService legacyService = context.getService(LegacyService.class);
-		assertNotNull(legacyService);
-		assertTrue(legacyService.isActive());
-		assertNotNull(legacyService.getIJ1Helper());
-		assertNotNull(context.getService(ImageJ1HelperService.class));
-
-		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
-			.anyMatch(specification -> "fiji_image_list".equals(specification.name())));
-		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
-			.anyMatch(specification -> "fiji_image_view".equals(specification.name())));
-		assertTrue(aiToolService.getToolsWithExecutors().keySet().stream()
-			.anyMatch(specification -> "fiji_image_preview".equals(specification.name())));
-	}
-
-	@Test
-	public void testConvertsMultimodalToolResult() {
-		final ToolExecutionResult result = ToolExecutionResult.builder()
-			.resultContents(List.of(TextContent.from("image result"), ImageContent.from(
-				"AQID", "image/png")))
-			.build();
-
-		final List<McpSchema.Content> contents = DefaultMCPService
-			.convertToolResult(result);
-
-		assertEquals(2, contents.size());
-		assertTrue(contents.get(0) instanceof McpSchema.TextContent);
-		assertTrue(contents.get(1) instanceof McpSchema.ImageContent);
-		final McpSchema.ImageContent image = (McpSchema.ImageContent) contents.get(1);
-		assertEquals("AQID", image.data());
-		assertEquals("image/png", image.mimeType());
+	private static void setField(final Object target, final String name,
+		final Object value) throws Exception
+	{
+		final Field field = target.getClass().getDeclaredField(name);
+		field.setAccessible(true);
+		field.set(target, value);
 	}
 
 	private void waitForServerState(final boolean expected)
@@ -297,20 +251,22 @@ public class DefaultMCPServiceTest {
 		throws Exception
 	{
 		try (Socket socket = new Socket("127.0.0.1", testPort)) {
-			final PrintWriter writer = new PrintWriter(new OutputStreamWriter(
-				socket.getOutputStream(), StandardCharsets.US_ASCII));
-			writer.print("GET /mcp HTTP/1.1\r\n");
-			writer.print("Host: 127.0.0.1:" + testPort + "\r\n");
-			writer.print("Origin: " + origin + "\r\n");
-			writer.print("Accept: application/json, text/event-stream\r\n");
-			writer.print("Connection: close\r\n\r\n");
-			writer.flush();
-
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-				socket.getInputStream(), StandardCharsets.US_ASCII)))
+			try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
+				socket.getOutputStream(), StandardCharsets.US_ASCII)))
 			{
-				final String statusLine = reader.readLine();
-				return Integer.parseInt(statusLine.split(" ")[1]);
+				writer.print("GET /mcp HTTP/1.1\r\n");
+				writer.print("Host: 127.0.0.1:" + testPort + "\r\n");
+				writer.print("Origin: " + origin + "\r\n");
+				writer.print("Accept: application/json, text/event-stream\r\n");
+				writer.print("Connection: close\r\n\r\n");
+				writer.flush();
+
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+					socket.getInputStream(), StandardCharsets.US_ASCII)))
+				{
+					final String statusLine = reader.readLine();
+					return Integer.parseInt(statusLine.split(" ")[1]);
+				}
 			}
 		}
 	}

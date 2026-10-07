@@ -34,9 +34,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Rule;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.scijava.Context;
@@ -50,26 +51,30 @@ import sc.fiji.llm.tools.ToolScope;
 
 public class ConversationToolPluginTest {
 
-	@Rule
-	public TemporaryFolder folder = new TemporaryFolder();
+	@ClassRule
+	public static TemporaryFolder folder = new TemporaryFolder();
 
-	private Context context;
+	private static Context context;
 	private DefaultConversationService service;
 	private ConversationToolPlugin tool;
 
-	@Before
-	public void setUp() throws IOException {
+	@BeforeClass
+	public static void setUpContext() {
 		context = Setup.context();
-		service = (DefaultConversationService) context.getService(
-			ConversationService.class);
-		service.setConversationDirectory(folder.newFolder("history"));
-		tool = context.getService(sc.fiji.llm.tools.AiToolService.class).getInstance(
-			ConversationToolPlugin.class);
 	}
 
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void tearDownContext() {
 		context.dispose();
+	}
+
+	@Before
+	public void setUp() throws IOException {
+		service = (DefaultConversationService) context.getService(
+			ConversationService.class);
+		service.setConversationDirectory(folder.newFolder());
+		tool = context.getService(sc.fiji.llm.tools.AiToolService.class).getInstance(
+			ConversationToolPlugin.class);
 	}
 
 	@Test

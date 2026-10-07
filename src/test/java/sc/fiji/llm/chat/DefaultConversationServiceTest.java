@@ -41,9 +41,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Rule;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.scijava.Context;
@@ -54,25 +55,29 @@ import sc.fiji.llm.Setup;
 
 public class DefaultConversationServiceTest {
 
-	@Rule
-	public TemporaryFolder folder = new TemporaryFolder();
+	@ClassRule
+	public static TemporaryFolder folder = new TemporaryFolder();
 
-	private Context context;
+	private static Context context;
 	private DefaultConversationService service;
 	private File dir;
 
-	@Before
-	public void setUp() throws IOException {
+	@BeforeClass
+	public static void setUpContext() {
 		context = Setup.context();
-		service = (DefaultConversationService) context.getService(
-			ConversationService.class);
-		dir = folder.newFolder("history");
-		service.setConversationDirectory(dir);
 	}
 
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void tearDownContext() {
 		context.dispose();
+	}
+
+	@Before
+	public void setUp() throws IOException {
+		service = (DefaultConversationService) context.getService(
+			ConversationService.class);
+		dir = folder.newFolder();
+		service.setConversationDirectory(dir);
 	}
 
 	@Test

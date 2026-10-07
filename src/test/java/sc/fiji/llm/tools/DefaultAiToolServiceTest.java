@@ -37,8 +37,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.scijava.Context;
 
@@ -54,15 +54,15 @@ import sc.fiji.llm.tools.AbstractAiToolPlugin.ErrorOptions;
 
 public class DefaultAiToolServiceTest {
 
-	private Context context;
+	private static Context context;
 
-	@Before
-	public void setUp() {
+	@BeforeClass
+	public static void setUp() {
 		context = Setup.context();
 	}
 
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void disposeContext() {
 		context.dispose();
 	}
 

@@ -34,8 +34,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.scijava.Context;
 
@@ -46,15 +46,15 @@ import sc.fiji.llm.Setup;
 
 public class GuidanceToolPluginTest {
 
-	private Context context;
+	private static Context context;
 
-	@Before
-	public void setUp() {
+	@BeforeClass
+	public static void setUp() {
 		context = Setup.context();
 	}
 
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void disposeContext() {
 		context.dispose();
 	}
 
