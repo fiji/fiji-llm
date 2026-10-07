@@ -256,20 +256,19 @@ public class OllamaProcessManager {
 	 * request with an empty prompt.
 	 *
 	 * @param modelName the name of the model to prepare
+	 * @param contextSize the context size to request while loading the model
 	 * @throws IOException if the server cannot be reached or rejects the request
 	 * @throws InterruptedException if the request is interrupted
 	 */
-	public void prepareModel(final String modelName) throws IOException,
+	public void prepareModel(final String modelName, final int contextSize) throws IOException,
 		InterruptedException
 	{
 		if (!isServerRunning() && !startServer()) {
 			throw new IOException("Ollama server is not running");
 		}
 
-		final JsonObject requestBody = new JsonObject();
-		requestBody.addProperty("model", modelName);
-		requestBody.addProperty("prompt", "");
-		requestBody.addProperty("stream", false);
+		final JsonObject requestBody = createPreparationRequestBody(modelName,
+			contextSize);
 
 		final HttpRequest request = HttpRequest.newBuilder(OLLAMA_GENERATE_URI)
 			.timeout(MODEL_PREPARATION_TIMEOUT)
@@ -287,6 +286,19 @@ public class OllamaProcessManager {
 			throw new IOException("Ollama failed to prepare model '" + modelName +
 				"' (HTTP " + response.statusCode() + "): " + responseBody);
 		}
+	}
+
+	static JsonObject createPreparationRequestBody(final String modelName,
+		final int contextSize)
+	{
+		final JsonObject requestBody = new JsonObject();
+		requestBody.addProperty("model", modelName);
+		requestBody.addProperty("prompt", "");
+		requestBody.addProperty("stream", false);
+		final JsonObject options = new JsonObject();
+		options.addProperty("num_ctx", contextSize);
+		requestBody.add("options", options);
+		return requestBody;
 	}
 
 	/**

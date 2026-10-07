@@ -34,6 +34,8 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.gson.JsonObject;
+
 /**
  * Tests for shared Ollama provider behavior.
  */
@@ -92,6 +94,16 @@ public class AbstractOllamaProviderTest {
 			glimmer.appendRemoteString(
 				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS")).get();
 		assertEquals(15.37152, glimmerDemand.estimateGiB(32 * 1024), 0.0000001);
+	}
+
+	@Test
+	public void testPreparationRequestUsesConfiguredContextSize() {
+		final JsonObject requestBody = OllamaProcessManager
+			.createPreparationRequestBody("test-model", 32 * 1024);
+
+		assertEquals("test-model", requestBody.get("model").getAsString());
+		assertEquals(32 * 1024, requestBody.getAsJsonObject("options")
+			.get("num_ctx").getAsInt());
 	}
 
 	private static final class TestOllamaProvider extends AbstractOllamaProvider {

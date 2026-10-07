@@ -214,7 +214,7 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 			final CompletableFuture<String> preparation = CompletableFuture.supplyAsync(() -> {
 				try {
 					if (!processManager.isModelPrepared(name)) {
-						processManager.prepareModel(name);
+						processManager.prepareModel(name, getContextSize(name));
 					}
 					final VisionSupport visionSupport = processManager
 						.getModelCapabilities(name).map(capabilities -> capabilities.contains(
