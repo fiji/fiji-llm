@@ -77,6 +77,9 @@ public class Fiji_Chat extends DynamicCommand {
 		"</body></html>";
 	private static final double MEDIUM_COST_THRESHOLD = 10.0;
 	private static final double HIGH_COST_THRESHOLD = 20.0;
+	private static final double MEDIUM_DEMAND_THRESHOLD = 10.0;
+	private static final double HIGH_DEMAND_THRESHOLD = 18.0;
+	private static final int DEMAND_REFERENCE_CONTEXT_TOKENS = 32 * 1024;
 
 	@Parameter
 	private ProviderService providerService;
@@ -143,7 +146,7 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
-	private String modelCostMessage = "";
+	private String modelTierMessage = "";
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
@@ -277,22 +280,23 @@ public class Fiji_Chat extends DynamicCommand {
 	 */
 	protected void modelChanged() {
 		if (provider == null || provider.isEmpty() || model == null) {
-			modelCostMessage = "";
+			modelTierMessage = "";
 			return;
 		}
 
 		final LLMProvider selectedProvider = providerService.getProvider(
 			providerName());
 		if (selectedProvider == null) {
-			modelCostMessage = "";
+			modelTierMessage = "";
 			return;
 		}
 
-		modelCostMessage = selectedProvider.getCost(model).map(
-			Fiji_Chat::formatCost).orElse("");
+		modelTierMessage = selectedProvider.getCost(model).map(Fiji_Chat::formatCost)
+			.orElseGet(() -> selectedProvider.getDemand(model).map(
+				Fiji_Chat::formatDemand).orElse(""));
 	}
 
-	private enum CostTier {
+	private enum ModelTier {
 		LOW(1, "Low", "#2e7d32"), MEDIUM(2, "Medium", "#c58a00"), HIGH(3,
 			"High", "#c62828");
 
@@ -300,7 +304,7 @@ public class Fiji_Chat extends DynamicCommand {
 		private final String label;
 		private final String color;
 
-		CostTier(final int filledSegments, final String label, final String color) {
+		ModelTier(final int filledSegments, final String label, final String color) {
 			this.filledSegments = filledSegments;
 			this.label = label;
 			this.color = color;
@@ -321,21 +325,36 @@ public class Fiji_Chat extends DynamicCommand {
 		}
 	}
 
-	private static CostTier costTier(final LLMProvider.ModelCost cost) {
+	private static ModelTier costTier(final LLMProvider.ModelCost cost) {
 		final double totalCost = cost.inputPerMillionTokens() + cost
 			.outputPerMillionTokens();
-		if (totalCost <= MEDIUM_COST_THRESHOLD) return CostTier.LOW;
-		if (totalCost <= HIGH_COST_THRESHOLD) return CostTier.MEDIUM;
-		return CostTier.HIGH;
+		if (totalCost <= MEDIUM_COST_THRESHOLD) return ModelTier.LOW;
+		if (totalCost <= HIGH_COST_THRESHOLD) return ModelTier.MEDIUM;
+		return ModelTier.HIGH;
+	}
+
+	private static ModelTier demandTier(final LLMProvider.ModelDemand demand) {
+		final double estimatedDemand = demand.estimateGiB(
+			DEMAND_REFERENCE_CONTEXT_TOKENS);
+		if (estimatedDemand <= MEDIUM_DEMAND_THRESHOLD) return ModelTier.LOW;
+		if (estimatedDemand <= HIGH_DEMAND_THRESHOLD) return ModelTier.MEDIUM;
+		return ModelTier.HIGH;
+	}
+
+	private static String formatTier(final String label, final ModelTier tier) {
+		return String.format(Locale.ROOT,
+			"<html><body style='width: %s px'><table border='0' cellpadding='0' " +
+			"cellspacing='0'><tr><td valign='middle'><b>%s →</b>" +
+			"&nbsp;</td>%s</tr></table></body></html>", WIDTH, label,
+			tier.meterCellsHtml());
 	}
 
 	static String formatCost(final LLMProvider.ModelCost cost) {
-		final CostTier tier = costTier(cost);
-		return String.format(Locale.ROOT,
-			"<html><body style='width: %s px'><table border='0' cellpadding='0' " +
-				"cellspacing='0'><tr><td valign='middle'><b>Relative API Cost →</b>" +
-				"&nbsp;</td>%s</tr></table></body></html>", WIDTH,
-			tier.meterCellsHtml());
+		return formatTier("Relative API Cost", costTier(cost));
+	}
+
+	static String formatDemand(final LLMProvider.ModelDemand demand) {
+		return formatTier("Relative Local Demand", demandTier(demand));
 	}
 
 	@Override

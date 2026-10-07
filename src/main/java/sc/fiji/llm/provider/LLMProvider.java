@@ -82,6 +82,26 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	record ModelCost(double inputPerMillionTokens, double outputPerMillionTokens) {}
 
 	/**
+	 * Approximate runtime memory demand curve for a model.
+	 *
+	 * @param baseGiB estimated memory demand before context storage
+	 * @param contextGiBPerToken estimated additional memory per context token
+	 */
+	record ModelDemand(double baseGiB, double contextGiBPerToken)
+	{
+
+		/**
+		 * Estimates the runtime memory demand at a context size.
+		 *
+		 * @param contextTokens context size to estimate
+		 * @return estimated runtime memory demand in GiB
+		 */
+		public double estimateGiB(final int contextTokens) {
+			return baseGiB + contextGiBPerToken * contextTokens;
+		}
+	}
+
+	/**
 	 * Reports whether a model accepts image content in chat messages.
 	 *
 	 * @param modelName the model name
@@ -182,6 +202,16 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * @return the model pricing, if known
 	 */
 	default Optional<ModelCost> getCost(final String modelName) {
+		return Optional.empty();
+	}
+
+	/**
+	 * Gets the approximate local runtime memory demand for a model.
+	 *
+	 * @param modelName the model name
+	 * @return the model demand, if known
+	 */
+	default Optional<ModelDemand> getDemand(final String modelName) {
 		return Optional.empty();
 	}
 

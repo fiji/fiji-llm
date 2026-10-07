@@ -76,6 +76,24 @@ public class AbstractOllamaProviderTest {
 				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS").get());
 	}
 
+	@Test
+	public void testCuratedModelDemands() {
+		final Gemma4Provider gemma = new Gemma4Provider();
+		final LLMProvider.ModelDemand gemmaXS = gemma.getDemand("XS").get();
+		assertEquals(7.76, gemmaXS.baseGiB(), 0.0);
+		assertEquals(0.0000153, gemmaXS.contextGiBPerToken(), 0.0);
+		assertEquals(8.0106752, gemmaXS.estimateGiB(16 * 1024), 0.0000001);
+		assertEquals(8.2613504, gemmaXS.estimateGiB(32 * 1024), 0.0000001);
+		assertEquals(gemmaXS, gemma.getDemand(gemma.appendRemoteString("XS"))
+			.get());
+
+		final GlimmerProviderIQ2 glimmer = new GlimmerProviderIQ2();
+		final LLMProvider.ModelDemand glimmerDemand = glimmer.getDemand(
+			glimmer.appendRemoteString(
+				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS")).get();
+		assertEquals(15.37152, glimmerDemand.estimateGiB(32 * 1024), 0.0000001);
+	}
+
 	private static final class TestOllamaProvider extends AbstractOllamaProvider {
 
 		@Override

@@ -82,4 +82,20 @@ public class Fiji_ChatTest {
 		assertFalse(high.contains("#2e7d32"));
 		assertFalse(high.contains("#c58a00"));
 	}
+
+	@Test
+	public void testFormatDemand() {
+		final String low = Fiji_Chat.formatDemand(new LLMProvider.ModelDemand(8.0,
+			0.0));
+		assertTrue(low.contains("Relative Local Demand"));
+		assertTrue(low.contains(">Low</b>"));
+
+		final String medium = Fiji_Chat.formatDemand(new LLMProvider.ModelDemand(
+			14.0, 0.0));
+		assertTrue(medium.contains(">Medium</b>"));
+
+		final String high = Fiji_Chat.formatDemand(new LLMProvider.ModelDemand(19.0,
+			0.0));
+		assertTrue(high.contains(">High</b>"));
+	}
 }

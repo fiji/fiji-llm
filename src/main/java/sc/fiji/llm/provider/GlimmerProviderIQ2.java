@@ -73,4 +73,13 @@ public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 		return MODEL_NAME.equals(modelName) ? Optional.of(MODEL_DOWNLOAD_SIZE) :
 			Optional.empty();
 	}
+
+	@Override
+	public Optional<ModelDemand> getDemand(final String modelName) {
+		if (modelName == null) return Optional.empty();
+		final String localModelName = isRemoteModel(modelName) ? removeRemoteString(
+			modelName) : modelName;
+		return MODEL_NAME.equals(localModelName) ? Optional.of(new ModelDemand(14.88,
+			0.0000150)) : Optional.empty();
+	}
 }

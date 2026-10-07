@@ -66,6 +66,12 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 		M_MODEL, 15_634_191_744L,
 		L_MODEL, 18_851_727_936L);
 
+	private static final Map<String, ModelDemand> MODEL_DEMANDS = Map.of(
+		XS_MODEL, new ModelDemand(7.76, 0.0000153),
+		S_MODEL, new ModelDemand(8.69, 0.0000140),
+		M_MODEL, new ModelDemand(15.88, 0.0000209),
+		L_MODEL, new ModelDemand(20.05, 0.0000860));
+
 	@Override
 	public String getName() {
 		return "Gemma4 (Ollama)";
@@ -112,6 +118,15 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 	}
 
 	@Override
+	public Optional<ModelDemand> getDemand(final String modelName) {
+		if (modelName == null) return Optional.empty();
+		final String alias = isRemoteModel(modelName) ? removeRemoteString(modelName) :
+			modelName;
+		final String resolvedModel = MODEL_NAMES.getOrDefault(alias, alias);
+		return Optional.ofNullable(MODEL_DEMANDS.get(resolvedModel));
+	}
+
+	@Override
 	public Optional<String> getRecommendedModel() {
 		return Optional.of("S");
 	}
@@ -123,8 +138,8 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 
 	@Override
 	protected int getContextSize(String modelName) {
-		if (XS_MODEL.equals(modelName)) return 24 * 1024;
-		if (L_MODEL.equals(modelName)) return 64 * 1024;
+		if (XS_MODEL.equals(modelName)) return 64 * 1024;
+		if (S_MODEL.equals(modelName)) return 64 * 1024;
 		return getContextSize();
 	}
 }
