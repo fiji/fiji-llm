@@ -1,22 +1,19 @@
 {
   "Gemini": {
-    "models_documentation_last_modified": "2026-10-01",
+    "models_documentation_last_modified": "2026-10-07",
     "models_documentation": {
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
       "last_modified": "Tue, 06 Oct 2026 15:52:44 GMT",
-      "content_selector": "article.devsite-article",
-      "content_hash": "09d37ac85bb0258ffc480ba24f1ecaec0a9896a63f7e700827ee12e74ce42c1c",
-      "changed_since_previous": true,
-      "models_review_required": true
+      "content_check_skipped": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS607562373:1791379679659931"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS270540055:1791389899275099"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-10-06",
@@ -24,24 +21,24 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "content_selector": "main",
-      "content_hash": "0d088bf0a670f05772db7439887d101cf0bbc6e6c6ef71f70c31a18476da3e18"
+      "content_hash": "55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d",
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
   "Claude": {
-    "models_documentation_last_modified": "2026-10-06",
+    "models_documentation_last_modified": "2026-10-07",
     "models_documentation": {
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
-      "content_selector": "article#content-container",
-      "content_hash": "a223766a436813c93dce99bf77e669f5e01c41e17e6e87d9a55b8567e9d3782c",
+      "content_hash": "e621e4047f4488168ea9ef7fe86ba648a2a466436fea21bdd2f49fcb2a8e6efa",
       "changed_since_previous": true,
       "models_review_required": true
     },
@@ -52,11 +49,10 @@
     },
     "health": "review_required"
   },
-  "checked_at": "2026-10-07T13:28:01.564072138Z",
+  "checked_at": "2026-10-07T16:18:20.512776940Z",
   "status": "review_required",
   "failures": [
-    "Gemini models_documentation changed last_modified from \"Thu, 01 Oct 2026 00:13:51 GMT\" to \"Tue, 06 Oct 2026 15:52:44 GMT\"; re-evaluate the provided models",
-    "Gemini models_documentation changed content_hash from \"2e4d06359f63115dba8bc60c72a9ada254bf6b4b747fd6dce1e6a4704de82775\" to \"09d37ac85bb0258ffc480ba24f1ecaec0a9896a63f7e700827ee12e74ce42c1c\"; re-evaluate the provided models",
-    "Claude models_documentation changed content_hash from \"24f6272639ead8c289111c4049d63d1b8b03e77d587801b7acc6f22231844da3\" to \"a223766a436813c93dce99bf77e669f5e01c41e17e6e87d9a55b8567e9d3782c\"; re-evaluate the provided models"
+    "ChatGPT models_documentation changed content_hash from \"0d088bf0a670f05772db7439887d101cf0bbc6e6c6ef71f70c31a18476da3e18\" to \"55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d\"; re-evaluate the provided models",
+    "Claude models_documentation changed content_hash from \"a223766a436813c93dce99bf77e669f5e01c41e17e6e87d9a55b8567e9d3782c\" to \"e621e4047f4488168ea9ef7fe86ba648a2a466436fea21bdd2f49fcb2a8e6efa\"; re-evaluate the provided models"
   ]
 }
