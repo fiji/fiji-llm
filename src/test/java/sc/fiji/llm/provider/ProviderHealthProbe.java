@@ -38,6 +38,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +125,7 @@ public final class ProviderHealthProbe {
 		final JsonObject currentProviderState,
 		final JsonObject previousProviderState, final List<String> failures)
 	{
+		if (isDocumentationBaseline(provider)) return;
 		if (previousProviderState == null || !previousProviderState.has(
 			"models_documentation_last_modified")) return;
 		if (!currentProviderState.get("models_documentation_last_modified").equals(
@@ -159,6 +162,8 @@ public final class ProviderHealthProbe {
 			final int status = response.statusCode();
 			current.addProperty("status", status);
 			current.addProperty("final_url", response.uri().toString());
+			if ("models_documentation".equals(name) && isDocumentationBaseline(
+				provider)) current.addProperty("baseline_established", true);
 			response.headers().firstValue("Last-Modified").ifPresent(value -> current
 				.addProperty("last_modified", value));
 			if ("models_documentation".equals(name) && !isBrokenStatus(status)) {
@@ -254,9 +259,13 @@ public final class ProviderHealthProbe {
 	{
 		if (previousProviderState == null || !previousProviderState.has(name)) return;
 		final JsonObject previous = previousProviderState.getAsJsonObject(name);
+		final boolean documentationBaseline = "models_documentation".equals(name) &&
+			isDocumentationBaseline(provider);
 		for (final String field : List.of("url", "status", "final_url",
 			"last_modified", "content_hash"))
 		{
+			if (documentationBaseline && ("last_modified".equals(field) ||
+				"content_hash".equals(field))) continue;
 			if ("last_modified".equals(field) && !provider
 				.shouldReviewModelsDocumentationLastModified()) continue;
 			if ("content_hash".equals(field) && current.has(
@@ -281,6 +290,16 @@ public final class ProviderHealthProbe {
 					" from " + previousValue + " to " + currentValue + action);
 			}
 		}
+	}
+
+	static boolean isDocumentationBaseline(final LLMProvider provider,
+		final LocalDate runDate)
+	{
+		return runDate.equals(provider.getModelsDocumentationLastModified());
+	}
+
+	private static boolean isDocumentationBaseline(final LLMProvider provider) {
+		return isDocumentationBaseline(provider, LocalDate.now(ZoneOffset.UTC));
 	}
 
 	private static String healthStatus(final JsonObject providerState) {

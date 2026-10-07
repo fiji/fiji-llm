@@ -41,9 +41,9 @@ clarify rather than silently reviewing a different provider.
    the last published status change, not necessarily the most recent scheduled
    probe.
 2. For each requested provider, inspect its status entry and relevant entries
-   in `failures`. Report the provider health, changed fields, request errors,
-   content errors, HTTP status, final URL, content selector, and review flags
-   only when they are present.
+  in `failures`. Report the provider health, changed fields, request errors,
+  content errors, HTTP status, final URL, content fingerprint, baseline marker,
+  and review flags only when they are present.
 3. Inspect the provider implementation and identify the configured model
    aliases, model IDs, model list, pricing, vision assumptions, and recommended
    model where applicable. Use the actual implementation as the source of
@@ -58,10 +58,19 @@ clarify rather than silently reviewing a different provider.
    identifies the intended key-management page. This is a URL-maintenance
    finding, not automatically a model-list finding.
 
-The health probe treats changes to documentation content or
-`Last-Modified` metadata as a reason for human review; it does not determine
-whether the configured model list is correct. A changed documentation hash
+The health probe asks each provider to turn raw documentation HTML into a
+stable model-catalog fingerprint. Providers should retain model IDs, pricing,
+and lifecycle information while excluding volatile prose. The probe does not
+determine whether the configured model list is correct. A changed fingerprint
 therefore requires a comparison, not an automatic model update.
+
+When a provider's `getModelsDocumentationLastModified()` date equals the
+current UTC run date, that run establishes a new documentation baseline. The
+probe does not compare the documentation fingerprint or `Last-Modified` value
+against the previous state for that run, but it still checks HTTP status,
+redirects, API-key URLs, and fingerprint/parser errors. Gemini may also skip
+body fingerprinting when its live `Last-Modified` date is not newer than the
+provider's acknowledged date.
 
 ## Provider-specific comparison
 
@@ -75,8 +84,10 @@ therefore requires a comparison, not an automatic model update.
   recommended model, and any model naming or lifecycle changes in
   `GeminiProvider`.
 
-Also verify the documentation URL and content selector when the health finding
-indicates a redirect, URL change, or content-check failure.
+Also verify the documentation URL, response status, and provider fingerprint
+or parser behavior when the health finding indicates a redirect, URL change,
+or content-check failure. Do not expect a shared CSS selector: fingerprinting
+is provider-specific.
 
 ## Report format
 

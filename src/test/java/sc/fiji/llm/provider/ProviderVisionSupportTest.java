@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -101,6 +102,18 @@ public class ProviderVisionSupportTest {
 			"Wed, 08 Oct 2026 00:00:00 GMT"));
 		assertTrue(provider.shouldCheckModelsDocumentationContent("invalid"));
 		assertTrue(!provider.shouldReviewModelsDocumentationLastModified());
+	}
+
+	/**
+	 * Verifies that a provider date equal to the run date establishes a baseline.
+	 */
+	@Test
+	public void testDocumentationBaselineDate() {
+		final GeminiProvider provider = new GeminiProvider();
+		assertTrue(ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
+			2026, 10, 7)));
+		assertTrue(!ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
+			2026, 10, 8)));
 	}
 
 	@Test
