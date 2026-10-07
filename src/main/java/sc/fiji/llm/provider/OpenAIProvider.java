@@ -29,11 +29,17 @@
 
 package sc.fiji.llm.provider;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -108,8 +114,62 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public String getModelsDocumentationContentSelector() {
-		return "main";
+	public String getModelsDocumentationContentHash(final String html)
+		throws IOException
+	{
+		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
+		final List<String> facts = new ArrayList<>();
+		for (final Element modelIdLabel : document.select("div").stream().filter(
+			element -> "Model ID".equals(element.ownText().trim())).toList())
+		{
+			final String modelId = fieldValue(modelIdLabel);
+			if (modelId.isBlank()) continue;
+			final Element pricingScope = findPricingScope(modelIdLabel);
+			final String inputPrice = pricingScope == null ? "" : fieldValue(
+				pricingScope, "Input price");
+			final String outputPrice = pricingScope == null ? "" : fieldValue(
+				pricingScope, "Output price");
+			final String scopeText = pricingScope == null ? modelIdLabel.parent()
+				.parent().text() : pricingScope.text();
+			final String lifecycle = scopeText.toLowerCase(Locale.ROOT).contains("deprecated") ?
+				"deprecated" : "active";
+			facts.add(modelId + "|input=" + inputPrice + "|output=" + outputPrice +
+				"|lifecycle=" + lifecycle);
+		}
+		if (facts.isEmpty()) throw new IOException("OpenAI model facts not found");
+		facts.sort(String::compareTo);
+		return LLMProvider.hashNormalizedDocumentationText(String.join("\n",
+			facts));
+	}
+
+	private static Element findPricingScope(final Element modelIdLabel) {
+		Element fallback = null;
+		for (final Element ancestor : modelIdLabel.parents()) {
+			if (!hasField(ancestor, "Input price") || !hasField(ancestor,
+				"Output price")) continue;
+			if (fallback == null) fallback = ancestor;
+			if (ancestor.select("a[href*='/api/docs/models/']").size() == 1) return ancestor;
+		}
+		return fallback;
+	}
+
+	private static boolean hasField(final Element scope, final String label) {
+		return scope.select("div").stream().anyMatch(element -> label.equals(
+			element.ownText().trim()));
+	}
+
+	private static String fieldValue(final Element scope, final String label) {
+		for (final Element field : scope.select("div")) {
+			if (label.equals(field.ownText().trim())) return fieldValue(field);
+		}
+		return "";
+	}
+
+	private static String fieldValue(final Element field) {
+		final String label = field.ownText().trim();
+		final String rowText = field.parent().text().trim();
+		return rowText.startsWith(label) ? rowText.substring(label.length()).trim() :
+			"";
 	}
 
 	@Override

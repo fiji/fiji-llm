@@ -30,6 +30,7 @@
 package sc.fiji.llm.provider;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -45,6 +46,62 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.openai.OpenAiResponsesChatRequestParameters;
 
 public class ProviderVisionSupportTest {
+
+	/**
+	 * Verifies that provider fingerprints retain model facts while ignoring prose.
+	 *
+	 * @throws Exception if a provider cannot fingerprint the fixture
+	 */
+	@Test
+	public void testProviderDocumentationHashesModelFacts() throws Exception {
+		final String claude = "<p>volatile prose</p><table>" +
+			"<tr><th>Pricing</th><td>$1 / input</td><td>$5 / output</td></tr>" +
+			"<tr><th>Claude API ID</th><td>claude-haiku</td></tr>" +
+			"<tr><th>Retirement</th><td>Not sooner than 2027</td></tr></table>";
+		final String claudeWithNewModel = claude.replace("<td>claude-haiku</td>",
+			"<td>claude-haiku</td><td>claude-new</td>");
+		final AnthropicProvider anthropic = new AnthropicProvider();
+		assertEquals(anthropic.getModelsDocumentationContentHash(claude), anthropic
+			.getModelsDocumentationContentHash(claude.replace("volatile prose",
+				"different prose")));
+		assertNotEquals(anthropic.getModelsDocumentationContentHash(claude),
+			anthropic.getModelsDocumentationContentHash(claudeWithNewModel));
+
+		final String openAI = "<div class='card'><a href='/api/docs/models/gpt-luna'>" +
+			"GPT Luna</a><div><div>Model ID</div>" +
+			"<div>gpt-luna</div></div><div><div>Input price</div>" +
+			"<div>$0.1 / Input MTok</div></div><div><div>Output price</div>" +
+			"<div>$0.5 / Output MTok</div></div></div>";
+		final OpenAIProvider openAIProvider = new OpenAIProvider();
+		assertNotEquals(openAIProvider.getModelsDocumentationContentHash(openAI),
+			openAIProvider.getModelsDocumentationContentHash(openAI.replace("$0.1",
+				"$0.2")));
+		assertNotEquals(openAIProvider.getModelsDocumentationContentHash(openAI),
+			openAIProvider.getModelsDocumentationContentHash(openAI.replace("GPT Luna",
+				"GPT Luna Deprecated")));
+
+		final String gemini = "<h3>Stable</h3><table><tr><th>Model</th>" +
+			"<th>Endpoint</th></tr><tr><td>Gemini Lite</td>" +
+			"<td>gemini-lite</td></tr></table>";
+		final GeminiProvider geminiProvider = new GeminiProvider();
+		assertNotEquals(geminiProvider.getModelsDocumentationContentHash(gemini),
+			geminiProvider.getModelsDocumentationContentHash(gemini.replace(
+				"gemini-lite", "gemini-new")));
+	}
+
+	/**
+	 * Verifies that Gemini uses its acknowledged date as a content-check gate.
+	 */
+	@Test
+	public void testGeminiDocumentationDateGate() {
+		final GeminiProvider provider = new GeminiProvider();
+		assertTrue(!provider.shouldCheckModelsDocumentationContent(
+			"Tue, 06 Oct 2026 15:52:44 GMT"));
+		assertTrue(provider.shouldCheckModelsDocumentationContent(
+			"Wed, 08 Oct 2026 00:00:00 GMT"));
+		assertTrue(provider.shouldCheckModelsDocumentationContent("invalid"));
+		assertTrue(!provider.shouldReviewModelsDocumentationLastModified());
+	}
 
 	@Test
 	public void testOpenAiVisionSupport() {

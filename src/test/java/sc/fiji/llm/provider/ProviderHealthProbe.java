@@ -34,20 +34,14 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
 import org.scijava.Context;
 import org.scijava.prefs.PrefService;
 
@@ -189,6 +183,13 @@ public final class ProviderHealthProbe {
 		final URI uri,
 		final JsonObject current, final List<String> failures)
 	{
+		final String lastModified = current.has("last_modified") ? current.get(
+			"last_modified").getAsString() : null;
+		if (!provider.shouldCheckModelsDocumentationContent(lastModified)) {
+			current.addProperty("content_check_skipped", true);
+			return;
+		}
+
 		try {
 			final HttpRequest request = HttpRequest.newBuilder(uri).timeout(
 				REQUEST_TIMEOUT).GET().build();
@@ -198,34 +199,14 @@ public final class ProviderHealthProbe {
 				throw new IOException("GET returned HTTP " + response.statusCode());
 			}
 
-			final Element content = Jsoup.parse(response.body(), uri.toString()).select(
-				provider.getModelsDocumentationContentSelector()).first();
-			if (content == null) {
-				throw new IOException("selector did not match: " + provider
-					.getModelsDocumentationContentSelector());
-			}
-
-			current.addProperty("content_selector", provider
-				.getModelsDocumentationContentSelector());
-			current.addProperty("content_hash", contentHash(content));
+			current.addProperty("content_hash", provider
+				.getModelsDocumentationContentHash(response.body()));
 		}
 		catch (final IOException | InterruptedException e) {
 			if (e instanceof InterruptedException) Thread.currentThread().interrupt();
 			current.addProperty("content_error", e.toString());
 			failures.add(provider.getName() +
 				" models documentation content check failed: " + e.getMessage());
-		}
-	}
-
-	private static String contentHash(final Element content) throws IOException {
-		try {
-			final byte[] normalizedContent = content.text().replaceAll("\\s+", " ")
-				.trim().getBytes(StandardCharsets.UTF_8);
-			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-				.digest(normalizedContent));
-		}
-		catch (final NoSuchAlgorithmException e) {
-			throw new IOException("SHA-256 is unavailable", e);
 		}
 	}
 
@@ -276,6 +257,10 @@ public final class ProviderHealthProbe {
 		for (final String field : List.of("url", "status", "final_url",
 			"last_modified", "content_hash"))
 		{
+			if ("last_modified".equals(field) && !provider
+				.shouldReviewModelsDocumentationLastModified()) continue;
+			if ("content_hash".equals(field) && current.has(
+				"content_check_skipped")) continue;
 			final JsonElement previousValue = previous.has(field) ? previous.get(field) :
 				JsonNull.INSTANCE;
 			final JsonElement currentValue = current.has(field) ? current.get(field) :

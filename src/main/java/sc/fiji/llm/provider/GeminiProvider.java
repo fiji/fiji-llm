@@ -29,12 +29,22 @@
 
 package sc.fiji.llm.provider;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -88,13 +98,64 @@ public class GeminiProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public String getModelsDocumentationContentSelector() {
-		return "article.devsite-article";
+	public String getModelsDocumentationContentHash(final String html)
+		throws IOException
+	{
+		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
+		final Set<String> facts = new TreeSet<>();
+		String lifecycle = "unknown";
+		for (final Element element : document.select("h2, h3, h4, table")) {
+			if (!"table".equals(element.tagName())) {
+				lifecycle = lifecycleFromHeading(element.text(), lifecycle);
+				continue;
+			}
+			for (final Element row : element.select("tr")) {
+				final Elements cells = row.select("th, td");
+				if (cells.size() < 2) continue;
+				final String modelId = cells.get(1).text().trim();
+				if (modelId.isBlank() || !modelId.contains("-")) continue;
+				final String rowLifecycle = cells.first().text().toLowerCase(Locale.ROOT)
+					.contains("shut down") ? "shut-down" : lifecycle;
+				facts.add(rowLifecycle + "|" + modelId);
+			}
+		}
+		if (facts.isEmpty()) throw new IOException("Gemini model facts not found");
+		return LLMProvider.hashNormalizedDocumentationText(String.join("\n", facts));
+	}
+
+	private static String lifecycleFromHeading(final String heading,
+		final String current)
+	{
+		final String normalized = heading.toLowerCase(Locale.ROOT);
+		if (normalized.contains("stable")) return "stable";
+		if (normalized.contains("preview")) return "preview";
+		if (normalized.contains("experimental")) return "experimental";
+		if (normalized.contains("previous") || normalized.contains("deprecated"))
+			return "previous";
+		return current;
+	}
+
+	@Override
+	public boolean shouldCheckModelsDocumentationContent(final String lastModified) {
+		if (lastModified == null || lastModified.isBlank()) return true;
+		try {
+			final LocalDate remoteDate = ZonedDateTime.parse(lastModified,
+				DateTimeFormatter.RFC_1123_DATE_TIME).toLocalDate();
+			return remoteDate.isAfter(getModelsDocumentationLastModified());
+		}
+		catch (final DateTimeParseException e) {
+			return true;
+		}
+	}
+
+	@Override
+	public boolean shouldReviewModelsDocumentationLastModified() {
+		return false;
 	}
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 1);
+		return LocalDate.of(2026, 10, 7);
 	}
 
 	@Override

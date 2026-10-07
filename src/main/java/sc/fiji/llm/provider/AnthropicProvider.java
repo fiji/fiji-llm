@@ -29,11 +29,17 @@
 
 package sc.fiji.llm.provider;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.scijava.plugin.Plugin;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
@@ -105,13 +111,40 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public String getModelsDocumentationContentSelector() {
-		return "article#content-container";
+	public String getModelsDocumentationContentHash(final String html)
+		throws IOException
+	{
+		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
+		final Element modelTable = document.select("table").stream().filter(table -> {
+			final String text = table.text();
+			return text.contains("Pricing") && text.contains("Claude API ID") &&
+				text.contains("Retirement");
+		}).findFirst().orElseThrow(() -> new IOException(
+			"Claude model comparison table not found"));
+
+		final List<String> facts = new ArrayList<>();
+		for (final Element row : modelTable.select("tr")) {
+			final Elements cells = row.select("th, td");
+			if (cells.isEmpty()) continue;
+			final String label = cells.first().text();
+			if (!"Pricing".equals(label) && !"Claude API ID".equals(label) &&
+				!"Retirement".equals(label)) continue;
+
+			final StringBuilder fact = new StringBuilder(label);
+			for (int i = 1; i < cells.size(); i++) {
+				fact.append('|').append(cells.get(i).text());
+			}
+			facts.add(fact.toString());
+		}
+		if (facts.size() != 3) throw new IOException(
+			"Claude model comparison facts are incomplete");
+		return LLMProvider.hashNormalizedDocumentationText(String.join("\n",
+			facts));
 	}
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 06);
+		return LocalDate.of(2026, 10, 7);
 	}
 
 	@Override
