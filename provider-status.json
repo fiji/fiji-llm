@@ -5,32 +5,32 @@
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
+      "baseline_established": true,
       "last_modified": "Tue, 06 Oct 2026 15:52:44 GMT",
       "content_check_skipped": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS270540055:1791389899275099"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1949539825:1791400326928888"
     },
     "health": "healthy"
   },
   "ChatGPT": {
-    "models_documentation_last_modified": "2026-10-06",
+    "models_documentation_last_modified": "2026-10-07",
     "models_documentation": {
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "content_hash": "55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d",
-      "changed_since_previous": true,
-      "models_review_required": true
+      "baseline_established": true,
+      "content_hash": "55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d"
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "Claude": {
     "models_documentation_last_modified": "2026-10-07",
@@ -38,21 +38,17 @@
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
-      "content_hash": "e621e4047f4488168ea9ef7fe86ba648a2a466436fea21bdd2f49fcb2a8e6efa",
-      "changed_since_previous": true,
-      "models_review_required": true
+      "baseline_established": true,
+      "content_hash": "c180604e99b317b46ab7ebbd2603d0546ffe43313daf6b72ea66d47a4768f883"
     },
     "api_key": {
       "url": "https://platform.claude.com/settings/keys",
       "status": 200,
       "final_url": "https://platform.claude.com/settings/keys"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
-  "checked_at": "2026-10-07T16:18:20.512776940Z",
-  "status": "review_required",
-  "failures": [
-    "ChatGPT models_documentation changed content_hash from \"0d088bf0a670f05772db7439887d101cf0bbc6e6c6ef71f70c31a18476da3e18\" to \"55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d\"; re-evaluate the provided models",
-    "Claude models_documentation changed content_hash from \"a223766a436813c93dce99bf77e669f5e01c41e17e6e87d9a55b8567e9d3782c\" to \"e621e4047f4488168ea9ef7fe86ba648a2a466436fea21bdd2f49fcb2a8e6efa\"; re-evaluate the provided models"
-  ]
+  "checked_at": "2026-10-07T19:12:08.252820639Z",
+  "status": "healthy",
+  "failures": []
 }
