@@ -49,7 +49,7 @@ import org.scijava.ui.UIService;
  * Allows users to choose from available installed models and download remote
  * models from the Ollama library.
  */
-@Plugin(type = LLMProvider.class, name = "Ollama", priority = ProviderPriority.OLLAMA)
+@Plugin(type = LLMProvider.class, name = "Ollama (Custom)", priority = ProviderPriority.OLLAMA)
 public class OllamaProvider extends AbstractOllamaProvider {
 
 	private static final String MODEL_URL =
@@ -66,12 +66,12 @@ public class OllamaProvider extends AbstractOllamaProvider {
 
 	@Override
 	public String getName() {
-		return "Ollama";
+		return "Ollama (Custom)";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Local Ollama models (user-selectable)";
+		return "Explore any available Ollama model.";
 	}
 
 	@Override
