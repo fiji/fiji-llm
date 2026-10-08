@@ -41,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -182,6 +183,14 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 
 	@Override
 	public int getServerPort() {
+		final Server currentJettyServer = jettyServer;
+		if (currentJettyServer != null && currentJettyServer.isRunning()) {
+			for (final Connector connector : currentJettyServer.getConnectors()) {
+				if (connector instanceof ServerConnector serverConnector) {
+					return serverConnector.getLocalPort();
+				}
+			}
+		}
 		return prefService.getInt(MCPService.class, MCPService.PORT_KEY,
 			MCPService.DEFAULT_PORT);
 	}
@@ -401,7 +410,8 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 
 		try {
 			jettyServer.start();
-			logService.debug("Jetty server started on http://localhost:" + port);
+			logService.debug("Jetty server started on http://localhost:" +
+				connector.getLocalPort());
 
 			// Register each tool from AiToolService with the MCP server
 			for (final Map.Entry<ToolSpecification, ToolExecutor> entry : tools

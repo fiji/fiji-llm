@@ -57,7 +57,7 @@ public class DefaultGuidanceServiceTest {
 
 	@AfterClass
 	public static void disposeContext() {
-		context.dispose();
+		Setup.dispose(context);
 	}
 
 	@Test

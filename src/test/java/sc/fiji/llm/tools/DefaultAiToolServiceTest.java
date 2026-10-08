@@ -63,7 +63,7 @@ public class DefaultAiToolServiceTest {
 
 	@AfterClass
 	public static void disposeContext() {
-		context.dispose();
+		Setup.dispose(context);
 	}
 
 	/**

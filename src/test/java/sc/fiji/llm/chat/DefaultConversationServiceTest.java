@@ -69,7 +69,7 @@ public class DefaultConversationServiceTest {
 
 	@AfterClass
 	public static void tearDownContext() {
-		context.dispose();
+		Setup.dispose(context);
 	}
 
 	@Before

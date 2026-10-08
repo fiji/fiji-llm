@@ -28,8 +28,15 @@
  */
 package sc.fiji.llm;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import java.util.prefs.Preferences;
+
 import org.scijava.Context;
 import org.scijava.launcher.ReflectionUnlocker;
+
+import sc.fiji.llm.mcp.MCPService;
 
 /**
  * Helper class for setting up SciJava {@link Context}s with
@@ -37,12 +44,68 @@ import org.scijava.launcher.ReflectionUnlocker;
  */
 public final class Setup {
 
+	private static final Preferences MCP_PREFERENCES = Preferences
+		.userNodeForPackage(MCPService.class).node(MCPService.class.getSimpleName());
+	private static final Set<Context> CONTEXTS = Collections.newSetFromMap(
+		new IdentityHashMap<>());
+	private static String originalLaunchOnStartup;
+	private static boolean launchPreferenceCaptured;
+
 	static {
 		// NB: Necessary for ImageJ Legacy support in Java 17+.
 		ReflectionUnlocker.unlockAll();
 	}
 
-	public static Context context() {
-		return new Context();
+	/**
+	 * Creates a test context without launching the MCP server.
+	 *
+	 * @return a new SciJava context
+	 */
+	public static synchronized Context context() {
+		if (CONTEXTS.isEmpty()) {
+			originalLaunchOnStartup = MCP_PREFERENCES.get(
+				MCPService.LAUNCH_ON_START_KEY, null);
+			MCP_PREFERENCES.putBoolean(MCPService.LAUNCH_ON_START_KEY, false);
+			launchPreferenceCaptured = true;
+		}
+
+		try {
+			final Context context = new Context();
+			CONTEXTS.add(context);
+			return context;
+		}
+		catch (final RuntimeException e) {
+			if (CONTEXTS.isEmpty()) restoreLaunchOnStartup();
+			throw e;
+		}
+	}
+
+	/**
+	 * Disposes a test context and restores MCP startup preferences when no
+	 * managed test contexts remain.
+	 *
+	 * @param context the test context to dispose
+	 */
+	public static synchronized void dispose(final Context context) {
+		try {
+			context.dispose();
+		}
+		finally {
+			CONTEXTS.remove(context);
+			if (CONTEXTS.isEmpty()) restoreLaunchOnStartup();
+		}
+	}
+
+	private static void restoreLaunchOnStartup() {
+		if (!launchPreferenceCaptured) return;
+		if (originalLaunchOnStartup == null) {
+			MCP_PREFERENCES.remove(MCPService.LAUNCH_ON_START_KEY);
+		}
+		else {
+			MCP_PREFERENCES.put(MCPService.LAUNCH_ON_START_KEY,
+				originalLaunchOnStartup);
+		}
+		originalLaunchOnStartup = null;
+		launchPreferenceCaptured = false;
 	}
 }

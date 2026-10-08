@@ -56,7 +56,7 @@ public class SciJavaLogUtilsTest {
 
 	@AfterClass
 	public static void disposeContext() {
-		context.dispose();
+		Setup.dispose(context);
 	}
 
 	@Test

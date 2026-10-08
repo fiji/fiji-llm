@@ -39,11 +39,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
-import java.util.prefs.Preferences;
 
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
@@ -52,7 +50,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.scijava.Context;
-import org.scijava.log.LogService;
 import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -70,8 +67,6 @@ public class DefaultMCPServiceTest {
 	private AiToolService aiToolService;
 	private PrefService prefService;
 	private int originalPort;
-	private Preferences mcpPreferences;
-	private String originalLaunchOnStartup;
 	private int testPort;
 
 	@BeforeClass
@@ -81,44 +76,27 @@ public class DefaultMCPServiceTest {
 
 	@AfterClass
 	public static void disposeContext() {
-		context.dispose();
+		Setup.dispose(context);
 	}
 
 	@Before
 	public void setUp() throws Exception {
-		mcpPreferences = Preferences.userNodeForPackage(MCPService.class)
-			.node(MCPService.class.getSimpleName());
-		originalLaunchOnStartup = mcpPreferences.get(
-			MCPService.LAUNCH_ON_START_KEY, null);
-		mcpPreferences.putBoolean(MCPService.LAUNCH_ON_START_KEY, false);
-
 		prefService = context.getService(PrefService.class);
 		originalPort = prefService.getInt(MCPService.class, MCPService.PORT_KEY,
 			MCPService.DEFAULT_PORT);
-		try (ServerSocket socket = new ServerSocket(0)) {
-			testPort = socket.getLocalPort();
-		}
-		prefService.put(MCPService.class, MCPService.PORT_KEY, testPort);
+		prefService.put(MCPService.class, MCPService.PORT_KEY, 0);
 		aiToolService = context.getService(AiToolService.class);
 		mcpService = new DefaultMCPService();
-		setField(mcpService, "logService", context.getService(LogService.class));
-		setField(mcpService, "prefService", prefService);
-		setField(mcpService, "aiToolService", aiToolService);
+		context.inject(mcpService);
 	}
 
 	@After
 	public void tearDown() {
+		if (mcpService != null) {
+			mcpService.dispose();
+		}
 		if (prefService != null) {
 			prefService.put(MCPService.class, MCPService.PORT_KEY, originalPort);
-		}
-		if (mcpPreferences != null) {
-			if (originalLaunchOnStartup == null) {
-				mcpPreferences.remove(MCPService.LAUNCH_ON_START_KEY);
-			}
-			else {
-				mcpPreferences.put(MCPService.LAUNCH_ON_START_KEY,
-					originalLaunchOnStartup);
-			}
 		}
 	}
 
@@ -152,7 +130,7 @@ public class DefaultMCPServiceTest {
 		assertNotNull(mcpService);
 
 		// When: we start the server
-		mcpService.startServer();
+		startMcpServer();
 
 		// And: the server should be running after initialization
 		assertTrue(mcpService.isServerRunning());
@@ -160,7 +138,7 @@ public class DefaultMCPServiceTest {
 
 	@Test
 	public void testToolNamesMatchRegisteredTools() {
-		mcpService.startServer();
+		startMcpServer();
 
 		assertEquals(mcpService.getToolCount(), mcpService.getToolNames().size());
 		assertEquals(mcpService.getToolNames(), mcpService.getToolNames().stream()
@@ -174,7 +152,7 @@ public class DefaultMCPServiceTest {
 
 	@Test
 	public void testServerRecoversAfterJettyStops() throws Exception {
-		mcpService.startServer();
+		startMcpServer();
 		final Field jettyServerField = DefaultMCPService.class
 			.getDeclaredField("jettyServer");
 		jettyServerField.setAccessible(true);
@@ -190,24 +168,25 @@ public class DefaultMCPServiceTest {
 
 	@Test
 	public void testRejectsExternalOrigin() throws Exception {
-		mcpService.startServer();
+		startMcpServer();
 
 		assertEquals(403, getMcpResponseCode("https://attacker.example"));
 	}
 
 	@Test
 	public void testAllowsLoopbackOrigin() throws Exception {
-		mcpService.startServer();
+		startMcpServer();
 
 		assertTrue(getMcpResponseCode("http://127.0.0.1:" + testPort) != 403);
 	}
 
 	@Test
 	public void testServerPort() {
-		// When: we get the server port
+		// When: we start the server and get its bound port
+		startMcpServer();
 		final int port = mcpService.getServerPort();
 
-		// Then: it should be the configured test port
+		// Then: it should be an ephemeral port assigned by the operating system
 		assertTrue(port > 0);
 		assertTrue(port == testPort);
 	}
@@ -218,19 +197,17 @@ public class DefaultMCPServiceTest {
 		assertNotNull(aiToolService);
 
 		// When: we start the server
-		mcpService.startServer();
+		startMcpServer();
 
 		// Then: the server should expose the discovered tools
 		assertTrue(mcpService.isServerRunning());
 		assertTrue(mcpService.getToolCount() > 0);
 	}
 
-	private static void setField(final Object target, final String name,
-		final Object value) throws Exception
-	{
-		final Field field = target.getClass().getDeclaredField(name);
-		field.setAccessible(true);
-		field.set(target, value);
+	private void startMcpServer() {
+		mcpService.startServer();
+		testPort = mcpService.getServerPort();
+		assertTrue(testPort > 0);
 	}
 
 	private void waitForServerState(final boolean expected)
