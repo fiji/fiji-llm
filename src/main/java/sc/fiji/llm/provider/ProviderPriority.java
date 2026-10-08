@@ -36,8 +36,8 @@ final class ProviderPriority {
 	static final double GEMINI = Priority.HIGH - 1;
 	static final double OPENAI = Priority.HIGH - 2;
 	static final double ANTHROPIC = Priority.HIGH - 3;
-	static final double OLLAMA = Priority.HIGH - 4;
-	static final double GLIMMER = Priority.HIGH - 5;
+	static final double GLIMMER = Priority.HIGH - 4;
+	static final double OLLAMA = Priority.HIGH - 5;
 
 	private ProviderPriority() {}
 }
