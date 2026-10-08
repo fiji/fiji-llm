@@ -52,10 +52,10 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 
 	private static final List<String> MODEL_ALIASES = List.of("XS", "S", "M", "L");
 	private static final Map<String, String> MODEL_NAMES = Map.of(
-		"XS", XS_MODEL,
-		"S", S_MODEL,
-		"M", M_MODEL,
-		"L", L_MODEL);
+		"XS (E4B)", XS_MODEL,
+		"S (12B)", S_MODEL,
+		"M (26B)", M_MODEL,
+		"L (31B)", L_MODEL);
 	/**
 	 * Current Hugging Face GGUF and projection-file sizes for the pinned model
 	 * references, in bytes.
@@ -87,7 +87,7 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 
 	@Override
 	public String getDescription() {
-		return "Local Gemma4 models with selectable parameter counts and memory footprints.";
+		return "Local Gemma4 models with selectable memory footprints.";
 	}
 
 	@Override
