@@ -50,9 +50,15 @@ public class Gemma4Provider extends AbstractCuratedModelProvider {
 	private static final String L_MODEL =
 		"hf.co/google/gemma-4-31B-it-qat-q4_0-gguf:latest";
 
-	private static final List<String> MODEL_ALIASES = List.of("XS", "S", "M", "L");
-	private static final Map<String, String> MODEL_NAMES = Map.of("XS", XS_MODEL,
-		"S", S_MODEL, "M", M_MODEL, "L", L_MODEL);
+	private static final String XS_ALIAS = "XS (4B)";
+	private static final String S_ALIAS = "S (12B)";
+	private static final String M_ALIAS = "M (26B)";
+	private static final String L_ALIAS = "L (31B)";
+
+	private static final List<String> MODEL_ALIASES = List.of(XS_ALIAS, S_ALIAS,
+		M_ALIAS, L_ALIAS);
+	private static final Map<String, String> MODEL_NAMES = Map.of(XS_ALIAS, XS_MODEL,
+		S_ALIAS, S_MODEL, M_ALIAS, M_MODEL, L_ALIAS, L_MODEL);
 	/**
 	 * Current Hugging Face GGUF and projection-file sizes for the pinned model
 	 * references, in bytes.

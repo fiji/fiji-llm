@@ -46,9 +46,11 @@ public class GlimmerProviderIQ2 extends AbstractCuratedModelProvider {
 		"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS";
 	private static final String M_MODEL =
 		"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL";
-	private static final List<String> MODEL_ALIASES = List.of("XS (30B)", "M (30B)");
+	private static final String XS_ALIAS = "XS (30B)";
+	private static final String M_ALIAS = "M (30B)";
+	private static final List<String> MODEL_ALIASES = List.of(XS_ALIAS, M_ALIAS);
 	private static final Map<String, String> MODEL_NAMES = Map.of(
-		"XS (30B)", XS_MODEL, "M (30B)", M_MODEL);
+		XS_ALIAS, XS_MODEL, M_ALIAS, M_MODEL);
 	private static final Map<String, Long> MODEL_DOWNLOAD_SIZES = Map.of(
 		XS_MODEL, 12_913_433_344L, M_MODEL, 21_168_856_832L);
 	private static final Map<String, ModelDemand> MODEL_DEMANDS = Map.of(

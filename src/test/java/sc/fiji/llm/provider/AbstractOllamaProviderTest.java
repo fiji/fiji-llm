@@ -44,8 +44,8 @@ public class AbstractOllamaProviderTest {
 	@Test
 	public void testPrioritizeInstalledModels() {
 		final TestOllamaProvider provider = new TestOllamaProvider();
-		final String remoteXS = provider.appendRemoteString("XS");
-		final String remoteM = provider.appendRemoteString("M");
+		final String remoteXS = provider.appendRemoteString("XS (4B)");
+		final String remoteM = provider.appendRemoteString("M (26B)");
 
 		assertEquals(List.of("S", "L", remoteXS, remoteM), provider
 			.prioritizeInstalledModels(List.of(remoteXS, "S", remoteM, "L")));
@@ -84,12 +84,12 @@ public class AbstractOllamaProviderTest {
 	@Test
 	public void testCuratedModelDemands() {
 		final Gemma4Provider gemma = new Gemma4Provider();
-		final LLMProvider.ModelDemand gemmaXS = gemma.getDemand("XS").get();
+		final LLMProvider.ModelDemand gemmaXS = gemma.getDemand("XS (4B)").get();
 		assertEquals(7.76, gemmaXS.baseGiB(), 0.0);
 		assertEquals(0.0000153, gemmaXS.contextGiBPerToken(), 0.0);
 		assertEquals(8.0106752, gemmaXS.estimateGiB(16 * 1024), 0.0000001);
 		assertEquals(8.2613504, gemmaXS.estimateGiB(32 * 1024), 0.0000001);
-		assertEquals(gemmaXS, gemma.getDemand(gemma.appendRemoteString("XS"))
+		assertEquals(gemmaXS, gemma.getDemand(gemma.appendRemoteString("XS (4B)"))
 			.get());
 		final GlimmerProviderIQ2 glimmer = new GlimmerProviderIQ2();
 		final LLMProvider.ModelDemand glimmerDemand = glimmer.getDemand(
@@ -106,7 +106,7 @@ public class AbstractOllamaProviderTest {
 	public void testGemma4ModelDisplayUsesModelAlias() {
 		final Gemma4Provider provider = new Gemma4Provider();
 
-		assertEquals(new LLMProvider.ModelDisplay("Ollama", "Gemma4 S"),
+		assertEquals(new LLMProvider.ModelDisplay("Ollama", "Gemma4 S (12B)"),
 			provider.getModelDisplay(
 				"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest"));
 	}
