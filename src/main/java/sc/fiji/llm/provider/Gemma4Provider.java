@@ -78,6 +78,14 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 	}
 
 	@Override
+	public ModelDisplay getModelDisplay(final String modelName) {
+		final String modelAlias = MODEL_NAMES.entrySet().stream().filter(entry ->
+			entry.getKey().equals(modelName) || entry.getValue().equals(modelName))
+			.map(Map.Entry::getKey).findFirst().orElse(modelName);
+		return new ModelDisplay("Ollama", "Gemma4 " + modelAlias);
+	}
+
+	@Override
 	public boolean isCurated() {
 		return true;
 	}

@@ -88,12 +88,20 @@ public class AbstractOllamaProviderTest {
 		assertEquals(8.2613504, gemmaXS.estimateGiB(32 * 1024), 0.0000001);
 		assertEquals(gemmaXS, gemma.getDemand(gemma.appendRemoteString("XS"))
 			.get());
-
 		final GlimmerProviderIQ2 glimmer = new GlimmerProviderIQ2();
 		final LLMProvider.ModelDemand glimmerDemand = glimmer.getDemand(
 			glimmer.appendRemoteString(
 				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS")).get();
 		assertEquals(15.37152, glimmerDemand.estimateGiB(32 * 1024), 0.0000001);
+	}
+
+	@Test
+	public void testGemma4ModelDisplayUsesModelAlias() {
+		final Gemma4Provider provider = new Gemma4Provider();
+
+		assertEquals(new LLMProvider.ModelDisplay("Ollama", "Gemma4 S"),
+			provider.getModelDisplay(
+				"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest"));
 	}
 
 	@Test

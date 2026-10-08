@@ -372,9 +372,9 @@ Be concise, patient, humble, and collaborative.
 		else {
 			configureChatButton = new JButton();
 		}
-		configureChatButton.setText(buildConfigureChatButtonText(providerName,
-			modelName, llmProvider.supportsModelSelection(), configureChatButton
-			.getFont()));
+		configureChatButton.setText(buildConfigureChatButtonText(llmProvider
+			.getModelDisplay(modelName), llmProvider.supportsModelSelection(),
+			configureChatButton.getFont()));
 		configureChatButton.setPreferredSize(new Dimension(
 			CONFIGURE_CHAT_BUTTON_WIDTH, 36));
 		configureChatButton.setMinimumSize(configureChatButton.getPreferredSize());
@@ -1433,21 +1433,22 @@ Be concise, patient, humble, and collaborative.
 		commandService.run(Fiji_Chat.class, true);
 	}
 
-	private static String buildConfigureChatButtonText(final String providerName,
-		final String modelName, final boolean supportsModelSelection,
+	private static String buildConfigureChatButtonText(
+		final LLMProvider.ModelDisplay displayName,
+		final boolean supportsModelSelection,
 		final Font buttonFont)
 	{
 		if (!supportsModelSelection) {
-			return "<html>" + noWrap(truncateText(providerName, buttonFont,
+			return "<html>" + noWrap(truncateText(displayName.provider(), buttonFont,
 				CONFIGURE_CHAT_TEXT_WIDTH)) + "</html>";
 		}
 
 		final Font modelFont = buttonFont.deriveFont(Font.BOLD);
 		final Font providerFont = buttonFont.deriveFont(Math.max(1f, buttonFont
 			.getSize2D() - 2f));
-		final String modelText = noWrap(truncateText(modelName, modelFont,
+		final String modelText = noWrap(truncateText(displayName.model(), modelFont,
 			CONFIGURE_CHAT_TEXT_WIDTH));
-		final String providerText = noWrap(truncateText(providerName,
+		final String providerText = noWrap(truncateText(displayName.provider(),
 			providerFont, CONFIGURE_CHAT_TEXT_WIDTH));
 		return "<html><b>" + modelText + "</b><br><font size=\"-1\">" +
 			providerText + "</font></html>";

@@ -117,6 +117,11 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	}
 
 	@Override
+	public ModelDisplay getModelDisplay(final String modelName) {
+		return new ModelDisplay("Ollama", modelName);
+	}
+
+	@Override
 	public ChatRequestParameters defaultChatRequestParameters(
 		final String modelName)
 	{

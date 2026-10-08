@@ -102,6 +102,14 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	}
 
 	/**
+	 * The provider and model labels used when displaying a selected model.
+	 *
+	 * @param provider the provider label
+	 * @param model the model label
+	 */
+	record ModelDisplay(String provider, String model) {}
+
+	/**
 	 * Reports whether a model accepts image content in chat messages.
 	 *
 	 * @param modelName the model name
@@ -221,6 +229,16 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * @return the provider name (e.g., "OpenAI", "Anthropic", "Google")
 	 */
 	String getName();
+
+	/**
+	 * Get the provider and model labels used when displaying the selected model.
+	 *
+	 * @param modelName the configured model name
+	 * @return the labels to show in the chat window
+	 */
+	default ModelDisplay getModelDisplay(final String modelName) {
+		return new ModelDisplay(getName(), modelName);
+	}
 
 	/**
 	 * Get a description of this provider.
