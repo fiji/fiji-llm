@@ -29,8 +29,9 @@
 
 package sc.fiji.llm.data;
 
-import java.awt.image.BufferedImage;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +44,7 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
 import net.imagej.ImageJService;
-import net.imagej.display.ImageDisplay;
+import net.imagej.ImgPlus;
 import net.imagej.legacy.IJ1Helper;
 import net.imagej.legacy.LegacyService;
 
@@ -79,122 +80,159 @@ public final class ImageJ1HelperService extends AbstractService implements
 		return Collections.unmodifiableList(ids);
 	}
 
-	public Optional<ImageDisplay> getOrCreateImageDisplay(final int imageId) {
-		if (legacyService == null || !legacyService.isActive()) return Optional.empty();
+	/**
+	 * Returns the ImageJ 1.x image with the given ID. Callers should read image
+	 * state from the opaque legacy image rather than asking ImageJ2 for a display:
+	 * building a display autoscales every channel, which reads one plane per
+	 * channel and can take hours for a lazily loaded image with many channels.
+	 *
+	 * @param id the ImageJ 1.x image ID
+	 * @return the image when the legacy helper is available and the ID is open
+	 */
+	public Optional<Object> getImage(final int id) {
 		try {
-			final Optional<IJ1Helper> helper = getIJ1Helper();
-			if (helper.isEmpty()) return Optional.empty();
-			final var image = helper.get().getImage(imageId);
-			if (image == null) return Optional.empty();
-			final var imageMap = legacyService.getImageMap();
-			return imageMap == null ? Optional.empty() : Optional.ofNullable(imageMap
-				.registerLegacyImage(image));
+			return getIJ1Helper().map(helper -> (Object) helper.getImage(id));
 		}
 		catch (final RuntimeException e) {
 			return Optional.empty();
-		}
-	}
-
-	public boolean isImageVisible(final int id) {
-		try {
-			return getIJ1Helper().map(helper -> helper.getImage(id)).map(image -> image
-				.isVisible()).orElse(false);
-		}
-		catch (final RuntimeException e) {
-			return false;
-		}
-	}
-
-	public String getImageTitle(final int id) {
-		try {
-			return getIJ1Helper().map(helper -> helper.getImage(id)).map(image -> image
-				.getTitle()).orElse("");
-		}
-		catch (final RuntimeException e) {
-			return "";
-		}
-	}
-
-	public int getImageId(final ImageDisplay display) {
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return -1;
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return -1;
-			final var imagePlus = imageMap.lookupImagePlus(display);
-			return imagePlus == null ? -1 : imagePlus.getID();
-		}
-		catch (final RuntimeException e) {
-			return -1;
 		}
 	}
 
 	/**
-	 * Checks whether the legacy image for a display uses a virtual stack.
+	 * Returns the active ImageJ 1.x image without linking this service to IJ1 UI
+	 * classes.
 	 *
-	 * @param display the ImageJ2 display associated with the legacy image
-	 * @return whether the image has a virtual stack with multiple planes
+	 * @return the active image when ImageJ Legacy is available
 	 */
-	public boolean hasVirtualStack(final ImageDisplay display) {
-		final int imageId = getImageId(display);
-		if (imageId < 0) return false;
+	public Optional<Object> getActiveImage() {
+		if (getIJ1Helper().isEmpty()) return Optional.empty();
+		return Optional.ofNullable(invokeStatic("ij.WindowManager", "getCurrentImage"));
+	}
+
+	/**
+	 * Returns the legacy image ID, or {@code -1} when it cannot be read.
+	 *
+	 * @param image opaque ImageJ 1.x image
+	 * @return image ID, or {@code -1} when unavailable
+	 */
+	public int getImageId(final Object image) {
+		final Object id = invoke(image, "getID");
+		return id instanceof Number number ? number.intValue() : -1;
+	}
+
+	public boolean isActiveImage(final int id) {
+		return getActiveImage().map(image -> getImageId(image) == id).orElse(false);
+	}
+
+	/** Makes the image's window the current ImageJ window; call on the EDT. */
+	public boolean activateImage(final int id) {
+		final Object image = getImage(id).orElse(null);
+		final Object window = invoke(image, "getWindow");
+		if (window == null) return false;
+		invokeStatic("ij.WindowManager", "setCurrentWindow", window);
+		invoke(window, "toFront");
+		return isActiveImage(id);
+	}
+
+	public boolean isImageVisible(final int id) {
+		return getImage(id).map(image -> Boolean.TRUE.equals(invoke(image, "isVisible")))
+			.orElse(false);
+	}
+
+	public String getImageTitle(final int id) {
+		return getImage(id).map(this::getImageTitle).orElse("");
+	}
+
+	/**
+	 * Returns the title of an opaque legacy image, or an empty string.
+	 *
+	 * @param image opaque ImageJ 1.x image
+	 * @return image title, or an empty string when unavailable
+	 */
+	public String getImageTitle(final Object image) {
+		final Object title = invoke(image, "getTitle");
+		return title == null ? "" : String.valueOf(title);
+	}
+
+	/**
+	 * Wraps an image as an ImageJ2 {@link ImgPlus} without creating a display.
+	 * Planes are loaded only when accessed. This is the same wrapping imagej-legacy
+	 * uses for its datasets, so axes and pixel types match what ImageJ2 reports.
+	 *
+	 * @param image opaque ImageJ 1.x image returned by {@link #getImage(int)}
+	 * @return a lazy ImageJ2 view of the image
+	 */
+	public static ImgPlus<?> wrap(final Object image) {
+		final Object wrapped = invokeStatic("net.imglib2.img.VirtualStackAdapter",
+			"wrap", image);
+		if (wrapped instanceof ImgPlus<?> imgPlus) return imgPlus;
+		throw new IllegalStateException("Could not wrap legacy image as ImgPlus");
+	}
+
+	/**
+	 * Returns whether an image has a multi-plane virtual stack.
+	 *
+	 * @param image opaque ImageJ 1.x image
+	 * @return whether its virtual stack has more than one plane
+	 */
+	public boolean hasVirtualStack(final Object image) {
+		if (asInt(invoke(image, "getStackSize")) <= 1) return false;
+		return Boolean.TRUE.equals(invoke(invoke(image, "getStack"), "isVirtual"));
+	}
+
+	/**
+	 * Invokes a public method on an opaque legacy object.
+	 *
+	 * @param target object on which to invoke the method
+	 * @param methodName public method name
+	 * @param args method arguments
+	 * @return method result, or {@code null} if invocation fails
+	 */
+	public Object invokeLegacyMethod(final Object target, final String methodName,
+		final Object... args)
+	{
+		return invoke(target, methodName, args);
+	}
+
+	/**
+	 * Reads a public field from an opaque legacy object.
+	 *
+	 * @param target object containing the field
+	 * @param fieldName public field name
+	 * @return field value, or {@code null} if unavailable
+	 */
+	public Object getLegacyField(final Object target, final String fieldName) {
+		return getField(target, fieldName);
+	}
+
+	/**
+	 * Reads a public static field by class name.
+	 *
+	 * @param className fully qualified class name
+	 * @param fieldName public static field name
+	 * @return field value, or {@code null} if unavailable
+	 */
+	public Object getLegacyStaticField(final String className,
+		final String fieldName)
+	{
+		return getStaticField(className, fieldName);
+	}
+
+	/**
+	 * Checks whether an opaque object is an instance of a class by name.
+	 *
+	 * @param target object to check
+	 * @param className fully qualified class name
+	 * @return whether the object is an instance of that class
+	 */
+	public boolean isLegacyInstance(final Object target, final String className) {
+		if (target == null) return false;
 		try {
-			final Optional<IJ1Helper> helper = getIJ1Helper();
-			if (helper.isEmpty()) return false;
-			final Object image = helper.get().getImage(imageId);
-			if (asInt(invoke(image, "getStackSize")) <= 1) return false;
-			final Object stack = invoke(image, "getStack");
-			return Boolean.TRUE.equals(invoke(stack, "isVirtual"));
+			return Class.forName(className).isInstance(target);
 		}
-		catch (final RuntimeException e) {
+		catch (final ReflectiveOperationException | LinkageError e) {
 			return false;
 		}
-	}
-
-	public Optional<Object> getRoi(final ImageDisplay display) {
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return Optional.empty();
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return Optional.empty();
-			final var imagePlus = imageMap.lookupImagePlus(display);
-			return imagePlus == null ? Optional.empty() : Optional.ofNullable(invoke(
-				imagePlus, "getRoi"));
-		}
-		catch (final RuntimeException e) {
-			return Optional.empty();
-		}
-	}
-
-	public Optional<BufferedImage> getFlattenedImage(final ImageDisplay display) {
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return Optional.empty();
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return Optional.empty();
-			final var imagePlus = imageMap.lookupImagePlus(display);
-			if (imagePlus == null) return Optional.empty();
-			final Object flattened = invoke(imagePlus, "flatten");
-			final Object bufferedImage = invoke(flattened, "getBufferedImage");
-			return bufferedImage instanceof BufferedImage ? Optional.of((BufferedImage)
-				bufferedImage) : Optional.empty();
-		}
-		catch (final RuntimeException e) {
-			return Optional.empty();
-		}
-	}
-
-	public int getOverlayCount(final ImageDisplay display) {
-		final Object overlay = getLegacyImageValue(display, "getOverlay");
-		final Object size = invoke(overlay, "size");
-		return size instanceof Number ? ((Number) size).intValue() : 0;
-	}
-
-	public boolean isOverlayHidden(final ImageDisplay display) {
-		return Boolean.TRUE.equals(getLegacyImageValue(display, "getHideOverlay"));
 	}
 
 	public Object getResultsTable() {
@@ -231,13 +269,13 @@ public final class ImageJ1HelperService extends AbstractService implements
 	{
 		try {
 			final Class<?> type = Class.forName(className);
-			final Class<?>[] parameterTypes = new Class<?>[args.length];
-			for (int i = 0; i < args.length; i++) parameterTypes[i] = args[i].getClass();
-			final Method method = type.getMethod(methodName, parameterTypes);
-			method.setAccessible(true);
+			final Method method = findMethod(type, methodName, args);
+			if (!Modifier.isStatic(method.getModifiers())) return null;
 			return method.invoke(null, args);
 		}
-		catch (final ReflectiveOperationException | LinkageError e) {
+		catch (final ReflectiveOperationException | LinkageError |
+			IllegalArgumentException e)
+		{
 			return null;
 		}
 	}
@@ -247,28 +285,75 @@ public final class ImageJ1HelperService extends AbstractService implements
 	{
 		if (target == null) return null;
 		try {
-			final Class<?>[] parameterTypes = new Class<?>[args.length];
-			for (int i = 0; i < args.length; i++) parameterTypes[i] = args[i].getClass();
-			final Method method = target.getClass().getMethod(methodName, parameterTypes);
+			final Method method = findMethod(target.getClass(), methodName, args);
 			return method.invoke(target, args);
+		}
+		catch (final ReflectiveOperationException | LinkageError |
+			IllegalArgumentException e)
+		{
+			return null;
+		}
+	}
+
+	private static Method findMethod(final Class<?> type, final String methodName,
+		final Object... args) throws NoSuchMethodException
+	{
+		for (final Method method : type.getMethods()) {
+			if (!method.getName().equals(methodName) || method.getParameterCount() !=
+				args.length) continue;
+			final Class<?>[] parameterTypes = method.getParameterTypes();
+			boolean matches = true;
+			for (int i = 0; i < args.length; i++) {
+				if (!isCompatible(parameterTypes[i], args[i])) {
+					matches = false;
+					break;
+				}
+			}
+			if (matches) return method;
+		}
+		throw new NoSuchMethodException(type.getName() + "." + methodName);
+	}
+
+	private static boolean isCompatible(final Class<?> parameterType,
+		final Object argument)
+	{
+		if (argument == null) return !parameterType.isPrimitive();
+		final Class<?> referenceType = parameterType.isPrimitive() ?
+			boxedType(parameterType) : parameterType;
+		return referenceType.isAssignableFrom(argument.getClass());
+	}
+
+	private static Class<?> boxedType(final Class<?> primitiveType) {
+		if (primitiveType == boolean.class) return Boolean.class;
+		if (primitiveType == byte.class) return Byte.class;
+		if (primitiveType == char.class) return Character.class;
+		if (primitiveType == short.class) return Short.class;
+		if (primitiveType == int.class) return Integer.class;
+		if (primitiveType == long.class) return Long.class;
+		if (primitiveType == float.class) return Float.class;
+		if (primitiveType == double.class) return Double.class;
+		return primitiveType;
+	}
+
+	private static Object getField(final Object target, final String fieldName) {
+		if (target == null) return null;
+		try {
+			return target.getClass().getField(fieldName).get(target);
 		}
 		catch (final ReflectiveOperationException | LinkageError e) {
 			return null;
 		}
 	}
 
-	private Object getLegacyImageValue(final ImageDisplay display,
-		final String methodName)
+	private static Object getStaticField(final String className,
+		final String fieldName)
 	{
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return null;
-		}
 		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return null;
-			return invoke(imageMap.lookupImagePlus(display), methodName);
+			final Class<?> type = Class.forName(className);
+			final Field field = type.getField(fieldName);
+			return Modifier.isStatic(field.getModifiers()) ? field.get(null) : null;
 		}
-		catch (final RuntimeException e) {
+		catch (final ReflectiveOperationException | LinkageError e) {
 			return null;
 		}
 	}
@@ -288,12 +373,7 @@ public final class ImageJ1HelperService extends AbstractService implements
 	private static boolean getStaticBoolean(final String className,
 		final String fieldName)
 	{
-		try {
-			return Class.forName(className).getField(fieldName).getBoolean(null);
-		}
-		catch (final ReflectiveOperationException | LinkageError e) {
-			return false;
-		}
+		return Boolean.TRUE.equals(getStaticField(className, fieldName));
 	}
 
 	public static final class ResultsTableState {

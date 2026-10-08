@@ -33,9 +33,8 @@ import java.io.IOException;
 import java.util.Optional;
 
 import net.imagej.ImageJService;
-import net.imagej.display.ImageDisplay;
 
-/** Renders the current ImageJ display into bounded multimodal PNG content. */
+/** Renders open ImageJ images into bounded multimodal PNG content. */
 public interface ImageRenderingService extends ImageJService {
 
 	/** Preference key controlling image pixels sent to hosted models. */
@@ -65,6 +64,6 @@ public interface ImageRenderingService extends ImageJService {
 	Optional<RenderedImageResult> renderActiveImage(ImageRenderOptions options)
 		throws IOException;
 
-	Optional<RenderedImageResult> render(ImageDisplay display,
-		ImageRenderOptions options) throws IOException;
+	Optional<RenderedImageResult> render(int imageId, ImageRenderOptions options)
+		throws IOException;
 }

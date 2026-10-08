@@ -105,8 +105,12 @@ public class ImagesInFiji extends AbstractAgentGuide {
 			- Never assume that dimension index 2 is always Z or that a dataset is only
 				X/Y/Z/C/T. Inspect `numDimensions()`, `dimension(i)`, and `axis(i).type()` on
 				Dataset or `ImgPlus`; use channel/slice/frame methods on `ImagePlus`.
-			- For images already open in Fiji, use `ImageDisplayService` and its
-				`DatasetView` to identify the active display and Dataset.
+			- For images already open in Fiji, use the `ImagePlus` from
+				`WindowManager.getCurrentImage()` or `WindowManager.getImage(id)`. Avoid
+				`ImageDisplayService.getImageDisplays()` and `getActiveImageDisplay()`:
+				for an image without an ImageJ2 display they build one, which autoscales
+				every channel and reads a plane per channel. A lazily loaded image with
+				many channels can keep Fiji busy for hours.
 			""".strip();
 
 	public ImagesInFiji() {

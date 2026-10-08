@@ -74,7 +74,9 @@ public class ServicesAndContextGuide extends AbstractAgentGuide {
 			## ImageJ services (`imagej-common`)
 
 			- `DatasetService`: creates and manages ImageJ datasets.
-			- `ImageDisplayService`: coordinates image displays and their datasets.
+			- `ImageDisplayService`: coordinates image displays and their datasets. Asking
+			  it for the displays of open ImageJ 1.x images builds a display for each,
+			  which reads a plane per channel; see the `image-types` guide.
 			- `ROIService`, `OverlayService`, `LUTService`, `TableService`, and
 			  `UnitService`: support common image-analysis data and operations.
 			- `ImageJUIService`: provides ImageJ-specific user-interface integration.

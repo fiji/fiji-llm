@@ -29,15 +29,12 @@
 
 package sc.fiji.llm.image;
 
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,15 +49,8 @@ import org.scijava.prefs.PrefService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
-import net.imagej.Dataset;
-import net.imagej.Position;
 import net.imagej.axis.Axes;
-import net.imagej.axis.AxisType;
-import net.imagej.display.DatasetView;
-import net.imagej.display.ImageDisplay;
-import net.imagej.display.ImageDisplayService;
-import net.imglib2.display.ColorTable;
-import net.imglib2.display.screenimage.awt.ARGBScreenImage;
+import net.imglib2.display.ColorTable8;
 import sc.fiji.llm.data.ImageJ1HelperService;
 
 /** Default ImageJ-backed implementation of {@link ImageRenderingService}. */
@@ -68,9 +58,6 @@ import sc.fiji.llm.data.ImageJ1HelperService;
 public final class DefaultImageRenderingService extends AbstractService implements
 	ImageRenderingService
 {
-
-	@Parameter
-	private ImageDisplayService imageDisplayService;
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;
@@ -96,49 +83,85 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 	public Optional<RenderedImageResult> renderActiveImage(
 		final ImageRenderOptions options) throws IOException
 	{
-		return render(imageDisplayService.getActiveImageDisplay(), options);
+		final Optional<Object> image = imageJ1HelperService.getActiveImage();
+		return image.isEmpty() ? Optional.empty() : render(image.get(), options);
 	}
 
 	@Override
-	public Optional<RenderedImageResult> render(final ImageDisplay display,
+	public Optional<RenderedImageResult> render(final int imageId,
+		final ImageRenderOptions options) throws IOException
+	{
+		final Optional<Object> image = imageJ1HelperService.getImage(imageId);
+		return image.isEmpty() ? Optional.empty() : render(image.get(), options);
+	}
+
+	private Optional<RenderedImageResult> render(final Object image,
 		final ImageRenderOptions requestedOptions) throws IOException
 	{
-		if (display == null) return Optional.empty();
 		requirePixelSharing(isPixelSharingAllowed());
 		final ImageRenderOptions options = requestedOptions == null ?
 			new ImageRenderOptions() : requestedOptions;
-		final DatasetView view = imageDisplayService.getActiveDatasetView(display);
-		if (view == null) return Optional.empty();
-		final ARGBScreenImage screenImage = view.getScreenImage();
-		if (screenImage == null || screenImage.image() == null) return Optional.empty();
-
 		final Optional<BufferedImage> flattened = options.isIncludeOverlays() ?
-			imageJ1HelperService.getFlattenedImage(display) : Optional.empty();
-		final BufferedImage source = flattened.map(DefaultImageRenderingService::copyImage)
-			.orElseGet(() -> copyImage(screenImage.image()));
+			flatten(image) : Optional.empty();
+		BufferedImage rendered = flattened.orElse(null);
+		if (rendered == null) rendered = asBufferedImage(imageJ1HelperService
+			.invokeLegacyMethod(image, "getBufferedImage"));
+		if (rendered == null) return Optional.empty();
+		final BufferedImage source = copyImage(rendered);
 		final String renderMode = flattened.isPresent() ? ImageRenderMetadata
 			.FLATTENED_RENDER_MODE : ImageRenderMetadata.SCREEN_RENDER_MODE;
-		final Optional<Object> roi = options.isIncludeRoi() ? imageJ1HelperService
-			.getRoi(display) : Optional.empty();
-		final boolean roiIncluded = roi.isPresent();
-		if (roiIncluded && flattened.isEmpty()) drawRoi(source, roi.get());
-		final int overlayCount = imageJ1HelperService.getOverlayCount(display);
+		final Object roi = options.isIncludeRoi() ? imageJ1HelperService
+			.invokeLegacyMethod(image, "getRoi") : null;
+		final boolean roiIncluded = roi != null;
+		if (roiIncluded && flattened.isEmpty()) drawRoi(source, roi);
+		final Object overlay = imageJ1HelperService.invokeLegacyMethod(image,
+			"getOverlay");
+		final int overlayCount = asInt(imageJ1HelperService.invokeLegacyMethod(overlay,
+			"size"));
 		final boolean overlayIncluded = options.isIncludeOverlays() && flattened
-			.isPresent() && overlayCount > 0 && !imageJ1HelperService.isOverlayHidden(
-				display);
-		final String roiType = roiIncluded ? roi.get().getClass().getName() : "";
+			.isPresent() && overlayCount > 0 && !asBoolean(imageJ1HelperService
+				.invokeLegacyMethod(image, "getHideOverlay"));
+		final String roiType = roiIncluded ? roi.getClass().getName() : "";
 
 		final BufferedImage bounded = bound(source, options.getMaxDimension());
 		final byte[] pngBytes = encodePng(bounded);
-		final ImageRenderMetadata metadata = createMetadata(display, view,
-			source.getWidth(), source.getHeight(), bounded.getWidth(), bounded.getHeight(),
-			roiIncluded, renderMode, roiType, overlayIncluded, overlayCount);
+		final ImageRenderMetadata metadata = createMetadata(image, source.getWidth(),
+			source.getHeight(), bounded.getWidth(), bounded.getHeight(), roiIncluded,
+			renderMode, roiType, overlayIncluded, overlayCount);
 		return Optional.of(new RenderedImageResult(pngBytes, metadata));
 	}
 
 	static void requirePixelSharing(final boolean allowed) throws IOException {
 		if (!allowed) throw new IOException(ImageRenderingService
 			.PIXEL_SHARING_DISABLED_MESSAGE);
+	}
+
+	private Optional<BufferedImage> flatten(final Object image) {
+		try {
+			final Object flattened = imageJ1HelperService.invokeLegacyMethod(image,
+				"flatten");
+			return Optional.ofNullable(asBufferedImage(imageJ1HelperService
+				.invokeLegacyMethod(flattened, "getBufferedImage")));
+		}
+		catch (final RuntimeException e) {
+			return Optional.empty();
+		}
+	}
+
+	private static BufferedImage asBufferedImage(final Object image) {
+		return image instanceof BufferedImage bufferedImage ? bufferedImage : null;
+	}
+
+	private static int asInt(final Object value) {
+		return value instanceof Number number ? number.intValue() : 0;
+	}
+
+	private static double asDouble(final Object value) {
+		return value instanceof Number number ? number.doubleValue() : 0;
+	}
+
+	private static boolean asBoolean(final Object value) {
+		return Boolean.TRUE.equals(value);
 	}
 
 	static BufferedImage copyImage(final BufferedImage source) {
@@ -186,75 +209,106 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		return output.toByteArray();
 	}
 
-	private static void drawRoi(final BufferedImage image, final Object roi) {
+	private void drawRoi(final BufferedImage image, final Object roi) {
 		final Graphics2D graphics = image.createGraphics();
 		try {
-			final Method draw = roi.getClass().getMethod("draw", Graphics.class);
-			draw.invoke(roi, graphics);
-		}
-		catch (final ReflectiveOperationException e) {
-			throw new IllegalStateException("Could not draw ROI", e);
+			imageJ1HelperService.invokeLegacyMethod(roi, "draw", graphics);
 		}
 		finally {
 			graphics.dispose();
 		}
 	}
 
-	private ImageRenderMetadata createMetadata(final ImageDisplay display,
-		final DatasetView view, final int sourceWidth, final int sourceHeight,
-		final int renderedWidth, final int renderedHeight, final boolean roiIncluded,
-		final String renderMode, final String roiType, final boolean overlayIncluded,
-		final int overlayCount)
+	private ImageRenderMetadata createMetadata(final Object image,
+		final int sourceWidth, final int sourceHeight, final int renderedWidth,
+		final int renderedHeight, final boolean roiIncluded, final String renderMode,
+		final String roiType, final boolean overlayIncluded, final int overlayCount)
 	{
-		final Dataset dataset = view.getData();
-		final Map<String, Long> planePosition = createPlanePosition(view, dataset);
-		final long channelIndex = planePosition.getOrDefault(Axes.CHANNEL.getLabel(), -1L);
-		final List<ImageRenderMetadata.ChannelMetadata> channels = createChannelMetadata(
-			view);
-		final String colorMode = view.getColorMode() == null ? "" : view.getColorMode()
-			.name();
-		final int imageId = imageJ1HelperService.getImageId(display);
-		return new ImageRenderMetadata(imageJ1HelperService.getImageTitle(imageId),
-			imageId, sourceWidth, sourceHeight, renderedWidth, renderedHeight,
-			planePosition, channelIndex, view.getChannelCount(), colorMode, channels,
-			roiIncluded, roiType, overlayIncluded, overlayCount, renderMode);
+		final int channelCount = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+			"getNChannels"));
+		final long channelIndex = channelCount > 1 ? asInt(imageJ1HelperService
+			.invokeLegacyMethod(image, "getC")) - 1 : -1;
+		return new ImageRenderMetadata(imageJ1HelperService.getImageTitle(image),
+			imageJ1HelperService.getImageId(image), sourceWidth,
+			sourceHeight, renderedWidth, renderedHeight, createPlanePosition(image),
+			channelIndex, channelCount, colorMode(image), createChannelMetadata(
+				image), roiIncluded, roiType, overlayIncluded, overlayCount, renderMode);
 	}
 
-	private static Map<String, Long> createPlanePosition(final DatasetView view,
-		final Dataset dataset)
-	{
-		final Position position = view.getPlanePosition();
-		if (position == null || dataset == null) return Collections.emptyMap();
-		final long[] values = new long[position.numDimensions()];
-		position.localize(values);
+	private Map<String, Long> createPlanePosition(final Object image) {
 		final Map<String, Long> result = new LinkedHashMap<>();
-		int positionDimension = 0;
-		for (int datasetDimension = 0; datasetDimension < dataset.numDimensions();
-			datasetDimension++)
-		{
-			final AxisType axisType = dataset.axis(datasetDimension).type();
-			if (Axes.X.equals(axisType) || Axes.Y.equals(axisType)) continue;
-			if (positionDimension >= values.length) break;
-			final String label = axisType == null ? "Dim" + datasetDimension : axisType
-				.getLabel();
-			result.put(label, values[positionDimension++]);
+		if (asInt(imageJ1HelperService.invokeLegacyMethod(image, "getNChannels")) > 1) {
+			result.put(Axes.CHANNEL.getLabel(), (long) asInt(imageJ1HelperService
+				.invokeLegacyMethod(image, "getC")) - 1);
+		}
+		if (asInt(imageJ1HelperService.invokeLegacyMethod(image, "getNSlices")) > 1) {
+			result.put(Axes.Z.getLabel(), (long) asInt(imageJ1HelperService
+				.invokeLegacyMethod(image, "getZ")) - 1);
+		}
+		if (asInt(imageJ1HelperService.invokeLegacyMethod(image, "getNFrames")) > 1) {
+			result.put(Axes.TIME.getLabel(), (long) asInt(imageJ1HelperService
+				.invokeLegacyMethod(image, "getT")) - 1);
 		}
 		return result;
 	}
 
-	private static List<ImageRenderMetadata.ChannelMetadata> createChannelMetadata(
-		final DatasetView view)
-	{
-		final List<ColorTable> colorTables = view.getColorTables();
-		final List<ImageRenderMetadata.ChannelMetadata> channels = new ArrayList<>();
-		for (int channel = 0; channel < view.getChannelCount(); channel++) {
-			final ColorTable colorTable = channel < colorTables.size() ? colorTables.get(
-				channel) : null;
-			final ImageRenderMetadata.LutMetadata lut = colorTable == null ? null
-				: new ImageRenderMetadata.LutMetadata(colorTable);
-			channels.add(new ImageRenderMetadata.ChannelMetadata(channel, view
-				.getChannelMin(channel), view.getChannelMax(channel), lut));
+	private String colorMode(final Object image) {
+		if (!imageJ1HelperService.isLegacyInstance(image, "ij.CompositeImage")) {
+			return "COLOR";
 		}
+		final int mode = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+			"getMode"));
+		if (mode == asInt(imageJ1HelperService.getLegacyStaticField("ij.IJ",
+			"COMPOSITE"))) return "COMPOSITE";
+		if (mode == asInt(imageJ1HelperService.getLegacyStaticField("ij.IJ",
+			"GRAYSCALE"))) return "GRAYSCALE";
+		return "COLOR";
+	}
+
+	/** Describes only the displayed channels, which are few even for huge stacks. */
+	private List<ImageRenderMetadata.ChannelMetadata> createChannelMetadata(
+		final Object image)
+	{
+		final List<ImageRenderMetadata.ChannelMetadata> channels = new ArrayList<>();
+		if (imageJ1HelperService.isLegacyInstance(image, "ij.CompositeImage") &&
+			"COMPOSITE".equals(colorMode(image)))
+		{
+			final boolean[] active = (boolean[]) imageJ1HelperService
+				.invokeLegacyMethod(image, "getActiveChannels");
+			final int channelCount = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+				"getNChannels"));
+			for (int channel = 0; channel < channelCount; channel++) {
+				if (channel >= active.length || !active[channel]) continue;
+				final Object lut = imageJ1HelperService.invokeLegacyMethod(image,
+					"getChannelLut", channel + 1);
+				channels.add(new ImageRenderMetadata.ChannelMetadata(channel,
+					asDouble(imageJ1HelperService.getLegacyField(lut, "min")),
+					asDouble(imageJ1HelperService.getLegacyField(lut, "max")),
+					lutMetadata(lut)));
+			}
+			return channels;
+		}
+		final Object processor = imageJ1HelperService.invokeLegacyMethod(image,
+			"getProcessor");
+		final Object lut = imageJ1HelperService.invokeLegacyMethod(processor, "getLut");
+		channels.add(new ImageRenderMetadata.ChannelMetadata(Math.max(0, asInt(
+			imageJ1HelperService.invokeLegacyMethod(image, "getC")) - 1), asDouble(
+				imageJ1HelperService.invokeLegacyMethod(image, "getDisplayRangeMin")),
+			asDouble(imageJ1HelperService.invokeLegacyMethod(image,
+				"getDisplayRangeMax")), lut == null ? null : lutMetadata(lut)));
 		return channels;
+	}
+
+	private ImageRenderMetadata.LutMetadata lutMetadata(final Object lut) {
+		final int size = asInt(imageJ1HelperService.invokeLegacyMethod(lut,
+			"getMapSize"));
+		final byte[] reds = new byte[size];
+		final byte[] greens = new byte[size];
+		final byte[] blues = new byte[size];
+		imageJ1HelperService.invokeLegacyMethod(lut, "getReds", reds);
+		imageJ1HelperService.invokeLegacyMethod(lut, "getGreens", greens);
+		imageJ1HelperService.invokeLegacyMethod(lut, "getBlues", blues);
+		return new ImageRenderMetadata.LutMetadata(new ColorTable8(reds, greens,
+			blues));
 	}
 }
