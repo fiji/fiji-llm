@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,19 +27,34 @@
  * #L%
  */
 
-package sc.fiji.llm.image;
+package sc.fiji.llm;
 
-import java.io.IOException;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 
-import net.imagej.ImageJService;
+import ij.VirtualStack;
+import ij.process.ByteProcessor;
+import ij.process.ImageProcessor;
 
-/** Renders open ImageJ images into bounded multimodal PNG content. */
-public interface ImageRenderingService extends ImageJService {
+/** A virtual stack that records which slices were read. */
+public final class RecordingVirtualStack extends VirtualStack {
 
-	Optional<RenderedImageResult> renderActiveImage(ImageRenderOptions options)
-		throws IOException;
+	public final Set<Integer> requestedSlices = new HashSet<>();
 
-	Optional<RenderedImageResult> render(int imageId, ImageRenderOptions options)
-		throws IOException;
+	public RecordingVirtualStack(final int width, final int height,
+		final int slices)
+	{
+		super(width, height, slices);
+	}
+
+	@Override
+	public ImageProcessor getProcessor(final int n) {
+		requestedSlices.add(n);
+		return new ByteProcessor(getWidth(), getHeight());
+	}
+
+	@Override
+	public Object getPixels(final int n) {
+		return getProcessor(n).getPixels();
+	}
 }

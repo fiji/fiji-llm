@@ -195,11 +195,18 @@ Context items may also provide tooltip text for the chat attachment menu.
 Each chat message also carries a `SessionSnapshot`: the current output of `fiji_script_list` and `fiji_image_list` (names and IDs only, at most 20 images with the active one always kept), appended to the text sent to the model. It lets the model know which scripts and images are open without sending their content; the system prompt tells it to read relevant items with tools. Like attached context, the snapshot is neither displayed nor saved with the conversation. The active script falls back to the most recent visible Script Editor tab when no editor focus has been recorded.
 
 `ImageRenderingService` is the separate transient image payload layer. It copies the
-currently rendered `DatasetView` plane, preserving the active display LUT,
-channel ranges, color mode, and non-XY position, then bounds and encodes it as a
+plane currently shown for an `ImagePlus`, preserving its LUTs, channel ranges,
+composite mode, and channel/slice/frame position, then bounds and encodes it as a
 PNG-backed LangChain4j `ImageContent`. `RenderedImageResult` keeps that payload
-separate from `ImageRenderMetadata`; optional ROI drawing uses the active legacy
-ImageJ ROI when the legacy bridge is available.
+separate from `ImageRenderMetadata`; optional ROI drawing uses the image's
+ImageJ ROI.
+
+Image tools, context suppliers, rendering, and environment snapshots read open
+images through `ImageJ1HelperService` as `ImagePlus` objects, wrapping them with
+imglib2-ij's `VirtualStackAdapter` when they need ImageJ2 axes or pixel types.
+They never ask `ImageDisplayService` for displays. Building an ImageJ2 display
+for an ImageJ 1.x image autoscales every channel, which for a lazily loaded image
+with many channels reads one plane per channel.
 
 ---
 
@@ -246,6 +253,7 @@ While a response streams, `ChatMessagePanel` shows a `ThinkingIndicator` (animat
 | `langchain4j-mcp` | 1.13.1-beta23 | MCP client + `McpToolProvider` |
 | `scijava-common` | (pom-scijava) | Plugin system, services, DI |
 | `imagej-legacy` | (pom-scijava) | ImageJ1 macro/command interop |
+| `ij`, `imglib2-ij` | (pom-scijava) | ImageJ1 image access; lazy `ImgPlus` views of `ImagePlus` |
 | `jsoup` | 1.21.2 | HTML parsing |
 | `jackson` (2 + 3) | 2.19.2 / 3.0.3 | JSON serialization |
 | `jetty-server` | 11.0.20 | Embedded MCP HTTP server |

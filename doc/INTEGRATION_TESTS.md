@@ -134,6 +134,12 @@ would:
       image block or a server failure. The error should identify the requested
       id and recommend `fiji_image_list`, both when no images are open and when
       a different image is open.
+12. Open a large lazily loaded image whose third axis is channels, for example
+      a remote Zarr array through File > Import > HDF5/N5/Zarr/OME-NGFF with
+      Virtual checked. Call `fiji_image_list`, `fiji_image_details`, and
+      `fiji_image_view` for it, and run a short script with `fiji_script_run`.
+      Verify that each returns within a few seconds and that the Fiji status
+      bar does not show "computing min/max".
 
 ## Tool Sequence and Common Checks
 

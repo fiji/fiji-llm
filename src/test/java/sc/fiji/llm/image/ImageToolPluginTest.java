@@ -29,9 +29,12 @@
 package sc.fiji.llm.image;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,6 +44,12 @@ import org.scijava.Context;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.TextContent;
+import ij.ImagePlus;
+import ij.macro.Interpreter;
+import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.RecordingVirtualStack;
 import sc.fiji.llm.Setup;
 import sc.fiji.llm.tools.AiToolService;
 
@@ -82,6 +91,37 @@ public class ImageToolPluginTest {
 		}
 		finally {
 			imagePlusClass.getMethod("close").invoke(image);
+		}
+	}
+
+	@Test
+	public void testImageToolsDoNotBuildImageJ2Displays() {
+		final RecordingVirtualStack stack = new RecordingVirtualStack(2, 2, 500);
+		final ImagePlus image = new ImagePlus("many channels", stack);
+		image.setDimensions(500, 1, 1);
+		Interpreter.addBatchModeImage(image);
+		stack.requestedSlices.clear();
+		try {
+			final JsonObject details = JsonParser.parseString(plugin.getImageDetails(
+				image.getID())).getAsJsonObject();
+			final JsonObject channelAxis = details.getAsJsonArray("dimensions").get(2)
+				.getAsJsonObject();
+			assertEquals("Channel", channelAxis.get("type").getAsString());
+			assertEquals(500, channelAxis.get("length").getAsLong());
+			assertEquals("UnsignedByteType", details.get("pixel_type").getAsString());
+
+			final List<Content> view = plugin.viewImage(image.getID());
+			assertEquals(2, view.size());
+			final JsonObject metadata = JsonParser.parseString(((TextContent) view.get(
+				0)).text()).getAsJsonObject().getAsJsonObject("render_metadata");
+			assertEquals(500, metadata.get("channel_count").getAsInt());
+
+			assertNull(context.getService(LegacyService.class).getImageMap()
+				.lookupDisplay(image));
+			assertTrue(stack.requestedSlices.size() <= 1);
+		}
+		finally {
+			Interpreter.removeBatchModeImage(image);
 		}
 	}
 

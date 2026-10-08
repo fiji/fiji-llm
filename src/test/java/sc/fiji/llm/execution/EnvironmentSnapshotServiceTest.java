@@ -31,10 +31,8 @@ package sc.fiji.llm.execution;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -43,24 +41,20 @@ import org.scijava.Context;
 import org.scijava.console.ConsoleService;
 import org.scijava.console.OutputEvent;
 import org.scijava.console.OutputEvent.Source;
-import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 
 import com.google.gson.JsonObject;
 
 import ij.ImagePlus;
-import ij.VirtualStack;
+import ij.macro.Interpreter;
 import ij.measure.ResultsTable;
 import ij.process.ByteProcessor;
-import ij.process.ImageProcessor;
-import net.imagej.Dataset;
-import net.imagej.DatasetService;
-import net.imagej.axis.Axes;
-import net.imagej.axis.AxisType;
-import net.imagej.display.ImageDisplay;
 import net.imagej.legacy.LegacyService;
-import net.imglib2.Cursor;
-import net.imglib2.type.numeric.RealType;
+import net.imglib2.img.Img;
+import net.imglib2.img.cell.CellImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import sc.fiji.llm.RecordingVirtualStack;
 import sc.fiji.llm.Setup;
 
 public class EnvironmentSnapshotServiceTest {
@@ -121,16 +115,13 @@ public class EnvironmentSnapshotServiceTest {
 
 	@Test
 	public void testFinalPixelTrackingReportsInPlaceChanges() {
-		final DatasetService datasetService = context.getService(DatasetService.class);
-		final DisplayService displayService = context.getService(DisplayService.class);
-		final Dataset dataset = datasetService.create(new long[] { 2, 2 }, "pixel test",
-			new AxisType[] { Axes.X, Axes.Y }, 8, false, false);
-		final ImageDisplay display = (ImageDisplay) displayService.createDisplay(dataset);
+		final ImagePlus image = new ImagePlus("pixel test", new ByteProcessor(2, 2));
+		Interpreter.addBatchModeImage(image);
 		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
 			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
 		try {
-			final Cursor<? extends RealType<?>> cursor = dataset.cursor();
-			while (cursor.hasNext()) cursor.next().setReal(255);
+			image.getProcessor().setColor(255);
+			image.getProcessor().fill();
 
 			final JsonObject liveChanges = capture.current().toJson().getAsJsonObject(
 				"changes");
@@ -151,17 +142,16 @@ public class EnvironmentSnapshotServiceTest {
 		}
 		finally {
 			capture.close();
-			display.close();
+			Interpreter.removeBatchModeImage(image);
 		}
 	}
 
 	@Test
-	public void testFinalPixelTrackingSkipsCellImages() {
-		final DatasetService datasetService = context.getService(DatasetService.class);
-		final DisplayService displayService = context.getService(DisplayService.class);
-		final Dataset dataset = datasetService.create(new long[] { 2, 2 }, "cell test",
-			new AxisType[] { Axes.X, Axes.Y }, 8, false, false, true);
-		final ImageDisplay display = (ImageDisplay) displayService.createDisplay(dataset);
+	public void testFinalPixelTrackingSkipsWrappedImgLib2Images() {
+		final Img<UnsignedByteType> cells = new CellImgFactory<>(
+			new UnsignedByteType(), 2).create(2, 2, 3);
+		final ImagePlus image = ImageJFunctions.wrap(cells, "cell test");
+		Interpreter.addBatchModeImage(image);
 		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
 			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
 		try {
@@ -172,7 +162,7 @@ public class EnvironmentSnapshotServiceTest {
 		}
 		finally {
 			capture.close();
-			display.close();
+			Interpreter.removeBatchModeImage(image);
 		}
 	}
 
@@ -180,8 +170,7 @@ public class EnvironmentSnapshotServiceTest {
 	public void testFinalPixelTrackingSkipsVirtualStacks() {
 		final RecordingVirtualStack stack = new RecordingVirtualStack(2, 2, 3);
 		final ImagePlus image = new ImagePlus("virtual test", stack);
-		final ImageDisplay display = context.getService(LegacyService.class)
-			.getImageMap().registerLegacyImage(image);
+		Interpreter.addBatchModeImage(image);
 		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
 			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
 		try {
@@ -193,30 +182,28 @@ public class EnvironmentSnapshotServiceTest {
 		}
 		finally {
 			capture.close();
-			display.close();
-			image.close();
+			Interpreter.removeBatchModeImage(image);
 		}
 	}
 
-	private static final class RecordingVirtualStack extends VirtualStack {
-
-		private final Set<Integer> requestedSlices = new HashSet<>();
-
-		private RecordingVirtualStack(final int width, final int height,
-			final int slices)
-		{
-			super(width, height, slices);
+	@Test
+	public void testCaptureDoesNotBuildImageJ2Displays() {
+		final RecordingVirtualStack stack = new RecordingVirtualStack(2, 2, 500);
+		final ImagePlus image = new ImagePlus("many channels", stack);
+		image.setDimensions(500, 1, 1);
+		Interpreter.addBatchModeImage(image);
+		stack.requestedSlices.clear();
+		final EnvironmentSnapshotService.EnvironmentCapture capture = snapshotService
+			.capture(EnvironmentSnapshotService.PixelChangeTracking.FINAL_SHA256);
+		try {
+			capture.finish();
+			assertNull(context.getService(LegacyService.class).getImageMap()
+				.lookupDisplay(image));
+			assertTrue(stack.requestedSlices.isEmpty());
 		}
-
-		@Override
-		public ImageProcessor getProcessor(final int n) {
-			requestedSlices.add(n);
-			return new ByteProcessor(getWidth(), getHeight());
-		}
-
-		@Override
-		public Object getPixels(final int n) {
-			return getProcessor(n).getPixels();
+		finally {
+			capture.close();
+			Interpreter.removeBatchModeImage(image);
 		}
 	}
 }
