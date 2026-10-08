@@ -39,7 +39,7 @@ import org.scijava.plugin.Plugin;
  * See: https://huggingface.co/collections/google/gemma-4-69c2f5b8d6a5f
  */
 @Plugin(type = LLMProvider.class, name = "Ollama (Gemma4)", priority = ProviderPriority.GEMMA4)
-public class Gemma4Provider extends AbstractOllamaProvider {
+public class Gemma4Provider extends AbstractCuratedModelProvider {
 
 	private static final String XS_MODEL =
 		"hf.co/google/gemma-4-E4B-it-qat-q4_0-gguf:latest";
@@ -51,11 +51,8 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 		"hf.co/google/gemma-4-31B-it-qat-q4_0-gguf:latest";
 
 	private static final List<String> MODEL_ALIASES = List.of("XS", "S", "M", "L");
-	private static final Map<String, String> MODEL_NAMES = Map.of(
-		"XS (E4B)", XS_MODEL,
-		"S (12B)", S_MODEL,
-		"M (26B)", M_MODEL,
-		"L (31B)", L_MODEL);
+	private static final Map<String, String> MODEL_NAMES = Map.of("XS", XS_MODEL,
+		"S", S_MODEL, "M", M_MODEL, "L", L_MODEL);
 	/**
 	 * Current Hugging Face GGUF and projection-file sizes for the pinned model
 	 * references, in bytes.
@@ -72,6 +69,10 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 		M_MODEL, new ModelDemand(15.88, 0.0000209),
 		L_MODEL, new ModelDemand(20.05, 0.0000860));
 
+	public Gemma4Provider() {
+		super(MODEL_ALIASES, MODEL_NAMES);
+	}
+
 	@Override
 	public String getName() {
 		return "Gemma4 (Ollama)";
@@ -79,34 +80,13 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 
 	@Override
 	public ModelDisplay getModelDisplay(final String modelName) {
-		final String modelAlias = MODEL_NAMES.entrySet().stream().filter(entry ->
-			entry.getKey().equals(modelName) || entry.getValue().equals(modelName))
-			.map(Map.Entry::getKey).findFirst().orElse(modelName);
+		final String modelAlias = resolveModelAlias(modelName);
 		return new ModelDisplay("Ollama", "Gemma4 " + modelAlias);
 	}
 
 	@Override
 	public String getDescription() {
 		return "Local Gemma4 models with selectable memory footprints.";
-	}
-
-	@Override
-	public List<String> getAvailableModels() {
-		final List<String> installedModels = getAvailableLocalModels();
-		final List<String> models = MODEL_ALIASES.stream().map(alias -> {
-			final String modelName = MODEL_NAMES.get(alias);
-			return installedModels.contains(modelName) ? alias : appendRemoteString(alias);
-		}).toList();
-		return prioritizeInstalledModels(models);
-	}
-
-	@Override
-	public String validateModel(String modelToValidate) {
-		final boolean remote = isRemoteModel(modelToValidate);
-		final String alias = remote ? removeRemoteString(modelToValidate) :
-			modelToValidate;
-		final String modelName = MODEL_NAMES.getOrDefault(alias, alias);
-		return remote ? super.validateModel(appendRemoteString(modelName)) : modelName;
 	}
 
 	/**
@@ -123,10 +103,7 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 	@Override
 	public Optional<ModelDemand> getDemand(final String modelName) {
 		if (modelName == null) return Optional.empty();
-		final String alias = isRemoteModel(modelName) ? removeRemoteString(modelName) :
-			modelName;
-		final String resolvedModel = MODEL_NAMES.getOrDefault(alias, alias);
-		return Optional.ofNullable(MODEL_DEMANDS.get(resolvedModel));
+		return Optional.ofNullable(MODEL_DEMANDS.get(resolveModelName(modelName)));
 	}
 
 	@Override

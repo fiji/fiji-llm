@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.provider;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.scijava.plugin.Plugin;
@@ -38,13 +40,23 @@ import org.scijava.plugin.Plugin;
  * See: https://huggingface.co/unsloth/Muse-Glimmer-30B-GGUF
  */
 @Plugin(type = LLMProvider.class, name = "Ollama (Glimmer:30B)", priority = ProviderPriority.GLIMMER)
-public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
+public class GlimmerProviderIQ2 extends AbstractCuratedModelProvider {
 
-	private static final String MODEL_NAME = "hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS";
-	private static final long MODEL_DOWNLOAD_SIZE = 12_913_433_344L;
+	private static final String XS_MODEL =
+		"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS";
+	private static final String M_MODEL =
+		"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL";
+	private static final List<String> MODEL_ALIASES = List.of("XS (30B)", "M (30B)");
+	private static final Map<String, String> MODEL_NAMES = Map.of(
+		"XS (30B)", XS_MODEL, "M (30B)", M_MODEL);
+	private static final Map<String, Long> MODEL_DOWNLOAD_SIZES = Map.of(
+		XS_MODEL, 12_913_433_344L, M_MODEL, 21_168_856_832L);
+	private static final Map<String, ModelDemand> MODEL_DEMANDS = Map.of(
+		XS_MODEL, new ModelDemand(14.88, 0.0000150), M_MODEL,
+		new ModelDemand(22.56, 0.0000150));
 
 	public GlimmerProviderIQ2() {
-		super(MODEL_NAME);
+		super(MODEL_ALIASES, MODEL_NAMES);
 	}
 
 	@Override
@@ -54,7 +66,13 @@ public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 
 	@Override
 	public String getDescription() {
-		return "Local Muse Glimmer model - XS memory footprint.";
+		return "Local Muse Glimmer models with selectable memory footprints.";
+	}
+
+	@Override
+	public ModelDisplay getModelDisplay(final String modelName) {
+		return new ModelDisplay("Ollama", "Muse Glimmer " + resolveModelAlias(
+			modelName));
 	}
 
 	@Override
@@ -70,16 +88,12 @@ public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 	 */
 	@Override
 	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
-		return MODEL_NAME.equals(modelName) ? Optional.of(MODEL_DOWNLOAD_SIZE) :
-			Optional.empty();
+		return Optional.ofNullable(MODEL_DOWNLOAD_SIZES.get(modelName));
 	}
 
 	@Override
 	public Optional<ModelDemand> getDemand(final String modelName) {
 		if (modelName == null) return Optional.empty();
-		final String localModelName = isRemoteModel(modelName) ? removeRemoteString(
-			modelName) : modelName;
-		return MODEL_NAME.equals(localModelName) ? Optional.of(new ModelDemand(14.88,
-			0.0000150)) : Optional.empty();
+		return Optional.ofNullable(MODEL_DEMANDS.get(resolveModelName(modelName)));
 	}
 }

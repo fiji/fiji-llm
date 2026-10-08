@@ -76,6 +76,9 @@ public class AbstractOllamaProviderTest {
 		assertEquals(Long.valueOf(12_913_433_344L), provider
 			.getRemoteModelDownloadSize(
 				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS").get());
+		assertEquals(Long.valueOf(21_168_856_832L), provider
+			.getRemoteModelDownloadSize(
+				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL").get());
 	}
 
 	@Test
@@ -93,6 +96,10 @@ public class AbstractOllamaProviderTest {
 			glimmer.appendRemoteString(
 				"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-IQ2_XS")).get();
 		assertEquals(15.37152, glimmerDemand.estimateGiB(32 * 1024), 0.0000001);
+		assertEquals(glimmerDemand, glimmer.getDemand(glimmer.appendRemoteString(
+			"XS (30B)")).get());
+		assertEquals(23.05152, glimmer.getDemand("M (30B)").get().estimateGiB(
+			32 * 1024), 0.0000001);
 	}
 
 	@Test
@@ -102,6 +109,17 @@ public class AbstractOllamaProviderTest {
 		assertEquals(new LLMProvider.ModelDisplay("Ollama", "Gemma4 S"),
 			provider.getModelDisplay(
 				"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest"));
+	}
+
+	@Test
+	public void testGlimmerModelDisplayUsesModelAliases() {
+		final GlimmerProviderIQ2 provider = new GlimmerProviderIQ2();
+
+		assertEquals(new LLMProvider.ModelDisplay("Ollama",
+			"Muse Glimmer XS (30B)"), provider.getModelDisplay("XS (30B)"));
+		assertEquals(new LLMProvider.ModelDisplay("Ollama",
+			"Muse Glimmer M (30B)"), provider.getModelDisplay(
+			"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL"));
 	}
 
 	@Test

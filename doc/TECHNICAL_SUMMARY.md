@@ -53,7 +53,7 @@ integrated chat applies when constructing assistant requests.
 | `OllamaProvider` | `langchain4j-ollama` | Local |
 | `Gemma4Provider*`, `GlimmerProviderIQ2` | Ollama (managed subprocess) | Local |
 
-Ollama providers optionally manage the Ollama process lifecycle via `OllamaProcessManager`. `AbstractSingletonOllamaProvider` bakes in a specific model name, allowing each local model variant to be its own discoverable plugin.
+Ollama providers optionally manage the Ollama process lifecycle via `OllamaProcessManager`. `AbstractCuratedModelProvider` centralizes curated model aliases, local-model discovery, and remote-model validation for discoverable provider plugins.
 
 Each provider reports the date on which its models documentation was last checked
 against the models it supplies through `LLMProvider.getModelsDocumentationLastModified()`. The scheduled
