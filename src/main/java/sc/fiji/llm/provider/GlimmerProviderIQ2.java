@@ -49,12 +49,12 @@ public class GlimmerProviderIQ2 extends AbstractSingletonOllamaProvider {
 
 	@Override
 	public String getName() {
-		return "Muse Glimmer - extra small (Ollama)";
+		return "Muse Glimmer (Ollama)";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Local Muse Glimmer model - smallest parameter count and memory footprint.";
+		return "Local Muse Glimmer model - XS memory footprint.";
 	}
 
 	@Override
