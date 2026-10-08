@@ -37,7 +37,6 @@ import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -161,11 +160,6 @@ public class GeminiProvider extends AbstractLLMProvider {
 	@Override
 	public String getApiKeyUrl() {
 		return "https://aistudio.google.com/app/apikey";
-	}
-
-	@Override
-	public Optional<String> getRecommendedModel() {
-		return Optional.of("gemini-3.5-flash-lite");
 	}
 
 	@Override

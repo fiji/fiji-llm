@@ -329,25 +329,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	LocalDate getModelsDocumentationLastModified();
 
 	/**
-	 * Recommended models are used to provide default guides towards model selection.
-	 *
-	 * @return {@link Optional} that may contain the recommended model for this provider.
-	 */
-	default Optional<String> getRecommendedModel() {
-		return Optional.empty();
-	}
-
-	/**
-	 * Curated providers are configured and tested by the Fiji developers, and
-	 * are marked as such when choosing a service.
-	 *
-	 * @return true if this provider is curated
-	 */
-	default boolean isCurated() {
-		return false;
-	}
-
-	/**
 	 * Get the URL where users can obtain an API key for this provider.
 	 *
 	 * @return URL to the API key page

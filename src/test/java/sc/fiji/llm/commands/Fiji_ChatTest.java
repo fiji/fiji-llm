@@ -29,7 +29,6 @@
 
 package sc.fiji.llm.commands;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -42,11 +41,19 @@ import sc.fiji.llm.provider.LLMProvider;
 public class Fiji_ChatTest {
 
 	@Test
-	public void testChoiceLabelMarksOnlyCuratedProviders() {
-		final Gemma4Provider curated = new Gemma4Provider();
-		assertEquals("Gemma4 (Ollama)", curated.getName());
-		assertEquals("*Gemma4 (Ollama)", Fiji_Chat.choiceLabel(curated));
-		assertEquals("Claude", Fiji_Chat.choiceLabel(new AnthropicProvider()));
+	public void testServiceInfoMatchesProviderType() {
+		final String hosted = Fiji_Chat.formatServiceInfo(new AnthropicProvider());
+		assertTrue(hosted.contains("Cloud AI service."));
+		assertTrue(hosted.contains("Powerful remotely hosted models."));
+		assertTrue(hosted.contains(
+			"Data handling and retention are subject to provider policies."));
+		assertFalse(hosted.contains("Local AI service."));
+
+		final String local = Fiji_Chat.formatServiceInfo(new Gemma4Provider());
+		assertTrue(local.contains("Local AI service."));
+		assertTrue(local.contains("Models run on your hardware."));
+		assertTrue(local.contains("All data and messages stay on your computer."));
+		assertFalse(local.contains("Cloud AI service."));
 	}
 
 	@Test

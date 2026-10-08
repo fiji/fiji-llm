@@ -30,7 +30,6 @@
 package sc.fiji.llm.commands;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -63,17 +62,18 @@ public class Fiji_Chat extends DynamicCommand {
 
 	public static final String LAST_CHAT_MODEL = "sc.fiji.chat.lastModel";
 	public static final String LAST_CHAT_PROVIDER = "sc.fiji.chat.lastProvider";
-	private static final String CURATED_MARKER = "*";
 	public static final String AUTO_RUN = "sc.fiji.chat.autoRunChat";
 	private static final String NO_MODELS_AVAILABLE =
 		"<No Models Available For This Service>";
-	private static final String WIDTH = "400";
-	private static final String MULTIPLE_MODEL_MESSAGE = "<html><body style='width: " + WIDTH + "px'>" +
-		"<p>Next, choose a <b>Chat Model</b>. This is the <i>specific</i> model that you will chat with.<br />" +
-		"The <b>Service Info</b> page can help you decide, as usage rates and capabilities can vary.</p>" +
-		"</body></html>";
-	private static final String SINGLE_MODEL_MESSAGE = "<html><body style='width: " + WIDTH + "px'>" +
-		"<p>See the <b>Service Info</b> page for more information about this model provider.</p>" +
+	private static final String WIDTH = "300";
+	private static final String HOSTED_SERVICE_MESSAGE =
+		"<html><body style='width: " + WIDTH + "px'>" +
+		"<b>Cloud AI service.</b> Powerful remotely hosted models.<br />" +
+		"Data handling and retention are subject to provider policies.</body></html>";
+	private static final String LOCAL_SERVICE_MESSAGE =
+		"<html><body style='width: " + WIDTH + "px'>" +
+		"<b>Local AI service.</b> Models run on your hardware.<br />" +
+		"All data and messages stay on your computer." +
 		"</body></html>";
 	private static final double MEDIUM_COST_THRESHOLD = 10.0;
 	private static final double HIGH_COST_THRESHOLD = 20.0;
@@ -99,43 +99,31 @@ public class Fiji_Chat extends DynamicCommand {
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
 	private String welcomeMessage = "<html><body style='width: " + WIDTH +
-		"px'>" + "<h2 style='text-align: center'>Welcome to Fiji Chat!</h2>" +
-		"<p>Chat with an AI assistant for help, including:</p>" + "<ul>" +
-		"<li>Recommended commands for image analysis tasks</li>" +
-		"<li>Writing and debugging macros and scripts</li>" +
-		"<li>General Fiji support</li>" + "</ul>" +
-		"<p><b>Important:</b> This feature connects to external AI services with their own terms and conditions. " +
-		"Your queries may not be private/confidential. " +
-		"For detailed documentation, see <a href=\"https://github.com/fiji/fiji-llm\">the README</a>.</p>" +
-		"<p><b>NOTE:</b> This feature is in active development. " +
-		"The AI may provide incorrect information and make mistakes - always verify generative content." +
-		"Help out by <a href=\"https://forum.image.sc/tag/llm\">contacting us on the forum</a> with issues or feature requests.</p>" +
-		"</body></html>";
+		"px'>" + "<h1 style='text-align: center'>Welcome to Fiji Chat!</h1>" +
+		"<p>For detailed documentation, see <a href=\"https://github.com/fiji/fiji-llm\" " +
+		"style='color: #1a5fb4; text-decoration: underline;'>the README</a>.<br />" +
+		"AI may be inaccurate. Always verify important results.<br /><br />" +
+		"This feature is under active development.<br />" +
+		"Please <a href=\"https://forum.image.sc/tag/llm\" " +
+		"style='color: #1a5fb4; text-decoration: underline;'>contact us on the forum</a> " +
+		"with issues or requests." +
+		"</p></body></html>";
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
 	private String providerMessage = "<html><div style='width: " + WIDTH +
 		"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" +
 		"<body style='width: " + WIDTH + "px'>" +
-		"<p>First, select an <b>AI Service</b>.</p><ul>" +
-		"<li>This is typically the <i>general</i> model provider you want to use (e.g. ChatGPT or Claude).</li>" +
-		"<li>Model selection can be overwhelming! We recommend starting with a curated (<b>*</b>) local model.</li>" +
-		"<li>In general, local model services (e.g. Ollama) provide control, reproducibility, and security.</li>" +
-		"<li>However, they are limited by your local hardware, and have reduced scope compared to frontier models.</li>" +
-		"</ul></body></html>";
+		"<h2 style='text-align: center'>Getting Started</h2>" +
+		"<p>1. Select an <b>AI Service</b> (e.g. ChatGPT or Claude).<br />" +
+		"2. Select a specific <b>Chat Model</b> to talk with." +
+		"</p></body></html>";
 
 	@Parameter(label = "AI Service →", callback = "providerChanged",
 		persist = false)
 	private String provider;
 
-	// Maps each service choice label to its provider name.
-	private final Map<String, String> providerNamesByLabel = new LinkedHashMap<>();
-
-	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
-		persist = false, required = false)
-	private String modelMessage = MULTIPLE_MODEL_MESSAGE;
-
-	@Parameter(label = "Service Info →",
+	@Parameter(label = "Model Docs →",
 		visibility = org.scijava.ItemVisibility.MESSAGE, persist = false,
 		required = false)
 	private String modelDocLink = "";
@@ -146,88 +134,45 @@ public class Fiji_Chat extends DynamicCommand {
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
-	private String modelTierMessage = "";
+	private String serviceInfoMessage = "";
 
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
-	private String nextStepsMessage = "<html><body style='width: " + WIDTH +
-		"px'>" +
-		"<p>Click <b>OK</b> after you've made your selection.<br />" +
-		"Note that some AI services will require additional configuration.</p>" +
-		"</body></html>";
+	private String modelTierMessage = "";
 
 	@Override
 	public void initialize() {
 		// Get available providers and populate the provider choices
 		final List<LLMProvider> providers = providerService.getInstances();
-		for (final LLMProvider p : providers) {
-			providerNamesByLabel.put(choiceLabel(p), p.getName());
-		}
-		final List<String> providerLabels = List.copyOf(providerNamesByLabel
-			.keySet());
+		final List<String> providerLabels = providers.stream().map(
+			LLMProvider::getName).toList();
 
 		final MutableModuleItem<String> providerItem = getInfo().getMutableInput(
 			"provider", String.class);
 		providerItem.setChoices(providerLabels);
 
 		// Set default provider if available
-		String recommendedModel = "";
 		if (!providerLabels.isEmpty()) {
-			String defaultProvider = labelForName(prefService.get(Fiji_Chat.class,
-				LAST_CHAT_PROVIDER, ""));
-			if (defaultProvider.isEmpty()) {
-				final var recommended = providers.stream()
-					.filter(p -> p.getRecommendedModel().isPresent())
-					.findFirst();
-				if (recommended.isPresent()) {
-					defaultProvider = choiceLabel(recommended.get());
-					recommendedModel = recommended.get().getRecommendedModel().get();
-				}
-			}
+			String defaultProvider = prefService.get(Fiji_Chat.class,
+				LAST_CHAT_PROVIDER, "");
 			if (!providerItem.getChoices().contains(defaultProvider)) {
 				defaultProvider = providerLabels.get(0);
 			}
 			providerItem.setValue(this, defaultProvider);
 			providerChanged();
-			if (!recommendedModel.isEmpty()) {
-				final MutableModuleItem<String> modelItem = getInfo().getMutableInput(
-					"model", String.class);
-				if (modelItem.getChoices().contains(recommendedModel)) {
-					modelItem.setValue(this, recommendedModel);
-				}
-			}
 		}
 
-		// A recommended default was applied, so show the config dialog regardless
-		if (recommendedModel.isEmpty() && prefService.getBoolean(Fiji_Chat.class, AUTO_RUN, false)) {
+		// Show the config dialog when the previous run requested auto-start.
+		if (prefService.getBoolean(Fiji_Chat.class, AUTO_RUN, false)) {
 			for (final var input : getInfo().inputs()) {
 				resolveInput(input.getName());
 			}
 		}
 	}
 
-	/**
-	 * @return the label for a provider in the service chooser, which marks
-	 *         curated providers
-	 */
-	static String choiceLabel(final LLMProvider p) {
-		return p.isCurated() ? CURATED_MARKER + p.getName() : p.getName();
-	}
-
 	/** @return the name of the provider chosen in the service chooser */
 	private String providerName() {
-		return providerNamesByLabel.getOrDefault(provider, provider);
-	}
-
-	/**
-	 * @return the chooser label for a provider name, or an empty string if none
-	 */
-	private String labelForName(final String name) {
-		// Note: curated names once included the marker, so strip it.
-		final String bare = name.startsWith(CURATED_MARKER) ? name.substring(
-			CURATED_MARKER.length()) : name;
-		return providerNamesByLabel.entrySet().stream().filter(e -> e.getValue()
-			.equals(bare)).map(Map.Entry::getKey).findFirst().orElse("");
+		return provider;
 	}
 
 	/**
@@ -236,14 +181,17 @@ public class Fiji_Chat extends DynamicCommand {
 	 */
 	protected void providerChanged() {
 		if (provider == null || provider.isEmpty()) {
+			serviceInfoMessage = "";
 			return;
 		}
 
 		final LLMProvider selectedProvider = providerService.getProvider(
 			providerName());
 		if (selectedProvider == null) {
+			serviceInfoMessage = "";
 			return;
 		}
+		serviceInfoMessage = formatServiceInfo(selectedProvider);
 
 		// Update model documentation link
 		final String modelsUrl = selectedProvider.getModelsDocumentationUrl();
@@ -271,8 +219,12 @@ public class Fiji_Chat extends DynamicCommand {
 			modelItem.setChoices(List.of(NO_MODELS_AVAILABLE));
 			modelItem.setValue(this, NO_MODELS_AVAILABLE);
 		}
-		modelMessage = models.size() == 1 ? SINGLE_MODEL_MESSAGE : MULTIPLE_MODEL_MESSAGE;
 		modelChanged();
+	}
+
+	static String formatServiceInfo(final LLMProvider provider) {
+		return provider.requiresApiKey() ? HOSTED_SERVICE_MESSAGE :
+			LOCAL_SERVICE_MESSAGE;
 	}
 
 	/**

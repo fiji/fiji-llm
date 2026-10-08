@@ -86,11 +86,6 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 	}
 
 	@Override
-	public boolean isCurated() {
-		return true;
-	}
-
-	@Override
 	public String getDescription() {
 		return "Local Gemma4 models with selectable parameter counts and memory footprints.";
 	}
@@ -132,11 +127,6 @@ public class Gemma4Provider extends AbstractOllamaProvider {
 			modelName;
 		final String resolvedModel = MODEL_NAMES.getOrDefault(alias, alias);
 		return Optional.ofNullable(MODEL_DEMANDS.get(resolvedModel));
-	}
-
-	@Override
-	public Optional<String> getRecommendedModel() {
-		return Optional.of("S");
 	}
 
 	@Override
