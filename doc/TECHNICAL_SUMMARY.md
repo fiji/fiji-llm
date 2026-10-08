@@ -146,7 +146,7 @@ still overlap or occlude the target, and native UI is not guaranteed to be
 captured semantically or visually; inspect the returned `focus_requested` and
 `focus_restored` metadata.
 
-`fiji_command_run` can return `running` or `blocked_by_dialog` with a `run_id`; `fiji_command_run_status` reports the current state until the command completes. A wait expiry does not cancel the command. `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `EnvironmentSnapshotService` for lightweight operation-impact reporting, serialized in the optional `environment_impact` field. The report omits unchanged and empty values, and includes only changed image, active-image, Results table, and dialog metadata, plus non-empty ImageJ/SciJava log deltas and run-scoped ConsoleService stdout/stderr. Audited command and script captures also include bounded SHA-256 fingerprints of ImgLib2 native storage or pixel values; live snapshots defer pixel hashing and report `pixel_changes: "deferred"`. Large samples report `pixel_changes: "inconclusive"` when their sampled prefix matches, and lazy cell-backed images are skipped. No image pixels are copied into the report. Script execution also includes captured stderr in its `errors` field.
+`fiji_command_run` can return `running` or `blocked_by_dialog` with a `run_id`; `fiji_command_run_status` reports the current state until the command completes. A wait expiry does not cancel the command. `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `EnvironmentSnapshotService` for lightweight operation-impact reporting, serialized in the optional `environment_impact` field. The report omits unchanged and empty values, and includes only changed image, active-image, Results table, and dialog metadata, plus non-empty ImageJ/SciJava log deltas and run-scoped ConsoleService stdout/stderr. Audited command and script captures also include bounded SHA-256 fingerprints of ImgLib2 native storage or pixel values; live snapshots defer pixel hashing and report `pixel_changes: "deferred"`. Large samples report `pixel_changes: "inconclusive"` when their sampled prefix matches, and lazy images (cell-backed images and ImageJ virtual stacks) are skipped. No image pixels are copied into the report. Script execution also includes captured stderr in its `errors` field.
 
 `fiji_results_read` returns structured Results Table metadata and numeric
 rows, including `present`, `title`, `row_count`, `column_count`, `columns`, and
@@ -195,11 +195,18 @@ Context items may also provide tooltip text for the chat attachment menu.
 Each chat message also carries a `SessionSnapshot`: the current output of `fiji_script_list` and `fiji_image_list` (names and IDs only, at most 20 images with the active one always kept), appended to the text sent to the model. It lets the model know which scripts and images are open without sending their content; the system prompt tells it to read relevant items with tools. Like attached context, the snapshot is neither displayed nor saved with the conversation. The active script falls back to the most recent visible Script Editor tab when no editor focus has been recorded.
 
 `ImageRenderingService` is the separate transient image payload layer. It copies the
-currently rendered `DatasetView` plane, preserving the active display LUT,
-channel ranges, color mode, and non-XY position, then bounds and encodes it as a
+plane currently shown for an `ImagePlus`, preserving its LUTs, channel ranges,
+composite mode, and channel/slice/frame position, then bounds and encodes it as a
 PNG-backed LangChain4j `ImageContent`. `RenderedImageResult` keeps that payload
-separate from `ImageRenderMetadata`; optional ROI drawing uses the active legacy
-ImageJ ROI when the legacy bridge is available.
+separate from `ImageRenderMetadata`; optional ROI drawing uses the image's
+ImageJ ROI.
+
+Image tools, context suppliers, rendering, and environment snapshots read open
+images through `ImageJ1HelperService` as `ImagePlus` objects, wrapping them with
+imglib2-ij's `VirtualStackAdapter` when they need ImageJ2 axes or pixel types.
+They never ask `ImageDisplayService` for displays. Building an ImageJ2 display
+for an ImageJ 1.x image autoscales every channel, which for a lazily loaded image
+with many channels reads one plane per channel.
 
 ---
 
@@ -246,6 +253,7 @@ While a response streams, `ChatMessagePanel` shows a `ThinkingIndicator` (animat
 | `langchain4j-mcp` | 1.13.1-beta23 | MCP client + `McpToolProvider` |
 | `scijava-common` | (pom-scijava) | Plugin system, services, DI |
 | `imagej-legacy` | (pom-scijava) | ImageJ1 macro/command interop |
+| `ij`, `imglib2-ij` | (pom-scijava) | ImageJ1 image access; lazy `ImgPlus` views of `ImagePlus` |
 | `jsoup` | 1.21.2 | HTML parsing |
 | `jackson` (2 + 3) | 2.19.2 / 3.0.3 | JSON serialization |
 | `jetty-server` | 11.0.20 | Embedded MCP HTTP server |

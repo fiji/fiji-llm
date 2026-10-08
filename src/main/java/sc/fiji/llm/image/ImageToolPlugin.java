@@ -45,11 +45,9 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.TextContent;
-import net.imagej.Dataset;
+import ij.ImagePlus;
+import net.imagej.ImgPlus;
 import net.imagej.axis.AxisType;
-import net.imagej.display.DatasetView;
-import net.imagej.display.ImageDisplay;
-import net.imagej.display.ImageDisplayService;
 import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -62,9 +60,6 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;
-
-	@Parameter
-	private ImageDisplayService imageDisplayService;
 
 	@Parameter
 	private ImageRenderingService imageRenderingService;
@@ -88,7 +83,8 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 					JsonObject imageJson = new JsonObject();
 					imageJson.addProperty("image_id", id);
 					imageJson.addProperty("title", imageJ1HelperService.getImageTitle(id));
-					imageJson.addProperty("active", isActiveImage(id));
+					imageJson.addProperty("active", imageJ1HelperService.isActiveImage(
+						id));
 					images.add(imageJson);
 				}
 			}
@@ -123,19 +119,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 				ErrorOptions.withTool("fiji_image_list"));
 		}
 
-		final Optional<ImageDisplay> display = findImageDisplay(imageDisplayService
-			.getImageDisplays(), imageId);
-		if (display.isEmpty()) {
-			return jsonError("No open image found with id: " + imageId,
-				ErrorOptions.withTool("fiji_image_list"));
-		}
-
-		final ImageDisplay target = display.get();
-		imageDisplayService.getDisplayService().setActiveDisplay(target);
-		imageJ1HelperService.getIJ1Helper().ifPresent(helper -> helper
-			.syncActiveImage(target));
-
-		if (!isActiveImage(imageId)) {
+		if (!imageJ1HelperService.activateImage(imageId)) {
 			return jsonError("Unable to activate image with id: " + imageId);
 		}
 
@@ -150,38 +134,32 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 	@Tool(value = { "Return metadata for an open image, including title, pixel type, dimensions, and whether it is the active image." }, name = "fiji_image_details")
 	public String getImageDetails(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		try {
-			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-			final Optional<ImageDisplay> display = findImageDisplay(displays, imageId);
-			if (display.isPresent()) {
-				final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display
-					.get());
-				if (datasetView == null) return imageNotFoundError(imageId);
-				final Dataset dataset = datasetView.getData();
-				if (dataset == null) return imageNotFoundError(imageId);
+			final Optional<ImagePlus> image = imageJ1HelperService.getImage(imageId);
+			if (image.isEmpty()) return imageNotFoundError(imageId);
+			final ImgPlus<?> imgPlus = ImageJ1HelperService.wrap(image.get());
 
-				JsonObject result = new JsonObject();
-				result.addProperty("image_id", imageId);
-				result.addProperty("title", imageJ1HelperService.getImageTitle(imageId));
-				result.addProperty("active", isActiveImage(imageId));
-				result.addProperty("pixel_type", dataset.getType().getClass().getSimpleName());
+			JsonObject result = new JsonObject();
+			result.addProperty("image_id", imageId);
+			result.addProperty("title", image.get().getTitle());
+			result.addProperty("active", imageJ1HelperService.isActiveImage(imageId));
+			result.addProperty("pixel_type", imgPlus.getImg().getType().getClass()
+				.getSimpleName());
 
-				JsonArray dims = new JsonArray();
-				for (int i = 0; i < dataset.numDimensions(); i++) {
-					JsonObject dimObj = new JsonObject();
-					try {
-						AxisType axisType = dataset.axis(i).type();
-						dimObj.addProperty("type", axisType != null ? axisType.getLabel() : "Unknown");
-					}
-					catch (Exception e) {
-						dimObj.addProperty("type", "Dim" + i);
-					}
-					dimObj.addProperty("length", dataset.dimension(i));
-					dims.add(dimObj);
+			JsonArray dims = new JsonArray();
+			for (int i = 0; i < imgPlus.numDimensions(); i++) {
+				JsonObject dimObj = new JsonObject();
+				try {
+					AxisType axisType = imgPlus.axis(i).type();
+					dimObj.addProperty("type", axisType != null ? axisType.getLabel() : "Unknown");
 				}
-				result.add("dimensions", dims);
-				return result.toString();
+				catch (Exception e) {
+					dimObj.addProperty("type", "Dim" + i);
+				}
+				dimObj.addProperty("length", imgPlus.dimension(i));
+				dims.add(dimObj);
 			}
-			return imageNotFoundError(imageId);
+			result.add("dimensions", dims);
+			return result.toString();
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_image_details: " + e.getMessage());
@@ -206,22 +184,19 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		final String toolName)
 	{
 		try {
-			final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-			final Optional<ImageDisplay> display = findImageDisplay(displays, imageId);
-			if (display.isPresent()) {
-				if (imageRenderingService == null) return textContents(
-					jsonError("Image rendering is not available"));
-				final Optional<RenderedImageResult> rendered = imageRenderingService
-					.render(display.get(), options);
-				if (rendered.isEmpty()) return textContents(jsonError(
-					"Could not render image with id: " + imageId));
-				if (!includeMetadata) return List.of(rendered.get().getImageContent());
-				final JsonObject metadata = new JsonObject();
-				metadata.add("render_metadata", rendered.get().getMetadata().toJson());
-				return List.of(TextContent.from(metadata.toString()), rendered.get()
-					.getImageContent());
-			}
-			return textContents(imageNotFoundError(imageId));
+			if (imageJ1HelperService.getImage(imageId).isEmpty()) return textContents(
+				imageNotFoundError(imageId));
+			if (imageRenderingService == null) return textContents(jsonError(
+				"Image rendering is not available"));
+			final Optional<RenderedImageResult> rendered = imageRenderingService.render(
+				imageId, options);
+			if (rendered.isEmpty()) return textContents(jsonError(
+				"Could not render image with id: " + imageId));
+			if (!includeMetadata) return List.of(rendered.get().getImageContent());
+			final JsonObject metadata = new JsonObject();
+			metadata.add("render_metadata", rendered.get().getMetadata().toJson());
+			return List.of(TextContent.from(metadata.toString()), rendered.get()
+				.getImageContent());
 		}
 		catch (IOException | RuntimeException e) {
 			return textContents(jsonError("Failed to run " + toolName + ": " + e
@@ -229,25 +204,9 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	private Optional<ImageDisplay> findImageDisplay(final List<ImageDisplay> displays,
-		final int imageId)
-	{
-		if (displays != null) for (final ImageDisplay display : displays) {
-			if (imageJ1HelperService.getImageId(display) == imageId) return Optional.of(
-				display);
-		}
-		return imageJ1HelperService.getOrCreateImageDisplay(imageId);
-	}
-
 	private String imageNotFoundError(final int imageId) {
 		return jsonError("No open image found with id: " + imageId,
 			ErrorOptions.withTool("fiji_image_list"));
-	}
-
-	private boolean isActiveImage(final int imageId) {
-		final ImageDisplay activeDisplay = imageDisplayService.getActiveImageDisplay();
-		return activeDisplay != null && imageJ1HelperService.getImageId(activeDisplay) ==
-			imageId;
 	}
 
 	private static List<Content> textContents(final String text) {

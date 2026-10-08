@@ -29,7 +29,6 @@
 
 package sc.fiji.llm.data;
 
-import java.awt.image.BufferedImage;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,10 +41,14 @@ import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.ImageWindow;
 import net.imagej.ImageJService;
-import net.imagej.display.ImageDisplay;
+import net.imagej.ImgPlus;
 import net.imagej.legacy.IJ1Helper;
 import net.imagej.legacy.LegacyService;
+import net.imglib2.img.VirtualStackAdapter;
 
 /** Provides a consistent ImageJ 1.x helper entry point for other services/tools. */
 @Plugin(type = Service.class, priority = Priority.VERY_HIGH)
@@ -79,100 +82,58 @@ public final class ImageJ1HelperService extends AbstractService implements
 		return Collections.unmodifiableList(ids);
 	}
 
-	public Optional<ImageDisplay> getOrCreateImageDisplay(final int imageId) {
-		if (legacyService == null || !legacyService.isActive()) return Optional.empty();
+	/**
+	 * Returns the ImageJ 1.x image with the given ID. Callers should read image
+	 * state from the {@link ImagePlus} rather than asking ImageJ2 for a display:
+	 * building a display autoscales every channel, which reads one plane per
+	 * channel and can take hours for a lazily loaded image with many channels.
+	 */
+	public Optional<ImagePlus> getImage(final int id) {
 		try {
-			final Optional<IJ1Helper> helper = getIJ1Helper();
-			if (helper.isEmpty()) return Optional.empty();
-			final var image = helper.get().getImage(imageId);
-			if (image == null) return Optional.empty();
-			final var imageMap = legacyService.getImageMap();
-			return imageMap == null ? Optional.empty() : Optional.ofNullable(imageMap
-				.registerLegacyImage(image));
+			return getIJ1Helper().map(helper -> helper.getImage(id));
 		}
 		catch (final RuntimeException e) {
 			return Optional.empty();
 		}
+	}
+
+	public Optional<ImagePlus> getActiveImage() {
+		if (getIJ1Helper().isEmpty()) return Optional.empty();
+		return Optional.ofNullable(WindowManager.getCurrentImage());
+	}
+
+	public boolean isActiveImage(final int id) {
+		return getActiveImage().map(image -> image.getID() == id).orElse(false);
+	}
+
+	/** Makes the image's window the current ImageJ window; call on the EDT. */
+	public boolean activateImage(final int id) {
+		final ImageWindow window = getImage(id).map(ImagePlus::getWindow).orElse(null);
+		if (window == null) return false;
+		WindowManager.setCurrentWindow(window);
+		window.toFront();
+		return isActiveImage(id);
 	}
 
 	public boolean isImageVisible(final int id) {
-		try {
-			return getIJ1Helper().map(helper -> helper.getImage(id)).map(image -> image
-				.isVisible()).orElse(false);
-		}
-		catch (final RuntimeException e) {
-			return false;
-		}
+		return getImage(id).map(ImagePlus::isVisible).orElse(false);
 	}
 
 	public String getImageTitle(final int id) {
-		try {
-			return getIJ1Helper().map(helper -> helper.getImage(id)).map(image -> image
-				.getTitle()).orElse("");
-		}
-		catch (final RuntimeException e) {
-			return "";
-		}
+		return getImage(id).map(ImagePlus::getTitle).orElse("");
 	}
 
-	public int getImageId(final ImageDisplay display) {
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return -1;
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return -1;
-			final var imagePlus = imageMap.lookupImagePlus(display);
-			return imagePlus == null ? -1 : imagePlus.getID();
-		}
-		catch (final RuntimeException e) {
-			return -1;
-		}
+	/**
+	 * Wraps an image as an ImageJ2 {@link ImgPlus} without creating a display.
+	 * Planes are loaded only when accessed. This is the same wrapping imagej-legacy
+	 * uses for its datasets, so axes and pixel types match what ImageJ2 reports.
+	 */
+	public static ImgPlus<?> wrap(final ImagePlus image) {
+		return VirtualStackAdapter.wrap(image);
 	}
 
-	public Optional<Object> getRoi(final ImageDisplay display) {
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return Optional.empty();
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return Optional.empty();
-			final var imagePlus = imageMap.lookupImagePlus(display);
-			return imagePlus == null ? Optional.empty() : Optional.ofNullable(invoke(
-				imagePlus, "getRoi"));
-		}
-		catch (final RuntimeException e) {
-			return Optional.empty();
-		}
-	}
-
-	public Optional<BufferedImage> getFlattenedImage(final ImageDisplay display) {
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return Optional.empty();
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return Optional.empty();
-			final var imagePlus = imageMap.lookupImagePlus(display);
-			if (imagePlus == null) return Optional.empty();
-			final Object flattened = invoke(imagePlus, "flatten");
-			final Object bufferedImage = invoke(flattened, "getBufferedImage");
-			return bufferedImage instanceof BufferedImage ? Optional.of((BufferedImage)
-				bufferedImage) : Optional.empty();
-		}
-		catch (final RuntimeException e) {
-			return Optional.empty();
-		}
-	}
-
-	public int getOverlayCount(final ImageDisplay display) {
-		final Object overlay = getLegacyImageValue(display, "getOverlay");
-		final Object size = invoke(overlay, "size");
-		return size instanceof Number ? ((Number) size).intValue() : 0;
-	}
-
-	public boolean isOverlayHidden(final ImageDisplay display) {
-		return Boolean.TRUE.equals(getLegacyImageValue(display, "getHideOverlay"));
+	public static boolean hasVirtualStack(final ImagePlus image) {
+		return image.getStackSize() > 1 && image.getStack().isVirtual();
 	}
 
 	public Object getResultsTable() {
@@ -231,22 +192,6 @@ public final class ImageJ1HelperService extends AbstractService implements
 			return method.invoke(target, args);
 		}
 		catch (final ReflectiveOperationException | LinkageError e) {
-			return null;
-		}
-	}
-
-	private Object getLegacyImageValue(final ImageDisplay display,
-		final String methodName)
-	{
-		if (display == null || legacyService == null || !legacyService.isActive()) {
-			return null;
-		}
-		try {
-			final var imageMap = legacyService.getImageMap();
-			if (imageMap == null) return null;
-			return invoke(imageMap.lookupImagePlus(display), methodName);
-		}
-		catch (final RuntimeException e) {
 			return null;
 		}
 	}

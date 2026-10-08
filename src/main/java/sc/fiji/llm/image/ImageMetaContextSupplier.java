@@ -34,6 +34,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.swing.ImageIcon;
@@ -42,29 +43,23 @@ import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import net.imagej.Dataset;
+import ij.ImagePlus;
+import net.imagej.ImgPlus;
 import net.imagej.axis.AxisType;
-import net.imagej.display.DatasetView;
-import net.imagej.display.ImageDisplay;
-import net.imagej.display.ImageDisplayService;
 import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.ui.ContextItemSupplier;
 
 /**
  * ContextItemSupplier implementation for {@link ImageMetaContextItem}s.
- * Provides available images/datasets from the Fiji application and creates
- * context items. Uses ImageDisplayService which properly handles both ImageJ1
- * and ImageJ2 images.
+ * Provides the open ImageJ images from the Fiji application and creates
+ * context items.
  */
 @Plugin(type = ContextItemSupplier.class, priority = Priority.LOW)
 public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;
-
-	@Parameter
-	private ImageDisplayService imageDisplayService;
 
 	@Parameter
 	private ImageRenderingService imageRenderingService;
@@ -90,19 +85,10 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	@Override
 	public Set<ContextItem> listAvailable() {
 		final Set<ContextItem> items = new LinkedHashSet<>();
-
-		// Get all image displays (handles both ImageJ1 and ImageJ2)
-		final List<ImageDisplay> imageDisplays = imageDisplayService
-				.getImageDisplays();
-
-		if (imageDisplays == null || imageDisplays.isEmpty()) {
-				return items;
-		}
-
-		for (final ImageDisplay imageDisplay : imageDisplays) {
+		for (final int id : imageJ1HelperService.getImageIds()) {
 			try {
-				final ImageMetaContextItem item = createImageContextItem(imageDisplay);
-				if (item != null) items.add(item);
+				final Optional<ImagePlus> image = imageJ1HelperService.getImage(id);
+				if (image.isPresent()) items.add(createImageContextItem(image.get()));
 			} catch (Exception e) {
 			}
 		}
@@ -111,48 +97,36 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 
 	@Override
 	public ContextItem createActiveContextItem() {
-		// Get the active dataset view (automatically handles ImageJ1 to ImageJ2
-		// conversion)
-		final ImageDisplay display = imageDisplayService.getActiveImageDisplay();
-		if (display == null) {
-			return null;
-		}
-
-		return createImageContextItem(display);
+		return imageJ1HelperService.getActiveImage().map(
+			this::createImageContextItem).orElse(null);
 	}
 
 	/**
-	 * Creates an {@link ImageMetaContextItem} from a Dataset. Extracts metadata
+	 * Creates an {@link ImageMetaContextItem} from an image. Extracts metadata
 	 * and creates a descriptive text for the LLM.
 	 */
-	protected ImageMetaContextItem createImageContextItem(final ImageDisplay display) {
-		final DatasetView datasetView = imageDisplayService.getActiveDatasetView(display);
-		if (datasetView == null) return null;
-		final Dataset dataset = datasetView.getData();
-		if (dataset == null) return null;
-
-		final int id = imageJ1HelperService.getImageId(display);
-
-		String imageTitle = imageJ1HelperService.getImageTitle(id);
+	protected ImageMetaContextItem createImageContextItem(final ImagePlus image) {
+		final ImgPlus<?> imgPlus = ImageJ1HelperService.wrap(image);
+		final int id = image.getID();
 
 		// Extract all dimensions with their types and lengths
 		final List<ImageMetaContextItem.Dimension> dimensions = extractDimensions(
-			dataset);
-		final String pixelType = dataset.getType().getClass().getSimpleName();
+			imgPlus);
+		final String pixelType = imgPlus.getImg().getType().getClass().getSimpleName();
 
-		final RenderedImageResult rendered = renderImage(display);
-		return new ImageMetaContextItem(imageTitle, id, dimensions, pixelType,
+		final RenderedImageResult rendered = renderImage(id);
+		return new ImageMetaContextItem(image.getTitle(), id, dimensions, pixelType,
 			rendered == null ? null : rendered.getImageContent(), rendered == null ? null :
 			rendered.getMetadata(), includesOverlays());
 	}
 
-	private RenderedImageResult renderImage(final ImageDisplay display) {
+	private RenderedImageResult renderImage(final int imageId) {
 		if (imageRenderingService == null) return null;
 		try {
 			final ImageRenderOptions options = includesOverlays() ? new ImageRenderOptions(
 				ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true) :
 				new ImageRenderOptions();
-			return imageRenderingService.render(display, options).orElse(null);
+			return imageRenderingService.render(imageId, options).orElse(null);
 		}
 		catch (final IOException e) {
 			return null;
@@ -160,24 +134,24 @@ public class ImageMetaContextSupplier implements ContextItemSupplier {
 	}
 
 	/**
-	 * Extracts all dimensions from a dataset with their types and lengths.
+	 * Extracts all dimensions from an image with their types and lengths.
 	 */
 	private List<ImageMetaContextItem.Dimension> extractDimensions(
-		final Dataset dataset)
+		final ImgPlus<?> imgPlus)
 	{
 		final List<ImageMetaContextItem.Dimension> dimensions = new ArrayList<>();
 
-		final int numDims = dataset.numDimensions();
+		final int numDims = imgPlus.numDimensions();
 		for (int i = 0; i < numDims; i++) {
 			try {
-				final AxisType axisType = dataset.axis(i).type();
+				final AxisType axisType = imgPlus.axis(i).type();
 				final String type = axisType != null ? axisType.getLabel() : "Unknown";
-				final long length = dataset.dimension(i);
+				final long length = imgPlus.dimension(i);
 				dimensions.add(new ImageMetaContextItem.Dimension(type, length));
 			}
 			catch (Exception e) {
 				// If we can't get axis type, use a generic label
-				final long length = dataset.dimension(i);
+				final long length = imgPlus.dimension(i);
 				dimensions.add(new ImageMetaContextItem.Dimension("Dim" + i, length));
 			}
 		}

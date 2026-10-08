@@ -52,20 +52,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
-import net.imagej.Dataset;
+import ij.ImagePlus;
 import net.imagej.ImgPlus;
-import net.imagej.display.DatasetView;
-import net.imagej.display.ImageDisplay;
-import net.imagej.display.ImageDisplayService;
 import net.imagej.legacy.LegacyService;
-import net.imglib2.Cursor;
-import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
-import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.planar.PlanarImg;
-import net.imglib2.type.numeric.IntegerType;
-import net.imglib2.type.numeric.RealType;
 import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.data.ImageJ1HelperService.ResultsTableState;
 import sc.fiji.llm.log.ImageJLogUtils;
@@ -79,7 +69,6 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 {
 
 	private static final long MAX_BULK_HASH_BYTES = 128L * 1024 * 1024;
-	private static final long MAX_CURSOR_HASH_PIXELS = 1_000_000;
 	private static final String PIXEL_HASH_ALGORITHM = "SHA-256";
 
 	private enum PixelSnapshotMode {
@@ -123,9 +112,6 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 	private ConsoleService consoleService;
 
 	@Parameter
-	private ImageDisplayService imageDisplayService;
-
-	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;
 
 	/** Starts a capture without changing Fiji state. */
@@ -155,18 +141,9 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 
 	private List<ImageState> snapshotImages(final PixelSnapshotMode pixelSnapshotMode) {
 		final List<ImageState> images = new ArrayList<>();
-		final List<ImageDisplay> displays = imageDisplayService.getImageDisplays();
-		if (displays != null) for (final ImageDisplay display : displays) {
-			addImage(images, snapshotImage(display, pixelSnapshotMode));
-		}
-
-		// Legacy commands can create an ImagePlus before its ImageDisplay is
-		// registered. Reconcile the legacy IDs so those images are not omitted.
 		for (final int imageId : imageJ1HelperService.getImageIds()) {
-			if (!imageJ1HelperService.isImageVisible(imageId)) continue;
-			if (findImage(images, "id:" + imageId) != null) continue;
-			imageJ1HelperService.getOrCreateImageDisplay(imageId).ifPresent(display ->
-				addImage(images, snapshotImage(display, pixelSnapshotMode)));
+			imageJ1HelperService.getImage(imageId).ifPresent(image -> addImage(images,
+				snapshotImage(image, pixelSnapshotMode)));
 		}
 		return images;
 	}
@@ -178,36 +155,33 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 	}
 
 	private ImageState snapshotActiveImage(final List<ImageState> images) {
-		final ImageState activeImage = snapshotImage(imageDisplayService
-			.getActiveImageDisplay(), PixelSnapshotMode.NOT_REQUESTED);
+		final ImageState activeImage = imageJ1HelperService.getActiveImage().map(
+			image -> snapshotImage(image, PixelSnapshotMode.NOT_REQUESTED)).orElse(null);
 		return activeImage == null ? null : findImage(images, activeImage.key());
 	}
 
-	private ImageState snapshotImage(final ImageDisplay display,
+	private static ImageState snapshotImage(final ImagePlus image,
 		final PixelSnapshotMode pixelSnapshotMode)
 	{
-		if (display == null) return null;
 		try {
-			final DatasetView view = imageDisplayService.getActiveDatasetView(display);
-			final Dataset dataset = view == null ? null : view.getData();
-			if (dataset == null) return null;
-
-			final int id = imageJ1HelperService.getImageId(display);
-			final String title = id >= 0 ? imageJ1HelperService.getImageTitle(id) : dataset
-				.getName();
+			final ImgPlus<?> imgPlus = ImageJ1HelperService.wrap(image);
 			final List<Long> dimensions = new ArrayList<>();
-			for (int i = 0; i < dataset.numDimensions(); i++) {
-				dimensions.add(dataset.dimension(i));
+			for (int i = 0; i < imgPlus.numDimensions(); i++) {
+				dimensions.add(imgPlus.dimension(i));
 			}
-			final String pixelType = dataset.getType() == null ? "" : dataset.getType()
-				.getClass().getSimpleName();
+			final String pixelType = imgPlus.getImg().getType().getClass()
+				.getSimpleName();
 			String pixelHash = null;
 			String pixelHashEncoding = null;
 			String pixelHashReason = null;
 			PixelHashStatus pixelHashStatus = pixelSnapshotMode.hashStatus();
 			if (pixelSnapshotMode == PixelSnapshotMode.CAPTURED) {
 				try {
-					final PixelHashResult result = pixelHash(dataset);
+					// The wrapped PlanarImg loads planes on demand, so a virtual stack
+					// would otherwise have each plane loaded from its source to be hashed.
+					final PixelHashResult result = ImageJ1HelperService.hasVirtualStack(
+						image) ? PixelHashResult.skipped("lazy_container") : pixelHash(
+							imgPlus);
 					pixelHash = result.hash;
 					pixelHashEncoding = result.encoding;
 					pixelHashReason = result.reason;
@@ -218,7 +192,8 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 					pixelHashReason = "runtime_error";
 				}
 			}
-			return new ImageState(id, title, pixelType, dimensions, pixelHash,
+			return new ImageState(image.getID(), image.getTitle(), pixelType,
+				dimensions, pixelHash,
 				pixelHashEncoding, pixelHashReason, pixelHashStatus);
 		}
 		catch (RuntimeException e) {
@@ -226,29 +201,19 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 		}
 	}
 
-	private static PixelHashResult pixelHash(final Dataset dataset) {
+	private static PixelHashResult pixelHash(final ImgPlus<?> imgPlus) {
 		// TODO: Investigate whether ImageJ Ops provides a canonical bounded content digest.
-		final ImgPlus<? extends RealType<?>> imgPlus = dataset.getImgPlus();
-		if (imgPlus == null || imgPlus.getImg() == null) return PixelHashResult.skipped(
-			"no_img");
-		final Img<? extends RealType<?>> img = imgPlus.getImg();
-		if (img instanceof AbstractCellImg<?, ?, ?, ?>) return PixelHashResult.skipped(
-			"lazy_container");
-		if (img instanceof ArrayImg<?, ?> arrayImg) {
-			final ArrayDataAccess<?> access = (ArrayDataAccess<?>) arrayImg.update(null);
-			return nativeStorageHash(dataset, List.of(access.getCurrentStorageArray()));
+		if (!(imgPlus.getImg() instanceof PlanarImg<?, ?> planarImg)) {
+			return PixelHashResult.skipped("unsupported_storage");
 		}
-		if (img instanceof PlanarImg<?, ?> planarImg) {
-			final List<Object> storage = new ArrayList<>();
-			for (int plane = 0; plane < planarImg.numSlices(); plane++) {
-				storage.add(planarImg.getPlane(plane).getCurrentStorageArray());
-			}
-			return nativeStorageHash(dataset, storage);
+		final List<Object> storage = new ArrayList<>();
+		for (int plane = 0; plane < planarImg.numSlices(); plane++) {
+			storage.add(planarImg.getPlane(plane).getCurrentStorageArray());
 		}
-		return cursorHash(dataset, img);
+		return nativeStorageHash(imgPlus, storage);
 	}
 
-	private static PixelHashResult nativeStorageHash(final Dataset dataset,
+	private static PixelHashResult nativeStorageHash(final ImgPlus<?> imgPlus,
 		final List<Object> storage)
 	{
 		long totalBytes = 0;
@@ -264,7 +229,7 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 		}
 
 		final MessageDigest digest = newDigest();
-		updateDigestHeader(digest, dataset, "imglib2-native-storage-v1");
+		updateDigestHeader(digest, imgPlus, "imglib2-native-storage-v1");
 		long remaining = MAX_BULK_HASH_BYTES;
 		for (final Object array : storage) {
 			if (remaining == 0) break;
@@ -277,27 +242,6 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 			"imglib2-native-storage-v1", reason);
 	}
 
-	private static PixelHashResult cursorHash(final Dataset dataset,
-		final Img<? extends RealType<?>> img)
-	{
-		final MessageDigest digest = newDigest();
-		updateDigestHeader(digest, dataset, "imglib2-real-values-v1");
-		final byte[] longBytes = new byte[Long.BYTES];
-		final Cursor<? extends RealType<?>> cursor = img.cursor();
-		long pixels = 0;
-		while (pixels < MAX_CURSOR_HASH_PIXELS && cursor.hasNext()) {
-			final RealType<?> value = cursor.next();
-			final long bits = value instanceof IntegerType<?> integer ? integer
-				.getIntegerLong() : Double.doubleToLongBits(value.getRealDouble());
-			updateLong(digest, bits, longBytes);
-			pixels++;
-		}
-		final boolean sampled = cursor.hasNext();
-		return PixelHashResult.of(HexFormat.of().formatHex(digest.digest()), sampled ?
-			PixelHashStatus.SAMPLED : PixelHashStatus.CAPTURED, "imglib2-real-values-v1",
-			sampled ? "cursor_pixel_limit" : null);
-	}
-
 	private static MessageDigest newDigest() {
 		try {
 			return MessageDigest.getInstance(PIXEL_HASH_ALGORITHM);
@@ -308,18 +252,16 @@ public final class DefaultEnvironmentSnapshotService extends AbstractService
 	}
 
 	private static void updateDigestHeader(final MessageDigest digest,
-		final Dataset dataset, final String encoding)
+		final ImgPlus<?> imgPlus, final String encoding)
 	{
 		updateString(digest, "fiji-llm-pixel-hash-v2");
 		updateString(digest, encoding);
 		final byte[] longBytes = new byte[Long.BYTES];
-		updateLong(digest, dataset.numDimensions(), longBytes);
-		for (int dimension = 0; dimension < dataset.numDimensions(); dimension++) {
-			updateLong(digest, dataset.dimension(dimension), longBytes);
+		updateLong(digest, imgPlus.numDimensions(), longBytes);
+		for (int dimension = 0; dimension < imgPlus.numDimensions(); dimension++) {
+			updateLong(digest, imgPlus.dimension(dimension), longBytes);
 		}
-		final String pixelType = dataset.getType() == null ? "" : dataset.getType()
-			.getClass().getName();
-		updateString(digest, pixelType);
+		updateString(digest, imgPlus.getImg().getType().getClass().getName());
 	}
 
 	private static void updateString(final MessageDigest digest, final String value) {
