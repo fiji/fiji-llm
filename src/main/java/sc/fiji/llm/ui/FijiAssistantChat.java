@@ -108,6 +108,7 @@ import sc.fiji.llm.guidance.GuidancePromptFragments;
 import sc.fiji.llm.image.ImageMetaContextItem;
 import sc.fiji.llm.image.ImageToolPlugin;
 import sc.fiji.llm.provider.LLMProvider;
+import sc.fiji.llm.provider.LLMProvider.ModelDisplay;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.script.ScriptEditorToolPlugin;
 import sc.fiji.llm.tools.AiToolService;
@@ -120,7 +121,7 @@ public class FijiAssistantChat {
 	public static final float CHAT_FONT_SIZE = 16f;
 	private static final int INPUT_PANEL_PADDING = 8;
 	private static final int INITIAL_CHAT_WIDTH = 800;
-	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 72;
+	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 90;
 	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
 	private static final String GUIDE_SHOWN_PREF = "guideShown";
@@ -384,7 +385,7 @@ Be concise, patient, humble, and collaborative.
 		configureChatButton.setVerticalTextPosition(SwingConstants.CENTER);
 		configureChatButton.setIconTextGap(6);
 		configureChatButton.setMargin(new Insets(0, 0, 0, 0));
-		configureChatButton.setToolTipText(buildConfigureChatTooltip(providerName,
+		configureChatButton.setToolTipText(buildConfigureChatTooltip(llmProvider.getModelDisplay(modelName),
 			modelName, llmProvider.getDescription()));
 		configureChatButton.setFocusPainted(false);
 		configureChatButton.addActionListener(e -> configureChat());
@@ -1454,14 +1455,19 @@ Be concise, patient, humble, and collaborative.
 			providerText + "</font></html>";
 	}
 
-	private static String buildConfigureChatTooltip(final String providerName,
-		final String modelName, final String description)
+	private static String buildConfigureChatTooltip(final ModelDisplay display,
+		final String rawModel, final String description)
 	{
+		final String displayModel = display.model();
 		final String descriptionText = escapeHtml(description).replace("\r\n",
 			"<br>").replace("\n", "<br>");
-		return "<html>" + escapeHtml(providerName) + "<br>" + descriptionText +
-			"<br><br>Model: " + escapeHtml(modelName) +
-			"<br>Click to change provider or model</html>";
+		String toolTip = "<html>" + escapeHtml(displayModel) + "<br>" +
+			escapeHtml(display.provider()) + "<br>" + descriptionText;
+
+		if (!rawModel.equals(displayModel)) {
+			toolTip += "<br>Model: " + escapeHtml(rawModel);
+		}
+		return toolTip + "<br><br>Click to change provider or model</html>";
 	}
 
 	private static String truncateText(final String text, final Font font,
