@@ -349,20 +349,22 @@ Be concise, patient, humble, and collaborative.
 
 		// Change API Keys button
 		final JButton configureKeysButton;
-		final URL lockIconUrl = getClass().getResource("/icons/key-pao-32.png");
-		if (lockIconUrl != null) {
-			configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
-			configureKeysButton.setPreferredSize(new Dimension(36, 36));
-			configureKeysButton.setToolTipText("Configure API Key");
+		if (llmProvider.requiresApiKey()) {
+			final URL lockIconUrl = getClass().getResource("/icons/key-pao-32.png");
+			if (lockIconUrl != null) {
+				configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
+				configureKeysButton.setPreferredSize(new Dimension(36, 36));
+				configureKeysButton.setToolTipText("Configure API Key");
+			}
+			else {
+				configureKeysButton = new JButton("Configure API Key");
+			}
+			configureKeysButton.setFocusPainted(false);
+			configureKeysButton.addActionListener(e -> configureKeys());
+			buttonPanel.add(configureKeysButton);
+		} else {
+			configureKeysButton = null;
 		}
-		else {
-			configureKeysButton = new JButton("Configure API Key");
-		}
-		configureKeysButton.setFocusPainted(false);
-		configureKeysButton.addActionListener(e -> configureKeys());
-		buttonPanel.add(configureKeysButton);
-
-		configureKeysButton.setEnabled(llmProvider.requiresApiKey());
 
 		// Change Model button
 		final JButton configureChatButton;
@@ -670,8 +672,10 @@ Be concise, patient, humble, and collaborative.
 			"Permanently delete the current conversation.");
 		guide.addElement(forumButton, "Forum Button",
 			"Get help and support on the Image.sc forum.");
-		guide.addElement(configureKeysButton, "API Key Button",
-			"Configure API credentials for the active AI service.");
+		if (llmProvider.requiresApiKey()) {
+			guide.addElement(configureKeysButton, "API Key Button",
+				"Configure API credentials for the active AI service.");
+		}
 		guide.addElement(configureChatButton, "Configure Chat Button",
 			"Select a different AI service or model.");
 
