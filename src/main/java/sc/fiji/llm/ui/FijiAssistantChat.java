@@ -668,25 +668,25 @@ Be concise, patient, humble, and collaborative.
 		guide.setInspectModeComponent(inspectButton);
 		guide.setInspectModeChangeListener(this::updateInspectButtonState);
 		guide.addElement(configureChatButton, "Configure Chat Button",
-			"Select a different AI service or model.");
+			"Change the AI service, model, and related settings.");
 		guide.addElement(guideButton, "Guide Button",
-			"Open the interactive guide for a tour of Fiji Chat components.");
+			"Start an interactive tour of Fiji Chat.");
 		guide.addElement(inspectButton, "Inspect Mode Toggle",
-			"Toggle inspect mode, where you can click a component to learn more about it.");
+			"Toggle inspect mode; click highlighted Fiji Chat components to learn about them.");
 		guide.addElement(forumButton, "Forum Button",
-			"Get help and support on the Image.sc forum.");
+			"Open the Image.sc forum to get help and support.");
 		guide.addElement(conversationComboBox, "Select Conversation",
-			"Re-load a previous conversation.");
+			"Open a previous conversation. Conversations are saved automatically, independently of the active AI service and model.");
 		guide.addElement(newConversationButton, "New Conversation",
-			"Start a new conversation with the current chat model.");
+			"Start a new conversation with an empty chat history. Use a new conversation when changing topics or starting a new task.");
 		guide.addElement(deleteConversationButton, "Delete Conversation",
 			"Permanently delete the current conversation.");
 		guide.addElement(attachContextButton, "Attach Context",
-			"Attach the current item or choose an available item as chat context.");
+			"Attach items that are relevant to your task so the AI assistant can focus on them.");
 		guide.addElement(contextTagsScrollPane, "Context Items",
-			"Currently attached context items are shown here. Click on an item to remove it.");
+			"Review the context items that will be included when you send your message. Click an item to remove it before sending.");
 		guide.addElement(clearAllButton, "Clear Context",
-			"Remove all currently attached context items.");
+			"Remove all context items before sending.");
 		guide.addElement(sendStopButton, "Send / Stop Button",
 			"Click to send your message, or to interrupt the assistant while it's responding.");
 		guide.addElement(inputArea, "Chat Input",
