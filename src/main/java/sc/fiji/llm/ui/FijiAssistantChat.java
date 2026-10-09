@@ -341,7 +341,7 @@ Be concise, patient, humble, and collaborative.
 			e -> deleteCurrentConversation());
 		conversationPanel.add(deleteConversationButton);
 
-		topNavBar.add(conversationPanel, BorderLayout.WEST);
+		topNavBar.add(conversationPanel, BorderLayout.SOUTH);
 
 		final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5,
 			5));
@@ -423,7 +423,7 @@ Be concise, patient, humble, and collaborative.
 		configureChatButton.addActionListener(e -> configureChat());
 		buttonPanel.add(configureChatButton);
 
-		topNavBar.add(buttonPanel, BorderLayout.EAST);
+		topNavBar.add(buttonPanel, BorderLayout.NORTH);
 
 		// Chat display area - MigLayout for proper resizing with messages at bottom
 		// Fill horizontally, wrap each component to new row
