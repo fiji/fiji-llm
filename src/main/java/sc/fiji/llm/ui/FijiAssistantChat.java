@@ -381,6 +381,21 @@ Be concise, patient, humble, and collaborative.
 			configureKeysButton = null;
 		}
 
+		// Launch guide button
+		final URL questionIconUrl = getClass().getResource(
+			"/icons/question-icon-32.png");
+		if (questionIconUrl != null) {
+			guideButton = new JButton(new ImageIcon(questionIconUrl));
+			guideButton.setPreferredSize(new Dimension(36, 36));
+		}
+		else {
+			guideButton = new JButton("Show Guide");
+		}
+		guideButton.setToolTipText("Explain chat components");
+		guideButton.setFocusPainted(false);
+		guideButton.addActionListener(e -> launchGuide());
+		buttonPanel.add(guideButton);
+
 		// Change Model button
 		final JButton configureChatButton;
 		final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
@@ -407,21 +422,6 @@ Be concise, patient, humble, and collaborative.
 		configureChatButton.setFocusPainted(false);
 		configureChatButton.addActionListener(e -> configureChat());
 		buttonPanel.add(configureChatButton);
-
-		// Launch guide button
-		final URL questionIconUrl = getClass().getResource(
-			"/icons/question-icon-32.png");
-		if (questionIconUrl != null) {
-			guideButton = new JButton(new ImageIcon(questionIconUrl));
-			guideButton.setPreferredSize(new Dimension(36, 36));
-		}
-		else {
-			guideButton = new JButton("Show Guide");
-		}
-		guideButton.setToolTipText("Explain chat components");
-		guideButton.setFocusPainted(false);
-		guideButton.addActionListener(e -> launchGuide());
-		buttonPanel.add(guideButton);
 
 		topNavBar.add(buttonPanel, BorderLayout.EAST);
 
