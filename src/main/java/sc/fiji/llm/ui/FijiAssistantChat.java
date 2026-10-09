@@ -124,7 +124,21 @@ public class FijiAssistantChat {
 	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 90;
 	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
-	private static final String GUIDE_SHOWN_PREF = "guideShown";
+	private static final String WELCOME_MESSAGE =
+		"""
+## Welcome to Fiji Chat!
+
+Do you need support with:
+- Image analysis
+- Writing scripts and macros
+- Navigating Fiji
+- Something else?
+
+AI responses may be inaccurate.
+Always verify important results.
+
+**New to Fiji Chat?** Click **?** to learn more.
+		""";
 
 	private static enum Sender {
 			USER, ASSISTANT, SYSTEM, ERROR
@@ -234,6 +248,7 @@ Be concise, patient, humble, and collaborative.
 	private ImageIcon sendIcon;
 	private ImageIcon stopIcon;
 	private InteractiveGuide guide;
+	private ChatMessagePanel welcomePanel;
 	private ChatMessagePanel preparationPanel;
 	private javax.swing.Timer preparationTimer;
 	private LLMProvider llmProvider;
@@ -679,6 +694,9 @@ Be concise, patient, humble, and collaborative.
 		guide.addElement(configureChatButton, "Configure Chat Button",
 			"Select a different AI service or model.");
 
+		welcomePanel = new ChatMessagePanel(ChatMessagePanel.MessageType.SYSTEM,
+			WELCOME_MESSAGE, CHAT_FONT_SIZE);
+		addMessagePanelToChat(welcomePanel);
 		startModelPreparation();
 	}
 
@@ -686,13 +704,6 @@ Be concise, patient, humble, and collaborative.
 		frame.setVisible(true);
 		if (modelReady) {
 			inputArea.requestFocus();
-		}
-		if (!prefService.getBoolean(FijiAssistantChat.class, GUIDE_SHOWN_PREF,
-			false))
-		{
-			guide.showSingleton(guideButton, "Welcome to Fiji chat!",
-				"Click here for a brief tour.");
-			prefService.put(FijiAssistantChat.class, GUIDE_SHOWN_PREF, true);
 		}
 	}
 
@@ -810,6 +821,7 @@ Be concise, patient, humble, and collaborative.
 			return;
 		}
 
+		removeWelcomeMessage();
 		inputArea.setText(""); // Clear input immediately
 
 		StringBuilder displayMessage = new StringBuilder(userText);
@@ -1272,6 +1284,17 @@ Be concise, patient, humble, and collaborative.
 			// System and error messages are not added to chat memory
 			// User and assistant messages are already tracked in chatMemory via sendMessage()
 		});
+	}
+
+	private void removeWelcomeMessage() {
+		if (welcomePanel == null) {
+			return;
+		}
+
+		chatPanel.remove(welcomePanel);
+		welcomePanel = null;
+		chatPanel.revalidate();
+		chatPanel.repaint();
 	}
 
 	/**
@@ -1798,6 +1821,7 @@ Be concise, patient, humble, and collaborative.
 				}
 			}
 		}
+		welcomePanel = null;
 		chatPanel.revalidate();
 		chatPanel.repaint();
 	}

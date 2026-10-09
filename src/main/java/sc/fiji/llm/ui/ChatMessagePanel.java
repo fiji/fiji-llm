@@ -447,11 +447,6 @@ public class ChatMessagePanel extends JPanel {
 		// Convert Markdown => HTML and sanitize from the tracked raw markdown
 		String safeHtml = renderMarkdownToSafeHtml(rawMarkdown.toString());
 
-		// align system/error messages to center by wrapping in a div when needed
-		if (type == MessageType.SYSTEM || type == MessageType.ERROR) {
-			safeHtml = "<div style=\"text-align:center\">" + safeHtml + "</div>";
-		}
-
 		renderedHtml = safeHtml;
 		textPane.setText(renderedHtml);
 
@@ -482,7 +477,7 @@ public class ChatMessagePanel extends JPanel {
 		final SimpleAttributeSet attrs = new SimpleAttributeSet();
 		final int alignment = switch (type) {
 			case USER, ASSISTANT -> StyleConstants.ALIGN_LEFT;
-			case SYSTEM, ERROR -> StyleConstants.ALIGN_CENTER;
+			case SYSTEM, ERROR -> StyleConstants.ALIGN_LEFT;
 		};
 		StyleConstants.setAlignment(attrs, alignment);
 		// Remove extra paragraph indents
@@ -521,9 +516,17 @@ public class ChatMessagePanel extends JPanel {
 		styleSheet.addRule("a { color: " + cssColor(linkColor) +
 			"; text-decoration: none; }");
 		styleSheet.addRule("img { max-width: 100%; }");
-		styleSheet.addRule("body { margin: 1px; }");
+		styleSheet.addRule("body { margin: " + ((type == MessageType.SYSTEM || type ==
+			MessageType.ERROR) ? "0" : "1px") + "; }");
 		styleSheet.addRule("div { margin: 1px; }");
-		styleSheet.addRule("p { margin-top: 1px; margin-bottom: 1px; }");
+		if (type == MessageType.SYSTEM || type == MessageType.ERROR) {
+			styleSheet.addRule("h1, h2, h3 { margin-top: 0; margin-bottom: 8px; }");
+			styleSheet.addRule("ul, ol { margin-top: 0; margin-bottom: 8px; padding-left: 24px; }");
+			styleSheet.addRule("p { margin-top: 0; margin-bottom: 8px; }");
+		}
+		else {
+			styleSheet.addRule("p { margin-top: 1px; margin-bottom: 1px; }");
+		}
 	}
 
 	private Color getTextColor(final Color background) {
