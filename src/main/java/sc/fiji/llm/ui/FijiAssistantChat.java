@@ -406,7 +406,7 @@ Be concise, patient, humble, and collaborative.
 			configureChatButton = new JButton();
 		}
 		configureChatButton.setText(buildConfigureChatButtonText(llmProvider
-			.getModelDisplay(modelName), llmProvider.supportsModelSelection(),
+			.getModelDisplay(modelName),
 			configureChatButton.getFont()));
 		configureChatButton.setPreferredSize(new Dimension(
 			CONFIGURE_CHAT_BUTTON_WIDTH, 36));
@@ -1463,23 +1463,12 @@ Be concise, patient, humble, and collaborative.
 
 	private static String buildConfigureChatButtonText(
 		final LLMProvider.ModelDisplay displayName,
-		final boolean supportsModelSelection,
 		final Font buttonFont)
 	{
-		if (!supportsModelSelection) {
-			return "<html>" + noWrap(truncateText(displayName.provider(), buttonFont,
-				CONFIGURE_CHAT_TEXT_WIDTH)) + "</html>";
-		}
-
 		final Font modelFont = buttonFont.deriveFont(Font.BOLD);
-		final Font providerFont = buttonFont.deriveFont(Math.max(1f, buttonFont
-			.getSize2D() - 2f));
 		final String modelText = noWrap(truncateText(displayName.model(), modelFont,
 			CONFIGURE_CHAT_TEXT_WIDTH));
-		final String providerText = noWrap(truncateText(displayName.provider(),
-			providerFont, CONFIGURE_CHAT_TEXT_WIDTH));
-		return "<html><b>" + modelText + "</b><br><font size=\"-1\">" +
-			providerText + "</font></html>";
+		return "<html><b>" + modelText + "</b></html>";
 	}
 
 	private static String buildConfigureChatTooltip(final ModelDisplay display,
