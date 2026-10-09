@@ -169,7 +169,21 @@ public class ProviderVisionSupportTest {
 		assertEquals(Optional.empty(), anthropic.getCost("future-model"));
 		assertEquals(Optional.empty(), anthropic.getCost(null));
 
-		assertEquals(Optional.empty(), new GeminiProvider().getCost("Gemini"));
+		final GeminiProvider gemini = new GeminiProvider();
+		assertEquals(new LLMProvider.ModelCost(0.30, 2.50), gemini.getCost(
+			"gemini-3.5-flash-lite").get());
+		assertEquals(new LLMProvider.ModelCost(0.25, 1.50), gemini.getCost(
+			"gemini-3.1-flash-lite").get());
+		assertEquals(new LLMProvider.ModelCost(1.50, 9.00), gemini.getCost(
+			"gemini-3.5-flash").get());
+		assertEquals(new LLMProvider.ModelCost(0.75, 3.75), gemini.getCost(
+			"gemini-3.6-flash").get());
+		assertEquals(new LLMProvider.ModelCost(0.75, 3.75), gemini.getCost(
+			"gemini-3.7-flash").get());
+		assertEquals(new LLMProvider.ModelCost(0.75, 3.75), gemini.getCost(
+			"gemini-3.8-flash").get());
+		assertEquals(Optional.empty(), gemini.getCost("future-model"));
+		assertEquals(Optional.empty(), gemini.getCost(null));
 	}
 
 	@Test
