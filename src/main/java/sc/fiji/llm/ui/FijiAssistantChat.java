@@ -1063,9 +1063,12 @@ Be concise, patient, humble, and collaborative.
 		chatMessagePanel.finishWorking();
 		SwingUtilities.invokeLater(() -> {
 				chatPanel.remove(chatMessagePanel);
+				chatPanel.revalidate();
 				chatPanel.repaint();
-				JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-				vertical.setValue(vertical.getMaximum());
+				SwingUtilities.invokeLater(() -> {
+					JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
+					vertical.setValue(vertical.getMaximum());
+				});
 		});
 	}
 
