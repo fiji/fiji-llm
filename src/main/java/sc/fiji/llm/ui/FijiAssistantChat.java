@@ -69,6 +69,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
@@ -237,6 +238,8 @@ Be concise, patient, humble, and collaborative.
 	private final JButton clearAllButton;
 	private final JLabel contextPlaceholderLabel;
 	private final java.util.Map<ContextItem, JButton> contextItemButtons;
+	private final JToggleButton inspectButton;
+	private final Color inspectButtonDefaultBackground;
 	private final JButton guideButton;
 	private final List<ContextItem> contextItems;
 	private JComboBox<Conversation> conversationComboBox;
@@ -380,6 +383,22 @@ Be concise, patient, humble, and collaborative.
 		} else {
 			configureKeysButton = null;
 		}
+
+		// Inspect mode button
+		final URL inspectIconUrl = getClass().getResource(
+			"/icons/info-icon-32.png");
+		if (inspectIconUrl != null) {
+			inspectButton = new JToggleButton(new ImageIcon(inspectIconUrl));
+			inspectButton.setPreferredSize(new Dimension(36, 36));
+		}
+		else {
+			inspectButton = new JToggleButton("Inspect");
+		}
+		inspectButtonDefaultBackground = inspectButton.getBackground();
+		inspectButton.setToolTipText("Inspect chat components");
+		inspectButton.setFocusPainted(false);
+		inspectButton.addActionListener(e -> guide.toggleInspectMode());
+		buttonPanel.add(inspectButton);
 
 		// Launch guide button
 		final URL questionIconUrl = getClass().getResource(
@@ -663,36 +682,43 @@ Be concise, patient, humble, and collaborative.
 		frame.add(topNavBar, BorderLayout.NORTH);
 		frame.add(splitPane, BorderLayout.CENTER);
 
-		// Finalize frame
-		frame.pack();
-		frame.setLocationRelativeTo(null);
-
 		// Build the interactive guide (items will be displayed in order)
 		this.guide = new InteractiveGuide(frame);
-		guide.addElement(inputArea, "Chat Input",
-			"Type your message here and press 'enter' to chat with the AI assistant.");
-		guide.addElement(sendStopButton, "Send / Stop Button",
-			"Click to send your message, or to interrupt the assistant while it's responding.");
-		guide.addElement(attachContextButton, "Attach Context",
-			"Attach the current item or choose an available item as chat context.");
-		guide.addElement(contextTagsScrollPane, "Context Items",
-			"Currently attached context items are shown here. Click on an item to remove it.");
-		guide.addElement(clearAllButton, "Clear Context",
-			"Remove all currently attached context items.");
+		guide.setMessagePanel(chatScrollPane);
+		guide.setInspectModeComponent(inspectButton);
+		guide.setInspectModeChangeListener(this::updateInspectButtonState);
+		guide.addElement(configureChatButton, "Configure Chat Button",
+			"Select a different AI service or model.");
+		guide.addElement(guideButton, "Guide Button",
+			"Open the interactive guide for a tour of Fiji Chat components.");
+		guide.addElement(inspectButton, "Inspect Mode Toggle",
+			"Toggle inspect mode, where you can click a component to learn more about it.");
+		guide.addElement(forumButton, "Forum Button",
+			"Get help and support on the Image.sc forum.");
 		guide.addElement(conversationComboBox, "Select Conversation",
 			"Re-load a previous conversation.");
 		guide.addElement(newConversationButton, "New Conversation",
 			"Start a new conversation with the current chat model.");
 		guide.addElement(deleteConversationButton, "Delete Conversation",
 			"Permanently delete the current conversation.");
-		guide.addElement(forumButton, "Forum Button",
-			"Get help and support on the Image.sc forum.");
+		guide.addElement(attachContextButton, "Attach Context",
+			"Attach the current item or choose an available item as chat context.");
+		guide.addElement(contextTagsScrollPane, "Context Items",
+			"Currently attached context items are shown here. Click on an item to remove it.");
+		guide.addElement(clearAllButton, "Clear Context",
+			"Remove all currently attached context items.");
+		guide.addElement(sendStopButton, "Send / Stop Button",
+			"Click to send your message, or to interrupt the assistant while it's responding.");
+		guide.addElement(inputArea, "Chat Input",
+			"Type your message here and press 'enter' to chat with the AI assistant.");
 		if (llmProvider.requiresApiKey()) {
 			guide.addElement(configureKeysButton, "API Key Button",
 				"Configure API credentials for the active AI service.");
 		}
-		guide.addElement(configureChatButton, "Configure Chat Button",
-			"Select a different AI service or model.");
+
+		// Finalize frame after guide borders have reserved their layout space.
+		frame.pack();
+		frame.setLocationRelativeTo(null);
 
 		welcomePanel = new ChatMessagePanel(ChatMessagePanel.MessageType.SYSTEM,
 			WELCOME_MESSAGE, CHAT_FONT_SIZE);
@@ -820,6 +846,7 @@ Be concise, patient, humble, and collaborative.
 		if (userText.isEmpty()) {
 			return;
 		}
+		guide.setInspectMode(false);
 
 		removeWelcomeMessage();
 		inputArea.setText(""); // Clear input immediately
@@ -1379,6 +1406,15 @@ Be concise, patient, humble, and collaborative.
 
 	private void launchGuide() {
 		guide.start();
+	}
+
+	private void updateInspectButtonState(final boolean enabled) {
+		inspectButton.setSelected(enabled);
+		inspectButton.setOpaque(enabled);
+		inspectButton.setBackground(enabled ? new Color(255, 220, 170) :
+			inspectButtonDefaultBackground);
+		inspectButton.setToolTipText(enabled ? "Exit inspect mode" :
+			"Inspect chat components");
 	}
 
 	private void startModelPreparation() {

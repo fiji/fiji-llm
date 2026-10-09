@@ -31,16 +31,27 @@ package sc.fiji.llm.ui;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -50,7 +61,11 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 
@@ -60,18 +75,55 @@ import javax.swing.border.LineBorder;
  */
 public class InteractiveGuide {
 
+	private static final int GUIDE_BORDER_WIDTH = 3;
+	private static final Color INSPECT_BORDER_COLOR = new Color(255, 165, 0,
+		100);
+	private static final String INSPECT_MODE_DESCRIPTION =
+		"Click on a highlighted Fiji Chat component to learn more about it. " +
+			"Escape returns.";
+
 	private final JFrame parentFrame;
 	private final List<GuideElement> elements;
+	private final JPanel inspectGlassPane;
+	private final Map<Component, GuideElement> inspectTargets = new HashMap<>();
+	private final Map<JComponent, Border> guideOriginalBorders = new HashMap<>();
+	private Consumer<Boolean> inspectModeChangeListener;
+	private Component inspectModeComponent;
+	private Component messagePanel;
+	private int largestGuideTitleWidth;
 	private int currentIndex = 0;
 	private JDialog currentDialog;
 	private Timer flashTimer;
 	private boolean isActive = false;
 	private JComponent currentFlashingComponent;
 	private Border currentOriginalBorder;
+	private boolean inspectMode = false;
+	private final Map<JComponent, Border> inspectOriginalBorders = new HashMap<>();
 
 	public InteractiveGuide(JFrame parentFrame) {
 		this.parentFrame = parentFrame;
 		this.elements = new ArrayList<>();
+		this.inspectGlassPane = new JPanel();
+		inspectGlassPane.setOpaque(false);
+		inspectGlassPane.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mousePressed(final MouseEvent event) {
+				handleInspectClick(event);
+			}
+
+			@Override
+			public void mouseReleased(final MouseEvent event) {
+				event.consume();
+			}
+
+			@Override
+			public void mouseClicked(final MouseEvent event) {
+				event.consume();
+			}
+		});
+		parentFrame.setGlassPane(inspectGlassPane);
+		installEscapeBinding(parentFrame.getRootPane());
 	}
 
 	/**
@@ -80,7 +132,90 @@ public class InteractiveGuide {
 	public void addElement(Component component, String title,
 		String description)
 	{
-		elements.add(new GuideElement(component, title, description));
+		final GuideElement element = new GuideElement(component, title, description);
+		elements.add(element);
+		largestGuideTitleWidth = Math.max(largestGuideTitleWidth,
+			getGuideTitleWidth(title));
+		reserveGuideBorder(component);
+		if (inspectMode && component != inspectModeComponent) {
+			installInspectBorder(component);
+			registerInspectTargets(component, element);
+		}
+	}
+
+	/**
+	 * Set the component that separates the upper toolbar from the message input.
+	 *
+	 * @param messagePanel the chat display component
+	 */
+	public void setMessagePanel(final Component messagePanel) {
+		this.messagePanel = messagePanel;
+	}
+
+	/**
+	 * Exclude the inspect-mode control from inspect highlighting while retaining
+	 * it as a regular guide element.
+	 *
+	 * @param component the inspect-mode control
+	 */
+	public void setInspectModeComponent(final Component component) {
+		inspectModeComponent = component;
+	}
+
+	/**
+	 * Listen for inspect-mode state changes.
+	 *
+	 * @param listener receives the new inspect-mode state
+	 */
+	public void setInspectModeChangeListener(final Consumer<Boolean> listener) {
+		inspectModeChangeListener = listener;
+		if (listener != null) listener.accept(inspectMode);
+	}
+
+	/**
+	 * Toggle the inspect view.
+	 */
+	public void toggleInspectMode() {
+		setInspectMode(!inspectMode);
+	}
+
+	/**
+	 * Enable or disable the inspect view.
+	 *
+	 * @param enabled whether inspect mode should be active
+	 */
+	public void setInspectMode(final boolean enabled) {
+		if (inspectMode == enabled) return;
+
+		closeCurrentDialog();
+		isActive = false;
+		inspectMode = enabled;
+		if (enabled) {
+			inspectGlassPane.setVisible(true);
+			for (final GuideElement element : elements) {
+				if (element.getComponent() == inspectModeComponent) continue;
+				installInspectBorder(element.getComponent());
+				registerInspectTargets(element.getComponent(), element);
+			}
+			if (inspectModeComponent != null) {
+				showSingleton(inspectModeComponent, "Inspect Mode",
+					INSPECT_MODE_DESCRIPTION);
+			}
+		}
+		else {
+			inspectGlassPane.setVisible(false);
+			inspectTargets.clear();
+			restoreInspectBorders();
+		}
+		if (inspectModeChangeListener != null) inspectModeChangeListener.accept(
+			inspectMode);
+	}
+
+	/**
+	 * @return whether inspect mode is active
+	 */
+	public boolean isInspectMode() {
+		return inspectMode;
 	}
 
 	/**
@@ -142,7 +277,6 @@ public class InteractiveGuide {
 		buttonPanel.add(cancelButton);
 
 		buttonPanel.doLayout();
-		final int buttonPanelWidth = buttonPanel.getPreferredSize().width;
 		if (isLastElement) {
 			buttonPanel.remove(cancelButton);
 		}
@@ -154,7 +288,7 @@ public class InteractiveGuide {
 			Font.BOLD));
 		titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		JDialog dialog = createGuideDialog(element, titleLabel, buttonPanel, buttonPanelWidth);
+		JDialog dialog = createGuideDialog(element, titleLabel, buttonPanel);
 
 		showElement(element, dialog);
 	}
@@ -186,7 +320,7 @@ public class InteractiveGuide {
 		titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		buttonPanel.doLayout();
-		JDialog dialog = createGuideDialog(element, titleLabel, buttonPanel, buttonPanel.getPreferredSize().width);
+		JDialog dialog = createGuideDialog(element, titleLabel, buttonPanel);
 
 		showElement(element, dialog);
 	}
@@ -205,6 +339,7 @@ public class InteractiveGuide {
 
 		// Flash the component border briefly
 		flashComponentBorder(component);
+		installEscapeBinding(dialog.getRootPane());
 
 		// Create dialog with explanation
 		currentDialog = dialog;
@@ -214,7 +349,9 @@ public class InteractiveGuide {
 	/**
 	 * Create a dialog for a guide element.
 	 */
-	private JDialog createGuideDialog(GuideElement element, JLabel titleLabel, JPanel buttonPanel, int buttonPanelWidth) {
+	private JDialog createGuideDialog(GuideElement element, JLabel titleLabel,
+		JPanel buttonPanel)
+	{
 		final JDialog dialog = new JDialog(parentFrame, false);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		dialog.setUndecorated(true);
@@ -231,7 +368,8 @@ public class InteractiveGuide {
 		contentPanel.add(Box.createVerticalStrut(8));
 
 		titleLabel.doLayout();
-		final int titleWidth = titleLabel.getPreferredSize().width;
+		final int titleWidth = Math.max(largestGuideTitleWidth, titleLabel
+			.getPreferredSize().width);
 
 		// Description - constrained to button panel width
 		final JLabel descriptionLabel = new JLabel("<html><div style='width:" +
@@ -256,20 +394,16 @@ public class InteractiveGuide {
 			final Dimension screenSize = toolkit.getScreenSize();
 			final int xOffset = 5;
 
-			// Try to place to the right of the component
-			int dialogX = componentLocation.x + element.getComponent().getWidth() +
-				xOffset;
-			int dialogY = componentLocation.y;
+			final boolean aboveMessagePanel = isAboveMessagePanel(element
+				.getComponent());
+			int dialogX = componentLocation.x;
+			int dialogY = aboveMessagePanel ? componentLocation.y + element
+				.getComponent().getHeight() : componentLocation.y - dialog.getHeight();
 
-			// Check if dialog would be off-screen to the right
 			if (dialogX + dialog.getWidth() > screenSize.width) {
-				// Try placing to the left of the component instead
-				dialogX = componentLocation.x - dialog.getWidth() - xOffset;
-				if (dialogX < 0) {
-					// If still off-screen, place it centered
-					dialogX = (screenSize.width - dialog.getWidth()) / 2;
-				}
+				dialogX = screenSize.width - dialog.getWidth() - xOffset;
 			}
+			if (dialogX < 0) dialogX = xOffset;
 
 			// Check if dialog would be off-screen vertically and adjust
 			if (dialogY + dialog.getHeight() > screenSize.height) {
@@ -298,6 +432,25 @@ public class InteractiveGuide {
 		return dialog;
 	}
 
+	private boolean isAboveMessagePanel(final Component component) {
+		if (messagePanel == null) return true;
+
+		try {
+			return component.getLocationOnScreen().y < messagePanel
+				.getLocationOnScreen().y;
+		}
+		catch (final IllegalComponentStateException e) {
+			return true;
+		}
+	}
+
+	private static int getGuideTitleWidth(final String title) {
+		final JLabel titleLabel = new JLabel(title);
+		titleLabel.setFont(titleLabel.getFont().deriveFont(14f).deriveFont(
+			Font.BOLD));
+		return titleLabel.getPreferredSize().width;
+	}
+
 	/**
 	 * Flash the border of a component to highlight it.
 	 */
@@ -317,7 +470,10 @@ public class InteractiveGuide {
 		}
 
 		final int[] flashCount = { 0 };
-		Border flashBorder = new LineBorder(highlightColor, 3);
+		final Border originalComponentBorder = guideOriginalBorders.containsKey(
+			jComponent) ? guideOriginalBorders.get(jComponent) : currentOriginalBorder;
+		Border flashBorder = createGuideBorder(highlightColor,
+			originalComponentBorder);
 		flashTimer = new Timer(150, e -> {
 			if (flashCount[0] % 2 == 0) {
 				jComponent.setBorder(flashBorder);
@@ -396,6 +552,188 @@ public class InteractiveGuide {
 			currentFlashingComponent = null;
 			currentOriginalBorder = null;
 		}
+	}
+
+	private void closeCurrentDialog() {
+		resetCurrentComponentBorder();
+
+		if (currentDialog != null) {
+			currentDialog.dispose();
+			currentDialog = null;
+		}
+
+		if (flashTimer != null && flashTimer.isRunning()) {
+			flashTimer.stop();
+		}
+	}
+
+	private void installInspectBorder(final Component component) {
+		if (!(component instanceof JComponent jComponent) ||
+			inspectOriginalBorders.containsKey(jComponent)) return;
+
+		final Border reservedBorder = jComponent.getBorder();
+		final Border originalBorder = guideOriginalBorders.containsKey(jComponent)
+			? guideOriginalBorders.get(jComponent) : reservedBorder;
+		inspectOriginalBorders.put(jComponent, reservedBorder);
+		jComponent.setBorder(createGuideBorder(INSPECT_BORDER_COLOR,
+			originalBorder));
+		jComponent.revalidate();
+		jComponent.repaint();
+	}
+
+	private void reserveGuideBorder(final Component component) {
+		if (!(component instanceof JComponent jComponent) ||
+			guideOriginalBorders.containsKey(jComponent)) return;
+
+		final Border originalBorder = jComponent.getBorder();
+		guideOriginalBorders.put(jComponent, originalBorder);
+		jComponent.setBorder(createReservedGuideBorder(originalBorder));
+	}
+
+	private static Border createReservedGuideBorder(final Border innerBorder) {
+		final Border reservedBorder = new LookAndFeelBorder();
+		return innerBorder == null ? reservedBorder : BorderFactory
+			.createCompoundBorder(reservedBorder, innerBorder);
+	}
+
+	private static final class LookAndFeelBorder extends AbstractBorder {
+
+		@Override
+		public void paintBorder(final Component component, final Graphics graphics,
+			final int x, final int y, final int width, final int height)
+		{
+			if (width <= 0 || height <= 0) return;
+
+			final Color borderColor = surroundingBackground(component);
+			if (borderColor == null) return;
+
+			final Graphics borderGraphics = graphics.create();
+			try {
+				borderGraphics.setColor(borderColor);
+				final int borderWidth = Math.min(GUIDE_BORDER_WIDTH, Math.min(width,
+					height) / 2);
+				borderGraphics.fillRect(x, y, width, borderWidth);
+				borderGraphics.fillRect(x, y + height - borderWidth, width,
+					borderWidth);
+				final int innerHeight = height - (2 * borderWidth);
+				if (innerHeight > 0) {
+					borderGraphics.fillRect(x, y + borderWidth, borderWidth,
+						innerHeight);
+					borderGraphics.fillRect(x + width - borderWidth, y + borderWidth,
+						borderWidth, innerHeight);
+				}
+			}
+			finally {
+				borderGraphics.dispose();
+			}
+		}
+
+		private static Color surroundingBackground(final Component component) {
+			Component ancestor = component.getParent();
+			while (ancestor != null) {
+				if (ancestor instanceof JComponent jComponent && jComponent.isOpaque()) {
+					final Color background = jComponent.getBackground();
+					if (background != null) return background;
+				}
+				ancestor = ancestor.getParent();
+			}
+
+			return UIManager.getColor("Panel.background");
+		}
+
+		@Override
+		public Insets getBorderInsets(final Component component,
+			final Insets insets)
+		{
+			insets.top = GUIDE_BORDER_WIDTH;
+			insets.left = GUIDE_BORDER_WIDTH;
+			insets.bottom = GUIDE_BORDER_WIDTH;
+			insets.right = GUIDE_BORDER_WIDTH;
+			return insets;
+		}
+	}
+
+	private Border createGuideBorder(final Color color,
+		final Border innerBorder)
+	{
+		final Border guideBorder = new LineBorder(color, GUIDE_BORDER_WIDTH);
+		return innerBorder == null ? guideBorder : BorderFactory.createCompoundBorder(
+			guideBorder, innerBorder);
+	}
+
+	private void registerInspectTargets(final Component component,
+		final GuideElement element)
+	{
+		inspectTargets.put(component, element);
+
+		if (component instanceof Container container) {
+			for (final Component child : container.getComponents()) {
+				registerInspectTargets(child, element);
+			}
+		}
+	}
+
+	private void handleInspectClick(final MouseEvent event) {
+		event.consume();
+		if (!inspectMode) return;
+
+		final Point contentPoint = SwingUtilities.convertPoint(inspectGlassPane,
+			event.getPoint(), parentFrame.getContentPane());
+		final Component target = SwingUtilities.getDeepestComponentAt(parentFrame
+			.getContentPane(), contentPoint.x, contentPoint.y);
+		if (isDescendantOf(target, inspectModeComponent)) {
+			setInspectMode(false);
+			return;
+		}
+
+		final GuideElement element = findInspectTarget(target);
+		if (element != null) {
+			showSingleton(element.getComponent(), element.getTitle(), element
+				.getDescription());
+		}
+	}
+
+	private GuideElement findInspectTarget(Component component) {
+		while (component != null) {
+			final GuideElement element = inspectTargets.get(component);
+			if (element != null) return element;
+			component = component.getParent();
+		}
+		return null;
+	}
+
+	private static boolean isDescendantOf(Component component, Component ancestor) {
+		while (component != null) {
+			if (component == ancestor) return true;
+			component = component.getParent();
+		}
+		return false;
+	}
+
+	private void restoreInspectBorders() {
+		for (final Map.Entry<JComponent, Border> entry : inspectOriginalBorders
+			.entrySet())
+		{
+			final JComponent component = entry.getKey();
+			component.setBorder(entry.getValue());
+			component.revalidate();
+			component.repaint();
+		}
+		inspectOriginalBorders.clear();
+	}
+
+	private void installEscapeBinding(final JComponent component) {
+		final String actionKey = "exitInspectMode";
+		component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke
+			.getKeyStroke(KeyEvent.VK_ESCAPE, 0), actionKey);
+		final ActionMap actionMap = component.getActionMap();
+		actionMap.put(actionKey, new javax.swing.AbstractAction() {
+
+			@Override
+			public void actionPerformed(final java.awt.event.ActionEvent event) {
+				setInspectMode(false);
+			}
+		});
 	}
 
 	/**
