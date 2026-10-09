@@ -101,7 +101,6 @@ import sc.fiji.llm.chat.Conversation;
 import sc.fiji.llm.chat.ConversationService;
 import sc.fiji.llm.chat.ToolResultFormatter;
 import sc.fiji.llm.commands.Fiji_Chat;
-import sc.fiji.llm.commands.Manage_Keys;
 import sc.fiji.llm.context.ContextItem;
 import sc.fiji.llm.context.PromptRecommendations;
 import sc.fiji.llm.context.SessionSnapshot;
@@ -364,25 +363,6 @@ Be concise, patient, humble, and collaborative.
 		forumButton.setToolTipText("Get help on the Image.sc forum");
 		forumButton.addActionListener(e -> openForumInBrowser());
 		buttonPanel.add(forumButton);
-
-		// Change API Keys button
-		final JButton configureKeysButton;
-		if (llmProvider.requiresApiKey()) {
-			final URL lockIconUrl = getClass().getResource("/icons/key-pao-32.png");
-			if (lockIconUrl != null) {
-				configureKeysButton = new JButton(new ImageIcon(lockIconUrl));
-				configureKeysButton.setPreferredSize(new Dimension(36, 36));
-				configureKeysButton.setToolTipText("Configure API Key");
-			}
-			else {
-				configureKeysButton = new JButton("Configure API Key");
-			}
-			configureKeysButton.setFocusPainted(false);
-			configureKeysButton.addActionListener(e -> configureKeys());
-			buttonPanel.add(configureKeysButton);
-		} else {
-			configureKeysButton = null;
-		}
 
 		// Inspect mode button
 		final URL inspectIconUrl = getClass().getResource(
@@ -710,11 +690,7 @@ Be concise, patient, humble, and collaborative.
 		guide.addElement(sendStopButton, "Send / Stop Button",
 			"Click to send your message, or to interrupt the assistant while it's responding.");
 		guide.addElement(inputArea, "Chat Input",
-			"Type your message here and press 'enter' to chat with the AI assistant.");
-		if (llmProvider.requiresApiKey()) {
-			guide.addElement(configureKeysButton, "API Key Button",
-				"Configure API credentials for the active AI service.");
-		}
+			"Type a message and press Enter to chat with the AI assistant.");
 
 		// Finalize frame after guide borders have reserved their layout space.
 		frame.pack();
@@ -1472,20 +1448,6 @@ Be concise, patient, humble, and collaborative.
 			newConversationButton.setEnabled(false);
 			deleteConversationButton.setEnabled(false);
 		}
-	}
-
-	private void configureKeys() {
-		// Close this chat window
-		frame.dispose();
-		prefService.remove(Manage_Keys.class, Manage_Keys.autoRunKey(llmProvider
-			.getName()));
-		prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
-
-		Map<String, Object> params = new HashMap<>();
-		params.put("startChatbot", true);
-		params.put("provider", llmProvider.getName());
-		// Re-invoke the Fiji_Chat command to show the selection dialog
-		commandService.run(Manage_Keys.class, true, params);
 	}
 
 	private void configureChat() {
