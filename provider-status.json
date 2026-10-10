@@ -5,16 +5,17 @@
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
-      "baseline_established": true,
-      "last_modified": "Tue, 06 Oct 2026 15:52:44 GMT",
-      "content_check_skipped": true
+      "last_modified": "Fri, 09 Oct 2026 22:11:39 GMT",
+      "content_hash": "6f64f1e5c324abd44ea16510e3d8487b44c6d460df6c1796e111b9dcec9e0123",
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1949539825:1791400326928888"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS486781677:1791635733714730"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-10-07",
@@ -22,7 +23,6 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "baseline_established": true,
       "content_hash": "55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d"
     },
     "api_key": {
@@ -38,7 +38,6 @@
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
-      "baseline_established": true,
       "content_hash": "c180604e99b317b46ab7ebbd2603d0546ffe43313daf6b72ea66d47a4768f883"
     },
     "api_key": {
@@ -48,7 +47,9 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-07T19:12:08.252820639Z",
-  "status": "healthy",
-  "failures": []
+  "checked_at": "2026-10-10T12:35:34.937399971Z",
+  "status": "review_required",
+  "failures": [
+    "Gemini models_documentation changed content_hash from null to \"6f64f1e5c324abd44ea16510e3d8487b44c6d460df6c1796e111b9dcec9e0123\"; re-evaluate the provided models"
+  ]
 }
