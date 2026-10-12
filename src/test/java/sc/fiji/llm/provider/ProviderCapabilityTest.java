@@ -46,7 +46,7 @@ import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.openai.OpenAiResponsesChatRequestParameters;
 
-public class ProviderVisionSupportTest {
+public class ProviderCapabilityTest {
 
 	/**
 	 * Verifies that provider fingerprints retain model facts while ignoring prose.
