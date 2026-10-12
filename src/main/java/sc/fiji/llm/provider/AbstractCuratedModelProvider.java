@@ -31,6 +31,8 @@ package sc.fiji.llm.provider;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Abstract base class for Ollama providers with a curated set of model aliases.
@@ -65,6 +67,15 @@ public abstract class AbstractCuratedModelProvider extends AbstractOllamaProvide
 	}
 
 	/**
+	 * Gets the raw Ollama model names configured by this curated provider.
+	 *
+	 * @return the configured raw model names
+	 */
+	final Set<String> getRawModelNames() {
+		return Set.copyOf(modelNames.values());
+	}
+
+	/**
 	 * Resolves an alias or remote alias to its Ollama model name.
 	 *
 	 * @param modelName an alias, model name, or remote alias
@@ -92,10 +103,17 @@ public abstract class AbstractCuratedModelProvider extends AbstractOllamaProvide
 	}
 
 	@Override
-	public String validateModel(final String modelToValidate) {
-		final boolean remote = modelToValidate != null && isRemoteModel(
-			modelToValidate);
+	public Optional<ValidatedModel> validateModel(final String modelToValidate) {
+		if (modelToValidate == null || modelToValidate.isBlank()) {
+			return Optional.empty();
+		}
+		final boolean remote = isRemoteModel(modelToValidate);
 		final String modelName = resolveModelName(modelToValidate);
-		return remote ? super.validateModel(appendRemoteString(modelName)) : modelName;
+		if (!remote) {
+			return Optional.of(new ValidatedModel(resolveModelAlias(modelToValidate),
+				modelName));
+		}
+		return super.validateModel(appendRemoteString(modelName)).map(validated ->
+			new ValidatedModel(resolveModelAlias(modelToValidate), validated.modelName()));
 	}
 }

@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.scijava.command.Command;
 import org.scijava.command.CommandService;
@@ -324,17 +325,21 @@ public class Fiji_Chat extends DynamicCommand {
 		prefService.remove(Fiji_Chat.class, Fiji_Chat.AUTO_RUN);
 
 		final LLMProvider selectedProvider = providerService.getProvider(providerName);
-		String validatedModel = selectedProvider.validateModel(model);
-		if (LLMProvider.VALIDATION_FAILED.equals(validatedModel)) {
+		final Optional<LLMProvider.ValidatedModel> validated = selectedProvider
+			.validateModel(model);
+		if (validated.isEmpty()) {
 			cancel("Model validation failed");
 			return;
 		}
+		final LLMProvider.ValidatedModel validatedModel = validated.get();
 
-		prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, model);
+		prefService.put(Fiji_Chat.class, LAST_CHAT_MODEL, validatedModel
+			.availableModel());
 		if (selectedProvider.requiresApiKey()) {
 			Map<String, Object> params = new HashMap<>();
 			params.put("startChatbot", true);
 			params.put("provider", providerName);
+			params.put("chatModel", validatedModel.modelName());
 
 			commandService.run(Manage_Keys.class, true, params);
 		}
@@ -343,8 +348,8 @@ public class Fiji_Chat extends DynamicCommand {
 			try {
 				// Launch the chat window with provider and model info so it can
 				// recreate the assistant with memory
-				chatbotService.launchChat(providerName + " - " + validatedModel,
-					providerName, validatedModel);
+				chatbotService.launchChat(providerName + " - " + validatedModel.modelName(),
+					providerName, validatedModel.modelName());
 				prefService.put(Fiji_Chat.class, Fiji_Chat.AUTO_RUN, true);
 			}
 			catch (Exception e) {

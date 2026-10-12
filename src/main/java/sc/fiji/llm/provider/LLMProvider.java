@@ -42,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import org.jsoup.Jsoup;
+import org.scijava.Contextual;
 import org.scijava.Disposable;
 import org.scijava.Initializable;
 import org.scijava.plugin.SingletonPlugin;
@@ -56,7 +57,7 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
  * etc.) implements this interface to provide access to their chat models.
  */
 public interface LLMProvider extends SingletonPlugin, Initializable,
-	Disposable
+	Disposable, Contextual
 {
 
 	/** Default timeout duration for API calls */
@@ -64,9 +65,6 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 
 	/** Default maximum number of retries for API calls */
 	public static int DEFAULT_MAX_RETRIES = 0;
-
-	public static final String VALIDATION_FAILED =
-		"sc.fiji.llm.provider.validation_failed";
 
 	/** The provider's knowledge of a model's image-input support. */
 	public enum VisionSupport {
@@ -108,6 +106,14 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * @param model the model label
 	 */
 	record ModelDisplay(String provider, String model) {}
+
+	/**
+	 * The provider-facing model values after validation.
+	 *
+	 * @param availableModel the value suitable for the provider's model choices
+	 * @param modelName the model name passed to the model client
+	 */
+	record ValidatedModel(String availableModel, String modelName) {}
 
 	/**
 	 * Reports whether a model accepts image content in chat messages.
@@ -153,11 +159,12 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	 * require validation. (e.g. when downloading a remote model)
 	 *
 	 * @param modelToValidate Name of the model for validation
-	 * @return The validated model name, or {@link #VALIDATION_FAILED} if
-	 *         validation wasunsuccessful.
+	 * @return the validated model values, or an empty optional if validation was
+	 *         unsuccessful
 	 */
-	default String validateModel(String modelToValidate) {
-		return modelToValidate;
+	default Optional<ValidatedModel> validateModel(String modelToValidate) {
+		return modelToValidate == null || modelToValidate.isBlank() ? Optional
+			.empty() : Optional.of(new ValidatedModel(modelToValidate, modelToValidate));
 	}
 
 	/**

@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
+import org.scijava.AbstractContextual;
 import org.scijava.log.LogService;
 import org.scijava.platform.PlatformService;
 import org.scijava.plugin.Parameter;
@@ -76,7 +77,9 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
  * Abstract base class for Ollama-based providers. Handles common functionality
  * like process management, client model creation, and token counting.
  */
-public abstract class AbstractOllamaProvider implements LLMProvider {
+public abstract class AbstractOllamaProvider extends AbstractContextual implements
+	LLMProvider
+{
 
 	private static final Double DEFAULT_TEMPERATURE = 0.1;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
@@ -342,11 +345,15 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 	 * remote suffix, prompts the user for confirmation and downloads the model.
 	 *
 	 * @param modelToValidate the model to validate
-	 * @return the model name without remote suffix if successful, VALIDATION_FAILED
-	 *         if user cancels, or the original string if not a remote model
+	 * @return the validated model values, or an empty optional if the user cancels
+	 *         or validation fails
 	 */
 	@Override
-	public String validateModel(String modelToValidate) {
+	public Optional<ValidatedModel> validateModel(final String modelToValidate) {
+		if (modelToValidate == null || modelToValidate.isBlank()) {
+			return Optional.empty();
+		}
+
 		if (!processManager.isServerRunning()) {
 
 			boolean openOllama = uIService.showDialog("An Ollama installation is required but not found." +
@@ -362,12 +369,12 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 				}
 			}
 
-			return LLMProvider.VALIDATION_FAILED;
+			return Optional.empty();
 		}
 
 		if (!isRemoteModel(modelToValidate)) {
 			// Not a remote model, no validation needed
-			return modelToValidate;
+			return Optional.of(new ValidatedModel(modelToValidate, modelToValidate));
 		}
 
 		String modelName = removeRemoteString(modelToValidate);
@@ -385,13 +392,13 @@ public abstract class AbstractOllamaProvider implements LLMProvider {
 			}
 			catch (Exception e) {
 				// Failed to pull
-				return LLMProvider.VALIDATION_FAILED;
+				return Optional.empty();
 			}
 			// Pull successful
-			return modelName;
+			return Optional.of(new ValidatedModel(modelName, modelName));
 		}
 		else {
-			return LLMProvider.VALIDATION_FAILED;
+			return Optional.empty();
 		}
 	}
 

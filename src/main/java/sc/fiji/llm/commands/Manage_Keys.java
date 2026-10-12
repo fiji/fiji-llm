@@ -100,6 +100,10 @@ public class Manage_Keys extends DynamicCommand {
 		persist = false)
 	private Boolean startChatbot = false;
 
+	@Parameter(visibility = ItemVisibility.INVISIBLE, required = false,
+		persist = false)
+	private String chatModel;
+
 	@Override
 	public void initialize() {
 		// Get available providers
@@ -253,8 +257,10 @@ public class Manage_Keys extends DynamicCommand {
 			prefService.put(Manage_Keys.class, autoRunKey(provider), true);
 			if (startChatbot) {
 				// Create the assistant
-				String model = prefService.get(Fiji_Chat.class,
-					Fiji_Chat.LAST_CHAT_MODEL);
+				String model = chatModel;
+				if (model == null || model.isBlank()) {
+					model = prefService.get(Fiji_Chat.class, Fiji_Chat.LAST_CHAT_MODEL);
+				}
 				try {
 					// Launch the chat window with provider and model info so it can
 					// recreate the assistant with memory

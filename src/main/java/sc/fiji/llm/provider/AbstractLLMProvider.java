@@ -31,13 +31,16 @@ package sc.fiji.llm.provider;
 
 import java.util.List;
 
+import org.scijava.AbstractContextual;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 import sc.fiji.llm.auth.APIKeyService;
 
-public abstract class AbstractLLMProvider implements LLMProvider {
+public abstract class AbstractLLMProvider extends AbstractContextual implements
+	LLMProvider
+{
 
 	@Parameter
 	private APIKeyService apiKeyService;

@@ -29,20 +29,18 @@
 
 package sc.fiji.llm.provider;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.scijava.app.StatusService;
+import org.scijava.command.CommandModule;
+import org.scijava.command.CommandService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.UIService;
 
 /**
  * Generalist LLM provider plugin for Ollama with user-selectable models.
@@ -52,17 +50,10 @@ import org.scijava.ui.UIService;
 @Plugin(type = LLMProvider.class, name = "Ollama (Custom)", priority = ProviderPriority.OLLAMA)
 public class OllamaProvider extends AbstractOllamaProvider {
 
-	private static final String MODEL_URL =
-		"https://ollama.com/search?c=tools&c=thinking";
-	private static final String TAG_BASE_URL = "https://ollama.com/library/";
-
-	private Set<String> cachedRemoteTags;
+	static final String ENTER_NEW_MODEL = "<Enter new model>";
 
 	@Parameter
-	private UIService uIService;
-
-	@Parameter
-	private StatusService statusService;
+	private CommandService commandService;
 
 	@Override
 	public String getName() {
@@ -71,7 +62,7 @@ public class OllamaProvider extends AbstractOllamaProvider {
 
 	@Override
 	public String getDescription() {
-		return "Explore any available Ollama model.";
+		return "Explore any Ollama model by name.";
 	}
 
 	@Override
@@ -81,87 +72,53 @@ public class OllamaProvider extends AbstractOllamaProvider {
 
 	@Override
 	public List<String> getAvailableModels() {
-		// Get actual list of installed models from Ollama
-		List<String> models = new ArrayList<>(getAvailableLocalModels());
-		// Get basic available remote models
-		Set<String> remoteTags = fetchRemoteTags();
-		// Mark remote models that aren't installed
-		remoteTags.removeAll(models);
-		remoteTags.stream().map(this::appendRemoteString).forEach(models::add);
-
-		return models;
+		final ProviderService providerService = getContext() == null ? null : getContext()
+			.getService(ProviderService.class);
+		final Set<String> curatedModelNames = providerService == null ? Set.of() :
+			providerService.getInstances().stream().filter(
+				AbstractCuratedModelProvider.class::isInstance).map(
+					AbstractCuratedModelProvider.class::cast).flatMap(provider -> provider
+						.getRawModelNames().stream()).collect(Collectors.toUnmodifiableSet());
+		return filterAvailableModels(getAvailableLocalModels(), curatedModelNames);
 	}
 
+	static List<String> filterAvailableModels(final List<String> localModels,
+		final Set<String> curatedModelNames)
+	{
+		final List<String> models = new ArrayList<>();
+		localModels.stream().filter(model -> !curatedModelNames.contains(model)).forEach(
+			models::add);
+		models.add(ENTER_NEW_MODEL);
+		return List.copyOf(models);
+	}
 
-	/**
-	 * See https://github.com/ollama/ollama/issues/8241
-	 */
-	private Set<String> fetchRemoteTags() {
-		if (cachedRemoteTags != null) return cachedRemoteTags;
+	@Override
+	public Optional<ValidatedModel> validateModel(final String modelToValidate) {
+		if (!ENTER_NEW_MODEL.equals(modelToValidate)) {
+			return super.validateModel(modelToValidate);
+		}
 
-		Set<String> remoteTags = new LinkedHashSet<>();
-		// Fetch and parse the page
+		final String modelName = promptForModelName();
+		if (modelName == null) return Optional.empty();
+		return super.validateModel(appendRemoteString(modelName));
+	}
+
+	private String promptForModelName() {
+		if (commandService == null) return null;
 		try {
-			Document doc = Jsoup.connect(MODEL_URL).userAgent(
-				"Mozilla/5.0 (compatible; Java Jsoup)").get();
-
-			// Step 1: get tool names
-			Elements models = doc.select("span[x-test-search-response-title]");
-			for (Element model : models) {
-				String modelName = model.text();
-
-				// Step 2: fetch tags for this tool
-				String tagsUrl = TAG_BASE_URL + modelName;
-				Document tagsDoc = Jsoup.connect(tagsUrl).userAgent(
-					"Mozilla/5.0 (compatible; Java Jsoup)").get();
-
-				// Select <a> elements that contain the tags. Prefer extracting the
-				// canonical tag from the href (e.g. /library/qwen3:8b -> qwen3:8b).
-				// Some anchors contain additional UI labels (like a separate
-				// "latest" span) so using .text() yields e.g. "qwen3:8b latest"
-				// which previously caused us to filter out valid tags. Use the
-				// href attribute and the hidden input.command value as fallback.
-				Elements tagLinks = tagsDoc.select("a[href^='/library/" + modelName +
-					"']");
-				for (Element tagLink : tagLinks) {
-					String href = tagLink.attr("href"); // e.g. /library/qwen3:8b
-					String tag = null;
-
-					if (href != null && href.startsWith("/library/")) {
-						tag = href.substring("/library/".length());
-						// strip query or trailing slash if any
-						int q = tag.indexOf('?');
-						if (q != -1) tag = tag.substring(0, q);
-						if (tag.endsWith("/")) tag = tag.substring(0, tag.length() - 1);
-					}
-
-					// fallback: some desktop rows include an <input class="command"
-					// value="qwen3:8b" />
-					if ((tag == null || tag.isEmpty())) {
-						Element input = tagLink.selectFirst("input.command[value]");
-						if (input != null) {
-							tag = input.attr("value");
-						}
-					}
-
-					if (tag == null || tag.isEmpty()) continue;
-
-					String lower = tag.toLowerCase();
-					// Skip aliases like `qwen3:latest` (we prefer explicit version tags)
-					if (!lower.contains(":") || lower.endsWith(":latest") || lower.equals(
-						"latest") || lower.contains("cloud"))
-					{
-						continue;
-					}
-
-					remoteTags.add(tag);
-				}
-			}
+			final CommandModule module = commandService.run(OllamaModelInputCommand.class, true)
+				.get();
+			final Object value = module == null ? null : module.getInput("model");
+			if (!(value instanceof String)) return null;
+			final String modelName = ((String) value).trim();
+			return modelName.isEmpty() ? null : modelName;
 		}
-		catch (IOException e) {
-			// Remote tags not available
+		catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return null;
 		}
-		cachedRemoteTags = remoteTags;
-		return remoteTags;
+		catch (final ExecutionException | CancellationException e) {
+			return null;
+		}
 	}
 }

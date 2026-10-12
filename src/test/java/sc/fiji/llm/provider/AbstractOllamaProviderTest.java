@@ -31,10 +31,12 @@ package sc.fiji.llm.provider;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
 import com.google.gson.JsonObject;
+
 
 /**
  * Tests for shared Ollama provider behavior.
@@ -49,6 +51,26 @@ public class AbstractOllamaProviderTest {
 
 		assertEquals(List.of("S", "L", remoteXS, remoteM), provider
 			.prioritizeInstalledModels(List.of(remoteXS, "S", remoteM, "L")));
+	}
+
+	@Test
+	public void testCustomOllamaModelsExcludeCuratedRawNames() {
+		final String curatedModel =
+			"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest";
+
+		assertEquals(List.of("llama3.2:3b", OllamaProvider.ENTER_NEW_MODEL),
+			OllamaProvider.filterAvailableModels(List.of("llama3.2:3b", curatedModel),
+				Set.of(curatedModel)));
+	}
+
+	@Test
+	public void testCuratedValidationKeepsAliasAndResolvesRawName() {
+		final LLMProvider.ValidatedModel validated = new Gemma4Provider()
+			.validateModel("S (12B)").orElseThrow();
+
+		assertEquals("S (12B)", validated.availableModel());
+		assertEquals("hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:latest", validated
+			.modelName());
 	}
 
 	@Test
