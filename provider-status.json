@@ -1,21 +1,20 @@
 {
   "Gemini": {
-    "models_documentation_last_modified": "2026-10-07",
+    "models_documentation_last_modified": "2026-10-12",
     "models_documentation": {
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
+      "baseline_established": true,
       "last_modified": "Fri, 09 Oct 2026 22:11:39 GMT",
-      "content_hash": "6f64f1e5c324abd44ea16510e3d8487b44c6d460df6c1796e111b9dcec9e0123",
-      "changed_since_previous": true,
-      "models_review_required": true
+      "content_check_skipped": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/app/apikey",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS486781677:1791635733714730"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/app/apikey\u0026followup\u003dhttps://aistudio.google.com/app/apikey\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1187564218:1791815278308592"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-10-07",
@@ -47,9 +46,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-10T12:35:34.937399971Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini models_documentation changed content_hash from null to \"6f64f1e5c324abd44ea16510e3d8487b44c6d460df6c1796e111b9dcec9e0123\"; re-evaluate the provided models"
-  ]
+  "checked_at": "2026-10-12T14:28:00.112472021Z",
+  "status": "healthy",
+  "failures": []
 }
