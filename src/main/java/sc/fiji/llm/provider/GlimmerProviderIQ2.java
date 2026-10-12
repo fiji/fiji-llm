@@ -67,6 +67,11 @@ public class GlimmerProviderIQ2 extends AbstractCuratedModelProvider {
 	}
 
 	@Override
+	public String getModelsDocumentationUrl() {
+		return "https://dev.meta.ai/docs/muse-glimmer";
+	}
+
+	@Override
 	public String getDescription() {
 		return "Local Muse Glimmer models with selectable memory footprints.";
 	}
