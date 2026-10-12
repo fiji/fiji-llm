@@ -14,9 +14,9 @@ public class OllamaModelInputCommand implements Command {
 		required = false)
 	private String instructions =
 	"""
-<html><body><p>Enter the exact model string from ollama.com or Hugging Face. For xamples:</p>
+<html><body><p>Enter the exact model string from ollama.com or Hugging Face. For example:</p>
 <ul><li>llama3.2:3b</li>
-<li>unsloth/Qwen3.8-27B-GGUF:UD-IQ3_S</li><ul></body></html>";
+<li>hf.co/unsloth/Qwen3.8-27B-GGUF:UD-IQ3_S</li><ul></body></html>";
 """;
 
 	@Parameter(label = "Model:", style="columns=40", persist = false)
