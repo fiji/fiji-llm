@@ -33,11 +33,13 @@ import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -57,8 +59,8 @@ import com.google.gson.JsonParser;
 import sc.fiji.llm.ui.TaskProgressFrame;
 
 /**
- * Utility class for managing the Ollama server process and CLI operations.
- * Uses subprocess calls to the ollama CLI rather than a client library.
+ * Utility class for managing the Ollama server process and local HTTP API.
+ * Uses subprocess calls only for server lifecycle and model listing operations.
  */
 public class OllamaProcessManager {
 
@@ -72,12 +74,16 @@ public class OllamaProcessManager {
 		LOCAL_SERVER_URL + "/api/ps");
 	private static final URI OLLAMA_SHOW_URI = URI.create(LOCAL_SERVER_URL +
 		"/api/show");
+	private static final URI OLLAMA_PULL_URI = URI.create(LOCAL_SERVER_URL +
+		"/api/pull");
 	private static final Duration SERVER_TIMEOUT = Duration.ofSeconds(2);
 	private static final Duration MODEL_PREPARATION_TIMEOUT = Duration.ofMinutes(10);
 	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
 		.connectTimeout(SERVER_TIMEOUT).build();
 
 	public record ModelMemoryUsage(long modelSizeBytes, long vramSizeBytes) {}
+
+	record PullProgress(String status, long total, long completed, String error) {}
 
 	private Process ollamaProcess;
 	private List<String> cachedInstalledModels;
@@ -421,23 +427,27 @@ public class OllamaProcessManager {
 			// Running headless, skip GUI
 		}
 
-		ProcessBuilder pb = createOllamaProcessBuilder("pull", modelName);
-		// Don't inherit I/O so we can capture it for progress
-		pb.redirectErrorStream(true);
-
-		Process process = pb.start();
-
-		// Track download state
-		Set<String> seenSegments = new HashSet<>();
-		int segmentProgress = 0;
-		String lastSeenHash = null;
 		String failureReason = null;
 		boolean wasCancelled = false;
+		boolean successful = false;
 
 		try {
-			// Read output in a thread-safe manner to avoid blocking
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-				process.getInputStream())))
+			final JsonObject requestBody = new JsonObject();
+			requestBody.addProperty("model", modelName);
+			final HttpRequest request = HttpRequest.newBuilder(OLLAMA_PULL_URI)
+				.header("Content-Type", "application/json").POST(HttpRequest
+					.BodyPublishers.ofString(requestBody.toString())).build();
+			final HttpResponse<InputStream> response = HTTP_CLIENT.send(request,
+				HttpResponse.BodyHandlers.ofInputStream());
+
+			if (response.statusCode() < 200 || response.statusCode() >= 300) {
+				try (InputStream body = response.body()) {
+					failureReason = "Failed to pull model: " + modelName + " (HTTP " +
+						response.statusCode() + "): " + readResponseBody(body);
+				}
+			}
+			else try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+				response.body(), StandardCharsets.UTF_8)))
 			{
 				String line;
 
@@ -446,52 +456,36 @@ public class OllamaProcessManager {
 				while ((line = reader.readLine()) != null) {
 					// Check if task was cancelled
 					if (task.isCanceled()) {
-						process.destroyForcibly();
 						wasCancelled = true;
 						break;
 					}
 
-					// Extract hash from output (format: "pulling <hash>:")
-					String hash = extractSegmentHash(line);
-					if (hash != null && !seenSegments.contains(hash)) {
-						// New segment encountered - reset progress for this segment
-						seenSegments.add(hash);
-						segmentProgress = 0;
-						task.setProgressValue(0);
-						lastSeenHash = hash;
+					final Optional<PullProgress> progress = parsePullProgress(line);
+					if (progress.isEmpty()) continue;
+					final PullProgress update = progress.get();
+					if (update.error() != null) {
+						failureReason = update.error();
+						break;
 					}
-
-					// Only update progress if it's from the current segment
-					if (hash != null && hash.equals(lastSeenHash)) {
-						int progress = extractProgressPercentage(line);
-						if (progress >= 0) {
-							segmentProgress = progress;
-							task.setProgressValue(segmentProgress);
-						}
-
-						// Update task status with segment info (keep it simple and clean)
-						task.setStatusMessage("Downloading segment: " + lastSeenHash.substring(0,
-							Math.min(12, lastSeenHash.length())));
+					if (update.total() > 0) {
+						final int percentage = (int) Math.min(100, 100.0 * update
+							.completed() / update.total());
+						task.setProgressValue(percentage);
 					}
+					task.setStatusMessage(update.status());
+					successful = "success".equalsIgnoreCase(update.status());
 				}
 			}
-
-			int exitCode = process.waitFor();
-
-			if (exitCode != 0) {
-				failureReason = "Failed to pull model: " + modelName + " (exit code: " +
-					exitCode + ")";
-			}
-			else {
-				// Clear cache so it gets refreshed on next call
-				cachedInstalledModels = null;
+			if (!wasCancelled && failureReason == null && !successful) {
+				failureReason = "Ollama did not report a successful pull for model: " +
+					modelName;
 			}
 		}
-		catch (Exception e) {
-			// Wrap other exceptions
-			if (process.isAlive()) {
-				process.destroyForcibly();
-			}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			failureReason = "Pull interrupted for model: " + modelName;
+		}
+		catch (IOException e) {
 			failureReason = "Error pulling model: " + modelName + " - " + e.getMessage();
 		}
 		finally {
@@ -507,58 +501,37 @@ public class OllamaProcessManager {
 			}
 
 			// Success
+			cachedInstalledModels = null;
 			task.setProgressValue(100);
 			task.setStatusMessage("Model downloaded successfully: " + modelName);
 		}
 	}
 
-	/**
-	 * Extracts the segment hash from ollama output lines.
-	 * Expected format: "pulling <hash>: N% ▕█████ ... ▏ ..."
-	 * The hash is typically a 12-character hex string.
-	 *
-	 * @param line the output line from ollama
-	 * @return the segment hash, or null if no hash found
-	 */
-	private String extractSegmentHash(String line) {
-		// Look for pattern "pulling <hex>:" where hex can have uppercase or lowercase
-		// Pattern allows optional whitespace before the colon
-		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-			"pulling\\s+([a-fA-F0-9]+)\\s*:", java.util.regex.Pattern.CASE_INSENSITIVE);
-		java.util.regex.Matcher matcher = pattern.matcher(line);
-
-		if (matcher.find()) {
-			return matcher.group(1);
+	static Optional<PullProgress> parsePullProgress(final String line) {
+		try {
+			final JsonObject response = JsonParser.parseString(line).getAsJsonObject();
+			final String status = response.has("status") ? response.get("status")
+				.getAsString() : "";
+			final String error = response.has("error") ? response.get("error")
+				.getAsString() : null;
+			final long total = response.has("total") ? response.get("total")
+				.getAsLong() : 0;
+			final long completed = response.has("completed") ? response.get("completed")
+				.getAsLong() : 0;
+			if (status.isEmpty() && error == null) return Optional.empty();
+			return Optional.of(new PullProgress(status, total, completed, error));
 		}
-		return null;
+		catch (RuntimeException e) {
+			return Optional.empty();
+		}
 	}
 
-	/**
-	 * Extracts the progress percentage from ollama output lines.
-	 * Expected format: "pulling 93567e57a8fe:   5% ▕█████ ... ▏ 339 MB/7.0 GB   43 MB/s   2m33s"
-	 *
-	 * @param line the output line from ollama
-	 * @return the progress percentage (0-100), or -1 if no percentage found
-	 */
-	private int extractProgressPercentage(String line) {
-		// Look for pattern like "5%" or "45%" etc
-		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{1,3})%");
-		java.util.regex.Matcher matcher = pattern.matcher(line);
-
-		if (matcher.find()) {
-			try {
-				int percent = Integer.parseInt(matcher.group(1));
-				// Validate it's a reasonable percentage
-				if (percent >= 0 && percent <= 100) {
-					return percent;
-				}
-			}
-			catch (NumberFormatException e) {
-				// Ignore and return -1
-			}
-		}
-
-		return -1;
+	private static String readResponseBody(final InputStream inputStream)
+		throws IOException
+	{
+		final byte[] bytes = inputStream.readNBytes(4096);
+		final String body = new String(bytes, StandardCharsets.UTF_8).trim();
+		return body.isEmpty() ? "no response body" : body;
 	}
 
 	private ProcessBuilder createOllamaProcessBuilder(String... arguments) {

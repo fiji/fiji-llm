@@ -220,6 +220,26 @@ public class ProviderCapabilityTest {
 	}
 
 	@Test
+	public void testOllamaPullProgressParser() {
+		final OllamaProcessManager.PullProgress manifest = OllamaProcessManager
+			.parsePullProgress("{\"status\":\"pulling manifest\"}").orElseThrow();
+		assertEquals("pulling manifest", manifest.status());
+		assertEquals(0, manifest.total());
+
+		final OllamaProcessManager.PullProgress download = OllamaProcessManager
+			.parsePullProgress("{\"status\":\"pulling digest\",\"total\":1000," +
+				"\"completed\":250}").orElseThrow();
+		assertEquals(1000, download.total());
+		assertEquals(250, download.completed());
+
+		final OllamaProcessManager.PullProgress error = OllamaProcessManager
+			.parsePullProgress("{\"error\":\"model not found\"}").orElseThrow();
+		assertEquals("model not found", error.error());
+		assertEquals(Optional.empty(), OllamaProcessManager.parsePullProgress(
+			"not-json"));
+	}
+
+	@Test
 	public void testOllamaModelMemoryParser() {
 		final String response = "{\"models\":[{" +
 			"\"name\":\"llama3:latest\",\"size\":1000,\"size_vram\":750" +
