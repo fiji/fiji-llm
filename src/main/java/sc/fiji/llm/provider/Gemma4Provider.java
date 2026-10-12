@@ -85,6 +85,11 @@ public class Gemma4Provider extends AbstractCuratedModelProvider {
 	}
 
 	@Override
+	public String getModelsDocumentationUrl() {
+		return "https://ai.google.dev/gemma/docs/core";
+	}
+
+	@Override
 	public ModelDisplay getModelDisplay(final String modelName) {
 		final String modelAlias = resolveModelAlias(modelName);
 		return new ModelDisplay("Ollama", "Gemma4 " + modelAlias);
