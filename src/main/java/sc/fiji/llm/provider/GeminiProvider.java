@@ -64,14 +64,11 @@ public class GeminiProvider extends AbstractLLMProvider {
 	private static final int MAX_INPUT_TOKENS = 1_048_576;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
 	private static final List<String> AVAILABLE_MODELS = List.of("gemini-3.5-flash-lite",
-		"gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash",
-		"gemini-3.8-flash");
+		"gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash");
 	private static final Map<String, ModelCost> MODEL_COSTS = Map.of(
 		"gemini-3.5-flash-lite", new ModelCost(0.30, 2.50),
 		"gemini-3.1-flash-lite", new ModelCost(0.25, 1.50),
-		"gemini-3.5-flash", new ModelCost(1.50, 9.00),
 		"gemini-3.6-flash", new ModelCost(0.75, 3.75),
-		"gemini-3.7-flash", new ModelCost(0.75, 3.75),
 		"gemini-3.8-flash", new ModelCost(0.75, 3.75));
 
 	private static final Set<String> VISION_MODELS = new HashSet<>(AVAILABLE_MODELS);
@@ -169,7 +166,7 @@ public class GeminiProvider extends AbstractLLMProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 7);
+		return LocalDate.of(2026, 10, 12);
 	}
 
 	@Override
