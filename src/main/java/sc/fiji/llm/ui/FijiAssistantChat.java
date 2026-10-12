@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -123,6 +124,12 @@ public class FijiAssistantChat {
 	private static final int INITIAL_CHAT_WIDTH = 800;
 	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 90;
 	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
+	private static final int GUIDE_BUTTON_MARGIN = 3;
+	private static final int GUIDE_TOOLBAR_BUTTON_SIZE = 42;
+	private static final int GUIDE_INPUT_BUTTON_SIZE = 34;
+	private static final Color CONTEXT_BACKGROUND = new Color(240, 248, 255);
+	private static final Color CONTEXT_BORDER_COLOR = new Color(200, 220, 240);
+	private static final int CONTEXT_BORDER_WIDTH = 2;
 	private static final String PLACEHOLDER_TEXT = "Type your message here...";
 	private static final String WELCOME_MESSAGE =
 		"""
@@ -139,6 +146,17 @@ Always verify important results.
 
 **New to Fiji Chat?** Click **?** to learn more.
 		""";
+
+	private static void configureGuideButton(final AbstractButton button,
+		final int width, final int height)
+	{
+		button.setFocusPainted(false);
+		button.setMargin(new Insets(GUIDE_BUTTON_MARGIN, GUIDE_BUTTON_MARGIN,
+			GUIDE_BUTTON_MARGIN, GUIDE_BUTTON_MARGIN));
+		final Dimension naturalSize = button.getPreferredSize();
+		button.setPreferredSize(new Dimension(Math.max(width, naturalSize.width),
+			Math.max(height, naturalSize.height)));
+	}
 
 	private static enum Sender {
 			USER, ASSISTANT, SYSTEM, ERROR
@@ -292,7 +310,9 @@ Be concise, patient, humble, and collaborative.
 
 		conversationComboBox = new ConversationComboBox();
 		int prefHeight = conversationComboBox.getPreferredSize().height;
-		conversationComboBox.setPreferredSize(new Dimension(280, prefHeight));
+		final int conversationControlHeight = prefHeight + 6;
+		conversationComboBox.setPreferredSize(new Dimension(280,
+			conversationControlHeight));
 		conversationComboBox.setRenderer(new DefaultListCellRenderer() {
 
 			@Override
@@ -316,10 +336,15 @@ Be concise, patient, humble, and collaborative.
 		conversationPanel.add(new JLabel("Conversation:"));
 		conversationPanel.add(conversationComboBox);
 
-		newConversationButton = new JButton("+");
-		newConversationButton.setPreferredSize(new Dimension(prefHeight,
-			prefHeight));
-		newConversationButton.setFocusPainted(false);
+		final URL plusIconUrl = getClass().getResource("/icons/plus-20.png");
+		if (plusIconUrl != null) {
+			newConversationButton = new JButton(new ImageIcon(plusIconUrl));
+		}
+		else {
+			newConversationButton = new JButton("+");
+		}
+		configureGuideButton(newConversationButton, conversationControlHeight,
+			conversationControlHeight);
 		newConversationButton.setToolTipText("Start a new conversation");
 		newConversationButton.setEnabled(false);
 		newConversationButton.addActionListener(e -> clearConversation());
@@ -332,9 +357,8 @@ Be concise, patient, humble, and collaborative.
 		} else {
 			deleteConversationButton = new JButton("-");
 		}
-		deleteConversationButton.setPreferredSize(new Dimension(prefHeight,
-			prefHeight));
-		deleteConversationButton.setFocusPainted(false);
+		configureGuideButton(deleteConversationButton, conversationControlHeight,
+			conversationControlHeight);
 		deleteConversationButton.setToolTipText(
 			"Delete the current conversation permanently");
 		deleteConversationButton.setEnabled(false);
@@ -359,7 +383,8 @@ Be concise, patient, humble, and collaborative.
 		else {
 			forumButton = new JButton("Forum");
 		}
-		forumButton.setFocusPainted(false);
+		configureGuideButton(forumButton, GUIDE_TOOLBAR_BUTTON_SIZE,
+			GUIDE_TOOLBAR_BUTTON_SIZE);
 		forumButton.setToolTipText("Get help on the Image.sc forum");
 		forumButton.addActionListener(e -> openForumInBrowser());
 		buttonPanel.add(forumButton);
@@ -374,9 +399,10 @@ Be concise, patient, humble, and collaborative.
 		else {
 			inspectButton = new JToggleButton("Inspect");
 		}
+		configureGuideButton(inspectButton, GUIDE_TOOLBAR_BUTTON_SIZE,
+			GUIDE_TOOLBAR_BUTTON_SIZE);
 		inspectButtonDefaultBackground = inspectButton.getBackground();
 		inspectButton.setToolTipText("Inspect chat components");
-		inspectButton.setFocusPainted(false);
 		inspectButton.addActionListener(e -> guide.toggleInspectMode());
 		buttonPanel.add(inspectButton);
 
@@ -390,8 +416,9 @@ Be concise, patient, humble, and collaborative.
 		else {
 			guideButton = new JButton("Show Guide");
 		}
+		configureGuideButton(guideButton, GUIDE_TOOLBAR_BUTTON_SIZE,
+			GUIDE_TOOLBAR_BUTTON_SIZE);
 		guideButton.setToolTipText("Explain chat components");
-		guideButton.setFocusPainted(false);
 		guideButton.addActionListener(e -> launchGuide());
 		buttonPanel.add(guideButton);
 
@@ -407,18 +434,16 @@ Be concise, patient, humble, and collaborative.
 		configureChatButton.setText(buildConfigureChatButtonText(llmProvider
 			.getModelDisplay(modelName),
 			configureChatButton.getFont()));
-		configureChatButton.setPreferredSize(new Dimension(
-			CONFIGURE_CHAT_BUTTON_WIDTH, 36));
+		configureGuideButton(configureChatButton, CONFIGURE_CHAT_BUTTON_WIDTH + 6,
+			GUIDE_TOOLBAR_BUTTON_SIZE);
 		configureChatButton.setMinimumSize(configureChatButton.getPreferredSize());
 		configureChatButton.setMaximumSize(configureChatButton.getPreferredSize());
 		configureChatButton.setHorizontalAlignment(SwingConstants.LEFT);
 		configureChatButton.setHorizontalTextPosition(SwingConstants.RIGHT);
 		configureChatButton.setVerticalTextPosition(SwingConstants.CENTER);
 		configureChatButton.setIconTextGap(6);
-		configureChatButton.setMargin(new Insets(0, 0, 0, 0));
 		configureChatButton.setToolTipText(buildConfigureChatTooltip(llmProvider.getModelDisplay(modelName),
 			modelName, llmProvider.getDescription()));
-		configureChatButton.setFocusPainted(false);
 		configureChatButton.addActionListener(e -> configureChat());
 		buttonPanel.add(configureChatButton);
 
@@ -511,16 +536,11 @@ Be concise, patient, humble, and collaborative.
 		contextTagsScrollPane.setMinimumSize(new Dimension(36, 36));
 		contextTagsScrollPane.getVerticalScrollBar().setUnitIncrement(5);
 
-		// Apply light blue background to the scrollpane itself
-		contextTagsScrollPane.setBackground(new java.awt.Color(240, 248, 255)); // Light
-		// blue
-		// background
-		contextTagsScrollPane.getViewport().setBackground(new java.awt.Color(240,
-			248, 255));
-		contextTagsScrollPane.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(new java.awt.Color(200, 220, 240), 1),
-			BorderFactory.createEmptyBorder(0, 0, 0, 0) // No internal padding
-		));
+		// Apply a visible light blue background and border to the scrollpane.
+		contextTagsScrollPane.setBackground(CONTEXT_BACKGROUND);
+		contextTagsScrollPane.getViewport().setBackground(CONTEXT_BACKGROUND);
+		contextTagsScrollPane.setBorder(BorderFactory.createLineBorder(
+			CONTEXT_BORDER_COLOR, CONTEXT_BORDER_WIDTH));
 
 		// Create the outer panel that always shows
 		contextTagsPanel = new JPanel(new MigLayout("insets 0, fillx",
@@ -535,13 +555,13 @@ Be concise, patient, humble, and collaborative.
 		else {
 			attachContextButton = new JButton("+");
 		}
-		attachContextButton.setPreferredSize(new Dimension(28, 28));
+		configureGuideButton(attachContextButton, GUIDE_INPUT_BUTTON_SIZE,
+			GUIDE_INPUT_BUTTON_SIZE);
 		attachContextButton.setToolTipText("Attach context");
-		attachContextButton.setFocusPainted(false);
-		attachContextButton.setMargin(new Insets(0, 0, 0, 0));
 		attachContextButton.addActionListener(e -> showContextMenu(
 			attachContextButton));
-		contextTagsPanel.add(attachContextButton, "aligny center, width 28!, height 28!");
+		contextTagsPanel.add(attachContextButton, "aligny center, width " +
+			GUIDE_INPUT_BUTTON_SIZE + "!, height " + GUIDE_INPUT_BUTTON_SIZE + "!");
 
 		// Add scrollable tags area in the center
 		contextTagsPanel.add(contextTagsScrollPane, "growx, growy, pushy");
@@ -557,12 +577,14 @@ Be concise, patient, humble, and collaborative.
 		}
 
 		clearAllButton.setToolTipText("Clear all context items");
-		clearAllButton.setFocusPainted(false);
+		configureGuideButton(clearAllButton, GUIDE_INPUT_BUTTON_SIZE,
+			GUIDE_INPUT_BUTTON_SIZE);
 		clearAllButton.setEnabled(false); // Disabled until context items are added
 		clearAllButton.setForeground(java.awt.Color.RED);
 		clearAllButton.setFont(clearAllButton.getFont().deriveFont(14f));
 		clearAllButton.addActionListener(e -> clearAllContext());
-		contextTagsPanel.add(clearAllButton, "aligny center, height 28!");
+		contextTagsPanel.add(clearAllButton, "aligny center, height " +
+			GUIDE_INPUT_BUTTON_SIZE + "!");
 
 		// Input area - scrollable and resizable
 		inputArea = new JTextArea() {
@@ -627,7 +649,8 @@ Be concise, patient, humble, and collaborative.
 
 		// Single send/stop button that toggles based on mode
 		sendStopButton = new JButton();
-		sendStopButton.setFocusPainted(false);
+		configureGuideButton(sendStopButton, GUIDE_INPUT_BUTTON_SIZE,
+			GUIDE_INPUT_BUTTON_SIZE);
 		setSendMode(); // Start in send mode
 		sendStopButton.addActionListener(e -> {
 			if (isSendMode) {
@@ -642,7 +665,8 @@ Be concise, patient, humble, and collaborative.
 		final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly",
 			"[grow,fill][shrink]", "[grow,fill]"));
 		inputPanel.add(inputScrollPane, "growx, growy, pushy");
-		inputPanel.add(sendStopButton, "aligny bottom, height 28!");
+		inputPanel.add(sendStopButton, "aligny bottom, height " +
+			GUIDE_INPUT_BUTTON_SIZE + "!");
 
 		// Bottom panel combining context tags and input
 		final JPanel bottomPanel = new JPanel(new MigLayout(
@@ -692,7 +716,7 @@ Be concise, patient, humble, and collaborative.
 		guide.addElement(inputArea, "Chat Input",
 			"Type a message and press Enter to chat with the AI assistant.");
 
-		// Finalize frame after guide borders have reserved their layout space.
+		// Finalize the frame after all guide elements have been registered.
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 

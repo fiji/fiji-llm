@@ -64,7 +64,6 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.UIManager;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
@@ -75,7 +74,7 @@ import javax.swing.border.LineBorder;
  */
 public class InteractiveGuide {
 
-	private static final int GUIDE_BORDER_WIDTH = 3;
+	private static final int GUIDE_BORDER_WIDTH = 4;
 	private static final Color INSPECT_BORDER_COLOR = new Color(255, 165, 0,
 		100);
 	private static final String INSPECT_MODE_DESCRIPTION =
@@ -136,7 +135,7 @@ public class InteractiveGuide {
 		elements.add(element);
 		largestGuideTitleWidth = Math.max(largestGuideTitleWidth,
 			getGuideTitleWidth(title));
-		reserveGuideBorder(component);
+		rememberGuideBorder(component);
 		if (inspectMode && component != inspectModeComponent) {
 			installInspectBorder(component);
 			registerInspectTargets(component, element);
@@ -581,84 +580,61 @@ public class InteractiveGuide {
 		jComponent.repaint();
 	}
 
-	private void reserveGuideBorder(final Component component) {
+	private void rememberGuideBorder(final Component component) {
 		if (!(component instanceof JComponent jComponent) ||
 			guideOriginalBorders.containsKey(jComponent)) return;
 
 		final Border originalBorder = jComponent.getBorder();
 		guideOriginalBorders.put(jComponent, originalBorder);
-		jComponent.setBorder(createReservedGuideBorder(originalBorder));
 	}
 
-	private static Border createReservedGuideBorder(final Border innerBorder) {
-		final Border reservedBorder = new LookAndFeelBorder();
-		return innerBorder == null ? reservedBorder : BorderFactory
-			.createCompoundBorder(reservedBorder, innerBorder);
+	private Border createGuideBorder(final Color color,
+		final Border innerBorder)
+	{
+		return new GuideBorder(color, innerBorder);
 	}
 
-	private static final class LookAndFeelBorder extends AbstractBorder {
+	private static final class GuideBorder extends AbstractBorder {
+
+		private final Border innerBorder;
+		private final Border guideBorder;
+
+		GuideBorder(final Color color, final Border innerBorder) {
+			this.innerBorder = innerBorder;
+			guideBorder = new LineBorder(color, GUIDE_BORDER_WIDTH);
+		}
 
 		@Override
 		public void paintBorder(final Component component, final Graphics graphics,
 			final int x, final int y, final int width, final int height)
 		{
-			if (width <= 0 || height <= 0) return;
-
-			final Color borderColor = surroundingBackground(component);
-			if (borderColor == null) return;
-
-			final Graphics borderGraphics = graphics.create();
-			try {
-				borderGraphics.setColor(borderColor);
-				final int borderWidth = Math.min(GUIDE_BORDER_WIDTH, Math.min(width,
-					height) / 2);
-				borderGraphics.fillRect(x, y, width, borderWidth);
-				borderGraphics.fillRect(x, y + height - borderWidth, width,
-					borderWidth);
-				final int innerHeight = height - (2 * borderWidth);
-				if (innerHeight > 0) {
-					borderGraphics.fillRect(x, y + borderWidth, borderWidth,
-						innerHeight);
-					borderGraphics.fillRect(x + width - borderWidth, y + borderWidth,
-						borderWidth, innerHeight);
-				}
+			if (innerBorder != null) {
+				innerBorder.paintBorder(component, graphics, x, y, width, height);
 			}
-			finally {
-				borderGraphics.dispose();
-			}
-		}
-
-		private static Color surroundingBackground(final Component component) {
-			Component ancestor = component.getParent();
-			while (ancestor != null) {
-				if (ancestor instanceof JComponent jComponent && jComponent.isOpaque()) {
-					final Color background = jComponent.getBackground();
-					if (background != null) return background;
-				}
-				ancestor = ancestor.getParent();
-			}
-
-			return UIManager.getColor("Panel.background");
+			guideBorder.paintBorder(component, graphics, x, y, width, height);
 		}
 
 		@Override
 		public Insets getBorderInsets(final Component component,
 			final Insets insets)
 		{
-			insets.top = GUIDE_BORDER_WIDTH;
-			insets.left = GUIDE_BORDER_WIDTH;
-			insets.bottom = GUIDE_BORDER_WIDTH;
-			insets.right = GUIDE_BORDER_WIDTH;
+			if (innerBorder == null) {
+				insets.set(GUIDE_BORDER_WIDTH, GUIDE_BORDER_WIDTH,
+					GUIDE_BORDER_WIDTH, GUIDE_BORDER_WIDTH);
+			}
+			else {
+				final Insets originalInsets = innerBorder.getBorderInsets(component);
+				insets.set(Math.max(originalInsets.top, GUIDE_BORDER_WIDTH), Math.max(
+					originalInsets.left, GUIDE_BORDER_WIDTH), Math.max(originalInsets.bottom,
+					GUIDE_BORDER_WIDTH), Math.max(originalInsets.right, GUIDE_BORDER_WIDTH));
+			}
 			return insets;
 		}
-	}
 
-	private Border createGuideBorder(final Color color,
-		final Border innerBorder)
-	{
-		final Border guideBorder = new LineBorder(color, GUIDE_BORDER_WIDTH);
-		return innerBorder == null ? guideBorder : BorderFactory.createCompoundBorder(
-			guideBorder, innerBorder);
+		@Override
+		public boolean isBorderOpaque() {
+			return false;
+		}
 	}
 
 	private void registerInspectTargets(final Component component,
