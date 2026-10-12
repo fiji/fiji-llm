@@ -29,10 +29,6 @@
 
 package sc.fiji.llm.provider;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.scijava.plugin.Plugin;
 
 /**
@@ -48,17 +44,11 @@ public class GlimmerProviderIQ2 extends AbstractCuratedModelProvider {
 		"hf.co/unsloth/Muse-Glimmer-30B-GGUF:UD-Q4_K_XL";
 	private static final String XS_ALIAS = "XS (30B)";
 	private static final String M_ALIAS = "M (30B)";
-	private static final List<String> MODEL_ALIASES = List.of(XS_ALIAS, M_ALIAS);
-	private static final Map<String, String> MODEL_NAMES = Map.of(
-		XS_ALIAS, XS_MODEL, M_ALIAS, M_MODEL);
-	private static final Map<String, Long> MODEL_DOWNLOAD_SIZES = Map.of(
-		XS_MODEL, 12_913_433_344L, M_MODEL, 21_168_856_832L);
-	private static final Map<String, ModelDemand> MODEL_DEMANDS = Map.of(
-		XS_MODEL, new ModelDemand(14.88, 0.0000150), M_MODEL,
-		new ModelDemand(22.56, 0.0000150));
 
 	public GlimmerProviderIQ2() {
-		super(MODEL_ALIASES, MODEL_NAMES);
+		super(new CuratedModel(XS_MODEL, XS_ALIAS, 12_913_433_344L, 14.88,
+			0.0000150), new CuratedModel(M_MODEL, M_ALIAS, 21_168_856_832L, 22.56,
+			0.0000150));
 	}
 
 	@Override
@@ -87,20 +77,4 @@ public class GlimmerProviderIQ2 extends AbstractCuratedModelProvider {
 		return 32 * 1024;
 	}
 
-	/**
-	 * Gets the expected size of the pinned Hugging Face GGUF and mmproj files.
-	 *
-	 * @param modelName the Ollama model name without the remote suffix
-	 * @return the expected download size in bytes, or empty for another model
-	 */
-	@Override
-	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
-		return Optional.ofNullable(MODEL_DOWNLOAD_SIZES.get(modelName));
-	}
-
-	@Override
-	public Optional<ModelDemand> getDemand(final String modelName) {
-		if (modelName == null) return Optional.empty();
-		return Optional.ofNullable(MODEL_DEMANDS.get(resolveModelName(modelName)));
-	}
 }

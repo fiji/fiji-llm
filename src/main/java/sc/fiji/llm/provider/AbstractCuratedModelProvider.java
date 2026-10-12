@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Abstract base class for Ollama providers with a curated set of model aliases.
@@ -40,26 +42,43 @@ import java.util.Set;
 public abstract class AbstractCuratedModelProvider extends AbstractOllamaProvider {
 
 	private final List<String> modelAliases;
-	private final Map<String, String> modelNames;
+	private final Map<String, CuratedModel> modelsByAlias;
+	private final Map<String, CuratedModel> modelsByName;
+
+	/**
+	 * Immutable metadata for one curated Ollama model.
+	 *
+	 * @param model the raw Ollama model name
+	 * @param alias the user-facing model alias
+	 * @param downloadSize the expected download size in bytes, or {@code null}
+	 *            when unknown
+	 * @param baseGiB estimated memory demand before context storage
+	 * @param ctxGiBPerToken estimated additional memory per context token
+	 */
+	protected record CuratedModel(String model, String alias, Long downloadSize,
+		double baseGiB, double ctxGiBPerToken)
+	{}
 
 	/**
 	 * Creates a curated provider.
 	 *
-	 * @param modelAliases the aliases to present to users, in display order
-	 * @param modelNames the mapping from aliases to Ollama model names
+	 * @param curatedModels the models to present to users, in display order
 	 */
-	protected AbstractCuratedModelProvider(final List<String> modelAliases,
-		final Map<String, String> modelNames)
+	protected AbstractCuratedModelProvider(final CuratedModel... curatedModels)
 	{
-		this.modelAliases = List.copyOf(modelAliases);
-		this.modelNames = Map.copyOf(modelNames);
+		final List<CuratedModel> models = List.of(curatedModels);
+		modelAliases = models.stream().map(CuratedModel::alias).toList();
+		modelsByAlias = models.stream().collect(Collectors.toUnmodifiableMap(
+			CuratedModel::alias, Function.identity()));
+		modelsByName = models.stream().collect(Collectors.toUnmodifiableMap(
+			CuratedModel::model, Function.identity()));
 	}
 
 	@Override
 	public List<String> getAvailableModels() {
 		final List<String> installedModels = getAvailableLocalModels();
 		final List<String> models = modelAliases.stream().map(alias -> {
-			final String modelName = modelNames.get(alias);
+			final String modelName = modelsByAlias.get(alias).model();
 			return installedModels.contains(modelName) ? alias : appendRemoteString(
 				alias);
 		}).toList();
@@ -72,7 +91,7 @@ public abstract class AbstractCuratedModelProvider extends AbstractOllamaProvide
 	 * @return the configured raw model names
 	 */
 	final Set<String> getRawModelNames() {
-		return Set.copyOf(modelNames.values());
+		return Set.copyOf(modelsByName.keySet());
 	}
 
 	/**
@@ -85,7 +104,8 @@ public abstract class AbstractCuratedModelProvider extends AbstractOllamaProvide
 		if (modelName == null) return null;
 		final String alias = isRemoteModel(modelName) ? removeRemoteString(modelName) :
 			modelName;
-		return modelNames.getOrDefault(alias, alias);
+		final CuratedModel curatedModel = modelsByAlias.get(alias);
+		return curatedModel == null ? alias : curatedModel.model();
 	}
 
 	/**
@@ -97,9 +117,24 @@ public abstract class AbstractCuratedModelProvider extends AbstractOllamaProvide
 	protected final String resolveModelAlias(final String modelName) {
 		if (modelName == null) return null;
 		final String resolvedModelName = resolveModelName(modelName);
-		return modelNames.entrySet().stream().filter(entry -> entry.getValue().equals(
-			resolvedModelName)).map(Map.Entry::getKey).findFirst().orElse(
-			isRemoteModel(modelName) ? removeRemoteString(modelName) : modelName);
+		final CuratedModel curatedModel = modelsByName.get(resolvedModelName);
+		return curatedModel == null ? isRemoteModel(modelName) ? removeRemoteString(
+			modelName) : modelName : curatedModel.alias();
+	}
+
+	@Override
+	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
+		final CuratedModel curatedModel = modelsByName.get(modelName);
+		return curatedModel == null ? Optional.empty() : Optional.ofNullable(
+			curatedModel.downloadSize());
+	}
+
+	@Override
+	public Optional<ModelDemand> getDemand(final String modelName) {
+		if (modelName == null) return Optional.empty();
+		final CuratedModel curatedModel = modelsByName.get(resolveModelName(modelName));
+		return curatedModel == null ? Optional.empty() : Optional.of(new ModelDemand(
+			curatedModel.baseGiB(), curatedModel.ctxGiBPerToken()));
 	}
 
 	@Override

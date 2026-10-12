@@ -28,10 +28,6 @@
  */
 package sc.fiji.llm.provider;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.scijava.plugin.Plugin;
 
 /**
@@ -55,28 +51,12 @@ public class Gemma4Provider extends AbstractCuratedModelProvider {
 	private static final String M_ALIAS = "M (26B)";
 	private static final String L_ALIAS = "L (31B)";
 
-	private static final List<String> MODEL_ALIASES = List.of(XS_ALIAS, S_ALIAS,
-		M_ALIAS, L_ALIAS);
-	private static final Map<String, String> MODEL_NAMES = Map.of(XS_ALIAS, XS_MODEL,
-		S_ALIAS, S_MODEL, M_ALIAS, M_MODEL, L_ALIAS, L_MODEL);
-	/**
-	 * Current Hugging Face GGUF and projection-file sizes for the pinned model
-	 * references, in bytes.
-	 */
-	private static final Map<String, Long> MODEL_DOWNLOAD_SIZES = Map.of(
-		XS_MODEL, 6_146_493_536L,
-		S_MODEL, 7_150_994_912L,
-		M_MODEL, 15_634_191_744L,
-		L_MODEL, 18_851_727_936L);
-
-	private static final Map<String, ModelDemand> MODEL_DEMANDS = Map.of(
-		XS_MODEL, new ModelDemand(7.76, 0.0000153),
-		S_MODEL, new ModelDemand(8.69, 0.0000140),
-		M_MODEL, new ModelDemand(15.88, 0.0000209),
-		L_MODEL, new ModelDemand(20.05, 0.0000860));
-
 	public Gemma4Provider() {
-		super(MODEL_ALIASES, MODEL_NAMES);
+		super(new CuratedModel(XS_MODEL, XS_ALIAS, 6_146_493_536L, 7.76,
+			0.0000153), new CuratedModel(S_MODEL, S_ALIAS, 7_150_994_912L, 8.69,
+			0.0000140), new CuratedModel(M_MODEL, M_ALIAS, 15_634_191_744L, 15.88,
+			0.0000209), new CuratedModel(L_MODEL, L_ALIAS, 18_851_727_936L, 20.05,
+			0.0000860));
 	}
 
 	@Override
@@ -98,23 +78,6 @@ public class Gemma4Provider extends AbstractCuratedModelProvider {
 	@Override
 	public String getDescription() {
 		return "Local Gemma4 models with selectable memory footprints.";
-	}
-
-	/**
-	 * Gets the expected download size for a Gemma4 model.
-	 *
-	 * @param modelName the Ollama model name without the remote suffix
-	 * @return the expected download size in bytes, or empty when unknown
-	 */
-	@Override
-	protected Optional<Long> getRemoteModelDownloadSize(final String modelName) {
-		return Optional.ofNullable(MODEL_DOWNLOAD_SIZES.get(modelName));
-	}
-
-	@Override
-	public Optional<ModelDemand> getDemand(final String modelName) {
-		if (modelName == null) return Optional.empty();
-		return Optional.ofNullable(MODEL_DEMANDS.get(resolveModelName(modelName)));
 	}
 
 	@Override
