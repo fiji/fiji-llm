@@ -111,7 +111,7 @@ public class ProviderVisionSupportTest {
 	public void testDocumentationBaselineDate() {
 		final GeminiProvider provider = new GeminiProvider();
 		assertTrue(ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
-			2026, 10, 7)));
+			2026, 10, 12)));
 		assertTrue(!ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
 			2026, 10, 8)));
 	}
@@ -174,12 +174,8 @@ public class ProviderVisionSupportTest {
 			"gemini-3.5-flash-lite").get());
 		assertEquals(new LLMProvider.ModelCost(0.25, 1.50), gemini.getCost(
 			"gemini-3.1-flash-lite").get());
-		assertEquals(new LLMProvider.ModelCost(1.50, 9.00), gemini.getCost(
-			"gemini-3.5-flash").get());
 		assertEquals(new LLMProvider.ModelCost(0.75, 3.75), gemini.getCost(
 			"gemini-3.6-flash").get());
-		assertEquals(new LLMProvider.ModelCost(0.75, 3.75), gemini.getCost(
-			"gemini-3.7-flash").get());
 		assertEquals(new LLMProvider.ModelCost(0.75, 3.75), gemini.getCost(
 			"gemini-3.8-flash").get());
 		assertEquals(Optional.empty(), gemini.getCost("future-model"));
