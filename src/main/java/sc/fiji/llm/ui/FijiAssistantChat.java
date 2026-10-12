@@ -149,43 +149,6 @@ Always verify important results.
 **New to Fiji Chat?** Click **?** to learn more.
 		""";
 
-	private static void configureGuideButton(final AbstractButton button,
-		final int width, final int height)
-	{
-		button.setFocusPainted(false);
-		button.setMargin(new Insets(GUIDE_BUTTON_MARGIN, GUIDE_BUTTON_MARGIN,
-			GUIDE_BUTTON_MARGIN, GUIDE_BUTTON_MARGIN));
-		final Dimension naturalSize = button.getPreferredSize();
-		button.setPreferredSize(new Dimension(Math.max(width, naturalSize.width),
-			Math.max(height, naturalSize.height)));
-	}
-
-	private static <T extends AbstractButton> T createButton(final T button,
-		final String iconPath, final String fallbackText, final int width,
-		final int height, final String tooltip, final ActionListener listener)
-	{
-		final URL iconUrl = iconPath == null ? null : FijiAssistantChat.class
-			.getResource(iconPath);
-		if (iconUrl == null) button.setText(fallbackText);
-		else button.setIcon(new ImageIcon(iconUrl));
-
-		configureGuideButton(button, width, height);
-		button.setToolTipText(tooltip);
-		if (listener != null) button.addActionListener(listener);
-		return button;
-	}
-
-	private static <T extends AbstractButton> T addButton(final Container parent,
-		final T button, final String iconPath, final String fallbackText,
-		final int width, final int height, final String tooltip,
-		final ActionListener listener)
-	{
-		final T configuredButton = createButton(button, iconPath, fallbackText,
-			width, height, tooltip, listener);
-		parent.add(configuredButton);
-		return configuredButton;
-	}
-
 	private static enum Sender {
 			USER, ASSISTANT, SYSTEM, ERROR
 	};
@@ -1223,6 +1186,44 @@ Be concise, patient, humble, and collaborative.
 		}
 		return cause;
 	}
+
+	private static void configureGuideButton(final AbstractButton button,
+		final int width, final int height)
+	{
+		button.setFocusPainted(false);
+		button.setMargin(new Insets(GUIDE_BUTTON_MARGIN, GUIDE_BUTTON_MARGIN,
+			GUIDE_BUTTON_MARGIN, GUIDE_BUTTON_MARGIN));
+		final Dimension naturalSize = button.getPreferredSize();
+		button.setPreferredSize(new Dimension(Math.max(width, naturalSize.width),
+			Math.max(height, naturalSize.height)));
+	}
+
+	private static <T extends AbstractButton> T createButton(final T button,
+		final String iconPath, final String fallbackText, final int width,
+		final int height, final String tooltip, final ActionListener listener)
+	{
+		final URL iconUrl = iconPath == null ? null : FijiAssistantChat.class
+			.getResource(iconPath);
+		if (iconUrl == null) button.setText(fallbackText);
+		else button.setIcon(new ImageIcon(iconUrl));
+
+		configureGuideButton(button, width, height);
+		button.setToolTipText(tooltip);
+		if (listener != null) button.addActionListener(listener);
+		return button;
+	}
+
+	private static <T extends AbstractButton> T addButton(final Container parent,
+		final T button, final String iconPath, final String fallbackText,
+		final int width, final int height, final String tooltip,
+		final ActionListener listener)
+	{
+		final T configuredButton = createButton(button, iconPath, fallbackText,
+			width, height, tooltip, listener);
+		parent.add(configuredButton);
+		return configuredButton;
+	}
+
 
 	/**
 	 * Switches the send/stop button to stop mode.
