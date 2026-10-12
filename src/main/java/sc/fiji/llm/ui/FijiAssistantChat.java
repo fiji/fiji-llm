@@ -31,6 +31,7 @@ package sc.fiji.llm.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -40,6 +41,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
@@ -156,6 +158,32 @@ Always verify important results.
 		final Dimension naturalSize = button.getPreferredSize();
 		button.setPreferredSize(new Dimension(Math.max(width, naturalSize.width),
 			Math.max(height, naturalSize.height)));
+	}
+
+	private static <T extends AbstractButton> T createButton(final T button,
+		final String iconPath, final String fallbackText, final int width,
+		final int height, final String tooltip, final ActionListener listener)
+	{
+		final URL iconUrl = iconPath == null ? null : FijiAssistantChat.class
+			.getResource(iconPath);
+		if (iconUrl == null) button.setText(fallbackText);
+		else button.setIcon(new ImageIcon(iconUrl));
+
+		configureGuideButton(button, width, height);
+		button.setToolTipText(tooltip);
+		if (listener != null) button.addActionListener(listener);
+		return button;
+	}
+
+	private static <T extends AbstractButton> T addButton(final Container parent,
+		final T button, final String iconPath, final String fallbackText,
+		final int width, final int height, final String tooltip,
+		final ActionListener listener)
+	{
+		final T configuredButton = createButton(button, iconPath, fallbackText,
+			width, height, tooltip, listener);
+		parent.add(configuredButton);
+		return configuredButton;
 	}
 
 	private static enum Sender {
@@ -336,36 +364,18 @@ Be concise, patient, humble, and collaborative.
 		conversationPanel.add(new JLabel("Conversation:"));
 		conversationPanel.add(conversationComboBox);
 
-		final URL plusIconUrl = getClass().getResource("/icons/plus-20.png");
-		if (plusIconUrl != null) {
-			newConversationButton = new JButton(new ImageIcon(plusIconUrl));
-		}
-		else {
-			newConversationButton = new JButton("+");
-		}
-		configureGuideButton(newConversationButton, conversationControlHeight,
-			conversationControlHeight);
-		newConversationButton.setToolTipText("Start a new conversation");
+		newConversationButton = addButton(conversationPanel, new JButton(),
+			"/icons/plus-20.png", "+", conversationControlHeight,
+			conversationControlHeight, "Start a new conversation",
+			e -> clearConversation());
 		newConversationButton.setEnabled(false);
-		newConversationButton.addActionListener(e -> clearConversation());
-		conversationPanel.add(newConversationButton);
 
-		final URL trashIconUrl = getClass().getResource(
-			"/icons/trash-noun-20.png");
-		if (trashIconUrl != null) {
-			deleteConversationButton = new JButton(new ImageIcon(trashIconUrl));
-		} else {
-			deleteConversationButton = new JButton("-");
-		}
-		configureGuideButton(deleteConversationButton, conversationControlHeight,
-			conversationControlHeight);
-		deleteConversationButton.setToolTipText(
-			"Delete the current conversation permanently");
+		deleteConversationButton = addButton(conversationPanel, new JButton(),
+			"/icons/trash-noun-20.png", "-", conversationControlHeight,
+			conversationControlHeight, "Delete the current conversation permanently",
+			e -> deleteCurrentConversation());
 		deleteConversationButton.setEnabled(false);
 		deleteConversationButton.setForeground(java.awt.Color.RED);
-		deleteConversationButton.addActionListener(
-			e -> deleteCurrentConversation());
-		conversationPanel.add(deleteConversationButton);
 
 		topNavBar.add(conversationPanel, BorderLayout.SOUTH);
 
@@ -373,79 +383,39 @@ Be concise, patient, humble, and collaborative.
 			5));
 		buttonPanel.setOpaque(false);
 		// ImageSC Forum button
-		final JButton forumButton;
-		final URL forumIconUrl = getClass().getResource(
-			"/icons/imagesc-icon-32.png");
-		if (forumIconUrl != null) {
-			forumButton = new JButton(new ImageIcon(forumIconUrl));
-			forumButton.setPreferredSize(new Dimension(36, 36));
-		}
-		else {
-			forumButton = new JButton("Forum");
-		}
-		configureGuideButton(forumButton, GUIDE_TOOLBAR_BUTTON_SIZE,
-			GUIDE_TOOLBAR_BUTTON_SIZE);
-		forumButton.setToolTipText("Get help on the Image.sc forum");
-		forumButton.addActionListener(e -> openForumInBrowser());
-		buttonPanel.add(forumButton);
+		final JButton forumButton = addButton(buttonPanel, new JButton(),
+			"/icons/imagesc-icon-32.png", "Forum", GUIDE_TOOLBAR_BUTTON_SIZE,
+			GUIDE_TOOLBAR_BUTTON_SIZE, "Get help on the Image.sc forum",
+			e -> openForumInBrowser());
 
 		// Inspect mode button
-		final URL inspectIconUrl = getClass().getResource(
-			"/icons/info-icon-32.png");
-		if (inspectIconUrl != null) {
-			inspectButton = new JToggleButton(new ImageIcon(inspectIconUrl));
-			inspectButton.setPreferredSize(new Dimension(36, 36));
-		}
-		else {
-			inspectButton = new JToggleButton("Inspect");
-		}
-		configureGuideButton(inspectButton, GUIDE_TOOLBAR_BUTTON_SIZE,
-			GUIDE_TOOLBAR_BUTTON_SIZE);
+		inspectButton = addButton(buttonPanel, new JToggleButton(),
+			"/icons/info-icon-32.png", "Inspect", GUIDE_TOOLBAR_BUTTON_SIZE,
+			GUIDE_TOOLBAR_BUTTON_SIZE, "Inspect chat components",
+			e -> guide.toggleInspectMode());
 		inspectButtonDefaultBackground = inspectButton.getBackground();
-		inspectButton.setToolTipText("Inspect chat components");
-		inspectButton.addActionListener(e -> guide.toggleInspectMode());
-		buttonPanel.add(inspectButton);
 
 		// Launch guide button
-		final URL questionIconUrl = getClass().getResource(
-			"/icons/question-icon-32.png");
-		if (questionIconUrl != null) {
-			guideButton = new JButton(new ImageIcon(questionIconUrl));
-			guideButton.setPreferredSize(new Dimension(36, 36));
-		}
-		else {
-			guideButton = new JButton("Show Guide");
-		}
-		configureGuideButton(guideButton, GUIDE_TOOLBAR_BUTTON_SIZE,
-			GUIDE_TOOLBAR_BUTTON_SIZE);
-		guideButton.setToolTipText("Explain chat components");
-		guideButton.addActionListener(e -> launchGuide());
-		buttonPanel.add(guideButton);
+		guideButton = addButton(buttonPanel, new JButton(),
+			"/icons/question-icon-32.png", "Show Guide", GUIDE_TOOLBAR_BUTTON_SIZE,
+			GUIDE_TOOLBAR_BUTTON_SIZE, "Explain chat components",
+			e -> launchGuide());
 
 		// Change Model button
-		final JButton configureChatButton;
-		final URL gearIconUrl = getClass().getResource("/icons/gear-noun-32.png");
-		if (gearIconUrl != null) {
-			configureChatButton = new JButton(new ImageIcon(gearIconUrl));
-		}
-		else {
-			configureChatButton = new JButton();
-		}
+		final JButton configureChatButton = addButton(buttonPanel, new JButton(),
+			"/icons/gear-noun-32.png", "", CONFIGURE_CHAT_BUTTON_WIDTH + 6,
+			GUIDE_TOOLBAR_BUTTON_SIZE, buildConfigureChatTooltip(llmProvider
+				.getModelDisplay(modelName), modelName, llmProvider.getDescription()),
+			e -> configureChat());
 		configureChatButton.setText(buildConfigureChatButtonText(llmProvider
 			.getModelDisplay(modelName),
 			configureChatButton.getFont()));
-		configureGuideButton(configureChatButton, CONFIGURE_CHAT_BUTTON_WIDTH + 6,
-			GUIDE_TOOLBAR_BUTTON_SIZE);
 		configureChatButton.setMinimumSize(configureChatButton.getPreferredSize());
 		configureChatButton.setMaximumSize(configureChatButton.getPreferredSize());
 		configureChatButton.setHorizontalAlignment(SwingConstants.LEFT);
 		configureChatButton.setHorizontalTextPosition(SwingConstants.RIGHT);
 		configureChatButton.setVerticalTextPosition(SwingConstants.CENTER);
 		configureChatButton.setIconTextGap(6);
-		configureChatButton.setToolTipText(buildConfigureChatTooltip(llmProvider.getModelDisplay(modelName),
-			modelName, llmProvider.getDescription()));
-		configureChatButton.addActionListener(e -> configureChat());
-		buttonPanel.add(configureChatButton);
 
 		topNavBar.add(buttonPanel, BorderLayout.NORTH);
 
@@ -547,17 +517,10 @@ Be concise, patient, humble, and collaborative.
 			"[shrink][grow,fill][shrink]", "[grow,fill]"));
 		contextTagsPanel.setOpaque(false);
 
-		final URL attachIconUrl = getClass().getResource(
-			"/icons/attach-noun-20.png");
-		if (attachIconUrl != null) {
-			attachContextButton = new JButton(new ImageIcon(attachIconUrl));
-		}
-		else {
-			attachContextButton = new JButton("+");
-		}
-		configureGuideButton(attachContextButton, GUIDE_INPUT_BUTTON_SIZE,
-			GUIDE_INPUT_BUTTON_SIZE);
-		attachContextButton.setToolTipText("Attach context");
+		attachContextButton = createButton(new JButton(),
+			"/icons/attach-noun-20.png", "+", GUIDE_INPUT_BUTTON_SIZE,
+			GUIDE_INPUT_BUTTON_SIZE, "Attach context",
+			null);
 		attachContextButton.addActionListener(e -> showContextMenu(
 			attachContextButton));
 		contextTagsPanel.add(attachContextButton, "aligny center, width " +
@@ -568,21 +531,12 @@ Be concise, patient, humble, and collaborative.
 
 		// Add "Clear All" button on the right (icon button, 28x28 to match send
 		// button)
-		final URL closeIconUrl = getClass().getResource("/icons/close-20.png");
-		if (closeIconUrl != null) {
-			clearAllButton = new JButton(new ImageIcon(closeIconUrl));
-		}
-		else {
-			clearAllButton = new JButton("✕");
-		}
-
-		clearAllButton.setToolTipText("Clear all context items");
-		configureGuideButton(clearAllButton, GUIDE_INPUT_BUTTON_SIZE,
-			GUIDE_INPUT_BUTTON_SIZE);
+		clearAllButton = createButton(new JButton(), "/icons/close-20.png", "✕",
+			GUIDE_INPUT_BUTTON_SIZE, GUIDE_INPUT_BUTTON_SIZE,
+			"Clear all context items", e -> clearAllContext());
 		clearAllButton.setEnabled(false); // Disabled until context items are added
 		clearAllButton.setForeground(java.awt.Color.RED);
 		clearAllButton.setFont(clearAllButton.getFont().deriveFont(14f));
-		clearAllButton.addActionListener(e -> clearAllContext());
 		contextTagsPanel.add(clearAllButton, "aligny center, height " +
 			GUIDE_INPUT_BUTTON_SIZE + "!");
 
@@ -648,18 +602,16 @@ Be concise, patient, humble, and collaborative.
 		stopIcon = stopIcon != null ? stopIcon : null; // Ensure it's initialized
 
 		// Single send/stop button that toggles based on mode
-		sendStopButton = new JButton();
-		configureGuideButton(sendStopButton, GUIDE_INPUT_BUTTON_SIZE,
-			GUIDE_INPUT_BUTTON_SIZE);
+		sendStopButton = createButton(new JButton(), null, "",
+			GUIDE_INPUT_BUTTON_SIZE, GUIDE_INPUT_BUTTON_SIZE, null, e -> {
+				if (isSendMode) {
+					sendMessage();
+				}
+				else {
+					requestStop();
+				}
+			});
 		setSendMode(); // Start in send mode
-		sendStopButton.addActionListener(e -> {
-			if (isSendMode) {
-				sendMessage();
-			}
-			else {
-				requestStop();
-			}
-		});
 
 		// Input panel with button bar and input area
 		final JPanel inputPanel = new JPanel(new MigLayout("insets 0, fillx, filly",
