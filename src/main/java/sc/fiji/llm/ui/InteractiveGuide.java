@@ -64,6 +64,7 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
@@ -252,7 +253,8 @@ public class InteractiveGuide {
 		// Check if this is the last element
 		final boolean isLastElement = currentIndex == elements.size() - 1;
 
-		final JButton nextButton = new JButton(isLastElement ? "Done" : "Next");
+		final JButton nextButton = createGuideButton(isLastElement ? "Done" :
+			"Next");
 		nextButton.addActionListener(e -> {
 			if (isLastElement) {
 				cancel();
@@ -261,18 +263,10 @@ public class InteractiveGuide {
 				nextStep();
 			}
 		});
-		nextButton.setFocusPainted(false);
-		nextButton.setContentAreaFilled(false);
-		nextButton.setBorder(BorderFactory.createCompoundBorder(new LineBorder(
-			Color.GRAY, 1), BorderFactory.createEmptyBorder(4, 12, 4, 12)));
 		buttonPanel.add(nextButton);
 
-		final JButton cancelButton = new JButton("Stop");
+		final JButton cancelButton = createGuideButton("Stop");
 		cancelButton.addActionListener(e -> cancel());
-		cancelButton.setFocusPainted(false);
-		cancelButton.setContentAreaFilled(false);
-		cancelButton.setBorder(BorderFactory.createCompoundBorder(new LineBorder(
-			Color.GRAY, 1), BorderFactory.createEmptyBorder(4, 12, 4, 12)));
 		buttonPanel.add(cancelButton);
 
 		buttonPanel.doLayout();
@@ -302,12 +296,8 @@ public class InteractiveGuide {
 		GuideElement element = new GuideElement(component, title, description);
 
 		// OK button which simply closes the dialog
-		final JButton okButton = new JButton("OK");
+		final JButton okButton = createGuideButton("OK");
 		okButton.addActionListener(e -> cancel());
-		okButton.setFocusPainted(false);
-		okButton.setContentAreaFilled(false);
-		okButton.setBorder(BorderFactory.createCompoundBorder(new LineBorder(Color.GRAY, 1),
-			BorderFactory.createEmptyBorder(4, 12, 4, 12)));
 		final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20,
 			0));
 		buttonPanel.setOpaque(false);
@@ -358,11 +348,20 @@ public class InteractiveGuide {
 		// Now create the content panel with proper sizing
 		final JPanel contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-		contentPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-		// Set a warm beige background
-		contentPanel.setBackground(new Color(255, 250, 240)); // Warm beige
+		final Border popupBorder = UIManager.getBorder("PopupMenu.border");
+		final Border popupPadding = BorderFactory.createEmptyBorder(12, 12, 12,
+			12);
+		contentPanel.setBorder(popupBorder == null ? popupPadding : BorderFactory
+			.createCompoundBorder(popupBorder, popupPadding));
+		final Color popupBackground = getGuidePopupBackground();
+		if (popupBackground != null) contentPanel.setBackground(popupBackground);
+		Color popupForeground = UIManager.getColor("PopupMenu.foreground");
+		if (popupForeground == null) popupForeground = UIManager.getColor(
+			"Panel.foreground");
+		if (popupForeground != null) contentPanel.setForeground(popupForeground);
 		contentPanel.setOpaque(true);
 
+		titleLabel.setForeground(contentPanel.getForeground());
 		contentPanel.add(titleLabel);
 		contentPanel.add(Box.createVerticalStrut(8));
 
@@ -374,6 +373,7 @@ public class InteractiveGuide {
 		final JLabel descriptionLabel = new JLabel("<html><div style='width:" +
 			titleWidth + "px'>" + element.getDescription() + "</div></html>");
 		descriptionLabel.setFont(descriptionLabel.getFont().deriveFont(12f));
+		descriptionLabel.setForeground(contentPanel.getForeground());
 		descriptionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		contentPanel.add(descriptionLabel);
 		contentPanel.add(Box.createVerticalStrut(12));
@@ -429,6 +429,34 @@ public class InteractiveGuide {
 		});
 
 		return dialog;
+	}
+
+	private static Color getGuidePopupBackground() {
+		Color popupBackground = UIManager.getColor("PopupMenu.background");
+		final Color panelBackground = UIManager.getColor("Panel.background");
+		if (popupBackground == null) popupBackground = panelBackground;
+		if (popupBackground == null || panelBackground == null ||
+			!popupBackground.equals(panelBackground)) return popupBackground;
+
+		Color popupForeground = UIManager.getColor("PopupMenu.foreground");
+		if (popupForeground == null) popupForeground = UIManager.getColor(
+			"Panel.foreground");
+		return popupForeground == null ? popupBackground : blendColors(
+			popupBackground, popupForeground, 0.04f);
+	}
+
+	private static Color blendColors(final Color base, final Color target,
+		final float targetWeight)
+	{
+		final float baseWeight = 1f - targetWeight;
+		return new Color(Math.round(base.getRed() * baseWeight + target.getRed() *
+			targetWeight), Math.round(base.getGreen() * baseWeight + target.getGreen() *
+			targetWeight), Math.round(base.getBlue() * baseWeight + target.getBlue() *
+			targetWeight));
+	}
+
+	private static JButton createGuideButton(final String text) {
+		return new JButton(text);
 	}
 
 	private boolean isAboveMessagePanel(final Component component) {
