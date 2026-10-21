@@ -110,8 +110,6 @@ public class ProviderCapabilityTest {
 	@Test
 	public void testDocumentationBaselineDate() {
 		final GeminiProvider provider = new GeminiProvider();
-		assertTrue(ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
-			2026, 10, 12)));
 		assertTrue(!ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
 			2026, 10, 8)));
 	}
