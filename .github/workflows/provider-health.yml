@@ -105,7 +105,31 @@ jobs:
                   to_entries[]
                   | select((.value | type) == "object")
                   | select(.value.health? != null)
-                  | {name: .key, health: .value.health}
+                  | {
+                      name: .key,
+                      health: .value.health,
+                      models_documentation_last_modified: (.value.models_documentation_last_modified // null),
+                      models_documentation: (
+                        .value.models_documentation // {}
+                        | {
+                            url: (.url // ""),
+                            status: (.status // null),
+                            final_url: ((.final_url // "") | split("?")[0]),
+                            baseline_established: (.baseline_established // false),
+                            last_modified: (.last_modified // null),
+                            content_hash: (.content_hash // null),
+                            models_review_required: (.models_review_required // false)
+                          }
+                      ),
+                      api_key: (
+                        .value.api_key // {}
+                        | {
+                            url: (.url // ""),
+                            status: (.status // null),
+                            final_url: ((.final_url // "") | split("?")[0])
+                          }
+                      )
+                    }
                 ] | sort_by(.name)
               }
             ' "$1"
@@ -115,7 +139,7 @@ jobs:
             current_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status.json")"
             previous_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status-previous.json")"
             if [[ "$current_statuses" == "$previous_statuses" ]]; then
-              echo "Provider health statuses unchanged; skipping status commit."
+              echo "Provider health and baseline state unchanged; skipping status commit."
               exit 0
             fi
           fi

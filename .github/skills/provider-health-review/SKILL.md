@@ -101,9 +101,9 @@ body fingerprinting when its live `Last-Modified` date is not newer than the
 provider's acknowledged date.
 
 The `provider-status` branch is a published change-triggered snapshot, not
-necessarily the latest scheduled probe. The workflow commits it only when the
-overall status or a hosted provider's health changes, so `checked_at` can lag
-behind recent runs. When freshness matters, inspect the latest
+necessarily the latest scheduled probe. The workflow commits it when the
+overall status, a hosted provider's health, or stable check/baseline metadata
+changes, so `checked_at` can lag behind recent runs. When freshness matters, inspect the latest
 [provider-health workflow run](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml)
 and use the branch JSON for the published diagnostic details.
 
