@@ -166,12 +166,12 @@ public class GeminiProvider extends AbstractLLMProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 12);
+		return LocalDate.of(2026, 10, 21);
 	}
 
 	@Override
 	public String getApiKeyUrl() {
-		return "https://aistudio.google.com/app/apikey";
+		return "https://aistudio.google.com/api-keys";
 	}
 
 	@Override
