@@ -57,10 +57,14 @@ Ollama providers optionally manage the Ollama process lifecycle via `OllamaProce
 
 Each provider reports the date on which its models documentation was last checked
 against the models it supplies through `LLMProvider.getModelsDocumentationLastModified()`. The scheduled
-`HostedProviderModelHealthTest` checks provider documentation and API-key URLs,
+`ProviderHealthProbe` checks provider documentation and API-key URLs,
 records HTTP revision metadata when available, and requests a model review when a
-documentation fingerprint changes. When that provider date equals the current UTC
-run date, the run establishes a new documentation baseline. The GitHub Actions provider-health workflow
+a documentation fingerprint changes. It is compiled from test sources and
+launched directly by the GitHub Actions provider-health workflow. The focused
+`ProviderCapabilityTest` covers provider fingerprint fixtures, date gating,
+documentation baselines, costs, and vision assumptions; it does not perform
+the live URL checks. When that provider date equals the current UTC run date,
+the run establishes a new documentation baseline. The GitHub Actions provider-health workflow
 publishes the resulting per-hosted-provider badges used in the README; local
 Ollama providers are intentionally excluded. The workflow commits the
 `provider-status` branch only when the overall status or a hosted provider's

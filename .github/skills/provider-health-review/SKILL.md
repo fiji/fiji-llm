@@ -44,17 +44,29 @@ clarify rather than silently reviewing a different provider.
   in `failures`. Report the provider health, changed fields, request errors,
   content errors, HTTP status, final URL, content fingerprint, baseline marker,
   and review flags only when they are present.
-3. Inspect the provider implementation and identify the configured model
-   aliases, model IDs, model list, pricing, vision assumptions, and recommended
-   model where applicable. Use the actual implementation as the source of
-   truth rather than assuming that every provider represents models the same
-   way.
-4. Open the provider's current models documentation when web access is
+3. When the finding needs operational clarification, inspect the executable
+  [`ProviderHealthProbe`](../../../src/test/java/sc/fiji/llm/provider/ProviderHealthProbe.java)
+  and the scheduled
+  [`provider-health.yml`](../../workflows/provider-health.yml). The workflow
+  compiles test sources and launches the probe as a Java main class; it is not
+  a JUnit test. [`ProviderCapabilityTest`](../../../src/test/java/sc/fiji/llm/provider/ProviderCapabilityTest.java)
+  covers provider fingerprint fixtures, Gemini date gating, documentation
+  baselines, costs, and vision assumptions, but does not perform the live URL
+  checks.
+4. Inspect the provider implementation and identify the configured model
+  aliases, raw model IDs, available model list, pricing, vision assumptions,
+  model-specific request behavior, and ordering or default selection where
+  applicable. There is no formal recommended-model API. Distinguish aliases
+  exposed by `getAvailableModels()` from IDs in the provider's internal mapping;
+  a mapped model may not be user-selectable. Use the actual implementation as
+  the source of truth rather than assuming that every provider represents
+  models the same way.
+5. Open the provider's current models documentation when web access is
    available. Compare the documented model names, IDs, availability, pricing,
    image support, and relevant lifecycle or replacement information with the
    configured provider metadata. Do not copy large sections of provider
    documentation into the report.
-5. If the finding concerns an API-key URL, verify whether the URL still
+6. If the finding concerns an API-key URL, verify whether the URL still
    identifies the intended key-management page. This is a URL-maintenance
    finding, not automatically a model-list finding.
 
@@ -64,6 +76,22 @@ and lifecycle information while excluding volatile prose. The probe does not
 determine whether the configured model list is correct. A changed fingerprint
 therefore requires a comparison, not an automatic model update.
 
+The probe discovers providers through `ProviderService` and checks only
+providers for which `LLMProvider.requiresApiKey()` is true. The shared health
+hooks live on [`LLMProvider`](../../../src/main/java/sc/fiji/llm/provider/LLMProvider.java):
+`getModelsDocumentationContentHash`,
+`shouldCheckModelsDocumentationContent`,
+`shouldReviewModelsDocumentationLastModified`, and
+`getModelsDocumentationLastModified`.
+
+Probe status has specific meanings. A provider is `unhealthy` for a request or
+content error, or for HTTP 400, 404, 408, 410, or 5xx. Other statuses such as
+401 or 403 are recorded but do not by themselves make the provider unhealthy.
+Documentation changes produce `review_required`; an existing model review can
+also be carried forward until the provider date is updated after review. An
+Actions run can therefore fail because the result is `review_required`, rather
+than because the workflow itself failed.
+
 When a provider's `getModelsDocumentationLastModified()` date equals the
 current UTC run date, that run establishes a new documentation baseline. The
 probe does not compare the documentation fingerprint or `Last-Modified` value
@@ -72,16 +100,24 @@ redirects, API-key URLs, and fingerprint/parser errors. Gemini may also skip
 body fingerprinting when its live `Last-Modified` date is not newer than the
 provider's acknowledged date.
 
+The `provider-status` branch is a published change-triggered snapshot, not
+necessarily the latest scheduled probe. The workflow commits it only when the
+overall status or a hosted provider's health changes, so `checked_at` can lag
+behind recent runs. When freshness matters, inspect the latest
+[provider-health workflow run](https://github.com/fiji/fiji-llm/actions/workflows/provider-health.yml)
+and use the branch JSON for the published diagnostic details.
+
 ## Provider-specific comparison
 
 - **ChatGPT**: check the user-facing aliases returned by
   `getAvailableModels()`, the aliases-to-provider-ID mapping, model pricing,
-  and the vision-support assumptions in `OpenAIProvider`.
+  vision-support assumptions, and model-specific request defaults such as
+  reasoning effort in `OpenAIProvider`.
 - **Claude**: check the user-facing aliases returned by
   `getAvailableModels()`, the aliases-to-provider-ID mapping, model pricing,
   and the vision-support assumptions in `AnthropicProvider`.
 - **Gemini**: check the hard-coded available model list, vision-model set,
-  recommended model, and any model naming or lifecycle changes in
+  model ordering, and any model naming or lifecycle changes in
   `GeminiProvider`.
 
 Also verify the documentation URL, response status, and provider fingerprint
