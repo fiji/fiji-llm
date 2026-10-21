@@ -30,7 +30,6 @@ package sc.fiji.llm.provider;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -54,7 +53,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 
 import sc.fiji.llm.auth.APIKeyService;
 
@@ -237,35 +235,17 @@ public final class ProviderHealthProbe {
 			status >= 500;
 	}
 
-	private static JsonElement comparableValue(final String field,
-		final JsonElement value)
-	{
-		if (!"final_url".equals(field) || !value.isJsonPrimitive() || !value
-			.getAsJsonPrimitive().isString()) return value;
-
-		final URI uri = URI.create(value.getAsString());
-		try {
-			return new JsonPrimitive(new URI(uri.getScheme(), uri.getRawAuthority(), uri
-				.getRawPath(), null, null).toString());
-		}
-		catch (final URISyntaxException e) {
-			return value;
-		}
-	}
-
-	private static void compareWithPrevious(final LLMProvider provider,
+	static void compareWithPrevious(final LLMProvider provider,
 		final String name, final JsonObject current,
 		final JsonObject previousProviderState, final List<String> failures)
 	{
-		if (previousProviderState == null || !previousProviderState.has(name)) return;
+		if (!"models_documentation".equals(name) || previousProviderState == null ||
+			!previousProviderState.has(name)) return;
 		final JsonObject previous = previousProviderState.getAsJsonObject(name);
-		final boolean documentationBaseline = "models_documentation".equals(name) &&
-			isDocumentationBaseline(provider);
-		for (final String field : List.of("url", "status", "final_url",
-			"last_modified", "content_hash"))
+		final boolean documentationBaseline = isDocumentationBaseline(provider);
+		for (final String field : List.of("last_modified", "content_hash"))
 		{
-			if (documentationBaseline && ("last_modified".equals(field) ||
-				"content_hash".equals(field))) continue;
+			if (documentationBaseline) continue;
 			if ("last_modified".equals(field) && !provider
 				.shouldReviewModelsDocumentationLastModified()) continue;
 			if ("content_hash".equals(field) && current.has(
@@ -274,18 +254,10 @@ public final class ProviderHealthProbe {
 				JsonNull.INSTANCE;
 			final JsonElement currentValue = current.has(field) ? current.get(field) :
 				JsonNull.INSTANCE;
-			if (!comparableValue(field, previousValue).equals(comparableValue(field,
-				currentValue))) {
+			if (!previousValue.equals(currentValue)) {
 				current.addProperty("changed_since_previous", true);
-				if ("models_documentation".equals(name) && ("last_modified".equals(
-					field) || "content_hash".equals(field)))
-				{
-					current.addProperty("models_review_required", true);
-				}
-				final String action = "models_documentation".equals(name) &&
-					("last_modified".equals(field) || "content_hash".equals(field)) ?
-					"; re-evaluate the provided models" :
-					"";
+				current.addProperty("models_review_required", true);
+				final String action = "; re-evaluate the provided models";
 				failures.add(provider.getName() + " " + name + " changed " + field +
 					" from " + previousValue + " to " + currentValue + action);
 			}
@@ -311,8 +283,7 @@ public final class ProviderHealthProbe {
 					check.get("status").getAsInt())) return "unhealthy";
 		}
 		if (isTrue(providerState, "models_documentation", "models_review_required") ||
-			isTrue(providerState, "models_documentation", "changed_since_previous") ||
-			isTrue(providerState, "api_key", "changed_since_previous"))
+			isTrue(providerState, "models_documentation", "changed_since_previous"))
 			return "review_required";
 		return "healthy";
 	}

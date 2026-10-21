@@ -58,8 +58,9 @@ Ollama providers optionally manage the Ollama process lifecycle via `OllamaProce
 Each provider reports the date on which its models documentation was last checked
 against the models it supplies through `LLMProvider.getModelsDocumentationLastModified()`. The scheduled
 `ProviderHealthProbe` checks provider documentation and API-key URLs,
-records HTTP revision metadata when available, and requests a model review when a
-a documentation fingerprint changes. It is compiled from test sources and
+records HTTP revision metadata when available, and requests a model review when
+a documentation fingerprint changes. API-key URL changes are validated against
+the current live response rather than the previous local snapshot. It is compiled from test sources and
 launched directly by the GitHub Actions provider-health workflow. The focused
 `ProviderCapabilityTest` covers provider fingerprint fixtures, date gating,
 documentation baselines, costs, and vision assumptions; it does not perform

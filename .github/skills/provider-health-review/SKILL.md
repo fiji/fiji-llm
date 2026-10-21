@@ -66,9 +66,10 @@ clarify rather than silently reviewing a different provider.
    image support, and relevant lifecycle or replacement information with the
    configured provider metadata. Do not copy large sections of provider
    documentation into the report.
-6. If the finding concerns an API-key URL, verify whether the URL still
-   identifies the intended key-management page. This is a URL-maintenance
-   finding, not automatically a model-list finding.
+6. If the finding concerns an API-key URL, verify whether the configured URL
+  currently reaches the intended key-management page. A local URL edit is
+  published as diagnostic metadata but does not require review by itself;
+  review the live request only when it reports an error or broken status.
 
 The health probe asks each provider to turn raw documentation HTML into a
 stable model-catalog fingerprint. Providers should retain model IDs, pricing,

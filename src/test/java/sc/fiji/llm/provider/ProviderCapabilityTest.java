@@ -34,11 +34,14 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.junit.Test;
+
+import com.google.gson.JsonObject;
 
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
@@ -112,6 +115,26 @@ public class ProviderCapabilityTest {
 		final GeminiProvider provider = new GeminiProvider();
 		assertTrue(!ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
 			2026, 10, 8)));
+	}
+
+	@Test
+	public void testApiKeyUrlChangesDoNotRequireReview() {
+		final GeminiProvider provider = new GeminiProvider();
+		final JsonObject previous = new JsonObject();
+		final JsonObject previousApiKey = new JsonObject();
+		previousApiKey.addProperty("url", "https://aistudio.google.com/app/apikey");
+		previousApiKey.addProperty("status", 200);
+		previous.add("api_key", previousApiKey);
+		final JsonObject currentApiKey = new JsonObject();
+		currentApiKey.addProperty("url", "https://aistudio.google.com/api-keys");
+		currentApiKey.addProperty("status", 200);
+		final List<String> failures = new ArrayList<>();
+
+		ProviderHealthProbe.compareWithPrevious(provider, "api_key", currentApiKey,
+			previous, failures);
+
+		assertTrue(failures.isEmpty());
+		assertTrue(!currentApiKey.has("changed_since_previous"));
 	}
 
 	@Test
