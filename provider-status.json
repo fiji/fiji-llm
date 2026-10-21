@@ -12,10 +12,9 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS805805686:1792607322607164",
-      "changed_since_previous": true
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS890047812:1792607463815050"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-10-07",
@@ -47,9 +46,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-21T18:28:43.826467384Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini api_key changed url from \"https://aistudio.google.com/app/apikey\" to \"https://aistudio.google.com/api-keys\""
-  ]
+  "checked_at": "2026-10-21T18:31:05.277575115Z",
+  "status": "healthy",
+  "failures": []
 }
