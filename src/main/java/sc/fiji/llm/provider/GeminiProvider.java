@@ -155,7 +155,7 @@ public class GeminiProvider extends AbstractLLMProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 21);
+		return LocalDate.of(2026, 10, 26);
 	}
 
 	@Override
