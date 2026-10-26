@@ -1,21 +1,333 @@
 {
   "Gemini": {
-    "models_documentation_last_modified": "2026-10-21",
+    "models_documentation_last_modified": "2026-10-26",
     "models_documentation": {
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
+      "baseline_established": true,
       "last_modified": "Thu, 22 Oct 2026 16:39:31 GMT",
-      "content_hash": "efafc0b3f9c3101ffea1d87260dc95e8b2ccd40c21e5b6109e3ebcc6cec42ebe",
-      "changed_since_previous": true,
-      "models_review_required": true
+      "facts": {
+        "models": {
+          "A general-purpose managed agent that autonomously plans, reasons, runs code, manages files, and browses the web inside a secure, isolated Linux sandbox.": {
+            "lifecycle": "preview"
+          },
+          "A professional design engine with a reasoning core for studio-quality 4K visuals, complex layouts, and precise text rendering.": {
+            "lifecycle": "preview"
+          },
+          "Advanced embodied reasoning model that understands physical spaces and plans multi-step tasks for robotic agents with new capabilities like instrument reading, improved spatial and physical reasoning.": {
+            "lifecycle": "shut-down"
+          },
+          "An agentic model that autonomously plans and executes multi-step research across hundreds of sources to produce cited, interactive reports.": {
+            "lifecycle": "preview"
+          },
+          "Controllable text-to-speech audio generation with fine control over style and pacing.": {
+            "lifecycle": "preview"
+          },
+          "Designed as the efficiency specialist of the image generation family, offering ultra-low latency and cost-effective image generation and editing.": {
+            "lifecycle": "preview"
+          },
+          "Embodied reasoning model delivering advanced video understanding, spatial reasoning, multi-step tool orchestration, and multi-robot collaboration for robotics tasks.": {
+            "lifecycle": "preview"
+          },
+          "Fast and controllable text-to-speech for low-latency, cost-efficient applications and real-time assistants.": {
+            "lifecycle": "preview"
+          },
+          "Fast, cost-efficient text-to-speech model built for high-throughput production workloads across 101 languages.": {
+            "lifecycle": "preview"
+          },
+          "Flagship creative text-to-speech model for studio-grade voice fidelity, expressive acting, and regional dialects across 130 languages.": {
+            "lifecycle": "preview"
+          },
+          "High-dimensional vector representations for advanced semantic search, text classification, and RAG systems.": {
+            "lifecycle": "preview"
+          },
+          "High-efficiency image generation and editing model with improved visual quality, typography, and multi-turn consistency.": {
+            "lifecycle": "preview"
+          },
+          "High-efficiency production-scale visual creation, combining the intelligence of the Gemini 3 series with lightning-fast generation speeds.": {
+            "lifecycle": "preview"
+          },
+          "High-fidelity music generation model providing granular creative control and real-time streaming capabilities.": {
+            "lifecycle": "preview"
+          },
+          "High-fidelity speech synthesis optimized for quality in structured workflows like podcasts and audiobooks.": {
+            "lifecycle": "preview"
+          },
+          "Legacy audio-to-audio preview model. We recommend updating to Gemini 3.8 Live.": {
+            "lifecycle": "preview"
+          },
+          "Legacy text-to-speech preview model. We recommend updating to Gemini 3.8 Flash TTS or Gemini 3.8 Flash-Lite TTS.": {
+            "lifecycle": "preview"
+          },
+          "Low-latency speech-to-text model with utterance-based language detection, speaker diarization, word-level timestamps, and custom vocabulary biasing.": {
+            "lifecycle": "preview"
+          },
+          "Optimized for real-time conversational agents with sub-second native audio streaming.": {
+            "lifecycle": "preview"
+          },
+          "Our best price-performance model for low-latency, high-volume tasks that require reasoning.": {
+            "lifecycle": "preview"
+          },
+          "Our flagship Live API model for low-latency, bidirectional voice and video agents with native audio reasoning.": {
+            "lifecycle": "preview"
+          },
+          "Our flagship music generation model, optimized for full-length songs with complex structural coherence.": {
+            "lifecycle": "preview"
+          },
+          "Our high-reasoning audio-to-audio model, recommended when higher background reasoning is required during live interactions.": {
+            "lifecycle": "preview"
+          },
+          "Our most cost-efficient multimodal model, offering the fastest performance for high-frequency, lightweight tasks.": {
+            "lifecycle": "shut-down"
+          },
+          "Our second generation workhorse model, with next-gen features and improved capabilities, including superior speed, native tool use, and a 1M token context window.": {
+            "lifecycle": "shut-down"
+          },
+          "Our state-of-the-art reasoning model, with advanced multimodal understanding.": {
+            "lifecycle": "shut-down"
+          },
+          "Previous generation music generation model for full-length songs.": {
+            "lifecycle": "preview"
+          },
+          "State-of-the-art native image generation and editing designed for fast, creative workflows.": {
+            "lifecycle": "preview"
+          },
+          "Text-to-image model featuring fast and ultra-fast generation (shut down).": {
+            "lifecycle": "shut-down"
+          },
+          "The default option for most low-latency voice agent experiences and real-time dialogue without reasoning delays.": {
+            "lifecycle": "preview"
+          },
+          "The fastest and most budget-friendly multimodal model in the 2.5 family.": {
+            "lifecycle": "preview"
+          },
+          "gemini-3-flash-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3-pro-image": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-image": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-lite": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-lite-image": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-live-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-tts-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-pro-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.5-flash-lite": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.5-live-translate-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.5-transcribe gemini-3.5-transcribe-live": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.6-flash": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-flash": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-flash-lite-tts": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-flash-tts": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-live": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-live-extended-thinking": {
+            "lifecycle": "preview"
+          },
+          "gemini-4-argon": {
+            "lifecycle": "stable"
+          },
+          "gemini-nano-banana-2.1": {
+            "lifecycle": "preview"
+          },
+          "gemini-omni-1.1-flash": {
+            "lifecycle": "preview"
+          }
+        }
+      },
+      "baseline_facts": {
+        "models": {
+          "A general-purpose managed agent that autonomously plans, reasons, runs code, manages files, and browses the web inside a secure, isolated Linux sandbox.": {
+            "lifecycle": "preview"
+          },
+          "A professional design engine with a reasoning core for studio-quality 4K visuals, complex layouts, and precise text rendering.": {
+            "lifecycle": "preview"
+          },
+          "Advanced embodied reasoning model that understands physical spaces and plans multi-step tasks for robotic agents with new capabilities like instrument reading, improved spatial and physical reasoning.": {
+            "lifecycle": "shut-down"
+          },
+          "An agentic model that autonomously plans and executes multi-step research across hundreds of sources to produce cited, interactive reports.": {
+            "lifecycle": "preview"
+          },
+          "Controllable text-to-speech audio generation with fine control over style and pacing.": {
+            "lifecycle": "preview"
+          },
+          "Designed as the efficiency specialist of the image generation family, offering ultra-low latency and cost-effective image generation and editing.": {
+            "lifecycle": "preview"
+          },
+          "Embodied reasoning model delivering advanced video understanding, spatial reasoning, multi-step tool orchestration, and multi-robot collaboration for robotics tasks.": {
+            "lifecycle": "preview"
+          },
+          "Fast and controllable text-to-speech for low-latency, cost-efficient applications and real-time assistants.": {
+            "lifecycle": "preview"
+          },
+          "Fast, cost-efficient text-to-speech model built for high-throughput production workloads across 101 languages.": {
+            "lifecycle": "preview"
+          },
+          "Flagship creative text-to-speech model for studio-grade voice fidelity, expressive acting, and regional dialects across 130 languages.": {
+            "lifecycle": "preview"
+          },
+          "High-dimensional vector representations for advanced semantic search, text classification, and RAG systems.": {
+            "lifecycle": "preview"
+          },
+          "High-efficiency image generation and editing model with improved visual quality, typography, and multi-turn consistency.": {
+            "lifecycle": "preview"
+          },
+          "High-efficiency production-scale visual creation, combining the intelligence of the Gemini 3 series with lightning-fast generation speeds.": {
+            "lifecycle": "preview"
+          },
+          "High-fidelity music generation model providing granular creative control and real-time streaming capabilities.": {
+            "lifecycle": "preview"
+          },
+          "High-fidelity speech synthesis optimized for quality in structured workflows like podcasts and audiobooks.": {
+            "lifecycle": "preview"
+          },
+          "Legacy audio-to-audio preview model. We recommend updating to Gemini 3.8 Live.": {
+            "lifecycle": "preview"
+          },
+          "Legacy text-to-speech preview model. We recommend updating to Gemini 3.8 Flash TTS or Gemini 3.8 Flash-Lite TTS.": {
+            "lifecycle": "preview"
+          },
+          "Low-latency speech-to-text model with utterance-based language detection, speaker diarization, word-level timestamps, and custom vocabulary biasing.": {
+            "lifecycle": "preview"
+          },
+          "Optimized for real-time conversational agents with sub-second native audio streaming.": {
+            "lifecycle": "preview"
+          },
+          "Our best price-performance model for low-latency, high-volume tasks that require reasoning.": {
+            "lifecycle": "preview"
+          },
+          "Our flagship Live API model for low-latency, bidirectional voice and video agents with native audio reasoning.": {
+            "lifecycle": "preview"
+          },
+          "Our flagship music generation model, optimized for full-length songs with complex structural coherence.": {
+            "lifecycle": "preview"
+          },
+          "Our high-reasoning audio-to-audio model, recommended when higher background reasoning is required during live interactions.": {
+            "lifecycle": "preview"
+          },
+          "Our most cost-efficient multimodal model, offering the fastest performance for high-frequency, lightweight tasks.": {
+            "lifecycle": "shut-down"
+          },
+          "Our second generation workhorse model, with next-gen features and improved capabilities, including superior speed, native tool use, and a 1M token context window.": {
+            "lifecycle": "shut-down"
+          },
+          "Our state-of-the-art reasoning model, with advanced multimodal understanding.": {
+            "lifecycle": "shut-down"
+          },
+          "Previous generation music generation model for full-length songs.": {
+            "lifecycle": "preview"
+          },
+          "State-of-the-art native image generation and editing designed for fast, creative workflows.": {
+            "lifecycle": "preview"
+          },
+          "Text-to-image model featuring fast and ultra-fast generation (shut down).": {
+            "lifecycle": "shut-down"
+          },
+          "The default option for most low-latency voice agent experiences and real-time dialogue without reasoning delays.": {
+            "lifecycle": "preview"
+          },
+          "The fastest and most budget-friendly multimodal model in the 2.5 family.": {
+            "lifecycle": "preview"
+          },
+          "gemini-3-flash-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3-pro-image": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-image": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-lite": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-lite-image": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-live-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-flash-tts-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.1-pro-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.5-flash-lite": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.5-live-translate-preview": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.5-transcribe gemini-3.5-transcribe-live": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.6-flash": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-flash": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-flash-lite-tts": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-flash-tts": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-live": {
+            "lifecycle": "preview"
+          },
+          "gemini-3.8-live-extended-thinking": {
+            "lifecycle": "preview"
+          },
+          "gemini-4-argon": {
+            "lifecycle": "stable"
+          },
+          "gemini-nano-banana-2.1": {
+            "lifecycle": "preview"
+          },
+          "gemini-omni-1.1-flash": {
+            "lifecycle": "preview"
+          }
+        }
+      }
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1831333180:1792755745457579"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1657157410:1793032588575361"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-10-07",
@@ -23,14 +335,35 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "content_hash": "55ba601765bb37b6a0ce2cc5bd69a4d0a81cd29ad6dc4b84f5a3a4086262f81d"
+      "facts": {
+        "models": {
+          "gpt-6-astra": {
+            "input_price": "$10 / Input MTok",
+            "output_price": "$50 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-sol": {
+            "input_price": "$2 / Input MTok",
+            "output_price": "$10 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6-luna": {
+            "input_price": "$0.1 / Input MTok",
+            "output_price": "$0.5 / Output MTok",
+            "lifecycle": "active"
+          }
+        }
+      },
+      "changed_since_previous": true,
+      "models_review_required": true,
+      "structured_baseline_required": true
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
   "Claude": {
     "models_documentation_last_modified": "2026-10-07",
@@ -38,18 +371,43 @@
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
-      "content_hash": "c180604e99b317b46ab7ebbd2603d0546ffe43313daf6b72ea66d47a4768f883"
+      "facts": {
+        "model_table": {
+          "Pricing": [
+            "$10 / input MTok$50 / output MTok",
+            "$4 / input MTok$20 / output MTok",
+            "$2 / input MTok$10 / output MTok",
+            "From $0.10 / input MTokFrom $0.50 / output MTok"
+          ],
+          "Claude API ID": [
+            "claude-fable-5-1",
+            "claude-opus-5-5",
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5"
+          ],
+          "Retirement": [
+            "Not sooner than September 1, 2027",
+            "Not sooner than September 22, 2027",
+            "Not sooner than September 28, 2027",
+            "Not sooner than October 7, 2027"
+          ]
+        }
+      },
+      "changed_since_previous": true,
+      "models_review_required": true,
+      "structured_baseline_required": true
     },
     "api_key": {
       "url": "https://platform.claude.com/settings/keys",
       "status": 200,
       "final_url": "https://platform.claude.com/settings/keys"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
-  "checked_at": "2026-10-23T11:42:26.512801281Z",
+  "checked_at": "2026-10-26T16:36:30.662544611Z",
   "status": "review_required",
   "failures": [
-    "Gemini models_documentation changed content_hash from null to \"efafc0b3f9c3101ffea1d87260dc95e8b2ccd40c21e5b6109e3ebcc6cec42ebe\"; re-evaluate the provided models"
+    "ChatGPT models documentation has no structured accepted baseline to compare. Current extracted facts:\n{\"models\":{\"gpt-6-astra\":{\"input_price\":\"$10 / Input MTok\",\"output_price\":\"$50 / Output MTok\",\"lifecycle\":\"active\"},\"gpt-6.1-sol\":{\"input_price\":\"$2 / Input MTok\",\"output_price\":\"$10 / Output MTok\",\"lifecycle\":\"active\"},\"gpt-6-luna\":{\"input_price\":\"$0.1 / Input MTok\",\"output_price\":\"$0.5 / Output MTok\",\"lifecycle\":\"active\"}}}\nReview them and update getModelsDocumentationLastModified()",
+    "Claude models documentation has no structured accepted baseline to compare. Current extracted facts:\n{\"model_table\":{\"Pricing\":[\"$10 / input MTok$50 / output MTok\",\"$4 / input MTok$20 / output MTok\",\"$2 / input MTok$10 / output MTok\",\"From $0.10 / input MTokFrom $0.50 / output MTok\"],\"Claude API ID\":[\"claude-fable-5-1\",\"claude-opus-5-5\",\"claude-sonnet-5-5\",\"claude-haiku-5-5\"],\"Retirement\":[\"Not sooner than September 1, 2027\",\"Not sooner than September 22, 2027\",\"Not sooner than September 28, 2027\",\"Not sooner than October 7, 2027\"]}}\nReview them and update getModelsDocumentationLastModified()"
   ]
 }
