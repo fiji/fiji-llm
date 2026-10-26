@@ -178,7 +178,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 7);
+		return LocalDate.of(2026, 10, 26);
 	}
 
 	@Override
