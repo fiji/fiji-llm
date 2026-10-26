@@ -105,7 +105,7 @@ import sc.fiji.llm.tools.ToolScope;
 public class DefaultMCPService extends AbstractService implements MCPService
 {
 
-	private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(3);
+	private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(30);
 	private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(3);
 	private static final Duration RESTART_DELAY = Duration.ofSeconds(1);
 	private static final Duration SERVER_POLL_INTERVAL = Duration.ofMillis(100);
@@ -273,31 +273,33 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			stopServer.set(false);
 
 			// Start MCP server in a daemon thread
-			serverThread = new Thread(() -> runMcpServerWithRecovery(
-				getMcpTools(), port, startupException));
-			serverThread.setDaemon(true);
-			serverThread.setName("MCP-Server-Thread");
-			serverThread.start();
+			final Thread startupThread = new Thread(() -> runMcpServerWithRecovery(
+				port, startupException));
+			serverThread = startupThread;
+			startupThread.setDaemon(true);
+			startupThread.setName("MCP-Server-Thread");
+			startupThread.start();
 
 			// Wait for server to be ready (with timeout)
 			logService.debug("Waiting for Fiji MCP server to be ready...");
 			final boolean serverStarted = serverReady.await(STARTUP_TIMEOUT.toMillis(),
 				TimeUnit.MILLISECONDS);
 
-			final String startupMessage = startupException[0] == null ? null :
-				startupException[0].getMessage();
-			if (startupMessage != null && startupMessage.contains("Failed to bind")) {
-				logService.error("Fiji MCP server failed to startup: another instance of the server may be running");
-				return;
+			if (startupException[0] != null) {
+				stopServerThread(startupThread);
+				final String startupMessage = startupException[0].getMessage();
+				if (startupMessage != null && startupMessage.contains("Failed to bind")) {
+					logService.error("Fiji MCP server failed to startup: another instance of the server may be running");
+					return;
+				}
+				throw new RuntimeException(
+					"Encountered exception during server startup", startupException[0]);
 			}
 
 			if (!serverStarted) {
-				if (startupException[0] != null) {
-					throw new RuntimeException( "Encountered exception during server startup",
-					startupException[0]);
-				}
+				stopServerThread(startupThread);
 				throw new RuntimeException(
-					"Fiji MCP server failed to start for unknown reasons");
+					"Fiji MCP server failed to start within the timeout");
 			}
 
 			initialized.set(true);
@@ -307,6 +309,19 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			logService.error("Failed to initialize Fiji MCP server", e);
 			throw new RuntimeException("Failed to initialize Fiji MCP server", e);
 		}
+	}
+
+	private void stopServerThread(final Thread thread) {
+		stopServer.set(true);
+		if (thread == null || thread == Thread.currentThread()) return;
+
+		thread.interrupt();
+		try {
+			thread.join(SHUTDOWN_TIMEOUT.toMillis());
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		if (!thread.isAlive() && serverThread == thread) serverThread = null;
 	}
 
 	private Map<ToolSpecification, ToolExecutor> getMcpTools() {
@@ -322,14 +337,13 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 	 * Runs the MCP server with the given tools.
 	 */
 	private void runMcpServerWithRecovery(
-		final Map<ToolSpecification, ToolExecutor> tools, final int port,
-		final Exception[] startupException)
+		final int port, final Exception[] startupException)
 	{
 		boolean serverHasStarted = false;
 		int restartAttempts = 0;
 		while (!stopServer.get()) {
 			try {
-				runMcpServer(tools, port);
+				runMcpServer(getMcpTools(), port);
 			} catch (final Exception e) {
 				if (!serverHasStarted && serverReady.getCount() > 0) {
 					startupException[0] = e;

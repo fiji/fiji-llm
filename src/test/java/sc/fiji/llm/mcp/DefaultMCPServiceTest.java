@@ -39,9 +39,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
@@ -50,6 +52,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.scijava.Context;
+import org.scijava.log.AbstractLogService;
+import org.scijava.log.LogLevel;
+import org.scijava.log.LogMessage;
 import org.scijava.prefs.PrefService;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -137,6 +142,34 @@ public class DefaultMCPServiceTest {
 	}
 
 	@Test
+	public void testToolDiscoveryFailureCanBeRetried() throws Exception {
+		final Field logServiceField = DefaultMCPService.class
+			.getDeclaredField("logService");
+		logServiceField.setAccessible(true);
+		logServiceField.set(mcpService, new SilentLogService());
+
+		final AtomicInteger discoveryAttempts = new AtomicInteger();
+		final AiToolService failingToolService = (AiToolService) Proxy
+			.newProxyInstance(AiToolService.class.getClassLoader(),
+				new Class[] { AiToolService.class }, (proxy, method, args) -> {
+					if ("getToolsWithExecutors".equals(method.getName())) {
+						discoveryAttempts.incrementAndGet();
+						throw new IllegalStateException("tool discovery failed");
+					}
+					throw new UnsupportedOperationException(method.getName());
+				});
+		final Field toolServiceField = DefaultMCPService.class
+			.getDeclaredField("aiToolService");
+		toolServiceField.setAccessible(true);
+		toolServiceField.set(mcpService, failingToolService);
+
+		assertStartupFailure();
+		assertStartupFailure();
+
+		assertEquals(2, discoveryAttempts.get());
+	}
+
+	@Test
 	public void testToolNamesMatchRegisteredTools() {
 		startMcpServer();
 
@@ -210,6 +243,20 @@ public class DefaultMCPServiceTest {
 		assertTrue(testPort > 0);
 	}
 
+	private void assertStartupFailure() {
+		try {
+			mcpService.startServer();
+			throw new AssertionError("Expected MCP server startup to fail");
+		}
+		catch (final RuntimeException e) {
+			Throwable cause = e;
+			while (cause != null && !"tool discovery failed".equals(cause.getMessage())) {
+				cause = cause.getCause();
+			}
+			assertNotNull(cause);
+		}
+	}
+
 	private void waitForServerState(final boolean expected)
 		throws InterruptedException
 	{
@@ -222,6 +269,16 @@ public class DefaultMCPServiceTest {
 		}
 		assertTrue("Unexpected MCP server running state",
 			mcpService.isServerRunning() == expected);
+	}
+
+	private static class SilentLogService extends AbstractLogService {
+
+		SilentLogService() {
+			setLevel(LogLevel.NONE);
+		}
+
+		@Override
+		protected void messageLogged(final LogMessage message) {}
 	}
 
 	private int getMcpResponseCode(final String origin)
