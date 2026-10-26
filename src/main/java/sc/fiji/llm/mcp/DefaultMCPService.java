@@ -393,6 +393,7 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 			HttpServletStreamableServerTransportProvider.builder()
 				.jsonMapper(McpJsonDefaults.getMapper())
 				.mcpEndpoint("/mcp")
+				.keepAliveInterval(Duration.ofSeconds(15))
 				.build();
 
 		// Create MCP server with tools support
@@ -418,9 +419,11 @@ Use the narrowest applicable tool, and avoid modifying state unless it is necess
 
 		// Register the MCP servlet
 		final ServletHolder holder = new ServletHolder(transportServlet);
+		holder.setAsyncSupported(true);
 		context.addServlet(holder, "/mcp/*");
-		context.addFilter(new FilterHolder(new OriginValidationFilter()), "/*",
-			EnumSet.of(DispatcherType.REQUEST));
+		final FilterHolder originFilter = new FilterHolder(new OriginValidationFilter());
+		originFilter.setAsyncSupported(true);
+		context.addFilter(originFilter, "/*", EnumSet.of(DispatcherType.REQUEST));
 
 		try {
 			jettyServer.start();
