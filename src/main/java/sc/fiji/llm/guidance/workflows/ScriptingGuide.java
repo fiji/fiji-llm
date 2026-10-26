@@ -128,6 +128,13 @@ public class ScriptingGuide extends AbstractAgentGuide {
 			Script parameters completely replace ImageJ 1.x GenericDialog usage: NEVER use
 			`ij.gui.GenericDialog` to gather script or macro inputs.
 
+			## Formatting
+			Prefer easily human-readable syntax:
+			- Put one statement or control structure per line.
+			- Use explicit indentation and braces where the language supports them.
+			- Do not minify or compress generated scripts.
+			- Preserve the existing style when modifying a user's script.
+
 			## Diagnostic guidance
 			- Treat `running`, `success`, `finished_with_warnings`, `finished_with_errors`, `blocked_by_dialog`, and `infrastructure_error` as distinct outcomes. A completed run with only known non-fatal diagnostics reports `finished_with_warnings` and includes them in `warnings`.
 			- A `running` result with `wait_expired: true` is still active; poll its run status instead of retrying.
