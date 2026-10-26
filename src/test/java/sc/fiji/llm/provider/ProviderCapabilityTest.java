@@ -95,7 +95,13 @@ public class ProviderCapabilityTest {
 
 	@Test
 	public void testDocumentationDifferenceIsReported() {
-		final GeminiProvider provider = new GeminiProvider();
+		final GeminiProvider provider = new GeminiProvider() {
+
+			@Override
+			public LocalDate getModelsDocumentationLastModified() {
+				return LocalDate.of(2026, 10, 25);
+			}
+		};
 		final JsonObject previousFacts = new JsonObject();
 		final JsonObject previousModels = new JsonObject();
 		final JsonObject previousModel = new JsonObject();
