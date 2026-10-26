@@ -42,7 +42,7 @@ clarify rather than silently reviewing a different provider.
    probe.
 2. For each requested provider, inspect its status entry and relevant entries
   in `failures`. Report the provider health, changed fields, request errors,
-  content errors, HTTP status, final URL, content fingerprint, baseline marker,
+  content errors, HTTP status, final URL, extracted facts, baseline marker,
   and review flags only when they are present.
 3. When the finding needs operational clarification, inspect the executable
   [`ProviderHealthProbe`](../../../src/test/java/sc/fiji/llm/provider/ProviderHealthProbe.java)
@@ -50,7 +50,7 @@ clarify rather than silently reviewing a different provider.
   [`provider-health.yml`](../../workflows/provider-health.yml). The workflow
   compiles test sources and launches the probe as a Java main class; it is not
   a JUnit test. [`ProviderCapabilityTest`](../../../src/test/java/sc/fiji/llm/provider/ProviderCapabilityTest.java)
-  covers provider fingerprint fixtures, Gemini date gating, documentation
+  covers provider fact fixtures, documentation
   baselines, costs, and vision assumptions, but does not perform the live URL
   checks.
 4. Inspect the provider implementation and identify the configured model
@@ -71,35 +71,36 @@ clarify rather than silently reviewing a different provider.
   published as diagnostic metadata but does not require review by itself;
   review the live request only when it reports an error or broken status.
 
-The health probe asks each provider to turn raw documentation HTML into a
-stable model-catalog fingerprint. Providers should retain model IDs, pricing,
-and lifecycle information while excluding volatile prose. The probe does not
-determine whether the configured model list is correct. A changed fingerprint
-therefore requires a comparison, not an automatic model update.
+The health probe asks each provider to turn raw documentation HTML into
+structured model-catalog facts. Providers should retain model IDs, pricing, and
+lifecycle information while excluding volatile prose. The probe compares those
+facts directly and reports exact added, removed, or changed fields; it does not
+determine whether the configured model list is correct.
 
 The probe discovers providers through `ProviderService` and checks only
 providers for which `LLMProvider.requiresApiKey()` is true. The shared health
 hooks live on [`LLMProvider`](../../../src/main/java/sc/fiji/llm/provider/LLMProvider.java):
-`getModelsDocumentationContentHash`,
-`shouldCheckModelsDocumentationContent`,
-`shouldReviewModelsDocumentationLastModified`, and
-`getModelsDocumentationLastModified`.
+`getModelsDocumentationFacts` and `getModelsDocumentationLastModified`.
 
 Probe status has specific meanings. A provider is `unhealthy` for a request or
 content error, or for HTTP 400, 404, 408, 410, or 5xx. Other statuses such as
 401 or 403 are recorded but do not by themselves make the provider unhealthy.
-Documentation changes produce `review_required`; an existing model review can
-also be carried forward until the provider date is updated after review. An
+Changes in extracted documentation facts produce `review_required`; an
+existing model review can also be carried forward until the provider date is
+updated after review. When the provider date equals the current UTC date, the
+run establishes the extracted facts as the new baseline. `Last-Modified` is
+recorded for diagnostics but does not independently trigger model review. An
 Actions run can therefore fail because the result is `review_required`, rather
 than because the workflow itself failed.
 
 When a provider's `getModelsDocumentationLastModified()` date equals the
 current UTC run date, that run establishes a new documentation baseline. The
-probe does not compare the documentation fingerprint or `Last-Modified` value
-against the previous state for that run, but it still checks HTTP status,
-redirects, API-key URLs, and fingerprint/parser errors. Gemini may also skip
-body fingerprinting when its live `Last-Modified` date is not newer than the
-provider's acknowledged date.
+probe still fetches and parses the documentation body on every successful
+documentation check, and it checks HTTP status, redirects, API-key URLs, and
+parser errors. Published provider state keeps the accepted `baseline_facts`
+separate from the latest observed `facts`; pending review runs never replace
+the accepted baseline. It never uses a whole-page or opaque content hash for
+model review.
 
 The `provider-status` branch is a published change-triggered snapshot, not
 necessarily the latest scheduled probe. The workflow commits it when the
@@ -121,10 +122,10 @@ and use the branch JSON for the published diagnostic details.
   model ordering, and any model naming or lifecycle changes in
   `GeminiProvider`.
 
-Also verify the documentation URL, response status, and provider fingerprint
-or parser behavior when the health finding indicates a redirect, URL change,
-or content-check failure. Do not expect a shared CSS selector: fingerprinting
-is provider-specific.
+Also verify the documentation URL, response status, and provider fact parser
+behavior when the health finding indicates a redirect, URL change, or
+content-check failure. Do not expect a shared CSS selector: parsing is
+provider-specific.
 
 ## Report format
 

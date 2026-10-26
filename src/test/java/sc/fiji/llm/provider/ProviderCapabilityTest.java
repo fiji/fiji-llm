@@ -52,12 +52,12 @@ import dev.langchain4j.model.openai.OpenAiResponsesChatRequestParameters;
 public class ProviderCapabilityTest {
 
 	/**
-	 * Verifies that provider fingerprints retain model facts while ignoring prose.
+	 * Verifies that provider parsers retain model facts while ignoring prose.
 	 *
 	 * @throws Exception if a provider cannot fingerprint the fixture
 	 */
 	@Test
-	public void testProviderDocumentationHashesModelFacts() throws Exception {
+	public void testProviderDocumentationFactsRetainModelFacts() throws Exception {
 		final String claude = "<p>volatile prose</p><table>" +
 			"<tr><th>Pricing</th><td>$1 / input</td><td>$5 / output</td></tr>" +
 			"<tr><th>Claude API ID</th><td>claude-haiku</td></tr>" +
@@ -65,11 +65,11 @@ public class ProviderCapabilityTest {
 		final String claudeWithNewModel = claude.replace("<td>claude-haiku</td>",
 			"<td>claude-haiku</td><td>claude-new</td>");
 		final AnthropicProvider anthropic = new AnthropicProvider();
-		assertEquals(anthropic.getModelsDocumentationContentHash(claude), anthropic
-			.getModelsDocumentationContentHash(claude.replace("volatile prose",
+		assertEquals(anthropic.getModelsDocumentationFacts(claude), anthropic
+			.getModelsDocumentationFacts(claude.replace("volatile prose",
 				"different prose")));
-		assertNotEquals(anthropic.getModelsDocumentationContentHash(claude),
-			anthropic.getModelsDocumentationContentHash(claudeWithNewModel));
+		assertNotEquals(anthropic.getModelsDocumentationFacts(claude), anthropic
+			.getModelsDocumentationFacts(claudeWithNewModel));
 
 		final String openAI = "<div class='card'><a href='/api/docs/models/gpt-luna'>" +
 			"GPT Luna</a><div><div>Model ID</div>" +
@@ -77,34 +77,63 @@ public class ProviderCapabilityTest {
 			"<div>$0.1 / Input MTok</div></div><div><div>Output price</div>" +
 			"<div>$0.5 / Output MTok</div></div></div>";
 		final OpenAIProvider openAIProvider = new OpenAIProvider();
-		assertNotEquals(openAIProvider.getModelsDocumentationContentHash(openAI),
-			openAIProvider.getModelsDocumentationContentHash(openAI.replace("$0.1",
+		assertNotEquals(openAIProvider.getModelsDocumentationFacts(openAI),
+			openAIProvider.getModelsDocumentationFacts(openAI.replace("$0.1",
 				"$0.2")));
-		assertNotEquals(openAIProvider.getModelsDocumentationContentHash(openAI),
-			openAIProvider.getModelsDocumentationContentHash(openAI.replace("GPT Luna",
+		assertNotEquals(openAIProvider.getModelsDocumentationFacts(openAI),
+			openAIProvider.getModelsDocumentationFacts(openAI.replace("GPT Luna",
 				"GPT Luna Deprecated")));
 
 		final String gemini = "<h3>Stable</h3><table><tr><th>Model</th>" +
 			"<th>Endpoint</th></tr><tr><td>Gemini Lite</td>" +
 			"<td>gemini-lite</td></tr></table>";
 		final GeminiProvider geminiProvider = new GeminiProvider();
-		assertNotEquals(geminiProvider.getModelsDocumentationContentHash(gemini),
-			geminiProvider.getModelsDocumentationContentHash(gemini.replace(
+		assertNotEquals(geminiProvider.getModelsDocumentationFacts(gemini),
+			geminiProvider.getModelsDocumentationFacts(gemini.replace(
 				"gemini-lite", "gemini-new")));
 	}
 
-	/**
-	 * Verifies that Gemini uses its acknowledged date as a content-check gate.
-	 */
 	@Test
-	public void testGeminiDocumentationDateGate() {
+	public void testDocumentationDifferenceIsReported() {
 		final GeminiProvider provider = new GeminiProvider();
-		assertTrue(!provider.shouldCheckModelsDocumentationContent(
-			"Tue, 06 Oct 2026 15:52:44 GMT"));
-		assertTrue(provider.shouldCheckModelsDocumentationContent(
-			"Wed, 08 Oct 2026 00:00:00 GMT"));
-		assertTrue(provider.shouldCheckModelsDocumentationContent("invalid"));
-		assertTrue(!provider.shouldReviewModelsDocumentationLastModified());
+		final JsonObject previousFacts = new JsonObject();
+		final JsonObject previousModels = new JsonObject();
+		final JsonObject previousModel = new JsonObject();
+		previousModel.addProperty("lifecycle", "stable");
+		previousModels.add("gemini-old", previousModel);
+		previousFacts.add("models", previousModels);
+		final JsonObject previousObservedFacts = new JsonObject();
+		final JsonObject previousObservedModels = new JsonObject();
+		final JsonObject previousObservedModel = new JsonObject();
+		previousObservedModel.addProperty("lifecycle", "stable");
+		previousObservedModels.add("gemini-intermediate", previousObservedModel);
+		previousObservedFacts.add("models", previousObservedModels);
+		final JsonObject previousDocumentation = new JsonObject();
+		previousDocumentation.add("baseline_facts", previousFacts);
+		previousDocumentation.add("facts", previousObservedFacts);
+		final JsonObject previous = new JsonObject();
+		previous.add("models_documentation", previousDocumentation);
+
+		final JsonObject currentFacts = new JsonObject();
+		final JsonObject currentModels = new JsonObject();
+		final JsonObject currentModel = new JsonObject();
+		currentModel.addProperty("lifecycle", "stable");
+		currentModels.add("gemini-new", currentModel);
+		currentFacts.add("models", currentModels);
+		final JsonObject currentDocumentation = new JsonObject();
+		currentDocumentation.add("facts", currentFacts);
+		final List<String> failures = new ArrayList<>();
+
+		ProviderHealthProbe.compareWithPrevious(provider, "models_documentation",
+			currentDocumentation, previous, failures);
+
+		assertTrue(currentDocumentation.has("changes"));
+		assertTrue(currentDocumentation.get("changes").isJsonArray());
+		assertTrue(currentDocumentation.get("changes").toString().contains("gemini-old"));
+		assertTrue(currentDocumentation.get("changes").toString().contains("gemini-new"));
+		assertTrue(!currentDocumentation.get("changes").toString().contains(
+			"gemini-intermediate"));
+		assertTrue(failures.get(0).contains("gemini-new"));
 	}
 
 	/**

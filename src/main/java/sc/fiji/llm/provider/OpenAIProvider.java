@@ -31,7 +31,6 @@ package sc.fiji.llm.provider;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,6 +40,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.scijava.plugin.Plugin;
+
+import com.google.gson.JsonObject;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
@@ -114,11 +115,11 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public String getModelsDocumentationContentHash(final String html)
+	public JsonObject getModelsDocumentationFacts(final String html)
 		throws IOException
 	{
 		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
-		final List<String> facts = new ArrayList<>();
+		final JsonObject models = new JsonObject();
 		for (final Element modelIdLabel : document.select("div").stream().filter(
 			element -> "Model ID".equals(element.ownText().trim())).toList())
 		{
@@ -133,13 +134,16 @@ public class OpenAIProvider extends AbstractLLMProvider {
 				.parent().text() : pricingScope.text();
 			final String lifecycle = scopeText.toLowerCase(Locale.ROOT).contains("deprecated") ?
 				"deprecated" : "active";
-			facts.add(modelId + "|input=" + inputPrice + "|output=" + outputPrice +
-				"|lifecycle=" + lifecycle);
+			final JsonObject model = new JsonObject();
+			model.addProperty("input_price", inputPrice);
+			model.addProperty("output_price", outputPrice);
+			model.addProperty("lifecycle", lifecycle);
+			models.add(modelId, model);
 		}
-		if (facts.isEmpty()) throw new IOException("OpenAI model facts not found");
-		facts.sort(String::compareTo);
-		return LLMProvider.hashNormalizedDocumentationText(String.join("\n",
-			facts));
+		if (models.isEmpty()) throw new IOException("OpenAI model facts not found");
+		final JsonObject facts = new JsonObject();
+		facts.add("models", models);
+		return facts;
 	}
 
 	private static Element findPricingScope(final Element modelIdLabel) {

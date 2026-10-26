@@ -117,7 +117,10 @@ jobs:
                             final_url: ((.final_url // "") | split("?")[0]),
                             baseline_established: (.baseline_established // false),
                             last_modified: (.last_modified // null),
-                            content_hash: (.content_hash // null),
+                            baseline_facts: (.baseline_facts // {}),
+                            facts: (.facts // {}),
+                            changes: (.changes // []),
+                            structured_baseline_required: (.structured_baseline_required // false),
                             models_review_required: (.models_review_required // false)
                           }
                       ),

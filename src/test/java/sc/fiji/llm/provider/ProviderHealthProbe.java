@@ -50,7 +50,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -124,10 +123,7 @@ public final class ProviderHealthProbe {
 		final JsonObject previousProviderState, final List<String> failures)
 	{
 		if (isDocumentationBaseline(provider)) return;
-		if (previousProviderState == null || !previousProviderState.has(
-			"models_documentation_last_modified")) return;
-		if (!currentProviderState.get("models_documentation_last_modified").equals(
-			previousProviderState.get("models_documentation_last_modified"))) return;
+		if (previousProviderState == null) return;
 
 		final JsonObject previousModels = previousProviderState.has(
 			"models_documentation") ? previousProviderState.getAsJsonObject(
@@ -137,10 +133,15 @@ public final class ProviderHealthProbe {
 
 		final JsonObject currentModels = currentProviderState.getAsJsonObject(
 			"models_documentation");
+		if (currentModels.has("models_review_required")) return;
 		currentModels.addProperty("models_review_required", true);
-		failures.add(provider.getName() +
-			" models documentation still requires review; update " +
-			"getModelsDocumentationLastModified() after reviewing it");
+		if (previousModels.has("changes")) currentModels.add("changes", previousModels.get(
+			"changes"));
+		final String changes = previousModels.has("changes") ? previousModels.get(
+			"changes").toString() : "No structured change details were recorded.";
+		failures.add(provider.getName() + " models documentation still requires review:\n" +
+			changes + "\nReview the extracted facts and update " +
+			"getModelsDocumentationLastModified()");
 	}
 
 	private static void checkUrl(final LLMProvider provider, final String name,
@@ -186,13 +187,6 @@ public final class ProviderHealthProbe {
 		final URI uri,
 		final JsonObject current, final List<String> failures)
 	{
-		final String lastModified = current.has("last_modified") ? current.get(
-			"last_modified").getAsString() : null;
-		if (!provider.shouldCheckModelsDocumentationContent(lastModified)) {
-			current.addProperty("content_check_skipped", true);
-			return;
-		}
-
 		try {
 			final HttpRequest request = HttpRequest.newBuilder(uri).timeout(
 				REQUEST_TIMEOUT).GET().build();
@@ -202,8 +196,9 @@ public final class ProviderHealthProbe {
 				throw new IOException("GET returned HTTP " + response.statusCode());
 			}
 
-			current.addProperty("content_hash", provider
-				.getModelsDocumentationContentHash(response.body()));
+			final JsonObject facts = provider.getModelsDocumentationFacts(response.body());
+			current.add("facts", facts);
+			if (isDocumentationBaseline(provider)) current.add("baseline_facts", facts);
 		}
 		catch (final IOException | InterruptedException e) {
 			if (e instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -240,28 +235,76 @@ public final class ProviderHealthProbe {
 		final JsonObject previousProviderState, final List<String> failures)
 	{
 		if (!"models_documentation".equals(name) || previousProviderState == null ||
-			!previousProviderState.has(name)) return;
+			!previousProviderState.has(name) || isDocumentationBaseline(provider)) return;
 		final JsonObject previous = previousProviderState.getAsJsonObject(name);
-		final boolean documentationBaseline = isDocumentationBaseline(provider);
-		for (final String field : List.of("last_modified", "content_hash"))
-		{
-			if (documentationBaseline) continue;
-			if ("last_modified".equals(field) && !provider
-				.shouldReviewModelsDocumentationLastModified()) continue;
-			if ("content_hash".equals(field) && current.has(
-				"content_check_skipped")) continue;
-			final JsonElement previousValue = previous.has(field) ? previous.get(field) :
-				JsonNull.INSTANCE;
-			final JsonElement currentValue = current.has(field) ? current.get(field) :
-				JsonNull.INSTANCE;
-			if (!previousValue.equals(currentValue)) {
-				current.addProperty("changed_since_previous", true);
-				current.addProperty("models_review_required", true);
-				final String action = "; re-evaluate the provided models";
-				failures.add(provider.getName() + " " + name + " changed " + field +
-					" from " + previousValue + " to " + currentValue + action);
-			}
+		if (!current.has("facts")) return;
+		if (!previous.has("baseline_facts")) {
+			current.addProperty("changed_since_previous", true);
+			current.addProperty("models_review_required", true);
+			current.addProperty("structured_baseline_required", true);
+			failures.add(provider.getName() + " models documentation has no structured " +
+				"accepted baseline to compare. Current " +
+				"extracted facts:\n" + current.get("facts") +
+				"\nReview them and update getModelsDocumentationLastModified()");
+			return;
 		}
+
+		current.add("baseline_facts", previous.get("baseline_facts"));
+		final List<String> differences = new ArrayList<>();
+		appendDifferences("", previous.get("baseline_facts"), current.get("facts"),
+			differences);
+		if (differences.isEmpty()) return;
+		final JsonArray changes = new JsonArray();
+		for (final String difference : differences) changes.add(difference);
+		current.add("changes", changes);
+		current.addProperty("changed_since_previous", true);
+		current.addProperty("models_review_required", true);
+		final StringBuilder failure = new StringBuilder(provider.getName())
+			.append(" models documentation changed:");
+		for (final String difference : differences) failure.append("\n- ").append(
+			difference);
+		failure.append("\nReview the extracted facts and update ")
+			.append("getModelsDocumentationLastModified()");
+		failures.add(failure.toString());
+	}
+
+	private static void appendDifferences(final String path,
+		final JsonElement previous, final JsonElement current,
+		final List<String> differences)
+	{
+		if (previous == null) {
+			differences.add(path + " added: " + current);
+			return;
+		}
+		if (current == null) {
+			differences.add(path + " removed: " + previous);
+			return;
+		}
+		if (previous.isJsonObject() && current.isJsonObject()) {
+			final java.util.Set<String> members = new java.util.TreeSet<>();
+			members.addAll(previous.getAsJsonObject().keySet());
+			members.addAll(current.getAsJsonObject().keySet());
+			for (final String member : members) {
+				final String memberPath = path.isEmpty() ? member : path + "." + member;
+				appendDifferences(memberPath, previous.getAsJsonObject().get(member),
+					current.getAsJsonObject().get(member), differences);
+			}
+			return;
+		}
+		if (previous.isJsonArray() && current.isJsonArray()) {
+			final JsonArray previousArray = previous.getAsJsonArray();
+			final JsonArray currentArray = current.getAsJsonArray();
+			final int commonSize = Math.min(previousArray.size(), currentArray.size());
+			for (int i = 0; i < commonSize; i++) appendDifferences(path + "[" + i + "]",
+				previousArray.get(i), currentArray.get(i), differences);
+			for (int i = commonSize; i < previousArray.size(); i++) differences.add(
+				path + "[" + i + "] removed: " + previousArray.get(i));
+			for (int i = commonSize; i < currentArray.size(); i++) differences.add(
+				path + "[" + i + "] added: " + currentArray.get(i));
+			return;
+		}
+		if (!previous.equals(current)) differences.add(path + " changed from " + previous +
+			" to " + current);
 	}
 
 	static boolean isDocumentationBaseline(final LLMProvider provider,

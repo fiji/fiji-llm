@@ -31,22 +31,21 @@ package sc.fiji.llm.provider;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.scijava.plugin.Plugin;
+
+import com.google.gson.JsonObject;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
@@ -109,11 +108,11 @@ public class GeminiProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public String getModelsDocumentationContentHash(final String html)
+	public JsonObject getModelsDocumentationFacts(final String html)
 		throws IOException
 	{
 		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
-		final Set<String> facts = new TreeSet<>();
+		final Map<String, String> modelLifecycles = new TreeMap<>();
 		String lifecycle = "unknown";
 		for (final Element element : document.select("h2, h3, h4, table")) {
 			if (!"table".equals(element.tagName())) {
@@ -127,11 +126,19 @@ public class GeminiProvider extends AbstractLLMProvider {
 				if (modelId.isBlank() || !modelId.contains("-")) continue;
 				final String rowLifecycle = cells.first().text().toLowerCase(Locale.ROOT)
 					.contains("shut down") ? "shut-down" : lifecycle;
-				facts.add(rowLifecycle + "|" + modelId);
+				modelLifecycles.put(modelId, rowLifecycle);
 			}
 		}
-		if (facts.isEmpty()) throw new IOException("Gemini model facts not found");
-		return LLMProvider.hashNormalizedDocumentationText(String.join("\n", facts));
+		if (modelLifecycles.isEmpty()) throw new IOException("Gemini model facts not found");
+		final JsonObject models = new JsonObject();
+		for (final Map.Entry<String, String> entry : modelLifecycles.entrySet()) {
+			final JsonObject model = new JsonObject();
+			model.addProperty("lifecycle", entry.getValue());
+			models.add(entry.getKey(), model);
+		}
+		final JsonObject facts = new JsonObject();
+		facts.add("models", models);
+		return facts;
 	}
 
 	private static String lifecycleFromHeading(final String heading,
@@ -144,24 +151,6 @@ public class GeminiProvider extends AbstractLLMProvider {
 		if (normalized.contains("previous") || normalized.contains("deprecated"))
 			return "previous";
 		return current;
-	}
-
-	@Override
-	public boolean shouldCheckModelsDocumentationContent(final String lastModified) {
-		if (lastModified == null || lastModified.isBlank()) return true;
-		try {
-			final LocalDate remoteDate = ZonedDateTime.parse(lastModified,
-				DateTimeFormatter.RFC_1123_DATE_TIME).toLocalDate();
-			return remoteDate.isAfter(getModelsDocumentationLastModified());
-		}
-		catch (final DateTimeParseException e) {
-			return true;
-		}
-	}
-
-	@Override
-	public boolean shouldReviewModelsDocumentationLastModified() {
-		return false;
 	}
 
 	@Override

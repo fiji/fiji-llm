@@ -30,22 +30,19 @@
 package sc.fiji.llm.provider;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import org.jsoup.Jsoup;
 import org.scijava.Contextual;
 import org.scijava.Disposable;
 import org.scijava.Initializable;
 import org.scijava.plugin.SingletonPlugin;
+
+import com.google.gson.JsonObject;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
@@ -269,62 +266,18 @@ public interface LLMProvider extends SingletonPlugin, Initializable,
 	String getModelsDocumentationUrl();
 
 	/**
-	 * Create a stable hash of the model facts in the provider's documentation.
-	 * Providers may parse the raw HTML to exclude volatile prose while retaining
-	 * model identifiers, prices, and lifecycle information.
+	 * Extract the model facts that should be compared between documentation
+	 * checks. Providers should parse the raw HTML to exclude volatile prose while
+	 * retaining model identifiers, prices, and lifecycle information.
 	 *
 	 * @param html the raw models documentation HTML
-	 * @return a SHA-256 hash of the provider's model facts
-	 * @throws IOException if the documentation cannot be parsed or hashed
+	 * @return structured model facts
+	 * @throws IOException if the documentation cannot be parsed
 	 */
-	default String getModelsDocumentationContentHash(final String html)
+	default JsonObject getModelsDocumentationFacts(final String html)
 		throws IOException
 	{
-		return hashNormalizedDocumentationText(Jsoup.parse(html).text());
-	}
-
-	/**
-	 * Reports whether the probe should fetch and hash the documentation body for
-	 * the supplied {@code Last-Modified} value.
-	 *
-	 * @param lastModified the documentation response's {@code Last-Modified} value
-	 * @return true when the documentation body should be checked
-	 */
-	default boolean shouldCheckModelsDocumentationContent(
-		final String lastModified)
-	{
-		return true;
-	}
-
-	/**
-	 * Reports whether a changed documentation {@code Last-Modified} value should
-	 * independently trigger model review.
-	 *
-	 * @return true when the header change is itself review-worthy
-	 */
-	default boolean shouldReviewModelsDocumentationLastModified() {
-		return true;
-	}
-
-	/**
-	 * Hash normalized documentation text for provider-specific model parsers.
-	 *
-	 * @param text the canonical model facts to hash
-	 * @return a SHA-256 hash
-	 * @throws IOException if SHA-256 is unavailable
-	 */
-	static String hashNormalizedDocumentationText(final String text)
-		throws IOException
-	{
-		try {
-			final byte[] normalizedText = text.replaceAll("\\s+", " ").trim()
-				.getBytes(StandardCharsets.UTF_8);
-			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-				.digest(normalizedText));
-		}
-		catch (final NoSuchAlgorithmException e) {
-			throw new IOException("SHA-256 is unavailable", e);
-		}
+		throw new IOException("Provider does not expose documentation facts");
 	}
 
 	/**

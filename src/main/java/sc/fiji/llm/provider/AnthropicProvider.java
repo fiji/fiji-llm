@@ -31,7 +31,6 @@ package sc.fiji.llm.provider;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +40,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.scijava.plugin.Plugin;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
@@ -111,7 +113,7 @@ public class AnthropicProvider extends AbstractLLMProvider {
 	}
 
 	@Override
-	public String getModelsDocumentationContentHash(final String html)
+	public JsonObject getModelsDocumentationFacts(final String html)
 		throws IOException
 	{
 		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
@@ -122,7 +124,7 @@ public class AnthropicProvider extends AbstractLLMProvider {
 		}).findFirst().orElseThrow(() -> new IOException(
 			"Claude model comparison table not found"));
 
-		final List<String> facts = new ArrayList<>();
+		final JsonObject modelTableFacts = new JsonObject();
 		for (final Element row : modelTable.select("tr")) {
 			final Elements cells = row.select("th, td");
 			if (cells.isEmpty()) continue;
@@ -130,16 +132,15 @@ public class AnthropicProvider extends AbstractLLMProvider {
 			if (!"Pricing".equals(label) && !"Claude API ID".equals(label) &&
 				!"Retirement".equals(label)) continue;
 
-			final StringBuilder fact = new StringBuilder(label);
-			for (int i = 1; i < cells.size(); i++) {
-				fact.append('|').append(cells.get(i).text());
-			}
-			facts.add(fact.toString());
+			final JsonArray values = new JsonArray();
+			for (int i = 1; i < cells.size(); i++) values.add(cells.get(i).text());
+			modelTableFacts.add(label, values);
 		}
-		if (facts.size() != 3) throw new IOException(
+		if (modelTableFacts.size() != 3) throw new IOException(
 			"Claude model comparison facts are incomplete");
-		return LLMProvider.hashNormalizedDocumentationText(String.join("\n",
-			facts));
+		final JsonObject facts = new JsonObject();
+		facts.add("model_table", modelTableFacts);
+		return facts;
 	}
 
 	@Override
