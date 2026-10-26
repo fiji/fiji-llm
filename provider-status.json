@@ -325,16 +325,17 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1657157410:1793032588575361"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1949092421:1793034258984621"
     },
     "health": "healthy"
   },
   "ChatGPT": {
-    "models_documentation_last_modified": "2026-10-07",
+    "models_documentation_last_modified": "2026-10-26",
     "models_documentation": {
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
+      "baseline_established": true,
       "facts": {
         "models": {
           "gpt-6-astra": {
@@ -354,23 +355,40 @@
           }
         }
       },
-      "changed_since_previous": true,
-      "models_review_required": true,
-      "structured_baseline_required": true
+      "baseline_facts": {
+        "models": {
+          "gpt-6-astra": {
+            "input_price": "$10 / Input MTok",
+            "output_price": "$50 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-sol": {
+            "input_price": "$2 / Input MTok",
+            "output_price": "$10 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6-luna": {
+            "input_price": "$0.1 / Input MTok",
+            "output_price": "$0.5 / Output MTok",
+            "lifecycle": "active"
+          }
+        }
+      }
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "Claude": {
-    "models_documentation_last_modified": "2026-10-07",
+    "models_documentation_last_modified": "2026-10-26",
     "models_documentation": {
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
+      "baseline_established": true,
       "facts": {
         "model_table": {
           "Pricing": [
@@ -393,21 +411,37 @@
           ]
         }
       },
-      "changed_since_previous": true,
-      "models_review_required": true,
-      "structured_baseline_required": true
+      "baseline_facts": {
+        "model_table": {
+          "Pricing": [
+            "$10 / input MTok$50 / output MTok",
+            "$4 / input MTok$20 / output MTok",
+            "$2 / input MTok$10 / output MTok",
+            "From $0.10 / input MTokFrom $0.50 / output MTok"
+          ],
+          "Claude API ID": [
+            "claude-fable-5-1",
+            "claude-opus-5-5",
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5"
+          ],
+          "Retirement": [
+            "Not sooner than September 1, 2027",
+            "Not sooner than September 22, 2027",
+            "Not sooner than September 28, 2027",
+            "Not sooner than October 7, 2027"
+          ]
+        }
+      }
     },
     "api_key": {
       "url": "https://platform.claude.com/settings/keys",
       "status": 200,
       "final_url": "https://platform.claude.com/settings/keys"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
-  "checked_at": "2026-10-26T16:36:30.662544611Z",
-  "status": "review_required",
-  "failures": [
-    "ChatGPT models documentation has no structured accepted baseline to compare. Current extracted facts:\n{\"models\":{\"gpt-6-astra\":{\"input_price\":\"$10 / Input MTok\",\"output_price\":\"$50 / Output MTok\",\"lifecycle\":\"active\"},\"gpt-6.1-sol\":{\"input_price\":\"$2 / Input MTok\",\"output_price\":\"$10 / Output MTok\",\"lifecycle\":\"active\"},\"gpt-6-luna\":{\"input_price\":\"$0.1 / Input MTok\",\"output_price\":\"$0.5 / Output MTok\",\"lifecycle\":\"active\"}}}\nReview them and update getModelsDocumentationLastModified()",
-    "Claude models documentation has no structured accepted baseline to compare. Current extracted facts:\n{\"model_table\":{\"Pricing\":[\"$10 / input MTok$50 / output MTok\",\"$4 / input MTok$20 / output MTok\",\"$2 / input MTok$10 / output MTok\",\"From $0.10 / input MTokFrom $0.50 / output MTok\"],\"Claude API ID\":[\"claude-fable-5-1\",\"claude-opus-5-5\",\"claude-sonnet-5-5\",\"claude-haiku-5-5\"],\"Retirement\":[\"Not sooner than September 1, 2027\",\"Not sooner than September 22, 2027\",\"Not sooner than September 28, 2027\",\"Not sooner than October 7, 2027\"]}}\nReview them and update getModelsDocumentationLastModified()"
-  ]
+  "checked_at": "2026-10-26T17:04:20.836327763Z",
+  "status": "healthy",
+  "failures": []
 }
