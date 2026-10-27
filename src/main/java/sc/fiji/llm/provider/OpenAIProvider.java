@@ -31,10 +31,7 @@ package sc.fiji.llm.provider;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -56,20 +53,17 @@ import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
  * LLM provider plugin for OpenAI (ChatGPT).
  */
 @Plugin(type = LLMProvider.class, name = "ChatGPT", priority = ProviderPriority.OPENAI)
-public class OpenAIProvider extends AbstractLLMProvider {
+public class OpenAIProvider extends AbstractHostedProvider {
 
 	private static final int MAX_INPUT_TOKENS = 922_000;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
-	private static final List<String> MODEL_ALIASES = List.of("Luna 5.6", "Luna 6",
-		"Terra 6", "Sol 6");
-	private static final Map<String, String> MODEL_NAMES = Map.of("Luna 5.6",
-		"gpt-5.6-luna", "Luna 6", "gpt-6-luna", "Terra 6", "gpt-6.1-terra",
-		"Sol 6", "gpt-6.1-sol");
-	private static final Map<String, ModelCost> MODEL_COSTS = Map.of(
-		"gpt-5.6-luna", new ModelCost(0.20, 1.20),
-		"gpt-6-luna", new ModelCost(0.10, 0.50),
-		"gpt-6.1-terra", new ModelCost(1.00, 5.00),
-		"gpt-6.1-sol", new ModelCost(2.00, 10.00));
+
+	public OpenAIProvider() {
+		super(new HostedModel("gpt-5.6-luna", "Luna 5.6", 0.20, 1.20), new HostedModel(
+			"gpt-6-luna", "Luna 6", 0.10, 0.50), new HostedModel("gpt-6.1-terra",
+			"Terra 6", 1.00, 5.00), new HostedModel("gpt-6.1-sol", "Sol 6", 2.00,
+			10.00));
+	}
 
 	@Override
 	public String getName() {
@@ -88,27 +82,6 @@ public class OpenAIProvider extends AbstractLLMProvider {
 			modelName)) ? "medium" : "none";
 		return OpenAiResponsesChatRequestParameters.builder()
 			.reasoningEffort(reasoningEffort).build();
-	}
-
-	@Override
-	public VisionSupport getVisionSupport(final String modelName) {
-		return MODEL_NAMES.containsValue(resolveModelName(modelName)) ?
-			VisionSupport.SUPPORTED : VisionSupport.UNKNOWN;
-	}
-
-	@Override
-	public List<String> getAvailableModels() {
-		return MODEL_ALIASES;
-	}
-
-	@Override
-	public Optional<ModelCost> getCost(final String modelName) {
-		if (modelName == null) return Optional.empty();
-		return Optional.ofNullable(MODEL_COSTS.get(resolveModelName(modelName)));
-	}
-
-	private String resolveModelName(final String modelName) {
-		return modelName == null ? null : MODEL_NAMES.getOrDefault(modelName, modelName);
 	}
 
 	@Override

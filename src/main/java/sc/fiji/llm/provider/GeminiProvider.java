@@ -31,12 +31,8 @@ package sc.fiji.llm.provider;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.jsoup.Jsoup;
@@ -58,19 +54,17 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
  * LLM provider plugin for Google AI (Gemini).
  */
 @Plugin(type = LLMProvider.class, name = "Gemini", priority = ProviderPriority.GEMINI)
-public class GeminiProvider extends AbstractLLMProvider {
+public class GeminiProvider extends AbstractHostedProvider {
 
 	private static final int MAX_INPUT_TOKENS = 1_048_576;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
-	private static final List<String> AVAILABLE_MODELS = List.of("gemini-3.5-flash-lite",
-		"gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash");
-	private static final Map<String, ModelCost> MODEL_COSTS = Map.of(
-		"gemini-3.5-flash-lite", new ModelCost(0.30, 2.50),
-		"gemini-3.1-flash-lite", new ModelCost(0.25, 1.50),
-		"gemini-3.6-flash", new ModelCost(0.75, 3.75),
-		"gemini-3.8-flash", new ModelCost(0.75, 3.75));
 
-	private static final Set<String> VISION_MODELS = new HashSet<>(AVAILABLE_MODELS);
+	public GeminiProvider() {
+		super(new HostedModel("gemini-3.5-flash-lite", "gemini-3.5-flash-lite", 0.30,
+			2.50), new HostedModel("gemini-3.1-flash-lite", "gemini-3.1-flash-lite",
+			0.25, 1.50), new HostedModel("gemini-3.6-flash", "gemini-3.6-flash", 0.75,
+			3.75), new HostedModel("gemini-3.8-flash", "gemini-3.8-flash", 0.75, 3.75));
+	}
 
 	@Override
 	public String getName() {
@@ -80,26 +74,6 @@ public class GeminiProvider extends AbstractLLMProvider {
 	@Override
 	public String getDescription() {
 		return "Gemini models by Google";
-	}
-
-	@Override
-	public VisionSupport getVisionSupport(final String modelName) {
-		return modelName != null && VISION_MODELS.contains(modelName) ?
-			VisionSupport.SUPPORTED : VisionSupport.UNKNOWN;
-	}
-
-	@Override
-	public List<String> getAvailableModels() {
-		// Google AI doesn't provide a public API endpoint to list models
-		// Fall back to hard-coded list, ordered by most to least permissive
-		// Taken from https://aistudio.google.com/docs/models
-		return AVAILABLE_MODELS;
-	}
-
-	@Override
-	public Optional<ModelCost> getCost(final String modelName) {
-		if (modelName == null) return Optional.empty();
-		return Optional.ofNullable(MODEL_COSTS.get(modelName));
 	}
 
 	@Override

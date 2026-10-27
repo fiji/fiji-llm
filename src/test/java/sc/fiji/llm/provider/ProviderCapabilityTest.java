@@ -224,6 +224,7 @@ public class ProviderCapabilityTest {
 			"Haiku").get());
 		assertEquals(new LLMProvider.ModelCost(4.00, 20.00), anthropic.getCost(
 			"Opus").get());
+		assertEquals(Optional.empty(), anthropic.getCost("Fable"));
 		assertEquals(Optional.empty(), anthropic.getCost("future-model"));
 		assertEquals(Optional.empty(), anthropic.getCost(null));
 
