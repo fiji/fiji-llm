@@ -175,7 +175,7 @@ public class ProviderCapabilityTest {
 	@Test
 	public void testOpenAiVisionSupport() {
 		final OpenAIProvider provider = new OpenAIProvider();
-		assertEquals(List.of("Luna 5.6", "Luna 6", "Sol 6"), provider
+		assertEquals(List.of("Luna 5.6", "Luna 6", "Terra 6", "Sol 6"), provider
 			.getAvailableModels());
 		for (final String model : provider.getAvailableModels()) {
 			assertEquals(model, LLMProvider.VisionSupport.SUPPORTED, provider
@@ -213,6 +213,8 @@ public class ProviderCapabilityTest {
 		final OpenAIProvider openAI = new OpenAIProvider();
 		assertEquals(new LLMProvider.ModelCost(0.20, 1.20), openAI.getCost(
 			"Luna 5.6").get());
+		assertEquals(new LLMProvider.ModelCost(1.00, 5.00), openAI.getCost(
+			"Terra 6").get());
 		assertEquals(new LLMProvider.ModelCost(2.00, 10.00), openAI.getCost(
 			"Sol 6").get());
 		assertEquals(Optional.empty(), openAI.getCost("future-model"));

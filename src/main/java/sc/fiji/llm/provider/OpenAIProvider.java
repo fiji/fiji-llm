@@ -61,12 +61,14 @@ public class OpenAIProvider extends AbstractLLMProvider {
 	private static final int MAX_INPUT_TOKENS = 922_000;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
 	private static final List<String> MODEL_ALIASES = List.of("Luna 5.6", "Luna 6",
-		"Sol 6");
+		"Terra 6", "Sol 6");
 	private static final Map<String, String> MODEL_NAMES = Map.of("Luna 5.6",
-		"gpt-5.6-luna", "Luna 6", "gpt-6-luna", "Sol 6", "gpt-6.1-sol");
+		"gpt-5.6-luna", "Luna 6", "gpt-6-luna", "Terra 6", "gpt-6.1-terra",
+		"Sol 6", "gpt-6.1-sol");
 	private static final Map<String, ModelCost> MODEL_COSTS = Map.of(
 		"gpt-5.6-luna", new ModelCost(0.20, 1.20),
 		"gpt-6-luna", new ModelCost(0.10, 0.50),
+		"gpt-6.1-terra", new ModelCost(1.00, 5.00),
 		"gpt-6.1-sol", new ModelCost(2.00, 10.00));
 
 	@Override
@@ -178,7 +180,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 26);
+		return LocalDate.of(2026, 10, 27);
 	}
 
 	@Override
