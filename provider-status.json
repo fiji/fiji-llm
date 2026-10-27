@@ -5,7 +5,6 @@
       "url": "https://ai.google.dev/gemini-api/docs/models",
       "status": 200,
       "final_url": "https://ai.google.dev/gemini-api/docs/models",
-      "baseline_established": true,
       "last_modified": "Thu, 22 Oct 2026 16:39:31 GMT",
       "facts": {
         "models": {
@@ -325,7 +324,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1949092421:1793034258984621"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1160644790:1793103353928850"
     },
     "health": "healthy"
   },
@@ -335,7 +334,6 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "baseline_established": true,
       "facts": {
         "models": {
           "gpt-6-astra": {
@@ -346,6 +344,11 @@
           "gpt-6.1-sol": {
             "input_price": "$2 / Input MTok",
             "output_price": "$10 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-terra": {
+            "input_price": "$1 / Input MTok",
+            "output_price": "$5 / Output MTok",
             "lifecycle": "active"
           },
           "gpt-6-luna": {
@@ -373,14 +376,19 @@
             "lifecycle": "active"
           }
         }
-      }
+      },
+      "changes": [
+        "models.gpt-6.1-terra added: {\"input_price\":\"$1 / Input MTok\",\"output_price\":\"$5 / Output MTok\",\"lifecycle\":\"active\"}"
+      ],
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "healthy"
+    "health": "review_required"
   },
   "Claude": {
     "models_documentation_last_modified": "2026-10-26",
@@ -388,7 +396,6 @@
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
       "final_url": "https://platform.claude.com/docs/en/models/overview",
-      "baseline_established": true,
       "facts": {
         "model_table": {
           "Pricing": [
@@ -441,7 +448,9 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-26T17:04:20.836327763Z",
-  "status": "healthy",
-  "failures": []
+  "checked_at": "2026-10-27T12:15:55.048361715Z",
+  "status": "review_required",
+  "failures": [
+    "ChatGPT models documentation changed:\n- models.gpt-6.1-terra added: {\"input_price\":\"$1 / Input MTok\",\"output_price\":\"$5 / Output MTok\",\"lifecycle\":\"active\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
+  ]
 }
