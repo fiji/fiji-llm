@@ -127,6 +127,7 @@ public class Manage_Keys extends DynamicCommand {
 		if (!startChatbot) {
 			// This is never a required input - just a flag
 			resolveInput("startChatbot");
+			resolveInput("chatModel");
 		}
 
 		StringBuilder welcomeMsg = new StringBuilder();
