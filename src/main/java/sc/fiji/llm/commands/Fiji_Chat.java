@@ -198,7 +198,8 @@ public class Fiji_Chat extends DynamicCommand {
 		final String modelsUrl = selectedProvider.getModelsDocumentationUrl();
 		final MutableModuleItem<String> modelDocLinkItem = getInfo()
 			.getMutableInput("modelDocLink", String.class);
-		modelDocLinkItem.setValue(this, "<html><a href=\"" + modelsUrl + "\">" +
+		modelDocLinkItem.setValue(this, "<html><a href=\"" + modelsUrl +
+			"\" style='color: #1a5fb4; text-decoration: underline;'>" +
 			modelsUrl + "</a></html>");
 
 		// Update model choices
