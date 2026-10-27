@@ -40,6 +40,7 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
+import org.scijava.widget.Button;
 
 import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
@@ -99,6 +100,10 @@ public class Manage_Keys extends DynamicCommand {
 	@Parameter(visibility = ItemVisibility.INVISIBLE, required = false,
 		persist = false)
 	private String chatModel;
+
+	@Parameter(label = "Clear API Key", persist = false,
+		callback = "clearAPIKey")
+	private Button clearApiKeyButton;
 
 	@Override
 	public void initialize() {
@@ -228,6 +233,14 @@ public class Manage_Keys extends DynamicCommand {
 			apiKeyItem.setDescription("Enter your " + provider +
 				" API key from the link above");
 		}
+	}
+	
+	protected void clearAPIKey() {
+		if (provider == null || provider.isBlank()) return;
+	
+		apiKeyService.removeApiKey(provider);
+		prefService.remove(Manage_Keys.class, autoRunKey(provider));
+		providerChanged();
 	}
 
 	@Override
