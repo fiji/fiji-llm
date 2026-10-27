@@ -83,10 +83,6 @@ public class Manage_Keys extends DynamicCommand {
 		persist = false)
 	private String provider;
 
-	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
-		persist = false, required = false)
-	private String apiKeyMessage = "";
-
 	@Parameter(label = "Get API Key →", visibility = ItemVisibility.MESSAGE,
 		description = "Where to get an API key for this provider", persist = false,
 		required = false)
@@ -124,6 +120,10 @@ public class Manage_Keys extends DynamicCommand {
 			}
 		}
 
+		final MutableModuleItem<String> providerItem = getInfo().getMutableInput(
+			"provider", String.class);
+		providerItem.setChoices(providerNames);
+
 		if (!startChatbot) {
 			// This is never a required input - just a flag
 			resolveInput("startChatbot");
@@ -147,51 +147,43 @@ public class Manage_Keys extends DynamicCommand {
 		welcomeMsg.append(".</p></body>");
 		welcomeMessage = welcomeMsg.toString();
 
-		if (!singleProvider) {
-			StringBuilder providerMsg = new StringBuilder();
-			providerMsg.append("<div style='width: " + WIDTH +
-				"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>");
-			providerMsg.append("<body style='width: " + WIDTH + "px'>");
-			providerMsg.append("<p>First, select an <b>AI Service</b>.<br />");
+		StringBuilder providerMsg = new StringBuilder();
+		providerMsg.append("<div style='width: " + WIDTH +
+			"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>");
+		providerMsg.append("<body style='width: " + WIDTH + "px'>");
+		providerMsg.append("<h2 style='text-align: center'>Getting Started</h2>");
+		providerMsg.append("<p>");
+		if (singleProvider) {
 			providerMsg.append(
-				"This is the <i>model provider</i> whose key you want to edit.</p></body>");
-			providerMessage = providerMsg.toString();
+				"1. Enter your <b>API key</b>; click the <b>Get API Key</b> link if you need one.");
+			providerItem.setValue(this, provider);
+			resolveInput("provider");
 		}
 		else {
-			providerMessage = null;
-			resolveInput("provider");
-			resolveInput("providerMessage");
-		}
+			providerMsg.append(
+				"1. Select an <b>AI Service</b> whose key you want to edit.<br />");
+			providerMsg.append(
+				"2. Enter your <b>API key</b>; click the <b>Get API Key</b> link if you need one.");
 
-		StringBuilder apiKeyMsg = new StringBuilder();
-		apiKeyMsg.append(singleProvider ? "<div style='width: " + WIDTH +
-			"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>"
-			: "");
-		apiKeyMsg.append("<body style='width: " + WIDTH + "px'><p>");
-		apiKeyMsg.append(singleProvider ? "Please" : "Next,");
-		apiKeyMsg.append(" enter your API Key for this AI service.<br />");
-		apiKeyMsg.append(
-			"If you need a new key, click the <b>Get API Key</b> link.</p></body>");
-		apiKeyMessage = apiKeyMsg.toString();
-
-		final MutableModuleItem<String> providerItem = getInfo().getMutableInput(
-			"provider", String.class);
-
-		providerItem.setChoices(providerNames);
-
-		// Set default provider if available
-		if (!providerNames.isEmpty()) {
-			String defaultProvider = prefService.get(Fiji_Chat.class,
-				Fiji_Chat.LAST_CHAT_PROVIDER, "");
-			if (!providerItem.getChoices().contains(defaultProvider)) {
-				defaultProvider = providerNames.get(0);
+			if (!providerNames.isEmpty()) {
+				String defaultProvider = prefService.get(Fiji_Chat.class,
+					Fiji_Chat.LAST_CHAT_PROVIDER, "");
+				if (!providerNames.contains(defaultProvider)) {
+					defaultProvider = providerNames.get(0);
+				}
+				providerItem.setValue(this, defaultProvider);
 			}
-			providerItem.setValue(this, defaultProvider);
+		}
+		providerMsg.append("</p></body>");
+		providerMessage = providerMsg.toString();
+
+		// Update provider-related information if we're in a valid state
+		if (!providerNames.isEmpty()) {
 			providerChanged();
 		}
 
-		if (singleProvider && prefService.getBoolean(Manage_Keys.class, autoRunKey(
-			provider), false))
+		if (singleProvider && apiKeyService.hasApiKey(provider) && prefService
+			.getBoolean(Manage_Keys.class, autoRunKey(provider), false))
 		{
 			// Just re-start the chat without gathering input
 			for (final var input : getInfo().inputs()) {
@@ -272,6 +264,9 @@ public class Manage_Keys extends DynamicCommand {
 					cancel("Failed to create chat model: " + e.getMessage());
 				}
 			}
+		}
+		else {
+			prefService.remove(Manage_Keys.class, autoRunKey(provider));
 		}
 	}
 
