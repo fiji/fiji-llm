@@ -29,6 +29,8 @@
 
 package sc.fiji.llm.ui;
 
+import java.lang.ref.WeakReference;
+
 import javax.swing.SwingUtilities;
 
 import org.scijava.plugin.Plugin;
@@ -36,17 +38,24 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
 /**
- * Swing implementation of ChatbotService that launches a SimpleChatWindow.
+ * Swing implementation of ChatbotService that manages an chat window instance
+ * for a particular model and provider.
  */
 @Plugin(type = Service.class)
 public class SwingChatbotService extends AbstractService implements
 	ChatbotService
 {
+	private WeakReference<FijiAssistantChat> activeChatWindow = new WeakReference<>(
+		null);
+
 	@Override
 	public void launchChat(String title, String providerName, String modelName) {
 		SwingUtilities.invokeLater(() -> {
-			FijiAssistantChat chatWindow = new FijiAssistantChat(getContext(),
-				providerName, modelName);
+			FijiAssistantChat chatWindow = activeChatWindow.get();
+			if (chatWindow != null && chatWindow.focusIfVisible()) return;
+
+			chatWindow = new FijiAssistantChat(getContext(), providerName, modelName);
+			activeChatWindow = new WeakReference<>(chatWindow);
 			chatWindow.show();
 		});
 	}

@@ -677,6 +677,15 @@ Be concise, patient, humble, and collaborative.
 		}
 	}
 
+	boolean focusIfVisible() {
+		if (!frame.isDisplayable() || !frame.isVisible()) return false;
+
+		frame.toFront();
+		frame.requestFocus();
+		if (modelReady) inputArea.requestFocusInWindow();
+		return true;
+	}
+
 	private void showContextMenu(final JButton attachButton) {
 		final JPopupMenu menu = new JPopupMenu();
 		final List<ContextItemSupplier> suppliers;
