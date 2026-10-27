@@ -75,6 +75,7 @@ import javax.swing.JTextArea;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import org.scijava.Context;
 import org.scijava.command.CommandService;
@@ -109,6 +110,7 @@ import sc.fiji.llm.context.PromptRecommendations;
 import sc.fiji.llm.context.SessionSnapshot;
 import sc.fiji.llm.guidance.GuidancePromptFragments;
 import sc.fiji.llm.image.ImageMetaContextItem;
+import sc.fiji.llm.image.ImageRenderingService;
 import sc.fiji.llm.image.ImageToolPlugin;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.LLMProvider.ModelDisplay;
@@ -124,11 +126,15 @@ public class FijiAssistantChat {
 	public static final float CHAT_FONT_SIZE = 16f;
 	private static final int INPUT_PANEL_PADDING = 8;
 	private static final int INITIAL_CHAT_WIDTH = 800;
-	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 90;
-	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final int GUIDE_BUTTON_MARGIN = 3;
+	private static final int CONFIGURE_CHAT_TEXT_WIDTH = 123;
+	private static final int CONFIGURE_CHAT_BUTTON_WIDTH = CONFIGURE_CHAT_TEXT_WIDTH + 42;
 	private static final int GUIDE_TOOLBAR_BUTTON_SIZE = 42;
 	private static final int GUIDE_INPUT_BUTTON_SIZE = 34;
+	private static final int IMAGE_PRIVACY_BUTTON_WIDTH = CONFIGURE_CHAT_BUTTON_WIDTH +
+		2 * GUIDE_BUTTON_MARGIN;
+	private static final int IMAGE_PRIVACY_BUTTON_HEIGHT = 38;
+	private static final Color IMAGE_ACCESS_ACCENT = new Color(40, 110, 190);
 	private static final Color CONTEXT_BACKGROUND = new Color(240, 248, 255);
 	private static final Color CONTEXT_BORDER_COLOR = new Color(200, 220, 240);
 	private static final int CONTEXT_BORDER_WIDTH = 2;
@@ -232,6 +238,9 @@ Be concise, patient, humble, and collaborative.
 	@Parameter
 	private LogService logService;
 
+	@Parameter
+	private ImageRenderingService imageRenderingService;
+
 	// -- Non-Contextual fields --
 	private FijiAssistant assistant;
 	private ChatMemory chatMemory;
@@ -249,6 +258,7 @@ Be concise, patient, humble, and collaborative.
 	private final JToggleButton inspectButton;
 	private final Color inspectButtonDefaultBackground;
 	private final JButton guideButton;
+	private final JButton imagePrivacyButton;
 	private final List<ContextItem> contextItems;
 	private JComboBox<Conversation> conversationComboBox;
 	private JButton newConversationButton;
@@ -276,6 +286,7 @@ Be concise, patient, humble, and collaborative.
 		this.contextItems = new ArrayList<>();
 		this.llmProvider = providerService.getProvider(providerName);
 		this.modelName = modelName;
+		imageRenderingService.setLocalModel(!llmProvider.requiresApiKey());
 
 		// Create default request parameters
 		requestParameters = llmProvider.defaultChatRequestParameters(modelName);
@@ -289,15 +300,17 @@ Be concise, patient, humble, and collaborative.
 		final JPanel topNavBar = new JPanel(new BorderLayout());
 
 		// Conversation selector panel (added first so it appears on the left)
-		final JPanel conversationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
+		final JPanel conversationPanel = new JPanel(new BorderLayout());
+		final JPanel conversationControls = new JPanel(new FlowLayout(FlowLayout.LEFT,
 			3, 12));
 		conversationPanel.setOpaque(false);
+		conversationControls.setOpaque(false);
 
 		// For difference in hgaps
 		final JPanel spacer = new JPanel();
 		spacer.setOpaque(false);
 		spacer.setPreferredSize(new Dimension(2, 1));
-		conversationPanel.add(spacer);
+		conversationControls.add(spacer);
 
 		conversationComboBox = new ConversationComboBox();
 		int prefHeight = conversationComboBox.getPreferredSize().height;
@@ -324,21 +337,35 @@ Be concise, patient, humble, and collaborative.
 			conversationComboBox::addItem);
 		conversationComboBox.setSelectedIndex(-1);
 		conversationComboBox.addActionListener(e -> onConversationSelected());
-		conversationPanel.add(new JLabel("Conversation:"));
-		conversationPanel.add(conversationComboBox);
+		conversationControls.add(new JLabel("Conversation:"));
+		conversationControls.add(conversationComboBox);
 
-		newConversationButton = addButton(conversationPanel, new JButton(),
+		newConversationButton = addButton(conversationControls, new JButton(),
 			"/icons/plus-20.png", "+", conversationControlHeight,
 			conversationControlHeight, "Start a new conversation",
 			e -> clearConversation());
 		newConversationButton.setEnabled(false);
 
-		deleteConversationButton = addButton(conversationPanel, new JButton(),
+		deleteConversationButton = addButton(conversationControls, new JButton(),
 			"/icons/trash-noun-20.png", "-", conversationControlHeight,
 			conversationControlHeight, "Delete the current conversation permanently",
 			e -> deleteCurrentConversation());
 		deleteConversationButton.setEnabled(false);
 		deleteConversationButton.setForeground(java.awt.Color.RED);
+
+		imagePrivacyButton = createButton(new JButton(), null, "",
+			IMAGE_PRIVACY_BUTTON_WIDTH, IMAGE_PRIVACY_BUTTON_HEIGHT,
+			"Control whether hosted AI models may receive image pixels",
+			e -> toggleImagePrivacy());
+		imagePrivacyButton.addPropertyChangeListener("UI",
+			e -> updateImagePrivacyButton());
+		updateImagePrivacyButton();
+		final JPanel imagePrivacyPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,
+			5, 5));
+		imagePrivacyPanel.setOpaque(false);
+		imagePrivacyPanel.add(imagePrivacyButton);
+		conversationPanel.add(conversationControls, BorderLayout.WEST);
+		conversationPanel.add(imagePrivacyPanel, BorderLayout.EAST);
 
 		topNavBar.add(conversationPanel, BorderLayout.SOUTH);
 
@@ -608,6 +635,8 @@ Be concise, patient, humble, and collaborative.
 		guide.setInspectModeChangeListener(this::updateInspectButtonState);
 		guide.addElement(configureChatButton, "Configure Chat Button",
 			"Change the AI service, model, and related settings.");
+		guide.addElement(imagePrivacyButton, "Image Privacy",
+			"Control whether hosted AI models may receive image pixels.");
 		guide.addElement(guideButton, "Guide Button",
 			"Start an interactive tour of Fiji Chat.");
 		guide.addElement(inspectButton, "Inspect Mode Toggle",
@@ -832,10 +861,11 @@ Be concise, patient, humble, and collaborative.
 
 				for (final ContextItem item : mergedContextItems) {
 					if (item instanceof ImageMetaContextItem imageItem) {
-						imageItem.getImageContent().ifPresent(imageContent -> {
-							userContents.add(imageContent);
-							msgBuilder.addContent(imageContent);
-						});
+						if (imageRenderingService.isPixelSharingAllowed()) imageItem
+							.getImageContent().ifPresent(imageContent -> {
+								userContents.add(imageContent);
+								msgBuilder.addContent(imageContent);
+							});
 					}
 				}
 
@@ -1428,6 +1458,78 @@ Be concise, patient, humble, and collaborative.
 			newConversationButton.setEnabled(false);
 			deleteConversationButton.setEnabled(false);
 		}
+	}
+
+	private void toggleImagePrivacy() {
+		if (!llmProvider.requiresApiKey()) return;
+		final boolean enabled = prefService.getBoolean(ImageRenderingService.class,
+			ImageRenderingService.HOSTED_IMAGE_ACCESS_KEY,
+			ImageRenderingService.DEFAULT_HOSTED_IMAGE_ACCESS);
+		prefService.put(ImageRenderingService.class,
+			ImageRenderingService.HOSTED_IMAGE_ACCESS_KEY, !enabled);
+		updateImagePrivacyButton();
+	}
+
+	private void updateImagePrivacyButton() {
+		if (!SwingUtilities.isEventDispatchThread()) {
+			SwingUtilities.invokeLater(this::updateImagePrivacyButton);
+			return;
+		}
+		final boolean localModel = !llmProvider.requiresApiKey();
+		final boolean imageAccessEnabled = imageRenderingService.isPixelSharingAllowed();
+		final String iconPath = localModel ? "/icons/monitor-32.png" : imageAccessEnabled
+			? "/icons/eye-32.png" : "/icons/lock-noun-32.png";
+		final URL iconUrl = getClass().getResource(iconPath);
+		imagePrivacyButton.setIcon(iconUrl == null ? null : new ImageIcon(iconUrl));
+		imagePrivacyButton.setText(localModel ? "Local AI in use" :
+			imageAccessEnabled ? "AI can view images" : "AI cannot view images");
+		imagePrivacyButton.setEnabled(!localModel);
+		final Color defaultForeground = UIManager.getColor("Button.foreground");
+		final Color disabledForeground = UIManager.getColor(
+			"Label.disabledForeground");
+		final Color buttonBackground = UIManager.getColor("Button.background");
+		final Color safeButtonBackground = buttonBackground == null ? Color.WHITE :
+			buttonBackground;
+		final Color safeDefaultForeground = defaultForeground == null ? Color.BLACK :
+			defaultForeground;
+		imagePrivacyButton.setBackground(localModel || !imageAccessEnabled ?
+			safeButtonBackground : imageAccessBackground(safeButtonBackground));
+		imagePrivacyButton.setForeground(localModel ? disabledForeground == null ?
+			Color.GRAY : disabledForeground : safeDefaultForeground);
+		imagePrivacyButton.setOpaque(true);
+		imagePrivacyButton.setHorizontalAlignment(SwingConstants.LEFT);
+		imagePrivacyButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+		imagePrivacyButton.setVerticalTextPosition(SwingConstants.CENTER);
+		imagePrivacyButton.setIconTextGap(6);
+		configureGuideButton(imagePrivacyButton, IMAGE_PRIVACY_BUTTON_WIDTH,
+			IMAGE_PRIVACY_BUTTON_HEIGHT);
+		final Dimension privacyButtonSize = imagePrivacyButton.getPreferredSize();
+		imagePrivacyButton.setMinimumSize(privacyButtonSize);
+		imagePrivacyButton.setMaximumSize(privacyButtonSize);
+		imagePrivacyButton.setToolTipText(localModel ?
+			"Images may be viewed by the local AI model" : imageAccessEnabled ?
+			"The current hosted AI model may view image pixels; click to keep image pixels private" :
+			"The current hosted AI model cannot view image pixels; click to allow image viewing");
+		imagePrivacyButton.revalidate();
+		imagePrivacyButton.repaint();
+	}
+
+	private static Color imageAccessBackground(final Color base) {
+		final int luminance = (299 * base.getRed() + 587 * base.getGreen() + 114 * base
+			.getBlue()) / 1000;
+		if (luminance < 140) return blend(base, new Color(120, 180, 235), 0.25);
+		return blend(base, IMAGE_ACCESS_ACCENT, 0.18);
+	}
+
+	private static Color blend(final Color base, final Color overlay,
+		final double overlayWeight)
+	{
+		final Color safeBase = base == null ? Color.WHITE : base;
+		final double baseWeight = 1.0 - overlayWeight;
+		return new Color((int) Math.round(safeBase.getRed() * baseWeight + overlay
+			.getRed() * overlayWeight), (int) Math.round(safeBase.getGreen() * baseWeight +
+			overlay.getGreen() * overlayWeight), (int) Math.round(safeBase.getBlue() *
+			baseWeight + overlay.getBlue() * overlayWeight));
 	}
 
 	private void configureChat() {

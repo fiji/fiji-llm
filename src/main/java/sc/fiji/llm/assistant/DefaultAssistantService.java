@@ -40,6 +40,7 @@ import dev.langchain4j.model.chat.request.ChatRequest.Builder;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
 import sc.fiji.llm.chat.ImageToolResultNormalizer;
+import sc.fiji.llm.image.ImageRenderingService;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.tools.AiToolService;
@@ -58,6 +59,9 @@ public class DefaultAssistantService extends AbstractService implements
 	@Parameter
 	private AiToolService aiToolService;
 
+	@Parameter
+	private ImageRenderingService imageRenderingService;
+
 	@Override
 	public <T> T createAssistant(final Class<T> assistantInterface,
 		final String providerName, final String modelName,
@@ -68,6 +72,7 @@ public class DefaultAssistantService extends AbstractService implements
 		if (provider == null) {
 			throw new IllegalArgumentException("Provider not found: " + providerName);
 		}
+		imageRenderingService.setLocalModel(!provider.requiresApiKey());
 
 		final var builder = AiServices.builder(assistantInterface)
 			.streamingChatModel(provider.createStreamingChatModel(modelName))

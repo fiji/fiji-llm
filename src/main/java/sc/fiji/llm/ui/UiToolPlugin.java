@@ -33,6 +33,7 @@ import java.awt.Rectangle;
 import java.util.Base64;
 import java.util.List;
 
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import com.google.gson.JsonArray;
@@ -43,6 +44,7 @@ import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
+import sc.fiji.llm.image.ImageRenderingService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
 import sc.fiji.llm.tools.ToolRecommendationUtils;
@@ -50,6 +52,9 @@ import sc.fiji.llm.tools.ToolRecommendationUtils;
 /** AI tools for inspecting Fiji's visible UI. */
 @Plugin(type = AiToolPlugin.class)
 public class UiToolPlugin extends AbstractAiToolPlugin {
+
+	@Parameter
+	private ImageRenderingService imageRenderingService;
 
 	public UiToolPlugin() {
 		super(UiToolPlugin.class);
@@ -103,6 +108,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		@P(name = "component_path", value = "Component path from fiji_ui_controls_read, to crop to that component", required = false) final String componentPath)
 	{
 		try {
+			if (!imageRenderingService.isPixelSharingAllowed()) return List.of(TextContent
+				.from(jsonError(ImageRenderingService.PIXEL_SHARING_DISABLED_MESSAGE)));
 			final AWTDialogUtils.ScreenshotResult screenshot = AWTDialogUtils
 				.captureScreenshot(windowTitle, windowClassName, componentPath);
 			final JsonObject metadata = new JsonObject();

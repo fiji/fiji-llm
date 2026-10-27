@@ -72,4 +72,16 @@ public class DefaultImageRenderingServiceTest {
 	public void testOptionsRejectNonPositiveBound() {
 		new ImageRenderOptions(0, false);
 	}
+
+	@Test
+	public void testPixelSharingGuardRejectsDisabledAccess() {
+		try {
+			DefaultImageRenderingService.requirePixelSharing(false);
+			throw new AssertionError("Expected pixel sharing to be rejected");
+		}
+		catch (final IOException e) {
+			assertEquals(ImageRenderingService.PIXEL_SHARING_DISABLED_MESSAGE, e
+				.getMessage());
+		}
+	}
 }

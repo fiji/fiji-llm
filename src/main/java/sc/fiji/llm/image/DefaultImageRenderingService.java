@@ -48,6 +48,7 @@ import javax.imageio.ImageIO;
 import org.scijava.Priority;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.prefs.PrefService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
@@ -74,6 +75,23 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 	@Parameter
 	private ImageJ1HelperService imageJ1HelperService;
 
+	@Parameter
+	private PrefService prefService;
+
+	private volatile boolean localModel;
+
+	@Override
+	public boolean isPixelSharingAllowed() {
+		return localModel || prefService.getBoolean(ImageRenderingService.class,
+			ImageRenderingService.HOSTED_IMAGE_ACCESS_KEY,
+			ImageRenderingService.DEFAULT_HOSTED_IMAGE_ACCESS);
+	}
+
+	@Override
+	public void setLocalModel(final boolean localModel) {
+		this.localModel = localModel;
+	}
+
 	@Override
 	public Optional<RenderedImageResult> renderActiveImage(
 		final ImageRenderOptions options) throws IOException
@@ -86,6 +104,7 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		final ImageRenderOptions requestedOptions) throws IOException
 	{
 		if (display == null) return Optional.empty();
+		requirePixelSharing(isPixelSharingAllowed());
 		final ImageRenderOptions options = requestedOptions == null ?
 			new ImageRenderOptions() : requestedOptions;
 		final DatasetView view = imageDisplayService.getActiveDatasetView(display);
@@ -115,6 +134,11 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 			source.getWidth(), source.getHeight(), bounded.getWidth(), bounded.getHeight(),
 			roiIncluded, renderMode, roiType, overlayIncluded, overlayCount);
 		return Optional.of(new RenderedImageResult(pngBytes, metadata));
+	}
+
+	static void requirePixelSharing(final boolean allowed) throws IOException {
+		if (!allowed) throw new IOException(ImageRenderingService
+			.PIXEL_SHARING_DISABLED_MESSAGE);
 	}
 
 	static BufferedImage copyImage(final BufferedImage source) {

@@ -47,6 +47,22 @@ For each category, send this prompt:
 	Please describe the attached item.
 	```
 
+### Image privacy mode (manual hosted-model check)
+- [ ] Select a hosted model and verify that the image privacy control reports
+      that the AI can view images when access is enabled.
+- [ ] Turn image privacy off, verify that the control reports that images are
+      kept local, and attach an image. Confirm that the attachment still adds
+      image metadata but does not send image pixels.
+- [ ] With the lock enabled, ask the hosted model to use `fiji_image_view`,
+      `fiji_image_preview`, and `fiji_ui_screenshot`. Each pixel-producing tool
+      should return the privacy error instead of an image result; metadata-only
+      tools such as `fiji_image_list` and `fiji_image_details` should continue
+      to work.
+- [ ] Re-enable image access and repeat the image and UI screenshot checks,
+      verifying that the hosted model can receive the resulting image content.
+- [ ] Optionally select a local model and verify that image analysis and UI
+      screenshots remain available regardless of the hosted-model preference.
+
 ### Conversation renaming testing
 - [ ] Start a new conversation and verify that its UUID is stable while its
       display label initially falls back to that UUID.

@@ -38,6 +38,30 @@ import net.imagej.display.ImageDisplay;
 /** Renders the current ImageJ display into bounded multimodal PNG content. */
 public interface ImageRenderingService extends ImageJService {
 
+	/** Preference key controlling image pixels sent to hosted models. */
+	String HOSTED_IMAGE_ACCESS_KEY = "hostedImageAccess";
+
+	/** Default value for {@link #HOSTED_IMAGE_ACCESS_KEY}. */
+	boolean DEFAULT_HOSTED_IMAGE_ACCESS = true;
+
+	/** Error returned when pixel-level image sharing is disabled. */
+	String PIXEL_SHARING_DISABLED_MESSAGE =
+		"Pixel-level image sharing is disabled.";
+
+	/**
+	 * Reports whether the current assistant may receive image pixels.
+	 *
+	 * @return true for local models or when hosted image access is enabled
+	 */
+	boolean isPixelSharingAllowed();
+
+	/**
+	 * Records whether the current assistant uses a local model.
+	 *
+	 * @param localModel whether the active model processes data locally
+	 */
+	void setLocalModel(boolean localModel);
+
 	Optional<RenderedImageResult> renderActiveImage(ImageRenderOptions options)
 		throws IOException;
 
