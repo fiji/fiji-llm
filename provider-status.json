@@ -324,16 +324,17 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1160644790:1793103353928850"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1961734388:1793110563531608"
     },
     "health": "healthy"
   },
   "ChatGPT": {
-    "models_documentation_last_modified": "2026-10-26",
+    "models_documentation_last_modified": "2026-10-27",
     "models_documentation": {
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
+      "baseline_established": true,
       "facts": {
         "models": {
           "gpt-6-astra": {
@@ -370,25 +371,25 @@
             "output_price": "$10 / Output MTok",
             "lifecycle": "active"
           },
+          "gpt-6.1-terra": {
+            "input_price": "$1 / Input MTok",
+            "output_price": "$5 / Output MTok",
+            "lifecycle": "active"
+          },
           "gpt-6-luna": {
             "input_price": "$0.1 / Input MTok",
             "output_price": "$0.5 / Output MTok",
             "lifecycle": "active"
           }
         }
-      },
-      "changes": [
-        "models.gpt-6.1-terra added: {\"input_price\":\"$1 / Input MTok\",\"output_price\":\"$5 / Output MTok\",\"lifecycle\":\"active\"}"
-      ],
-      "changed_since_previous": true,
-      "models_review_required": true
+      }
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "health": "review_required"
+    "health": "healthy"
   },
   "Claude": {
     "models_documentation_last_modified": "2026-10-26",
@@ -448,9 +449,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-27T12:15:55.048361715Z",
-  "status": "review_required",
-  "failures": [
-    "ChatGPT models documentation changed:\n- models.gpt-6.1-terra added: {\"input_price\":\"$1 / Input MTok\",\"output_price\":\"$5 / Output MTok\",\"lifecycle\":\"active\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
-  ]
+  "checked_at": "2026-10-27T14:16:04.651749513Z",
+  "status": "healthy",
+  "failures": []
 }
