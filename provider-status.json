@@ -324,7 +324,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1961734388:1793110563531608"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-49763648:1793192325625476"
     },
     "health": "healthy"
   },
@@ -334,7 +334,6 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "baseline_established": true,
       "facts": {
         "models": {
           "gpt-6-astra": {
@@ -449,7 +448,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-10-27T14:16:04.651749513Z",
+  "checked_at": "2026-10-28T12:58:47.179054734Z",
   "status": "healthy",
   "failures": []
 }
