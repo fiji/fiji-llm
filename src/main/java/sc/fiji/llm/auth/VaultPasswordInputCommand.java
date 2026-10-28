@@ -43,6 +43,8 @@ import org.scijava.widget.TextWidget;
 	label = "Unlock API Key Vault", visible = false)
 public class VaultPasswordInputCommand extends DynamicCommand {
 
+	private static final int INSTRUCTIONS_WIDTH = 300;
+
 	@Parameter(visibility = ItemVisibility.INVISIBLE, required = false,
 		persist = false)
 	private boolean creatingVault;
@@ -51,36 +53,89 @@ public class VaultPasswordInputCommand extends DynamicCommand {
 		persist = false)
 	private String statusMessage = "";
 
+	@Parameter
+	private APIKeyService apiKeyService;
+
 	@Parameter(label = "", visibility = ItemVisibility.MESSAGE, required = false,
 		persist = false)
 	private String instructions = "";
 
 	@Parameter(label = "Master Password", style = TextWidget.PASSWORD_STYLE,
-		persist = false)
+		validater = "validateMasterPassword", persist = false)
 	private String masterPassword = "";
 
 	@Parameter(label = "Confirm Master Password",
-		style = TextWidget.PASSWORD_STYLE, persist = false)
+		style = TextWidget.PASSWORD_STYLE, validater = "validateConfirmation",
+		persist = false)
 	private String confirmation = "";
+
+	@Parameter(label = "Reset vault", callback = "resetVaultChanged",
+		persist = false)
+	private boolean resetVault;
 
 	@Override
 	public void initialize() {
-		instructions = creatingVault ?
-			"<html><body style='width: 300px'><p>Create a master password to protect the API key vault. You will need it each time Fiji starts.</p>" +
-			statusMessage + "</body></html>" :
-			"<html><body style='width: 300px'><p>Enter the master password to unlock the API key vault.</p>" +
-			statusMessage + "</body></html>";
+		updateInstructions();
 		if (!creatingVault) resolveInput("confirmation");
+		else {
+			resolveInput("resetVault");
+			getInfo().getMutableInput("resetVault", Boolean.class)
+				.setVisibility(ItemVisibility.INVISIBLE);
+		}
+	}
+
+	protected void resetVaultChanged() {
+		if (creatingVault) return;
+		if (resetVault) {
+			masterPassword = "";
+			getInfo().getMutableInput("masterPassword", String.class).setValue(this,
+				"");
+		}
+		updateInstructions();
 	}
 
 	@Override
 	public void run() {
-		if (masterPassword == null || masterPassword.isBlank()) {
-			cancel("Master password must not be empty");
-		}
-		else if (creatingVault && !Objects.equals(masterPassword, confirmation)) {
-			cancel("Master passwords do not match");
+		if (resetVault && !creatingVault) {
+			apiKeyService.resetVault();
+			masterPassword = "";
+			confirmation = "";
+			return;
 		}
 		confirmation = "";
+	}
+
+	protected String validateMasterPassword() {
+		if (resetVault && !creatingVault) return null;
+		return masterPassword == null || masterPassword.isBlank() ?
+			"Master password must not be empty" : null;
+	}
+
+	protected String validateConfirmation() {
+		if (!creatingVault) return null;
+		if (confirmation == null || confirmation.isBlank()) {
+			return "Please confirm the master password";
+		}
+		return Objects.equals(masterPassword, confirmation) ? null :
+			"Master passwords do not match";
+	}
+
+	private void updateInstructions() {
+		final String prompt;
+		if (creatingVault) {
+			prompt = "Create a master password to protect the API key vault." +
+				"<br><br>You will need it once per Fiji session.";
+		}
+		else if (resetVault) {
+			prompt = "<b>This will permanently delete all saved API keys.</b>" +
+				"<br><br>You will need to re-enter your API keys. Press OK to reset.";
+		}
+		else prompt = "Enter your master password to unlock the API key vault." +
+				"<br><br>If you forgot your password, you can reset it now.";
+		instructions = "<html><body style='width: " + INSTRUCTIONS_WIDTH +
+			"px; margin: 0'><p style='margin-top: 0'>" + prompt + "</p>" +
+			statusMessage + "</body></html>";
+		getInfo().getMutableInput("instructions", String.class).setValue(this,
+			instructions);
 	}
 }

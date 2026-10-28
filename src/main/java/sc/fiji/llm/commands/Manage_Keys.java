@@ -85,6 +85,8 @@ public class Manage_Keys extends DynamicCommand {
 	@Parameter
 	private CommandService commandService;
 
+	private boolean vaultAvailable;
+
 	@Parameter(label = "", visibility = ItemVisibility.MESSAGE, persist = false,
 		required = false)
 	private String welcomeMessage = "";
@@ -198,7 +200,13 @@ public class Manage_Keys extends DynamicCommand {
 
 		// Update provider-related information if we're in a valid state
 		if (!providerNames.isEmpty()) {
-			if (!unlockVault()) return;
+			if (!unlockVault()) {
+				for (final var input : getInfo().inputs()) {
+					resolveInput(input.getName());
+				}
+				return;
+			}
+			vaultAvailable = true;
 			providerChanged();
 		}
 
@@ -216,8 +224,10 @@ public class Manage_Keys extends DynamicCommand {
 		if (apiKeyService.isUnlocked()) return true;
 
 		boolean creatingVault = !apiKeyService.isVaultInitialized();
+		boolean retriedAfterReset = false;
 		String statusMessage = "";
 		while (true) {
+			final boolean vaultExistedBeforePrompt = apiKeyService.isVaultInitialized();
 			final Map<String, Object> parameters = new HashMap<>();
 			parameters.put("creatingVault", creatingVault);
 			parameters.put("statusMessage", statusMessage);
@@ -233,37 +243,34 @@ public class Manage_Keys extends DynamicCommand {
 			}
 			catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
-				cancel("API key vault unlock was interrupted");
 				return false;
 			}
 			catch (ExecutionException e) {
-				cancel("Unable to request the API key vault password");
 				return false;
 			}
 
-			if (module == null) {
-				cancel("API key vault password was not provided");
-				return false;
+			final boolean vaultExistsAfterPrompt = apiKeyService.isVaultInitialized();
+			if (vaultExistedBeforePrompt && !vaultExistsAfterPrompt &&
+				!retriedAfterReset)
+			{
+				retriedAfterReset = true;
+				creatingVault = true;
+				statusMessage = "";
+				continue;
 			}
+
 			if (module instanceof Cancelable cancelable && cancelable.isCanceled()) {
-				final String cancelReason = cancelable.getCancelReason();
 				module.setInput("masterPassword", "");
 				module.setInput("confirmation", "");
-				if ("Master passwords do not match".equals(cancelReason) ||
-					"Master password must not be empty".equals(cancelReason))
-				{
-					statusMessage = "<p>The password was empty or did not match. Try again.</p>";
-					continue;
-				}
-				cancel("API key vault unlock canceled");
 				return false;
 			}
+			if (module == null) return false;
 
 			if (!(module.getInput("masterPassword") instanceof String)) {
 				module.setInput("masterPassword", "");
 				module.setInput("confirmation", "");
-				cancel("API key vault password was not provided");
-				return false;
+				statusMessage = "<p>Enter a master password.</p>";
+				continue;
 			}
 			final char[] password = ((String) module.getInput("masterPassword"))
 				.toCharArray();
@@ -331,6 +338,7 @@ public class Manage_Keys extends DynamicCommand {
 
 	@Override
 	public void run() {
+		if (!vaultAvailable) return;
 		if (apiKey == null || apiKey.isEmpty()) {
 			apiKeyService.removeApiKey(provider);
 		}

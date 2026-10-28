@@ -141,6 +141,27 @@ public class DefaultAPIKeyService extends AbstractService implements
 	}
 
 	@Override
+	public synchronized void resetVault() {
+		lock();
+		try {
+			Files.deleteIfExists(vaultFile.toPath());
+		}
+		catch (IOException e) {
+			throw new IllegalStateException("Unable to delete API key vault", e);
+		}
+		@SuppressWarnings("deprecation")
+		final Map<String, String> legacyPreferences = prefService.getMap(
+			legacyPreferenceClass);
+		for (final String preferenceKey : legacyPreferences.keySet()) {
+			if (preferenceKey.startsWith(PREF_KEY_PREFIX) || preferenceKey.equals(
+				ENCRYPTION_KEY_PREF))
+			{
+				prefService.remove(legacyPreferenceClass, preferenceKey);
+			}
+		}
+	}
+
+	@Override
 	public synchronized String getApiKey(final String providerName) {
 		final Entry entry = findEntry(providerName);
 		if (entry == null) return null;

@@ -67,6 +67,13 @@ public interface APIKeyService extends ImageJService {
 	void lock();
 
 	/**
+	 * Permanently deletes the vault and any remaining legacy API key preferences.
+	 *
+	 * @throws IllegalStateException if the vault could not be deleted
+	 */
+	void resetVault();
+
+	/**
 	 * Get the API key for the specified provider.
 	 *
 	 * @param providerName the name of the provider (e.g., "OpenAI", "Anthropic")

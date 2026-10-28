@@ -41,7 +41,7 @@ import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -54,6 +54,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.scijava.Cancelable;
 import org.scijava.Context;
 import org.scijava.command.CommandInfo;
 import org.scijava.command.CommandService;
@@ -202,14 +203,44 @@ public class DefaultAPIKeyServiceTest {
 	{
 		final CommandInfo commandInfo = context.getService(CommandService.class)
 			.getCommand(VaultPasswordInputCommand.class);
-		final Map<String, Object> inputs = Map.of("creatingVault", true,
-			"masterPassword", "test-password", "confirmation", "test-password");
+		final LinkedHashMap<String, Object> inputs = new LinkedHashMap<>();
+		inputs.put("creatingVault", true);
+		inputs.put("masterPassword", "test-password");
+		inputs.put("confirmation", "test-password");
 		final Module module = context.getService(ModuleService.class).run(commandInfo,
 			false, inputs).get();
 
 		assertEquals("test-password", module.getInput("masterPassword"));
+		assertFalse(((Cancelable) module).isCanceled());
 		module.setInput("masterPassword", "");
 		module.setInput("confirmation", "");
+	}
+
+	@Test
+	public void testResetDeletesVaultAndLegacyPreferences() throws Exception {
+		final char[] masterPassword = "vault password".toCharArray();
+		service.unlock(masterPassword);
+		Arrays.fill(masterPassword, '\0');
+		final char[] apiKey = "key-to-delete".toCharArray();
+		service.setApiKey("Anthropic", apiKey);
+		Arrays.fill(apiKey, '\0');
+		prefService.put(LegacyPreferenceScope.class, LEGACY_ENCRYPTION_KEY,
+			"legacy-encryption-key");
+		prefService.put(LegacyPreferenceScope.class, LEGACY_KEY_PREFIX + "Gemini",
+			"legacy-encrypted-key");
+
+		service.resetVault();
+
+		assertFalse(service.isUnlocked());
+		assertFalse(service.isVaultInitialized());
+		assertNull(prefService.get(LegacyPreferenceScope.class, LEGACY_ENCRYPTION_KEY));
+		assertNull(prefService.get(LegacyPreferenceScope.class, LEGACY_KEY_PREFIX +
+			"Gemini"));
+
+		final char[] newPassword = "new vault password".toCharArray();
+		service.unlock(newPassword);
+		Arrays.fill(newPassword, '\0');
+		assertFalse(service.hasApiKey("Anthropic"));
 	}
 
 	private DefaultAPIKeyService newService() throws Exception {
