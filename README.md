@@ -373,6 +373,10 @@ are reviewed by human contributors.
 
 ## Frequently Asked Questions
 
+### Q: What information is shared with AI assistants?
+
+**A:** Nothing is shared proactively. The LLM can use tools to query information about your Fiji installation and inspect image data and GUI elements when needed. With local models, this information stays on your computer. When using a hosted model, the chat includes an AI vision toggle to control whether image data is shared with the model. Even with AI vision disabled, the model can still request basic image metadata through tools to support analysis.
+
 ### Q: How does Fiji LLM get its information?
 
 **A:** Each individual LLM has a baseline "knowledge" that is frozen in time based on when it was *trained*. To obtain current information, LLMs can use tools (such as web searches). We provide a core set of tools to help connected LLMs gather information related to Fiji use.
