@@ -38,6 +38,35 @@ import net.imagej.ImageJService;
 public interface APIKeyService extends ImageJService {
 
 	/**
+	 * Checks whether a vault file has been created.
+	 *
+	 * @return true if the vault file exists
+	 */
+	boolean isVaultInitialized();
+
+	/**
+	 * Checks whether the vault is unlocked in this process.
+	 *
+	 * @return true if the vault is unlocked
+	 */
+	boolean isUnlocked();
+
+	/**
+	 * Unlocks an existing vault or creates a new vault when none exists. The
+	 * caller remains responsible for clearing the supplied password array.
+	 *
+	 * @param masterPassword master password for the vault
+	 * @throws IllegalStateException if the vault cannot be opened, created, or
+	 *             migrated
+	 */
+	void unlock(char[] masterPassword);
+
+	/**
+	 * Locks the vault and clears this service's in-memory password state.
+	 */
+	void lock();
+
+	/**
 	 * Get the API key for the specified provider.
 	 *
 	 * @param providerName the name of the provider (e.g., "OpenAI", "Anthropic")
@@ -49,9 +78,10 @@ public interface APIKeyService extends ImageJService {
 	 * Set the API key for the specified provider.
 	 *
 	 * @param providerName the name of the provider
-	 * @param apiKey the API key to store
+	 * @param apiKey the API key to store; the caller remains responsible for
+	 *            clearing the array
 	 */
-	void setApiKey(String providerName, String apiKey);
+	void setApiKey(String providerName, char[] apiKey);
 
 	/**
 	 * Check if an API key is configured for the specified provider.

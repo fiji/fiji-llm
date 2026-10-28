@@ -133,6 +133,11 @@
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej-updater</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.linguafranca.pwdb</groupId>
+			<artifactId>KeePassJava2.kdbx.database</artifactId>
+			<version>3.1.0</version>
+		</dependency>
 
 		<!-- Third-party dependencies -->
 		<!-- Jackson 2 core -->
@@ -151,6 +156,18 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
+			<version>${jackson2.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>${jackson2.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
 			<version>${jackson2.version}</version>
 		</dependency>
 
@@ -364,7 +381,7 @@
 										<!-- Restore Jackson 2 jars from target/dependency -->
 										<copy file="${project.build.directory}/dependency/jackson-databind-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-databind-${jackson2.version}.jar" failonerror="false" />
 										<copy file="${project.build.directory}/dependency/jackson-core-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar" failonerror="false" />
-										<copy file="${project.build.directory}/dependency/jackson-dataformat-yaml-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-core-${jackson2.version}.jar" failonerror="false" />
+										<copy file="${project.build.directory}/dependency/jackson-dataformat-yaml-${jackson2.version}.jar" tofile="${scijava.app.directory}/jars/jackson-dataformat-yaml-${jackson2.version}.jar" failonerror="false" />
 									</target>
 								</configuration>
 							</execution>

@@ -49,12 +49,11 @@ public abstract class AbstractLLMProvider extends AbstractContextual implements
 	private LogService logService;
 
 	protected String apiKey() {
-		String apiKey = apiKeyService.getApiKey(getName());
-		if (apiKey == null) {
+		if (!apiKeyService.hasApiKey(getName())) {
 			throw new IllegalStateException("No API key configured for provider: " +
 				getName());
 		}
-		return apiKey;
+		return apiKeyService.getApiKey(getName());
 	}
 
 	/**

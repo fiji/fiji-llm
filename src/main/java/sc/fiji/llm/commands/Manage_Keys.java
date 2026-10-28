@@ -29,12 +29,20 @@
 
 package sc.fiji.llm.commands;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.scijava.Cancelable;
 import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
+import org.scijava.command.CommandInfo;
+import org.scijava.command.CommandService;
 import org.scijava.command.DynamicCommand;
+import org.scijava.module.Module;
 import org.scijava.module.MutableModuleItem;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
@@ -44,6 +52,7 @@ import org.scijava.widget.Button;
 import org.scijava.widget.TextWidget;
 
 import sc.fiji.llm.auth.APIKeyService;
+import sc.fiji.llm.auth.VaultPasswordInputCommand;
 import sc.fiji.llm.provider.LLMProvider;
 import sc.fiji.llm.provider.ProviderService;
 import sc.fiji.llm.ui.ChatbotService;
@@ -72,6 +81,9 @@ public class Manage_Keys extends DynamicCommand {
 
 	@Parameter
 	private ChatbotService chatbotService;
+
+	@Parameter
+	private CommandService commandService;
 
 	@Parameter(label = "", visibility = ItemVisibility.MESSAGE, persist = false,
 		required = false)
@@ -186,6 +198,7 @@ public class Manage_Keys extends DynamicCommand {
 
 		// Update provider-related information if we're in a valid state
 		if (!providerNames.isEmpty()) {
+			if (!unlockVault()) return;
 			providerChanged();
 		}
 
@@ -195,6 +208,77 @@ public class Manage_Keys extends DynamicCommand {
 			// Just re-start the chat without gathering input
 			for (final var input : getInfo().inputs()) {
 				resolveInput(input.getName());
+			}
+		}
+	}
+
+	private boolean unlockVault() {
+		if (apiKeyService.isUnlocked()) return true;
+
+		boolean creatingVault = !apiKeyService.isVaultInitialized();
+		String statusMessage = "";
+		while (true) {
+			final Map<String, Object> parameters = new HashMap<>();
+			parameters.put("creatingVault", creatingVault);
+			parameters.put("statusMessage", statusMessage);
+			final Module module;
+			try {
+				final CommandInfo commandInfo = commandService.getCommand(
+					VaultPasswordInputCommand.class);
+				if (commandInfo == null) {
+					cancel("API key vault password command is unavailable");
+					return false;
+				}
+				module = moduleService.run(commandInfo, true, parameters).get();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				cancel("API key vault unlock was interrupted");
+				return false;
+			}
+			catch (ExecutionException e) {
+				cancel("Unable to request the API key vault password");
+				return false;
+			}
+
+			if (module == null) {
+				cancel("API key vault password was not provided");
+				return false;
+			}
+			if (module instanceof Cancelable cancelable && cancelable.isCanceled()) {
+				final String cancelReason = cancelable.getCancelReason();
+				module.setInput("masterPassword", "");
+				module.setInput("confirmation", "");
+				if ("Master passwords do not match".equals(cancelReason) ||
+					"Master password must not be empty".equals(cancelReason))
+				{
+					statusMessage = "<p>The password was empty or did not match. Try again.</p>";
+					continue;
+				}
+				cancel("API key vault unlock canceled");
+				return false;
+			}
+
+			if (!(module.getInput("masterPassword") instanceof String)) {
+				module.setInput("masterPassword", "");
+				module.setInput("confirmation", "");
+				cancel("API key vault password was not provided");
+				return false;
+			}
+			final char[] password = ((String) module.getInput("masterPassword"))
+				.toCharArray();
+			try {
+				apiKeyService.unlock(password);
+				return true;
+			}
+			catch (IllegalStateException e) {
+				creatingVault = !apiKeyService.isVaultInitialized();
+				statusMessage = "<p>Could not unlock the vault. Check the master password and try again.</p>";
+			}
+			finally {
+				Arrays.fill(password, '\0');
+				module.setInput("masterPassword", "");
+				module.setInput("confirmation", "");
 			}
 		}
 	}
@@ -247,18 +331,21 @@ public class Manage_Keys extends DynamicCommand {
 
 	@Override
 	public void run() {
-		// Determine which API key to use
-		String keyToUse = apiKey;
-
-		if (keyToUse == null || keyToUse.isEmpty()) {
+		if (apiKey == null || apiKey.isEmpty()) {
 			apiKeyService.removeApiKey(provider);
 		}
-		else if (keyToUse.matches("\\*+")) {
+		else if (apiKey.matches("\\*+")) {
 			// No action if user didn't enter a new key
 		}
 		else {
-			// Store the new key
-			apiKeyService.setApiKey(provider, keyToUse);
+			final char[] key = apiKey.toCharArray();
+			try {
+				apiKeyService.setApiKey(provider, key);
+			}
+			finally {
+				Arrays.fill(key, '\0');
+				apiKey = "";
+			}
 		}
 
 		if (apiKeyService.hasApiKey(provider)) {
