@@ -41,6 +41,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.prefs.PrefService;
 import org.scijava.widget.Button;
+import org.scijava.widget.TextWidget;
 
 import sc.fiji.llm.auth.APIKeyService;
 import sc.fiji.llm.provider.LLMProvider;
@@ -90,7 +91,8 @@ public class Manage_Keys extends DynamicCommand {
 	private String apiKeyLink = "";
 
 	@Parameter(label = "Enter API Key →",
-		description = "New API key for this provider", persist = false)
+		description = "New API key for this provider", persist = false,
+		style = TextWidget.PASSWORD_STYLE)
 	private String apiKey = "";
 
 	@Parameter(visibility = ItemVisibility.INVISIBLE, required = false,
@@ -219,11 +221,11 @@ public class Manage_Keys extends DynamicCommand {
 			"</a>");
 
 		// Check if we have a stored API key for this provider
-		final String storedKey = apiKeyService.getApiKey(provider);
+		final boolean hasApiKey = apiKeyService.hasApiKey(provider);
 		final MutableModuleItem<String> apiKeyItem = getInfo().getMutableInput(
 			"apiKey", String.class);
 
-		if (storedKey != null && !storedKey.isEmpty()) {
+		if (hasApiKey) {
 			apiKeyItem.setValue(this, MASK); // Mask the stored key
 			apiKeyItem.setDescription(
 				"Key is configured (enter new key to replace it)");
