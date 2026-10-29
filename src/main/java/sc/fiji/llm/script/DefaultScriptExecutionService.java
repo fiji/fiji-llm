@@ -90,20 +90,34 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 
 		final Execution execution = new Execution(newRunID(),
 			scriptID, kind);
+		execution.startedAt = System.currentTimeMillis();
 		executions.put(execution.runID, execution);
 
+		final Thread startupThread = new Thread(() -> {
+			try {
+				start(execution);
+				execution.monitorThread = new Thread(() -> monitor(execution),
+					"Fiji-script-run-" + execution.runID);
+				execution.monitorThread.setDaemon(true);
+				execution.startupComplete = true;
+				execution.monitorThread.start();
+			}
+			catch (final Exception e) {
+				execution.startupComplete = true;
+				finishWithInfrastructureError(execution, e);
+			}
+		}, "Fiji-script-start-" + execution.runID);
+		startupThread.setDaemon(true);
 		try {
-			start(execution);
+			startupThread.start();
 		}
 		catch (final Exception e) {
+			execution.startupComplete = true;
 			finishWithInfrastructureError(execution, e);
 			return execution.snapshot();
 		}
 
-		execution.monitorThread = new Thread(() -> monitor(execution),
-			"Fiji-script-run-" + execution.runID);
-		execution.monitorThread.setDaemon(true);
-		execution.monitorThread.start();
+		if (SwingUtilities.isEventDispatchThread()) return execution.snapshot();
 		return await(execution, returnWhenBlocked);
 	}
 
@@ -113,14 +127,15 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		if (runID == null || runID.isBlank()) return null;
 		final Execution execution = executions.get(runID);
 		if (execution == null || execution.kind != expectedKind) return null;
-		if (execution.status == Status.RUNNING || execution.status == Status.BLOCKED_BY_DIALOG) {
+		if (execution.startupComplete && (execution.status == Status.RUNNING ||
+			execution.status == Status.BLOCKED_BY_DIALOG))
+		{
 			refreshLiveState(execution);
 		}
 		return execution.snapshot();
 	}
 
 	private void start(final Execution execution) throws Exception {
-		execution.startedAt = System.currentTimeMillis();
 		final Throwable[] preparationFailure = new Throwable[1];
 		final Runnable prepareScript = () -> {
 			try {
@@ -211,7 +226,6 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			}
 			final long remainingWait = waitDeadline - System.currentTimeMillis();
 			if (remainingWait <= 0) {
-				refreshLiveState(execution);
 				return execution.snapshot(true);
 			}
 			synchronized (execution) {
@@ -547,6 +561,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		private final ScriptID scriptID;
 		private final RunKind kind;
 		private volatile Status status = Status.RUNNING;
+		private volatile boolean startupComplete;
 		private volatile String scriptName;
 		private volatile long startedAt;
 		private volatile long finishedAt;

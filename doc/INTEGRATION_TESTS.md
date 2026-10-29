@@ -274,6 +274,62 @@ syntax failures, runtime failures, and timeouts.
       does not populate `errors` or cancel the Script Editor task. Poll the run
       until it reaches a terminal result.
 
+### Startup wait expiry while Fiji's event thread is busy
+
+This live regression intentionally holds Fiji's event thread for 40 seconds.
+Run it only against a disposable Fiji session.
+
+1. Create two Groovy tabs named `startup-blocker.groovy` and
+   `startup-target.groovy`. Set the target tab's content to:
+
+   ```groovy
+   println("STARTUP_TARGET_RAN")
+   ```
+
+2. Set the blocker tab's content to the following. Its timer selects the
+      target tab after the blocker script body has finished, then holds the
+      event thread so no UI action is needed while Fiji is busy.
+
+   ```groovy
+   def editor = org.scijava.ui.swing.script.TextEditor.instances.get(0)
+   def panes = []
+   def visit
+   visit = { component ->
+         if (component instanceof javax.swing.JTabbedPane) panes << component
+         if (component instanceof java.awt.Container) {
+               component.components.each { child -> visit(child) }
+         }
+   }
+   visit(editor)
+   def scriptTabs = panes.find { pane ->
+         (0..<pane.tabCount).any { index ->
+               pane.getTitleAt(index).contains("startup-target.groovy")
+         }
+   }
+   if (scriptTabs == null) throw new IllegalStateException("Target tab not found")
+   def targetIndex = (0..<scriptTabs.tabCount).find { index ->
+         scriptTabs.getTitleAt(index).contains("startup-target.groovy")
+   }
+   def timer = new javax.swing.Timer(2500, {
+         scriptTabs.selectedIndex = targetIndex
+         Thread.sleep(40000)
+   } as java.awt.event.ActionListener)
+   timer.setRepeats(false)
+   timer.start()
+   println("EDT_BLOCK_SCHEDULED")
+   ```
+
+3. Activate the blocker tab and call `fiji_script_run`. Verify that it returns
+   promptly with `status: "success"` and `EDT_BLOCK_SCHEDULED`.
+4. Wait three seconds, then call `fiji_script_run` for the now-active target tab.
+   Verify that it returns within the normal 30-second wait with
+   `status: "running"`, `wait_expired: true`, and a `run_id`, rather than a
+   tool timeout without an ID.
+5. While the event thread is still held, call `fiji_script_run_status` with
+   that ID and verify it returns the same run as `running`. After the 40-second
+   stall ends, poll again until it reports success and
+   `output: "STARTUP_TARGET_RAN"`.
+
 ## ImageJ Macros
 
 Start each macro regression run by deriving the test macro from recorded Fiji
