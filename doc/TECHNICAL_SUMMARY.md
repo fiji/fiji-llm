@@ -207,12 +207,14 @@ PNG-backed LangChain4j `ImageContent`. `RenderedImageResult` keeps that payload
 separate from `ImageRenderMetadata`; optional ROI drawing uses the image's
 ImageJ ROI.
 
-Image tools, context suppliers, rendering, and environment snapshots read open
-images through `ImageJ1HelperService` as `ImagePlus` objects, wrapping them with
-imglib2-ij's `VirtualStackAdapter` when they need ImageJ2 axes or pixel types.
-They never ask `ImageDisplayService` for displays. Building an ImageJ2 display
-for an ImageJ 1.x image autoscales every channel, which for a lazily loaded image
-with many channels reads one plane per channel.
+Image tools, context suppliers, rendering, and environment snapshots obtain open
+images through `IJ1Helper` via `ImageJ1HelperService`. The service keeps those
+ImageJ 1.x objects opaque and uses reflection for IJ1-specific operations. When
+ImageJ2 axes or pixel types are needed, it reflectively wraps the image with
+imglib2-ij's `VirtualStackAdapter` to create a lazy `ImgPlus`. These paths do not
+ask `ImageDisplayService` for displays. Building an ImageJ2 display for an
+ImageJ 1.x image autoscales every channel, which for a lazily loaded image with
+many channels reads one plane per channel.
 
 ---
 

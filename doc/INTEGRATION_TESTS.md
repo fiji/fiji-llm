@@ -153,7 +153,9 @@ would:
 12. Open a large lazily loaded image whose third axis is channels, for example
       a remote Zarr array through File > Import > HDF5/N5/Zarr/OME-NGFF with
       Virtual checked. Call `fiji_image_list`, `fiji_image_details`, and
-      `fiji_image_view` for it, and run a short script with `fiji_script_run`.
+      `fiji_image_view` for it. With another image active, call
+      `fiji_image_activate` for the virtual image, then run a short script with
+      `fiji_script_run`.
       Verify that each returns within a few seconds and that the Fiji status
       bar does not show "computing min/max".
 
@@ -255,7 +257,10 @@ syntax failures, runtime failures, and timeouts.
 - [ ] With a multi-plane ImageJ virtual stack open, run a short script that does
       not access it. Verify the run returns promptly and final
       `environment_impact.changes.pixel_changes` is `inconclusive`, without
-      loading every plane from the stack's backing source.
+      loading every plane from the stack's backing source. Reset and inspect the
+      backing loader's plane-request counter around the run when available; the
+      count should not increase. Prompt completion and an `inconclusive` result
+      alone do not prove that no planes were loaded.
 - [ ] Malformed syntax: verify a non-success result and useful error text.
 - [ ] Runtime exception after partial image processing: verify that output or
       images produced before the exception remain observable and the error is

@@ -61,7 +61,8 @@ public class ImagesInFiji extends AbstractAgentGuide {
 
 			### Virtual `ImagePlus`
 
-			An `ImagePlus` who reports `isVirtual()` is backed by a virtual stack,
+			An `ImagePlus` backed by a stack for which `getStack().isVirtual()` returns true
+			is backed by a virtual stack,
 			usually reading planes on demand from files or another source instead of keeping
 			all pixels in memory. Accessing a plane can therefore perform I/O, and the
 			`ImageProcessor` used for one slice may be reused or replaced when another slice
@@ -105,8 +106,9 @@ public class ImagesInFiji extends AbstractAgentGuide {
 			- Never assume that dimension index 2 is always Z or that a dataset is only
 				X/Y/Z/C/T. Inspect `numDimensions()`, `dimension(i)`, and `axis(i).type()` on
 				Dataset or `ImgPlus`; use channel/slice/frame methods on `ImagePlus`.
-			- For images already open in Fiji, use the `ImagePlus` from
-				`WindowManager.getCurrentImage()` or `WindowManager.getImage(id)`. Avoid
+			- For images already open in Fiji, use ImageJ Legacy's `IJ1Helper` to enumerate
+				IDs with `getIDList()` and obtain images with `getImage(id)`. Fiji-LLM services
+				should use `ImageJ1HelperService` for this access. Avoid
 				`ImageDisplayService.getImageDisplays()` and `getActiveImageDisplay()`:
 				for an image without an ImageJ2 display they build one, which autoscales
 				every channel and reads a plane per channel. A lazily loaded image with
