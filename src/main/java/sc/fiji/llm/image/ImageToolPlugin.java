@@ -77,7 +77,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		try {
 			JsonArray images = new JsonArray();
 			List<Integer> ids = imageJ1HelperService.getImageIds();
-			for (Integer id : ids) {
+			for (final int id : ids) {
 				if (imageJ1HelperService.isImageVisible(id)) {
 					JsonObject imageJson = new JsonObject();
 					imageJson.addProperty("image_id", id);
