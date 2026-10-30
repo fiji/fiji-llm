@@ -43,7 +43,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.scijava.MenuPath;
 import org.scijava.module.Module;
 import org.scijava.module.ModuleInfo;
 import org.scijava.module.ModuleService;
@@ -121,15 +120,10 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 				return jsonError("Menu path cannot be empty");
 			}
 
-			// Create a MenuPath from the components by joining them
-			// MenuPath constructor takes a string like "Plugins > Samples > Blobs"
-			MenuPath path = new MenuPath(menuPath);
-			String menuString = path.getMenuString();
-
 			// Find the module with this menu path
 			ModuleInfo moduleInfo = moduleService.getModules().stream()
 				// NB: MenuPath uses object equality
-				.filter(info -> menuString.equals(info.getMenuPath().getMenuString()))
+				.filter(info -> menuPath.equals(info.getMenuPath().getMenuString()))
 				.findFirst().orElse(null);
 
 			if (moduleInfo == null) {
@@ -143,7 +137,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			final String runID = newRunID();
 			final Future<Module> future = moduleService.run(moduleInfo, true);
 			final CommandExecution execution = new CommandExecution(runID, moduleInfo,
-				menuString, future, capture);
+				menuPath, future, capture);
 			executions.put(runID, execution);
 			return awaitCommand(execution);
 		}
