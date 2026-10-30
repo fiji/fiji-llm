@@ -49,7 +49,11 @@ import org.scijava.prefs.PrefService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
+import com.google.gson.JsonObject;
+
+import net.imagej.ImgPlus;
 import net.imagej.axis.Axes;
+import net.imagej.axis.AxisType;
 import net.imglib2.display.ColorTable8;
 import sc.fiji.llm.data.ImageJ1HelperService;
 
@@ -77,6 +81,12 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 	@Override
 	public void setLocalModel(final boolean localModel) {
 		this.localModel = localModel;
+	}
+
+	@Override
+	public Optional<ImageRenderMetadata> getImageMetadata(final int imageId) {
+		final Optional<Object> image = imageJ1HelperService.getImage(imageId);
+		return image.map(this::createMetadataOnly);
 	}
 
 	@Override
@@ -226,13 +236,87 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 	{
 		final int channelCount = asInt(imageJ1HelperService.invokeLegacyMethod(image,
 			"getNChannels"));
-		final long channelIndex = channelCount > 1 ? asInt(imageJ1HelperService
-			.invokeLegacyMethod(image, "getC")) - 1 : -1;
+		final long channelIndex = Math.max(0, asInt(imageJ1HelperService
+			.invokeLegacyMethod(image, "getC")) - 1);
+		final int imageId = imageJ1HelperService.getImageId(image);
+		final ImgPlus<?> imgPlus = ImageJ1HelperService.wrap(image);
 		return new ImageRenderMetadata(imageJ1HelperService.getImageTitle(image),
-			imageJ1HelperService.getImageId(image), sourceWidth,
+			imageId, sourceWidth,
 			sourceHeight, renderedWidth, renderedHeight, createPlanePosition(image),
 			channelIndex, channelCount, colorMode(image), createChannelMetadata(
-				image), roiIncluded, roiType, overlayIncluded, overlayCount, renderMode);
+				image), roiIncluded, roiType, overlayIncluded, overlayCount, renderMode,
+			imageJ1HelperService.isActiveImage(imageId), imgPlus.getImg().getType()
+				.getClass().getSimpleName(), createDimensions(imgPlus),
+			createSpatialCalibration(image), imageJ1HelperService.isLegacyInstance(
+				image, "ij.CompositeImage"));
+	}
+
+	private ImageRenderMetadata createMetadataOnly(final Object image) {
+		final int width = asInt(imageJ1HelperService.invokeLegacyMethod(image, "getWidth"));
+		final int height = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+			"getHeight"));
+		return createMetadata(image, width, height, width, height, false,
+			ImageRenderMetadata.SCREEN_RENDER_MODE, "", false, 0);
+	}
+
+	private List<ImageRenderMetadata.AxisMetadata> createDimensions(
+		final ImgPlus<?> imgPlus)
+	{
+		final List<ImageRenderMetadata.AxisMetadata> dimensions = new ArrayList<>();
+		for (int index = 0; index < imgPlus.numDimensions(); index++) {
+			String type = "Unknown";
+			try {
+				final AxisType axisType = imgPlus.axis(index).type();
+				if (axisType != null) type = axisType.getLabel();
+			}
+			catch (final RuntimeException ignored) {
+				type = "Dim" + index;
+			}
+			dimensions.add(new ImageRenderMetadata.AxisMetadata(index, type,
+				imgPlus.dimension(index)));
+		}
+		return dimensions;
+	}
+
+	private JsonObject createSpatialCalibration(final Object image) {
+		final Object calibration = imageJ1HelperService.invokeLegacyMethod(image,
+			"getCalibration");
+		final JsonObject result = new JsonObject();
+		addNumberProperty(result, "pixel_width", imageJ1HelperService.getLegacyField(
+			calibration, "pixelWidth"));
+		addNumberProperty(result, "pixel_height", imageJ1HelperService.getLegacyField(
+			calibration, "pixelHeight"));
+		addNumberProperty(result, "pixel_depth", imageJ1HelperService.getLegacyField(
+			calibration, "pixelDepth"));
+		addNumberProperty(result, "x_origin", imageJ1HelperService.getLegacyField(
+			calibration, "xOrigin"));
+		addNumberProperty(result, "y_origin", imageJ1HelperService.getLegacyField(
+			calibration, "yOrigin"));
+		addNumberProperty(result, "z_origin", imageJ1HelperService.getLegacyField(
+			calibration, "zOrigin"));
+		addTextProperty(result, "unit", imageJ1HelperService.invokeLegacyMethod(
+			calibration, "getUnit"));
+		addTextProperty(result, "x_unit", imageJ1HelperService.invokeLegacyMethod(
+			calibration, "getXUnit"));
+		addTextProperty(result, "y_unit", imageJ1HelperService.invokeLegacyMethod(
+			calibration, "getYUnit"));
+		addTextProperty(result, "z_unit", imageJ1HelperService.invokeLegacyMethod(
+			calibration, "getZUnit"));
+		return result;
+	}
+
+	private static void addNumberProperty(final JsonObject result, final String name,
+		final Object value)
+	{
+		if (value instanceof Number number && Double.isFinite(number.doubleValue())) {
+			result.addProperty(name, number);
+		}
+	}
+
+	private static void addTextProperty(final JsonObject result, final String name,
+		final Object value)
+	{
+		if (value instanceof String text && !text.isBlank()) result.addProperty(name, text);
 	}
 
 	private Map<String, Long> createPlanePosition(final Object image) {
@@ -270,33 +354,54 @@ public final class DefaultImageRenderingService extends AbstractService implemen
 		final Object image)
 	{
 		final List<ImageRenderMetadata.ChannelMetadata> channels = new ArrayList<>();
-		if (imageJ1HelperService.isLegacyInstance(image, "ij.CompositeImage") &&
-			"COMPOSITE".equals(colorMode(image)))
-		{
-			final boolean[] active = (boolean[]) imageJ1HelperService
-				.invokeLegacyMethod(image, "getActiveChannels");
-			final int channelCount = asInt(imageJ1HelperService.invokeLegacyMethod(image,
-				"getNChannels"));
-			for (int channel = 0; channel < channelCount; channel++) {
-				if (channel >= active.length || !active[channel]) continue;
-				final Object lut = imageJ1HelperService.invokeLegacyMethod(image,
-					"getChannelLut", channel + 1);
-				channels.add(new ImageRenderMetadata.ChannelMetadata(channel,
-					asDouble(imageJ1HelperService.getLegacyField(lut, "min")),
-					asDouble(imageJ1HelperService.getLegacyField(lut, "max")),
-					lutMetadata(lut)));
-			}
-			return channels;
+		final boolean composite = imageJ1HelperService.isLegacyInstance(image,
+			"ij.CompositeImage");
+		final int channelCount = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+			"getNChannels"));
+		final int currentChannel = Math.max(0, asInt(imageJ1HelperService
+			.invokeLegacyMethod(image, "getC")) - 1);
+		final int currentSlice = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+			"getZ"));
+		final int currentFrame = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+			"getT"));
+		final Object stack = imageJ1HelperService.invokeLegacyMethod(image, "getStack");
+		final boolean[] activeChannels = composite ? (boolean[]) imageJ1HelperService
+			.invokeLegacyMethod(image, "getActiveChannels") : null;
+		for (int channel = 0; channel < channelCount; channel++) {
+			final int stackIndex = asInt(imageJ1HelperService.invokeLegacyMethod(image,
+				"getStackIndex", channel + 1, currentSlice, currentFrame));
+			final String label = channelLabel(stack, stackIndex, channel);
+			final Object processor = imageJ1HelperService.invokeLegacyMethod(stack,
+				"getProcessor", stackIndex);
+			final Object lut = composite ? imageJ1HelperService.invokeLegacyMethod(image,
+				"getChannelLut", channel + 1) : imageJ1HelperService.invokeLegacyMethod(
+					processor, "getLut");
+			final double minimum = composite ? asDouble(imageJ1HelperService
+				.getLegacyField(lut, "min")) : channel == currentChannel ? asDouble(
+					imageJ1HelperService.invokeLegacyMethod(image, "getDisplayRangeMin")) :
+					asDouble(imageJ1HelperService.invokeLegacyMethod(processor, "getMin"));
+			final double maximum = composite ? asDouble(imageJ1HelperService
+				.getLegacyField(lut, "max")) : channel == currentChannel ? asDouble(
+					imageJ1HelperService.invokeLegacyMethod(image, "getDisplayRangeMax")) :
+					asDouble(imageJ1HelperService.invokeLegacyMethod(processor, "getMax"));
+			final boolean active = composite ? channel < activeChannels.length &&
+				activeChannels[channel] : channel == currentChannel;
+			channels.add(new ImageRenderMetadata.ChannelMetadata(channel, label, active,
+				minimum, maximum, lut == null ? null : lutMetadata(lut)));
 		}
-		final Object processor = imageJ1HelperService.invokeLegacyMethod(image,
-			"getProcessor");
-		final Object lut = imageJ1HelperService.invokeLegacyMethod(processor, "getLut");
-		channels.add(new ImageRenderMetadata.ChannelMetadata(Math.max(0, asInt(
-			imageJ1HelperService.invokeLegacyMethod(image, "getC")) - 1), asDouble(
-				imageJ1HelperService.invokeLegacyMethod(image, "getDisplayRangeMin")),
-			asDouble(imageJ1HelperService.invokeLegacyMethod(image,
-				"getDisplayRangeMax")), lut == null ? null : lutMetadata(lut)));
 		return channels;
+	}
+
+	private String channelLabel(final Object stack, final int stackIndex,
+		final int channel)
+	{
+		final Object stackLabel = imageJ1HelperService.invokeLegacyMethod(stack,
+			"getSliceLabel", stackIndex);
+		if (stackLabel instanceof String label && !label.isBlank()) {
+			final String firstLine = label.lines().findFirst().orElse("").trim();
+			if (!firstLine.isEmpty()) return firstLine;
+		}
+		return "Channel " + (channel + 1);
 	}
 
 	private ImageRenderMetadata.LutMetadata lutMetadata(final Object lut) {

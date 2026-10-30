@@ -106,6 +106,9 @@ public class ImagesInFiji extends AbstractAgentGuide {
 			- Never assume that dimension index 2 is always Z or that a dataset is only
 				X/Y/Z/C/T. Inspect `numDimensions()`, `dimension(i)`, and `axis(i).type()` on
 				Dataset or `ImgPlus`; use channel/slice/frame methods on `ImagePlus`.
+			- `fiji_image_details` and `fiji_image_view` report zero-based axis, channel,
+				and plane-position indices. ImagePlus C/Z/T methods are one-based; subtract
+				one when comparing them with these tool results.
 			- For images already open in Fiji, use ImageJ Legacy's `IJ1Helper` to enumerate
 				IDs with `getIDList()` and obtain images with `getImage(id)`. Fiji-LLM services
 				should use `ImageJ1HelperService` for this access. Avoid

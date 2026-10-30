@@ -33,8 +33,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import net.imglib2.display.ColorTable;
@@ -61,6 +63,11 @@ public final class ImageRenderMetadata {
 	private final boolean overlayIncluded;
 	private final int overlayCount;
 	private final String renderMode;
+	private final boolean active;
+	private final String pixelType;
+	private final List<AxisMetadata> dimensions;
+	private final JsonObject spatialCalibration;
+	private final boolean composite;
 
 	public ImageRenderMetadata(final String title, final int imageId,
 		final int sourceWidth, final int sourceHeight, final int renderedWidth,
@@ -95,6 +102,22 @@ public final class ImageRenderMetadata {
 		final String roiType, final boolean overlayIncluded, final int overlayCount,
 		final String renderMode)
 	{
+		this(title, imageId, sourceWidth, sourceHeight, renderedWidth, renderedHeight,
+			planePosition, channelIndex, channelCount, colorMode, channels, roiIncluded,
+			roiType, overlayIncluded, overlayCount, renderMode, true, "",
+			Collections.emptyList(), new JsonObject(), "COMPOSITE".equals(colorMode));
+	}
+
+	ImageRenderMetadata(final String title, final int imageId,
+		final int sourceWidth, final int sourceHeight, final int renderedWidth,
+		final int renderedHeight, final Map<String, Long> planePosition,
+		final long channelIndex, final int channelCount, final String colorMode,
+		final List<ChannelMetadata> channels, final boolean roiIncluded,
+		final String roiType, final boolean overlayIncluded, final int overlayCount,
+		final String renderMode, final boolean active, final String pixelType,
+		final List<AxisMetadata> dimensions, final JsonObject spatialCalibration,
+		final boolean composite)
+	{
 		this.title = title == null ? "" : title;
 		this.imageId = imageId;
 		this.sourceWidth = sourceWidth;
@@ -112,6 +135,12 @@ public final class ImageRenderMetadata {
 		this.overlayIncluded = overlayIncluded;
 		this.overlayCount = overlayCount;
 		this.renderMode = renderMode == null ? SCREEN_RENDER_MODE : renderMode;
+		this.active = active;
+		this.pixelType = pixelType == null ? "" : pixelType;
+		this.dimensions = Collections.unmodifiableList(new ArrayList<>(dimensions));
+		this.spatialCalibration = spatialCalibration == null ? new JsonObject() :
+			spatialCalibration.deepCopy();
+		this.composite = composite;
 	}
 
 	public String getTitle() {
@@ -180,22 +209,12 @@ public final class ImageRenderMetadata {
 
 	/** Returns a concise JSON description of the rendered display state. */
 	public JsonObject toJson() {
-		final JsonObject result = new JsonObject();
-		result.addProperty("title", title);
-		result.addProperty("image_id", imageId);
+		final JsonObject result = toDetailsJson();
 		result.addProperty("source_width", sourceWidth);
 		result.addProperty("source_height", sourceHeight);
 		result.addProperty("rendered_width", renderedWidth);
 		result.addProperty("rendered_height", renderedHeight);
 		result.addProperty("render_mode", renderMode);
-		final JsonObject position = new JsonObject();
-		for (final Map.Entry<String, Long> entry : planePosition.entrySet()) {
-			position.addProperty(entry.getKey(), entry.getValue());
-		}
-		if (position.size() > 0) result.add("plane_position", position);
-		result.addProperty("channel_index", channelIndex);
-		result.addProperty("channel_count", channelCount);
-		if (!colorMode.isEmpty()) result.addProperty("color_mode", colorMode);
 		if (roiIncluded) result.addProperty("roi_included", true);
 		if (!roiType.isEmpty()) result.addProperty("roi_type", roiType);
 		if (overlayIncluded) result.addProperty("overlay_included", true);
@@ -203,10 +222,62 @@ public final class ImageRenderMetadata {
 		return result;
 	}
 
+	JsonObject toDetailsJson() {
+		final JsonObject result = new JsonObject();
+		result.addProperty("title", title);
+		result.addProperty("image_id", imageId);
+		result.addProperty("active", active);
+		if (!pixelType.isEmpty()) result.addProperty("pixel_type", pixelType);
+		final JsonArray axes = new JsonArray();
+		for (final AxisMetadata dimension : dimensions) axes.add(dimension.toJson());
+		result.add("dimensions", axes);
+		result.addProperty("index_base", 0);
+		final JsonObject position = new JsonObject();
+		for (final Map.Entry<String, Long> entry : planePosition.entrySet()) {
+			position.addProperty(entry.getKey(), entry.getValue());
+		}
+		if (position.size() > 0) result.add("plane_position", position);
+		result.addProperty("channel_index", channelIndex);
+		result.addProperty("channel_count", channelCount);
+		result.addProperty("is_composite", composite);
+		if (!colorMode.isEmpty()) {
+			result.addProperty("display_mode", colorMode);
+			result.addProperty("color_mode", colorMode);
+		}
+		final JsonArray channelMetadata = new JsonArray();
+		for (final ChannelMetadata channel : channels) channelMetadata.add(channel.toJson());
+		result.add("channels", channelMetadata);
+		result.add("spatial_calibration", spatialCalibration.deepCopy());
+		return result;
+	}
+
+	static final class AxisMetadata {
+
+		private final int index;
+		private final String type;
+		private final long length;
+
+		AxisMetadata(final int index, final String type, final long length) {
+			this.index = index;
+			this.type = type == null ? "Unknown" : type;
+			this.length = length;
+		}
+
+		private JsonObject toJson() {
+			final JsonObject result = new JsonObject();
+			result.addProperty("axis_index", index);
+			result.addProperty("type", type);
+			result.addProperty("length", length);
+			return result;
+		}
+	}
+
 	/** Display range and LUT metadata for one displayed channel. */
 	public static final class ChannelMetadata {
 
 		private final int index;
+		private final String label;
+		private final boolean active;
 		private final double displayMinimum;
 		private final double displayMaximum;
 		private final LutMetadata lut;
@@ -214,7 +285,17 @@ public final class ImageRenderMetadata {
 		public ChannelMetadata(final int index, final double displayMinimum,
 			final double displayMaximum, final LutMetadata lut)
 		{
+			this(index, "Channel " + (index + 1), true, displayMinimum,
+				displayMaximum, lut);
+		}
+
+		ChannelMetadata(final int index, final String label, final boolean active,
+			final double displayMinimum, final double displayMaximum,
+			final LutMetadata lut)
+		{
 			this.index = index;
+			this.label = label == null ? "Channel " + (index + 1) : label;
+			this.active = active;
 			this.displayMinimum = displayMinimum;
 			this.displayMaximum = displayMaximum;
 			this.lut = lut;
@@ -234,6 +315,26 @@ public final class ImageRenderMetadata {
 
 		public LutMetadata getLut() {
 			return lut;
+		}
+
+		private JsonObject toJson() {
+			final JsonObject result = new JsonObject();
+			result.addProperty("channel_index", index);
+			result.addProperty("label", label);
+			result.addProperty("active", active);
+			final JsonObject displayRange = new JsonObject();
+			displayRange.addProperty("min", displayMinimum);
+			displayRange.addProperty("max", displayMaximum);
+			result.add("display_range", displayRange);
+			if (lut != null) {
+				final JsonObject lutJson = new JsonObject();
+				lutJson.addProperty("type", lut.getType());
+				lutJson.addProperty("length", lut.getLength());
+				final String color = lut.colorAtMaximum();
+				if (color != null) lutJson.addProperty("color_at_max", color);
+				result.add("lut", lutJson);
+			}
+			return result;
 		}
 	}
 
@@ -274,6 +375,13 @@ public final class ImageRenderMetadata {
 
 		public List<List<Integer>> getValues() {
 			return values;
+		}
+
+		private String colorAtMaximum() {
+			if (length == 0 || componentCount < 3) return null;
+			return String.format(Locale.ROOT, "#%02X%02X%02X", values.get(0).get(
+				length - 1), values.get(1).get(length - 1), values.get(2).get(
+				length - 1));
 		}
 	}
 }
