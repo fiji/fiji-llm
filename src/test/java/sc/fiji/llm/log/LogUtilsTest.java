@@ -99,4 +99,14 @@ public class LogUtilsTest {
 		assertEquals(warning, logs.getWarnings());
 		assertEquals("actual error", logs.withoutKnownWarnings().getErrors().trim());
 	}
+
+	@Test
+	public void testTextLogsSeparatesUnsupportedOutputWarnings() {
+		final String warning = "[WARNING] Ignoring unsupported output: result " +
+			"[bdv.viewer.SourceAndConverter]";
+		final TextLogs logs = new TextLogs("", warning + "\nactual error\n");
+
+		assertEquals(warning, logs.getWarnings());
+		assertEquals("actual error", logs.withoutKnownWarnings().getErrors().trim());
+	}
 }

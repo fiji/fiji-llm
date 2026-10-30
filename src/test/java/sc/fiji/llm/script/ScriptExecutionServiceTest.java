@@ -36,12 +36,16 @@ import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 
 import org.junit.Test;
 
 import com.google.gson.JsonObject;
 
+import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.log.TextLogs;
+import sc.fiji.llm.ui.AWTDialogUtils;
 
 public class ScriptExecutionServiceTest {
 
@@ -169,6 +173,70 @@ public class ScriptExecutionServiceTest {
 		assertEquals("finished_with_warnings", json.get("status").getAsString());
 		assertEquals(warning, json.get("warnings").getAsString());
 		assertFalse(json.has("errors"));
+	}
+
+	@Test
+	public void testUnsupportedOutputWarningFromStderrIsReportedSeparately() throws Exception {
+		final String warning = "[WARNING] Ignoring unsupported output: result " +
+			"[bdv.viewer.SourceAndConverter]";
+		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_WARNINGS,
+			DefaultScriptExecutionService.classifyFinishedStatus("", warning, null, null));
+		assertEquals(ScriptExecutionService.Status.FINISHED_WITH_ERRORS,
+			DefaultScriptExecutionService.classifyFinishedStatus("", warning +
+				"\nactual error", null, null));
+
+		final ScriptExecutionService.ExecutionResult result = createExecutionResult(
+			ScriptExecutionService.Status.FINISHED_WITH_WARNINGS, false, null, null);
+		final Field executionField = result.getClass().getDeclaredField("execution");
+		executionField.setAccessible(true);
+		setOptionalField(executionField.get(result), "environment",
+			environmentImpactWithStderr(warning));
+		final JsonObject json = result.toJson();
+
+		assertEquals("finished_with_warnings", json.get("status").getAsString());
+		assertEquals(warning, json.get("warnings").getAsString());
+		assertFalse(json.has("errors"));
+		assertEquals(warning, json.getAsJsonObject("environment_impact")
+			.get("console_stderr").getAsString());
+	}
+
+	private static EnvironmentSnapshotService.EnvironmentImpact environmentImpactWithStderr(
+		final String stderr)
+	{
+		return new EnvironmentSnapshotService.EnvironmentImpact() {
+
+			@Override
+			public List<AWTDialogUtils.DialogInfo> getNewModalDialogs() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public String getImageJLog() {
+				return "";
+			}
+
+			@Override
+			public String getSciJavaLog() {
+				return "";
+			}
+
+			@Override
+			public String getConsoleStdout() {
+				return "";
+			}
+
+			@Override
+			public String getConsoleStderr() {
+				return stderr;
+			}
+
+			@Override
+			public JsonObject toJson() {
+				final JsonObject json = new JsonObject();
+				json.addProperty("console_stderr", stderr);
+				return json;
+			}
+		};
 	}
 
 	private static ScriptExecutionService.ExecutionResult createExecutionResult(

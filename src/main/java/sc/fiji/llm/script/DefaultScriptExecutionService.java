@@ -322,9 +322,14 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		final String consoleStderr, final String primaryError,
 		final String errorDialog, final String warnings)
 	{
-		if (hasText(logErrors) || hasText(consoleStderr) || hasText(primaryError) ||
-			hasText(errorDialog)) return Status.FINISHED_WITH_ERRORS;
-		return hasText(warnings) ? Status.FINISHED_WITH_WARNINGS : Status.SUCCESS;
+		final TextLogs stderrLogs = new TextLogs("", consoleStderr);
+		if (hasText(logErrors) || hasText(stderrLogs.withoutKnownWarnings().getErrors()) ||
+			hasText(primaryError) || hasText(errorDialog))
+		{
+			return Status.FINISHED_WITH_ERRORS;
+		}
+		return hasText(warnings) || hasText(stderrLogs.getWarnings()) ?
+			Status.FINISHED_WITH_WARNINGS : Status.SUCCESS;
 	}
 
 	private static boolean hasText(final String value) {
@@ -341,12 +346,14 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			refreshEnvironment(execution);
 			final String consoleStderr = execution.environment == null ? "" : execution
 				.environment.getConsoleStderr().trim();
+			final String consoleStderrErrors = new TextLogs("", consoleStderr)
+				.withoutKnownWarnings().getErrors().trim();
 			final String diagnostic = cleanedLogs.withoutKnownWarnings().getErrors().trim();
 			if (!diagnostic.isEmpty() && (execution.primaryError == null ||
 				execution.primaryError.isBlank())) execution.primaryError = diagnostic;
-			if (!consoleStderr.isEmpty() && (execution.primaryError == null ||
-				execution.primaryError.isBlank())) execution.primaryError = consoleStderr.lines()
-				.findFirst().orElse(consoleStderr);
+			if (!consoleStderrErrors.isEmpty() && (execution.primaryError == null ||
+				execution.primaryError.isBlank())) execution.primaryError = consoleStderrErrors.lines()
+				.findFirst().orElse(consoleStderrErrors);
 			finish(execution, classifyFinishedStatus(diagnostic, consoleStderr,
 				execution.primaryError, execution.errorDialog, warnings), null, delta);
 		}
@@ -469,10 +476,14 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			final EnvironmentImpact environment = execution.environment;
 			final String consoleStderr = environment == null ? "" : environment
 				.getConsoleStderr();
+			final TextLogs consoleStderrLogs = new TextLogs("", consoleStderr);
+			final TextLogs consoleStderrWithoutWarnings = consoleStderrLogs
+				.withoutKnownWarnings();
 			addTextProperty(result, "output", logs.getOutput());
 			addTextProperty(result, "errors", appendDiagnostic(logsWithoutWarnings.getErrors(),
-				consoleStderr));
-			addTextProperty(result, "warnings", logs.getWarnings());
+				consoleStderrWithoutWarnings.getErrors()));
+			addTextProperty(result, "warnings", appendDiagnostic(logs.getWarnings(),
+				consoleStderrLogs.getWarnings()));
 			addTextProperty(result, "error_dialog", execution.errorDialog);
 
 			final JsonArray dialogs = new JsonArray();

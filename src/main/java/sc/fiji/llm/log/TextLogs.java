@@ -35,8 +35,9 @@ import java.util.regex.Pattern;
 /** A pair of text channels captured from an execution surface. */
 public final class TextLogs {
 
-	private static final Pattern AUTO_IMPORT_WARNING = Pattern.compile(
-		"(?im)^\\[WARNING\\] Auto-imports not available for language '[^\\r\\n']+'.*$");
+	private static final Pattern KNOWN_WARNING = Pattern.compile(
+		"(?im)^\\[WARNING\\] (?:Auto-imports not available for language " +
+		"'[^\\r\\n']+'.*|Ignoring unsupported output\\b[^\\r\\n]*)$");
 
 	private final String output;
 	private final String errors;
@@ -55,7 +56,7 @@ public final class TextLogs {
 	}
 
 	public String getWarnings() {
-		final Matcher matcher = AUTO_IMPORT_WARNING.matcher(errors);
+		final Matcher matcher = KNOWN_WARNING.matcher(errors);
 		final StringBuilder warnings = new StringBuilder();
 		while (matcher.find()) {
 			if (warnings.length() > 0) warnings.append(System.lineSeparator());
@@ -102,6 +103,6 @@ public final class TextLogs {
 
 	private static String stripKnownWarnings(final String logs) {
 		if (logs == null || logs.isBlank()) return logs == null ? "" : logs;
-		return AUTO_IMPORT_WARNING.matcher(logs).replaceAll("");
+		return KNOWN_WARNING.matcher(logs).replaceAll("");
 	}
 }
