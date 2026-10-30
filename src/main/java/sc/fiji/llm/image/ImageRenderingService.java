@@ -66,4 +66,12 @@ public interface ImageRenderingService extends ImageJService {
 
 	Optional<RenderedImageResult> render(int imageId, ImageRenderOptions options)
 		throws IOException;
+
+	/**
+	 * Returns image and display metadata without rendering or sharing pixel data.
+	 *
+	 * @param imageId ID from the open-image list
+	 * @return metadata when the image is open
+	 */
+	Optional<ImageRenderMetadata> getImageMetadata(int imageId);
 }

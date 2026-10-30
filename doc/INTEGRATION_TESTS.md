@@ -132,7 +132,9 @@ would:
 2. Call `fiji_image_activate` with the different `image_id`.
 3. Call `fiji_image_list` again and verify that the selected image is now active.
 4. Call `fiji_image_details` with that `image_id` and verify the title, active
-      state, pixel type, and dimension metadata.
+      state, pixel type, and dimension metadata. Verify each dimension reports
+      its `axis_index`, and verify `index_base: 0` declares that all axis,
+      channel, and plane-position indices are zero-based.
 
 5. Call `fiji_image_view` with that `image_id`.
 6. Verify that the result contains a text render-metadata content block and an
@@ -158,6 +160,19 @@ would:
       `fiji_script_run`.
       Verify that each returns within a few seconds and that the Fiji status
       bar does not show "computing min/max".
+13. Open a real multi-channel composite image with distinct channel labels,
+      LUTs, display ranges, and non-unit spatial calibration. Call
+      `fiji_image_details` and `fiji_image_view` for the same `image_id`.
+      Verify that both results have matching `dimensions`, `indexing`,
+      `plane_position`, `channel_index`, `channel_count`, `is_composite`,
+      `display_mode`, `channels`, and `spatial_calibration` values. Check that
+      channel entries report the expected zero-based `channel_index`, label, active
+      state, display range, and LUT color, and that calibration reports the
+      expected pixel sizes and units.
+14. Verify `index_base` is `0` in both results and that `axis_index`, channel
+      indices, and `plane_position` values are zero-based. Confirm that
+      `fiji_image_view` additionally reports render-specific fields and image
+      content, while `fiji_image_details` does not render pixels.
 
 ## Tool Sequence and Common Checks
 

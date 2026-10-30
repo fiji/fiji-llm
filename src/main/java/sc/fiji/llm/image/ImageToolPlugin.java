@@ -45,8 +45,6 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.TextContent;
-import net.imagej.ImgPlus;
-import net.imagej.axis.AxisType;
 import sc.fiji.llm.data.ImageJ1HelperService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -130,35 +128,15 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 		return jsonProp("activated_image", activatedImage).toString();
 	}
 
-	@Tool(value = { "Return metadata for an open image, including title, pixel type, dimensions, and whether it is the active image." }, name = "fiji_image_details")
+	@Tool(value = { "Return shared metadata for an open image, including its axes, composite/display mode, per-channel labels, LUT colors and display ranges, and spatial calibration. All indices and plane positions use zero-based indexing." }, name = "fiji_image_details")
 	public String getImageDetails(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		try {
-			final Optional<Object> image = imageJ1HelperService.getImage(imageId);
-			if (image.isEmpty()) return imageNotFoundError(imageId);
-			final ImgPlus<?> imgPlus = ImageJ1HelperService.wrap(image.get());
-
-			JsonObject result = new JsonObject();
-			result.addProperty("image_id", imageId);
-			result.addProperty("title", imageJ1HelperService.getImageTitle(image.get()));
-			result.addProperty("active", imageJ1HelperService.isActiveImage(imageId));
-			result.addProperty("pixel_type", imgPlus.getImg().getType().getClass()
-				.getSimpleName());
-
-			JsonArray dims = new JsonArray();
-			for (int i = 0; i < imgPlus.numDimensions(); i++) {
-				JsonObject dimObj = new JsonObject();
-				try {
-					AxisType axisType = imgPlus.axis(i).type();
-					dimObj.addProperty("type", axisType != null ? axisType.getLabel() : "Unknown");
-				}
-				catch (Exception e) {
-					dimObj.addProperty("type", "Dim" + i);
-				}
-				dimObj.addProperty("length", imgPlus.dimension(i));
-				dims.add(dimObj);
-			}
-			result.add("dimensions", dims);
-			return result.toString();
+			if (imageRenderingService == null) return jsonError(
+				"Image metadata is not available");
+			final Optional<ImageRenderMetadata> metadata = imageRenderingService
+				.getImageMetadata(imageId);
+			return metadata.map(imageMetadata -> imageMetadata.toDetailsJson().toString())
+				.orElseGet(() -> imageNotFoundError(imageId));
 		}
 		catch (RuntimeException e) {
 			return jsonError("Failed to run fiji_image_details: " + e.getMessage());
@@ -171,7 +149,7 @@ public class ImageToolPlugin extends AbstractAiToolPlugin {
 			"fiji_image_preview").get(0);
 	}
 
-	@Tool(value = { "Return a faithful rendering of an open image for analysis, preserving Fiji display adjustments such as LUTs and including visible ROIs and overlays. Use this by default for image interpretation or whenever display context matters; the result also includes render metadata." }, name = "fiji_image_view")
+	@Tool(value = { "Return the shared image metadata plus a faithful rendering of the current plane, preserving Fiji display adjustments such as LUTs and including visible ROIs and overlays. All indices and plane positions use zero-based indexing." }, name = "fiji_image_view")
 	public List<Content> viewImage(@P(name = "image_id", value = "Image ID from fiji_image_list") int imageId) {
 		return renderImage(imageId, new ImageRenderOptions(
 			ImageRenderOptions.DEFAULT_MAX_DIMENSION, true, true), true,
