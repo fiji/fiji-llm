@@ -216,23 +216,72 @@ With Fiji showing at least one ordinary AWT or Swing window:
       class, type, bounds, active state, and modality metadata.
 2. Call `fiji_ui_controls_read` with one exact window title and verify that
       supported labels, buttons, text fields, checkboxes, choices, combo boxes, and
-      menu entries include roles and state metadata. Supply the exact window
-      class as well when titles are duplicated.
-3. Call `fiji_ui_screenshot` and verify the result contains JSON metadata plus
+      showing controls include roles and state metadata. Supply the exact window
+      class as well when titles are duplicated. Confirm controls beneath a
+      non-showing container and buttons without a usable label, accessible name,
+      tooltip, or action command are omitted. Confirm described icon buttons
+      remain available.
+3. In the Script Editor, call `fiji_ui_menu_read` without `parent_path` and
+      verify it returns only top-level menu entries with paths, roles, labels,
+      and enabled state. Open `Templates` with `fiji_ui_control_interact` using
+      its returned path, then poll `fiji_ui_control_interact_status` until it
+      completes. Verify its delta lists only immediate menu entries as added
+      controls. Read
+      that menu with `fiji_ui_menu_read` using its path, then repeat for
+      `ImageJ 1.x` and verify the `Batch` submenu appears without its
+      descendants. Verify reading a closed submenu does not expose its children.
+4. Call `fiji_ui_screenshot` and verify the result contains JSON metadata plus
       an MCP `image` content block with PNG data. Screenshots request focus
       automatically only when the target is not already active; verify the
       `focus_requested` and `focus_restored` metadata. Focus activation and
       restoration are best effort and do not guarantee an unobstructed capture.
-4. Use a returned showing component path to capture a component crop, and
+5. Use a returned showing component path to capture a component crop, and
       verify that a hidden or ambiguous target returns a text error rather than an
       image block.
-5. Exercise collection controls with `fiji_ui_controls_read`. Use the N5
+6. With a disposable frame that has no unsaved state, call
+      `fiji_ui_window_close` with its exact title and class. Verify it returns a
+      `run_id`; poll `fiji_ui_window_close_status` until terminal and verify the
+      delta reports the target frame visibility changing from true to false and
+      includes the frame in `windows_closed`.
+7. Open a disposable unsaved Script Editor tab and request its frame close with
+      `fiji_ui_window_close`. Verify the call returns promptly with a `run_id`,
+      polling reports `blocked_by_dialog` with the save prompt, and the frame
+      remains available while the prompt is unresolved. Respond with the chosen
+      exact button, continue polling, and verify the final delta reports the frame
+      closing after the dialog is dismissed.
+      Discard only the disposable test script during cleanup.
+8. Open the N5 importer with a small local test container. Call
+      `fiji_ui_windows_read` and `fiji_ui_controls_read` to identify its frame and
+      container field. Re-read controls immediately before each action, then use
+      `fiji_ui_control_interact` with `action: "set_text"` and the test path as
+      `text`. Poll its status until completion and verify `changes.controls`
+      contains the text field path with its resulting `state.value`. Use a fresh control snapshot to
+      target the enabled `Detect datasets`
+      button with `action: "click"`; poll until completion and verify the dataset
+      tree appears or updates. Confirm `fiji_ui_controls_read` recommends
+      `fiji_ui_control_interact` when it reports an interactable control.
+9. In a controlled window with a text field, editable checkbox, `JComboBox`,
+      AWT `Choice`, `JList`, `JTable`, and `JTree`, test `set_text`, `set_checked`
+      with both true and false, and `select` with valid zero-based indices.
+      Verify `changes.controls` lists affected paths with their resulting states,
+      omits unchanged paths, and uses `state: null` after a fixture control is
+      removed. Also verify combo-box and choice snapshots include bounded
+      `data.items` with option indices,
+      values, and selection state. Test missing action arguments, an action
+      incompatible with the target control, an out-of-range index, a nonexistent
+      path, and an ambiguous window; poll each run to `failed` and verify its error
+      without acting on another control. Verify password fields are not offered for
+      interaction. Confirm `fiji_ui_dialog_respond` still handles exact buttons
+      in dialogs. For a button that opens a modal dialog, verify the interaction
+      returns a `run_id` promptly, polling reports `blocked_by_dialog` and its
+      details, and after responding the run completes with a state delta.
+10. Exercise collection controls with `fiji_ui_controls_read`. Use the N5
       importer window for the dataset tree: expand a branch, select a node, and
       verify role `tree`, `data.visible_row_count`, and `data.nodes`. Each node
       should report `row`, `value`, `path`, `path_indices`, `selected`,
       `expanded`, and `leaf`. Confirm collapsed descendants are not reported as
       visible nodes.
-6. Use a controlled window with a small `JList`, `JTable`, and `JTree` fixture
+11. Use a controlled window with a small `JList`, `JTable`, and `JTree` fixture
       with known contents and selections. Lists should report role `list`,
       `data.item_count`, and `data.items` with `index`, `value`, and `selected`.
       Tables should report role `table`, `data.row_count`, `data.column_count`,

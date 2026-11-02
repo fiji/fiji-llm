@@ -32,7 +32,6 @@ package sc.fiji.llm.ui;
 import java.awt.AWTException;
 import java.awt.Button;
 import java.awt.Checkbox;
-import java.awt.CheckboxMenuItem;
 import java.awt.Choice;
 import java.awt.Component;
 import java.awt.Container;
@@ -43,7 +42,6 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Label;
 import java.awt.Menu;
 import java.awt.MenuBar;
-import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -67,6 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.accessibility.AccessibleContext;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBox;
@@ -83,6 +82,7 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTable;
 import javax.swing.JToggleButton;
 import javax.swing.JTree;
+import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 import javax.swing.tree.TreePath;
@@ -122,6 +122,14 @@ public final class AWTDialogUtils {
 	{
 		return invokeOnEdt(() -> collectControls(findVisibleWindow(windowTitle,
 			windowClassName)));
+	}
+
+	/** Returns one level of menus from a visible Swing menu bar. */
+	public static List<ControlInfo> getVisibleMenuItems(final String windowTitle,
+		final String windowClassName, final String parentPath)
+	{
+		return invokeOnEdt(() -> collectVisibleMenuItems(findVisibleWindow(windowTitle,
+			windowClassName), parentPath));
 	}
 
 	/** Captures a visible window or component, restoring the previous focus afterward. */
@@ -207,12 +215,84 @@ public final class AWTDialogUtils {
 		return windowClassName.isEmpty() || windowClassName.equals(window.getClass().getName());
 	}
 
+	private static List<ControlInfo> collectVisibleMenuItems(final Window window,
+		final String parentPath)
+	{
+		if (!(window instanceof RootPaneContainer rootPaneContainer)) throw new IllegalStateException(
+			"Target window does not have a Swing menu bar");
+		final JMenuBar menuBar = rootPaneContainer.getRootPane().getJMenuBar();
+		if (menuBar == null || !menuBar.isShowing()) throw new IllegalStateException(
+			"Target window has no showing Swing menu bar");
+
+		final List<ControlInfo> menus = new ArrayList<>();
+		if (parentPath == null || parentPath.isBlank()) {
+			for (int index = 0; index < menuBar.getMenuCount(); index++) {
+				final JMenu menu = menuBar.getMenu(index);
+				if (menu != null && menu.isShowing()) menus.add(describeControl(menu,
+					"menu_bar/menu[" + index + "]"));
+			}
+		}
+		else {
+			final JMenu parentMenu = resolveSwingMenu(menuBar, parentPath);
+			if (!parentMenu.getPopupMenu().isShowing()) throw new IllegalStateException(
+				"Open the menu before reading its entries: " + parentPath);
+			for (int index = 0; index < parentMenu.getItemCount(); index++) {
+				final JMenuItem item = parentMenu.getItem(index);
+				if (item != null && item.isShowing()) menus.add(describeControl(item,
+					parentPath + "/item[" + index + "]"));
+			}
+		}
+		return Collections.unmodifiableList(menus);
+	}
+
+	private static JMenu resolveSwingMenu(final JMenuBar menuBar,
+		final String menuPath)
+	{
+		final String[] segments = menuPath.split("/");
+		if (segments.length < 2 || !"menu_bar".equals(segments[0])) throw new IllegalArgumentException(
+			"parent_path must be a menu path returned by fiji_ui_menu_read");
+
+		final int menuIndex = parseMenuIndex(segments[1], "menu", menuBar.getMenuCount());
+		JMenu menu = menuBar.getMenu(menuIndex);
+		if (menu == null || !menu.isShowing()) throw new IllegalStateException(
+			"Menu is not showing: " + menuPath);
+
+		for (int segmentIndex = 2; segmentIndex < segments.length; segmentIndex++) {
+			if (!menu.getPopupMenu().isShowing()) throw new IllegalStateException(
+				"Open the menu before reading its entries: " + menuPath);
+			final int itemIndex = parseMenuIndex(segments[segmentIndex], "item", menu
+				.getItemCount());
+			final JMenuItem item = menu.getItem(itemIndex);
+			if (!(item instanceof JMenu childMenu) || !item.isShowing()) throw new IllegalStateException(
+				"Menu path does not identify a showing submenu: " + menuPath);
+			menu = childMenu;
+		}
+		return menu;
+	}
+
+	private static int parseMenuIndex(final String segment, final String prefix,
+		final int itemCount)
+	{
+		if (!segment.startsWith(prefix + "[") || !segment.endsWith("]")) throw new IllegalArgumentException(
+			"Invalid menu path segment: " + segment);
+		final int index;
+		try {
+			index = Integer.parseInt(segment.substring(prefix.length() + 1, segment.length() - 1));
+		}
+		catch (final NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid menu path index: " + segment, e);
+		}
+		if (index < 0 || index >= itemCount) throw new IllegalArgumentException(
+			"Menu path index is out of range: " + segment);
+		return index;
+	}
+
 	private static List<ControlInfo> collectControls(final Window window) {
 		final List<ControlInfo> controls = new ArrayList<>();
 		collectControls(window, "root", controls, Collections.newSetFromMap(
 			new IdentityHashMap<>()));
 		if (window instanceof Frame frame && frame.getMenuBar() != null) {
-			collectMenuControls(frame.getMenuBar(), "menu_bar", controls);
+			collectTopLevelMenuControls(frame.getMenuBar(), "menu_bar", controls);
 		}
 		return Collections.unmodifiableList(controls);
 	}
@@ -220,11 +300,9 @@ public final class AWTDialogUtils {
 	private static void collectControls(final Component component, final String path,
 		final List<ControlInfo> controls, final Set<Component> visited)
 	{
-		if (!visited.add(component)) return;
-		if (component.isVisible()) {
-			final ControlInfo control = describeControl(component, path);
-			if (control != null) controls.add(control);
-		}
+		if (!visited.add(component) || !component.isShowing()) return;
+		final ControlInfo control = describeControl(component, path);
+		if (control != null) controls.add(control);
 		if (component instanceof Container container) {
 			final Component[] children = container.getComponents();
 			for (int i = 0; i < children.length; i++) {
@@ -233,29 +311,16 @@ public final class AWTDialogUtils {
 		}
 	}
 
-	private static void collectMenuControls(final Menu menu, final String path,
-		final List<ControlInfo> controls)
-	{
-		for (int i = 0; i < menu.getItemCount(); i++) {
-			final MenuItem item = menu.getItem(i);
-			if (item == null) continue;
-			final String itemPath = path + "/item[" + i + "]";
-			final String role = item instanceof Menu ? "menu" : "menu_item";
-			final Boolean selected = item instanceof CheckboxMenuItem checkbox ?
-				checkbox.getState() : null;
-			controls.add(new ControlInfo(itemPath, role, item.getClass().getName(), item
-				.getLabel(), null, selected, null, item.isEnabled(), true, false, false,
-				item.getActionCommand(), null));
-			if (item instanceof Menu child) collectMenuControls(child, itemPath, controls);
-		}
-	}
-
-	private static void collectMenuControls(final MenuBar menuBar, final String path,
+	private static void collectTopLevelMenuControls(final MenuBar menuBar,
+		final String path,
 		final List<ControlInfo> controls)
 	{
 		for (int i = 0; i < menuBar.getMenuCount(); i++) {
 			final Menu menu = menuBar.getMenu(i);
-			if (menu != null) collectMenuControls(menu, path + "/menu[" + i + "]", controls);
+			if (menu == null) continue;
+			controls.add(new ControlInfo(path + "/menu[" + i + "]", "menu", menu
+				.getClass().getName(), menu.getLabel(), null, null, null, menu.isEnabled(),
+				true, true, false, menu.getActionCommand(), null));
 		}
 	}
 
@@ -284,18 +349,22 @@ public final class AWTDialogUtils {
 			"checkbox", component.getClass().getName(), checkbox.getLabel(), null, checkbox
 				.getState(), null, checkbox.isEnabled(), checkbox.isVisible(), checkbox
 				.isShowing(), false, null, bounds);
-		if (component instanceof Button button) return new ControlInfo(path, "button",
-			component.getClass().getName(), button.getLabel(), null, null, null, button
-				.isEnabled(), button.isVisible(), button.isShowing(), false, button
-				.getActionCommand(), bounds);
+		if (component instanceof Button button) {
+			final String text = buttonLabel(button.getLabel(), button);
+			final String actionCommand = button.getActionCommand();
+			if (isAnonymousButton(text, actionCommand)) return null;
+			return new ControlInfo(path, "button", component.getClass().getName(), text, null,
+				null, null, button.isEnabled(), button.isVisible(), button.isShowing(), false,
+				actionCommand, bounds);
+		}
 		if (component instanceof JComboBox<?> combo) return new ControlInfo(path,
 			"combo_box", component.getClass().getName(), null, selectedItem(combo
 				.getSelectedItem()), null, null, combo.isEnabled(), combo.isVisible(), combo
-				.isShowing(), false, null, bounds);
+				.isShowing(), false, null, bounds, comboBoxData(combo));
 		if (component instanceof Choice choice) return new ControlInfo(path,
 			"choice", component.getClass().getName(), null, choice.getSelectedItem(), null,
 			null, choice.isEnabled(), choice.isVisible(), choice.isShowing(), false, null,
-			bounds);
+			bounds, choiceData(choice));
 		if (component instanceof AbstractButton button) return describeButton(button,
 			path, bounds);
 		if (component instanceof JTextComponent textComponent) {
@@ -332,9 +401,66 @@ public final class AWTDialogUtils {
 		else role = "button";
 		final boolean hasSelectedState = button instanceof JToggleButton || button instanceof
 			JCheckBoxMenuItem || button instanceof JRadioButtonMenuItem;
-		return new ControlInfo(path, role, button.getClass().getName(), button.getText(),
-			null, hasSelectedState ? button.isSelected() : null, null, button.isEnabled(),
-			button.isVisible(), button.isShowing(), false, button.getActionCommand(), bounds);
+		final String text = buttonLabel(button.getText(), button);
+		final String actionCommand = button.getActionCommand();
+		if (isAnonymousButton(text, actionCommand)) return null;
+		return new ControlInfo(path, role, button.getClass().getName(), text, null,
+			hasSelectedState ? button.isSelected() : null, null, button.isEnabled(), button
+				.isVisible(), button.isShowing(), false, actionCommand, bounds);
+	}
+
+	private static String buttonLabel(final String text, final Component component) {
+		if (text != null && !text.isBlank()) return text;
+		final AccessibleContext accessibleContext = component.getAccessibleContext();
+		if (accessibleContext != null) {
+			final String accessibleName = accessibleContext.getAccessibleName();
+			if (accessibleName != null && !accessibleName.isBlank()) return accessibleName;
+		}
+		if (component instanceof AbstractButton button) {
+			final String toolTip = button.getToolTipText();
+			if (toolTip != null && !toolTip.isBlank()) return toolTip;
+		}
+		return null;
+	}
+
+	private static boolean isAnonymousButton(final String text,
+		final String actionCommand)
+	{
+		return (text == null || text.isBlank()) && (actionCommand == null || actionCommand
+			.isBlank());
+	}
+
+	private static Map<String, Object> comboBoxData(final JComboBox<?> combo) {
+		final List<String> options = new ArrayList<>();
+		for (int index = 0; index < combo.getItemCount(); index++) options.add(String.valueOf(
+			combo.getItemAt(index)));
+		return optionData(options, combo.getSelectedIndex());
+	}
+
+	private static Map<String, Object> choiceData(final Choice choice) {
+		final List<String> options = new ArrayList<>();
+		for (int index = 0; index < choice.getItemCount(); index++) options.add(choice.getItem(
+			index));
+		return optionData(options, choice.getSelectedIndex());
+	}
+
+	private static Map<String, Object> optionData(final List<String> options,
+		final int selectedIndex)
+	{
+		final List<Map<String, Object>> items = new ArrayList<>();
+		for (int index = 0; index < Math.min(options.size(), MAX_CONTROL_DATA_ITEMS); index++) {
+			final Map<String, Object> item = new LinkedHashMap<>();
+			item.put("index", index);
+			item.put("value", options.get(index));
+			item.put("selected", index == selectedIndex);
+			items.add(item);
+		}
+
+		final Map<String, Object> data = new LinkedHashMap<>();
+		data.put("item_count", options.size());
+		data.put("items", items);
+		data.put("truncated", options.size() > items.size());
+		return data;
 	}
 
 	private static Map<String, Object> listData(final JList<?> list) {
@@ -429,6 +555,30 @@ public final class AWTDialogUtils {
 		if (match[0] == null) throw new IllegalStateException(
 			"No visible component has path: " + path);
 		return match[0];
+	}
+
+	private static JMenuItem findSwingMenuComponent(final Window window,
+		final String menuPath)
+	{
+		if (!(window instanceof RootPaneContainer rootPaneContainer)) throw new IllegalStateException(
+			"Target window does not have a Swing menu bar");
+		final JMenuBar menuBar = rootPaneContainer.getRootPane().getJMenuBar();
+		if (menuBar == null || !menuBar.isShowing()) throw new IllegalStateException(
+			"Target window has no showing Swing menu bar");
+
+		final int lastItemSegment = menuPath.lastIndexOf("/item[");
+		if (lastItemSegment < 0) return resolveSwingMenu(menuBar, menuPath);
+
+		final String parentPath = menuPath.substring(0, lastItemSegment);
+		final JMenu parentMenu = resolveSwingMenu(menuBar, parentPath);
+		if (!parentMenu.getPopupMenu().isShowing()) throw new IllegalStateException(
+			"Open the menu before interacting with its entries: " + parentPath);
+		final String itemSegment = menuPath.substring(lastItemSegment + 1);
+		final int itemIndex = parseMenuIndex(itemSegment, "item", parentMenu.getItemCount());
+		final JMenuItem item = parentMenu.getItem(itemIndex);
+		if (item == null || !item.isShowing()) throw new IllegalStateException(
+			"Menu item is not showing: " + menuPath);
+		return item;
 	}
 
 	private static void findComponent(final Component component, final String path,
@@ -565,6 +715,170 @@ public final class AWTDialogUtils {
 	}
 
 	/**
+	 * Performs a supported interaction on one control selected by its visible window and path.
+	 *
+	 * @param windowTitle exact title of the visible target window
+	 * @param windowClassName optional exact class name to disambiguate windows
+	 * @param componentPath exact component path from {@link #getVisibleControls(String, String)}
+	 * @param action one of {@code click}, {@code set_text}, {@code set_checked}, or {@code select}
+	 * @param text new text for {@code set_text}; {@code null} otherwise
+	 * @param checked desired state for {@code set_checked}; {@code null} otherwise
+	 * @param index zero-based item or row index for {@code select}; {@code null} otherwise
+	 * @return the target control's description after the interaction
+	 * @throws IllegalArgumentException if the target or action arguments are missing or invalid
+	 * @throws IllegalStateException if the window or component is missing or ambiguous, or the
+	 *         target is hidden, disabled, or incompatible with the action
+	 */
+	public static ControlInfo interactWithControl(final String windowTitle,
+		final String windowClassName, final String componentPath, final String action,
+		final String text, final Boolean checked, final Integer index)
+	{
+		if (windowTitle == null || windowTitle.isBlank()) throw new IllegalArgumentException(
+			"Window title is required");
+		if (componentPath == null || componentPath.isBlank()) throw new IllegalArgumentException(
+			"Component path is required");
+		if (action == null || action.isBlank()) throw new IllegalArgumentException(
+			"Action is required");
+
+		final String normalizedAction = action.trim();
+		switch (normalizedAction) {
+			case "click":
+				if (text != null || checked != null || index != null) throw new IllegalArgumentException(
+					"click does not accept text, checked, or index");
+				break;
+			case "set_text":
+				if (text == null || checked != null || index != null) throw new IllegalArgumentException(
+					"set_text requires text and does not accept checked or index");
+				break;
+			case "set_checked":
+				if (checked == null || text != null || index != null) throw new IllegalArgumentException(
+					"set_checked requires checked and does not accept text or index");
+				break;
+			case "select":
+				if (index == null || text != null || checked != null) throw new IllegalArgumentException(
+					"select requires index and does not accept text or checked");
+				break;
+			default:
+				throw new IllegalArgumentException("Unsupported action: " + normalizedAction);
+		}
+
+		return invokeOnEdt(() -> {
+			final Window window = findVisibleWindow(windowTitle, windowClassName);
+			final Component component = componentPath.startsWith("menu_bar/") ?
+				findSwingMenuComponent(window, componentPath) : findComponent(window,
+					componentPath);
+			if (!component.isShowing()) throw new IllegalStateException(
+				"Target component is not showing: " + componentPath);
+			if (!component.isEnabled()) throw new IllegalStateException(
+				"Target component is disabled: " + componentPath);
+
+			switch (normalizedAction) {
+				case "click":
+					if (buttonInfo(component) == null) throw new IllegalStateException(
+						"Target component is not a supported button: " + componentPath);
+					clickButton(component);
+					break;
+				case "set_text":
+					setControlText(component, text);
+					break;
+				case "set_checked":
+					setControlChecked(component, checked);
+					break;
+				case "select":
+					selectControlItem(component, index);
+					break;
+				default:
+					throw new IllegalArgumentException("Unsupported action: " + normalizedAction);
+			}
+			return describeControl(component, normalize(componentPath));
+		});
+	}
+
+	private static void setControlText(final Component component, final String text) {
+		if (component instanceof JPasswordField || component instanceof TextField textField &&
+			textField.getEchoChar() != '\0') throw new IllegalStateException(
+				"Setting password fields is not supported");
+		if (component instanceof JTextComponent textComponent) {
+			if (!textComponent.isEditable()) throw new IllegalStateException(
+				"Target text component is not editable");
+			textComponent.setText(text);
+			return;
+		}
+		if (component instanceof TextComponent textComponent) {
+			if (!textComponent.isEditable()) throw new IllegalStateException(
+				"Target text component is not editable");
+			textComponent.setText(text);
+			return;
+		}
+		throw new IllegalStateException("Target component is not an editable text field or area");
+	}
+
+	private static void setControlChecked(final Component component,
+		final boolean checked)
+	{
+		if (component instanceof Checkbox checkbox) {
+			checkbox.setState(checked);
+			return;
+		}
+		if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
+			if (checkBoxMenuItem.isSelected() != checked) checkBoxMenuItem.doClick();
+			return;
+		}
+		if (component instanceof JToggleButton toggleButton && !(component instanceof
+			JRadioButton))
+		{
+			if (toggleButton.isSelected() != checked) toggleButton.doClick();
+			return;
+		}
+		throw new IllegalStateException("Target component is not a checkbox or toggle button");
+	}
+
+	private static void selectControlItem(final Component component, final int index) {
+		if (component instanceof JComboBox<?> comboBox) {
+			validateSelectionIndex(index, comboBox.getItemCount(), "combo box item");
+			comboBox.setSelectedIndex(index);
+			return;
+		}
+		if (component instanceof Choice choice) {
+			validateSelectionIndex(index, choice.getItemCount(), "choice item");
+			choice.select(index);
+			return;
+		}
+		if (component instanceof JList<?> list) {
+			validateSelectionIndex(index, list.getModel().getSize(), "list item");
+			list.setSelectedIndex(index);
+			list.ensureIndexIsVisible(index);
+			return;
+		}
+		if (component instanceof JTable table) {
+			validateSelectionIndex(index, table.getRowCount(), "table row");
+			if (!table.getRowSelectionAllowed()) throw new IllegalStateException(
+				"Target table does not allow row selection");
+			table.clearSelection();
+			table.addRowSelectionInterval(index, index);
+			if (table.getColumnCount() > 0) table.scrollRectToVisible(table.getCellRect(index, 0,
+				true));
+			return;
+		}
+		if (component instanceof JTree tree) {
+			validateSelectionIndex(index, tree.getRowCount(), "visible tree row");
+			tree.setSelectionRow(index);
+			tree.scrollRowToVisible(index);
+			return;
+		}
+		throw new IllegalStateException(
+			"Target component does not support indexed selection");
+	}
+
+	private static void validateSelectionIndex(final int index, final int size,
+		final String itemDescription)
+	{
+		if (index < 0 || index >= size) throw new IllegalArgumentException(
+			"index must be between 0 and " + (size - 1) + " for the target " +
+				itemDescription);
+	}
+
+	/**
 	 * Requests the normal window-manager close behavior for the unique visible
 	 * dialog with the given title.
 	 *
@@ -592,6 +906,32 @@ public final class AWTDialogUtils {
 			throw new IllegalStateException("Could not close dialog", e.getCause());
 		}
 		return result[0];
+	}
+
+	/**
+	 * Requests normal window-manager close handling for one visible frame.
+	 *
+	 * @param windowTitle exact title of the visible frame
+	 * @param windowClassName optional exact class name to disambiguate frames
+	 * @return the frame description and whether it remains visible after the request
+	 * @throws IllegalArgumentException if the title is null or blank
+	 * @throws IllegalStateException if the frame is missing, ambiguous, or the target is not a frame
+	 */
+	public static WindowCloseResponse closeWindow(final String windowTitle,
+		final String windowClassName)
+	{
+		if (windowTitle == null || windowTitle.isBlank()) throw new IllegalArgumentException(
+			"Window title is required");
+
+		return invokeOnEdt(() -> {
+			final Window window = findVisibleWindow(windowTitle, windowClassName);
+			if (!(window instanceof Frame)) throw new IllegalStateException(
+				"Target window is not a frame; use fiji_ui_dialog_close for dialogs");
+			final String title = windowTitle(window);
+			final String className = window.getClass().getName();
+			window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
+			return new WindowCloseResponse(title, className, window.isShowing());
+		});
 	}
 
 	private static DialogResponse respondOnEdt(final String dialogTitle,
@@ -1210,6 +1550,33 @@ public final class AWTDialogUtils {
 
 		public boolean isDialogVisibleAfter() {
 			return dialogVisibleAfter;
+		}
+	}
+
+	public static final class WindowCloseResponse {
+
+		private final String windowTitle;
+		private final String windowClassName;
+		private final boolean windowVisibleAfter;
+
+		private WindowCloseResponse(final String windowTitle, final String windowClassName,
+			final boolean windowVisibleAfter)
+		{
+			this.windowTitle = windowTitle == null ? "" : windowTitle;
+			this.windowClassName = windowClassName == null ? "" : windowClassName;
+			this.windowVisibleAfter = windowVisibleAfter;
+		}
+
+		public String getWindowTitle() {
+			return windowTitle;
+		}
+
+		public String getWindowClassName() {
+			return windowClassName;
+		}
+
+		public boolean isWindowVisibleAfter() {
+			return windowVisibleAfter;
 		}
 	}
 }

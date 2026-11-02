@@ -33,6 +33,25 @@ Use this agent to, when supported:
 - Inspect visible Java-owned windows with `fiji_ui_windows_read` and supported
 	controls with `fiji_ui_controls_read` before reasoning about general Fiji UI
 	state.
+- Browse Swing menus one level at a time with `fiji_ui_menu_read`: omit
+	`parent_path` for top-level menus, open a submenu using its returned path with
+	`fiji_ui_control_interact`, then read only that open submenu's entries.
+- Treat controls and menu entries as visible-state snapshots; hidden descendants
+	are omitted, anonymous buttons are omitted, and paths should be refreshed after
+	the UI changes.
+- When an explicitly requested action targets a non-dialog control, refresh the
+	control snapshot and use `fiji_ui_control_interact` with its exact window,
+	component path, action, and action-specific argument. Poll the returned run
+	id with `fiji_ui_control_interact_status`; if it reports
+	`blocked_by_dialog`, inspect/respond to that exact dialog and continue polling
+	until completion. Use the returned state delta to continue navigating, then refresh
+	control paths after any UI changes. Read `changes.controls` as changed paths with
+	their resulting states; `state: null` means that path no longer exists.
+	Keep using `fiji_ui_dialog_respond` for dialog buttons identified by exact text.
+- Close a frame only when explicitly requested, using `fiji_ui_window_close`
+	with its exact title and class when needed. Poll `fiji_ui_window_close_status`;
+	if a save dialog appears, inspect it and respond only after the intended
+	choice is clear. Use `fiji_ui_dialog_close` for dialogs themselves.
 - Use `fiji_ui_screenshot` when visual context is useful. It captures current
 	screen pixels and may include overlapping windows; requested focus changes
 	are best effort and the returned metadata reports whether focus was restored.

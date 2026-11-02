@@ -57,6 +57,21 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			  exact title is unknown.
 			- Use `fiji_ui_controls_read` to inspect the controls in one identified window.
 			  Select the window using its exact title and, when needed, its class name.
+			  The snapshot omits controls under non-showing components and buttons without
+			  a usable label, accessible name, tooltip, or action command. Paths are positional,
+			  so refresh the snapshot after the UI changes.
+			- Use `fiji_ui_menu_read` to inspect top-level Swing menus or the immediate
+			  entries of an open submenu. Open a submenu with `fiji_ui_control_interact`,
+			  poll until complete, then read that submenu using its returned path.
+			- Use `fiji_ui_control_interact` for an explicitly requested click, text entry,
+			  checkbox change, or indexed selection. It returns a `run_id`; poll
+			  `fiji_ui_control_interact_status` until terminal. If the run is
+			  `blocked_by_dialog`, inspect and answer the exact dialog, then continue polling.
+				Use `changes.controls` to see changed paths and their resulting states; a `null`
+				state means that path no longer exists. Refresh control paths after UI changes.
+			- Use `fiji_ui_window_close` only when closing a frame is explicitly requested.
+			  It requests normal window-manager close handling; poll
+			  `fiji_ui_window_close_status` and handle any reported save dialog explicitly.
 			- Use `fiji_ui_dialogs_read` when a dialog may be blocking an operation or when
 			  its message and available buttons must be identified.
 			- Use `fiji_ui_dialog_respond` only after reading the dialogs, with the exact

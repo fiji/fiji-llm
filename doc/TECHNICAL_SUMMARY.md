@@ -132,7 +132,7 @@ Built-in tools include:
 - **`SystemInfoToolPlugin`** — read-only host, JVM, application version, and update-site inspection
 - **`LogToolPlugin`** — ImageJ and SciJava log inspection
 - **`ConversationToolPlugin`** — one-time conversation naming from a supplied UUID, with an automatic timestamp
-- **`UiToolPlugin`** — visible AWT and Swing window/control inspection, screenshots, dialog inspection, exact button responses, and explicit dialog closing
+- **`UiToolPlugin`** — visible AWT and Swing window/control inspection, screenshots, typed path-targeted control interactions, asynchronous frame closing, exact dialog responses, and explicit dialog closing
 - **`ScriptExecutionService`** — shared Script Editor execution, bounded initial waits, state snapshots, and dialog-aware run status for scripts and `.ijm` macros
 
 `.ijm` macros are executed only by calling `TextEditor.runText()` on the active tab in a visible Script Editor. `fiji_script_run` rejects active `.ijm` tabs and directs callers to `fiji_macro_run`. Script and macro runs return `running`, `success`, `finished_with_errors`, `blocked_by_dialog`, or `infrastructure_error`. The initial run call waits up to 30 seconds; a still-running operation reports `wait_expired: true` and remains addressable by its `run_id`, without cancelling the Script Editor task or treating the wait expiry as an execution error. The matching status tool, `fiji_script_run_status` or `fiji_macro_run_status`, is read-only and should be polled until a terminal result. Blocked runs direct callers to `fiji_ui_dialog_respond` or `fiji_ui_dialog_close` for the intentional UI action.
@@ -145,6 +145,25 @@ recorder is closed, and an empty buffer is omitted.
 `fiji_ui_windows_read` and `fiji_ui_controls_read` inspect visible Java-owned
 AWT and Swing UI state on the event-dispatch thread. Control paths are snapshot
 selectors and should be re-read before any future state-changing UI action.
+Control traversal stops at non-showing components and omits buttons without a
+usable label, accessible name, tooltip, or action command. `fiji_ui_menu_read`
+returns the top-level Swing menus or the immediate entries of one currently open
+submenu; use `fiji_ui_control_interact` to open each submenu before reading it.
+`fiji_ui_control_interact` asynchronously supports `click`, `set_text`,
+`set_checked`, and zero-based `select` actions on compatible enabled, showing
+controls at an exact path in a uniquely matched visible window, including
+frames. Poll `fiji_ui_control_interact_status` for running or
+`blocked_by_dialog` state; it observes modal dialogs without blocking the poll
+call on the EDT. Completion reports only observed changes to controls, windows,
+and dialogs; `changes.controls` lists changed component paths with their resulting
+states, using `null` when a path no longer exists. Opening a submenu reports its
+immediate entries in that list. `duration_ms` is total elapsed
+wall time and includes any dialog-blocked interval. Control inspection includes bounded
+option values for combo boxes and AWT choices. `fiji_ui_dialog_respond` remains
+the dialog-specific action by exact button text.
+`fiji_ui_window_close` asynchronously dispatches the normal `WINDOW_CLOSING`
+event to one exact visible frame. Poll `fiji_ui_window_close_status`; a save
+prompt is reported as `blocked_by_dialog` and must be handled explicitly.
 `fiji_ui_screenshot` captures the current screen pixels for a visible window or
 showing component as an MCP image content block. It requests focus and restores
 the previous focus only when the target is not already active. Another window may
