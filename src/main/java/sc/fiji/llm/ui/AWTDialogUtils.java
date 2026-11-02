@@ -61,7 +61,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -71,18 +73,24 @@ import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JTable;
 import javax.swing.JToggleButton;
+import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
+import javax.swing.tree.TreePath;
 
 /** Utilities for inspecting and responding to visible AWT and Swing UI. */
 public final class AWTDialogUtils {
+
+	private static final int MAX_CONTROL_DATA_ITEMS = 100;
 
 	private AWTDialogUtils() {
 		// utility class
@@ -251,10 +259,19 @@ public final class AWTDialogUtils {
 		}
 	}
 
-	private static ControlInfo describeControl(final Component component,
+	static ControlInfo describeControl(final Component component,
 		final String path)
 	{
 		final Rectangle bounds = screenBounds(component);
+		if (component instanceof JTree tree) return new ControlInfo(path, "tree",
+			component.getClass().getName(), null, null, null, null, component.isEnabled(),
+			component.isVisible(), component.isShowing(), false, null, bounds, treeData(tree));
+		if (component instanceof JList<?> list) return new ControlInfo(path, "list",
+			component.getClass().getName(), null, null, null, null, component.isEnabled(),
+			component.isVisible(), component.isShowing(), false, null, bounds, listData(list));
+		if (component instanceof JTable table) return new ControlInfo(path, "table",
+			component.getClass().getName(), null, null, null, null, component.isEnabled(),
+			component.isVisible(), component.isShowing(), false, null, bounds, tableData(table));
 		if (component instanceof JLabel label) return new ControlInfo(path, "label",
 			component.getClass().getName(), label.getText(), null, null, null, component
 				.isEnabled(), component.isVisible(), component.isShowing(), false, null,
@@ -318,6 +335,89 @@ public final class AWTDialogUtils {
 		return new ControlInfo(path, role, button.getClass().getName(), button.getText(),
 			null, hasSelectedState ? button.isSelected() : null, null, button.isEnabled(),
 			button.isVisible(), button.isShowing(), false, button.getActionCommand(), bounds);
+	}
+
+	private static Map<String, Object> listData(final JList<?> list) {
+		final int itemCount = list.getModel().getSize();
+		final List<Map<String, Object>> items = new ArrayList<>();
+		for (int index = 0; index < Math.min(itemCount, MAX_CONTROL_DATA_ITEMS); index++) {
+			final Map<String, Object> item = new LinkedHashMap<>();
+			item.put("index", index);
+			item.put("value", String.valueOf(list.getModel().getElementAt(index)));
+			item.put("selected", list.isSelectedIndex(index));
+			items.add(item);
+		}
+
+		final Map<String, Object> data = new LinkedHashMap<>();
+		data.put("item_count", itemCount);
+		data.put("items", items);
+		data.put("truncated", itemCount > items.size());
+		return data;
+	}
+
+	private static Map<String, Object> tableData(final JTable table) {
+		final int rowCount = table.getRowCount();
+		final int columnCount = table.getColumnCount();
+		final List<String> columns = new ArrayList<>();
+		for (int column = 0; column < Math.min(columnCount, MAX_CONTROL_DATA_ITEMS); column++) {
+			columns.add(table.getColumnName(column));
+		}
+
+		final List<Map<String, Object>> rows = new ArrayList<>();
+		for (int row = 0; row < Math.min(rowCount, MAX_CONTROL_DATA_ITEMS); row++) {
+			final List<String> values = new ArrayList<>();
+			for (int column = 0; column < Math.min(columnCount, MAX_CONTROL_DATA_ITEMS); column++) {
+				values.add(String.valueOf(table.getValueAt(row, column)));
+			}
+			final Map<String, Object> rowData = new LinkedHashMap<>();
+			rowData.put("index", row);
+			rowData.put("selected", table.isRowSelected(row));
+			rowData.put("values", values);
+			rows.add(rowData);
+		}
+
+		final Map<String, Object> data = new LinkedHashMap<>();
+		data.put("row_count", rowCount);
+		data.put("column_count", columnCount);
+		data.put("columns", columns);
+		data.put("rows", rows);
+		data.put("truncated", rowCount > rows.size() || columnCount > columns.size());
+		return data;
+	}
+
+	private static Map<String, Object> treeData(final JTree tree) {
+		final int rowCount = tree.getRowCount();
+		final List<Map<String, Object>> nodes = new ArrayList<>();
+		for (int row = 0; row < Math.min(rowCount, MAX_CONTROL_DATA_ITEMS); row++) {
+			final TreePath treePath = tree.getPathForRow(row);
+			if (treePath == null) continue;
+
+			final Object[] pathComponents = treePath.getPath();
+			final List<String> labels = new ArrayList<>();
+			final List<Integer> pathIndices = new ArrayList<>();
+			for (int index = 0; index < pathComponents.length; index++) {
+				labels.add(String.valueOf(pathComponents[index]));
+				pathIndices.add(index == 0 ? 0 : tree.getModel().getIndexOfChild(
+					pathComponents[index - 1], pathComponents[index]));
+			}
+
+			final Object node = pathComponents[pathComponents.length - 1];
+			final Map<String, Object> nodeData = new LinkedHashMap<>();
+			nodeData.put("row", row);
+			nodeData.put("value", labels.get(labels.size() - 1));
+			nodeData.put("path", labels);
+			nodeData.put("path_indices", pathIndices);
+			nodeData.put("selected", tree.isPathSelected(treePath));
+			nodeData.put("expanded", tree.isExpanded(treePath));
+			nodeData.put("leaf", tree.getModel().isLeaf(node));
+			nodes.add(nodeData);
+		}
+
+		final Map<String, Object> data = new LinkedHashMap<>();
+		data.put("visible_row_count", rowCount);
+		data.put("nodes", nodes);
+		data.put("truncated", rowCount > nodes.size());
+		return data;
 	}
 
 	private static Component findComponent(final Window window, final String componentPath) {
@@ -789,12 +889,24 @@ public final class AWTDialogUtils {
 		private final boolean valueRedacted;
 		private final String actionCommand;
 		private final Rectangle bounds;
+		private final Map<String, Object> data;
 
 		private ControlInfo(final String path, final String role,
 			final String className, final String text, final String value,
 			final Boolean selected, final Boolean editable, final boolean enabled,
 			final boolean visible, final boolean showing, final boolean valueRedacted,
 			final String actionCommand, final Rectangle bounds)
+		{
+			this(path, role, className, text, value, selected, editable, enabled, visible,
+				showing, valueRedacted, actionCommand, bounds, Collections.emptyMap());
+		}
+
+		private ControlInfo(final String path, final String role,
+			final String className, final String text, final String value,
+			final Boolean selected, final Boolean editable, final boolean enabled,
+			final boolean visible, final boolean showing, final boolean valueRedacted,
+			final String actionCommand, final Rectangle bounds,
+			final Map<String, Object> data)
 		{
 			this.path = path;
 			this.role = role;
@@ -809,6 +921,7 @@ public final class AWTDialogUtils {
 			this.valueRedacted = valueRedacted;
 			this.actionCommand = actionCommand;
 			this.bounds = bounds == null ? null : new Rectangle(bounds);
+			this.data = Collections.unmodifiableMap(new LinkedHashMap<>(data));
 		}
 
 		public String getPath() {
@@ -861,6 +974,10 @@ public final class AWTDialogUtils {
 
 		public Rectangle getBounds() {
 			return bounds == null ? null : new Rectangle(bounds);
+		}
+
+		Map<String, Object> getData() {
+			return data;
 		}
 	}
 

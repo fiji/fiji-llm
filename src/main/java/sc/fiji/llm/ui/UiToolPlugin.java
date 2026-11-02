@@ -36,6 +36,7 @@ import java.util.List;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -52,6 +53,8 @@ import sc.fiji.llm.tools.ToolRecommendationUtils;
 /** AI tools for inspecting Fiji's visible UI. */
 @Plugin(type = AiToolPlugin.class)
 public class UiToolPlugin extends AbstractAiToolPlugin {
+
+	private static final Gson GSON = new Gson();
 
 	@Parameter
 	private ImageRenderingService imageRenderingService;
@@ -279,6 +282,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			result.addProperty("action_command", control.getActionCommand());
 		if (control.getBounds() != null) result.add("bounds", boundsJson(control
 			.getBounds()));
+		if (!control.getData().isEmpty()) result.add("data", GSON.toJsonTree(control
+			.getData()).getAsJsonObject());
 		return result;
 	}
 

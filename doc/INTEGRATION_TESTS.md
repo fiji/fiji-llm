@@ -226,6 +226,19 @@ With Fiji showing at least one ordinary AWT or Swing window:
 4. Use a returned showing component path to capture a component crop, and
       verify that a hidden or ambiguous target returns a text error rather than an
       image block.
+5. Exercise collection controls with `fiji_ui_controls_read`. Use the N5
+      importer window for the dataset tree: expand a branch, select a node, and
+      verify role `tree`, `data.visible_row_count`, and `data.nodes`. Each node
+      should report `row`, `value`, `path`, `path_indices`, `selected`,
+      `expanded`, and `leaf`. Confirm collapsed descendants are not reported as
+      visible nodes.
+6. Use a controlled window with a small `JList`, `JTable`, and `JTree` fixture
+      with known contents and selections. Lists should report role `list`,
+      `data.item_count`, and `data.items` with `index`, `value`, and `selected`.
+      Tables should report role `table`, `data.row_count`, `data.column_count`,
+      `data.columns`, and `data.rows` with `index`, `values`, and `selected`.
+      Check counts remain accurate and `data.truncated` is true when a widget
+      exceeds the reporting limit.
 
 ## Scripts
 
