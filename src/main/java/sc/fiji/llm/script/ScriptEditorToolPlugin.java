@@ -284,11 +284,13 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 			final TextEditor textEditor = TextEditorUtils
 				.getLastFocusedVisibleEditor();
 			if (textEditor == null) {
-				return jsonError("Script editor is not open",
-					ErrorOptions.withTool("fiji_script_open_editor"));
+				// Start the editor, returning a blank script.
+				return startEditor();
 			}
 
 			// Create new tab with default empty content
+			// NB: delegates to TextEditor.newTab, which does nothing if the current
+			// tab is an unmodified blank script.
 			final String[] result = new String[1];
 			if (SwingUtilities.isEventDispatchThread()) {
 				result[0] = performCreateNewTab(textEditor);

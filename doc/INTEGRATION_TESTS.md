@@ -7,9 +7,11 @@ live Fiji instance with the Script Editor and MCP tools available.
 ## Test Setup
 
 - Start Fiji with the Fiji-LLM plugin installed and the MCP server available.
-- Open the Fiji Script Editor through `fiji_script_open_editor`.
-- Create or open one test script, then use `fiji_script_activate` before each
-  run as needed.
+- For script execution tests, open the Fiji Script Editor through
+  `fiji_script_open_editor`. Create or open one test script, then use
+  `fiji_script_activate` before each run as needed.
+- For the macro-recorder transfer test, close all Script Editor windows before
+  starting the recorder; see the macro regression setup below.
 - Run non-`.ijm` code through `fiji_script_run`; run `.ijm` macros through
       `fiji_macro_run`. Never bypass the Script Editor with a direct ImageJ macro
       execution path.
@@ -346,6 +348,11 @@ Run it only against a disposable Fiji session.
    `output: "STARTUP_TARGET_RAN"`.
 
 ## ImageJ Macros
+
+For the macro-recorder transfer regression, begin with all Script Editor
+windows closed and verify `fiji_script_list` returns an empty `editors` array.
+Keep the editor closed while recording; `fiji_macro_create_script` should open
+it and create the transferred `.ijm` tab.
 
 Start each macro regression run by deriving the test macro from recorded Fiji
 commands:
