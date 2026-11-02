@@ -598,8 +598,6 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		final JsonObject result = new JsonObject();
 		result.addProperty("run_id", run.runID);
 		result.addProperty("status", run.status);
-		final long endTime = run.finishedAt > 0 ? run.finishedAt : System.currentTimeMillis();
-		result.addProperty("duration_ms", Math.max(0, endTime - run.startedAt));
 		if (run.error != null && !run.error.isBlank()) result.addProperty("error", run.error);
 		if (run.monitorError != null && !run.monitorError.isBlank()) result.addProperty(
 			"monitor_error", run.monitorError);
@@ -822,14 +820,12 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		private final String componentPath;
 		private final String action;
 		private final String statusToolName;
-		private final long startedAt = System.currentTimeMillis();
 		private final AtomicBoolean snapshotQueued = new AtomicBoolean();
 		private volatile String status = "running";
 		private volatile JsonArray dialogs = new JsonArray();
 		private volatile JsonObject snapshot;
 		private volatile String error;
 		private volatile String monitorError;
-		private volatile long finishedAt;
 
 		private InteractionRun(final String runID, final String windowTitle,
 			final String windowClassName, final String componentPath, final String action,
@@ -854,14 +850,12 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			snapshot = resultSnapshot;
 			dialogs = new JsonArray();
 			status = "completed";
-			finishedAt = System.currentTimeMillis();
 		}
 
 		private synchronized void fail(final String message) {
 			if (isTerminal()) return;
 			error = message;
 			status = "failed";
-			finishedAt = System.currentTimeMillis();
 		}
 
 		private synchronized void recordMonitorError(final String message) {

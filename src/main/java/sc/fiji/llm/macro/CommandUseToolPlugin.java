@@ -238,7 +238,6 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		result.add("executed_command", command);
 		result.addProperty("status", status);
 		result.addProperty("run_id", execution.runID);
-		result.addProperty("duration_ms", System.currentTimeMillis() - execution.startedAt);
 		if (waitExpired) result.addProperty("wait_expired", true);
 		if (error != null && !error.isBlank()) result.addProperty("errors", error);
 		final JsonObject environment = impact.toJson();
@@ -269,7 +268,6 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		private final String menuPath;
 		private final Future<Module> future;
 		private final EnvironmentCapture capture;
-		private final long startedAt;
 		private String finishedResult;
 
 		private CommandExecution(final String runID, final ModuleInfo moduleInfo,
@@ -281,7 +279,6 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			this.menuPath = menuPath;
 			this.future = future;
 			this.capture = capture;
-			this.startedAt = System.currentTimeMillis();
 		}
 	}
 

@@ -348,8 +348,8 @@ syntax failures, runtime failures, and timeouts.
       and verify that the diagnostic is captured in `errors` and
       `console_stderr` or another relevant log.
 - [ ] Long-running script: run a script longer than 30 seconds and verify the
-      initial result reports `status: "running"`, `wait_expired: true`,
-      `duration_ms`, and a `run_id`; verify that wait expiry
+      initial result reports `status: "running"`, `wait_expired: true`, and a
+      `run_id`; verify that wait expiry
       does not populate `errors` or cancel the Script Editor task. Poll the run
       until it reaches a terminal result.
 
@@ -477,8 +477,8 @@ inspected together.
 - [ ] Console exception: trigger a macro exception or error after `print()`
       output and compare the Script Editor, ImageJ Log, and SciJava results.
 - [ ] Long-running macro: run a macro longer than 30 seconds and verify the
-      initial result reports `status: "running"`, `wait_expired: true`,
-      `duration_ms`, and a `run_id`; verify that wait expiry
+      initial result reports `status: "running"`, `wait_expired: true`, and a
+      `run_id`; verify that wait expiry
       does not populate `errors` or cancel the Script Editor task. Poll the run
       until it reaches a terminal result.
 

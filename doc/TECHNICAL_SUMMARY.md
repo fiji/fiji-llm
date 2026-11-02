@@ -157,8 +157,7 @@ frames. Poll `fiji_ui_control_interact_status` for running or
 call on the EDT. Completion reports only observed changes to controls, windows,
 and dialogs; `changes.controls` lists changed component paths with their resulting
 states, using `null` when a path no longer exists. Opening a submenu reports its
-immediate entries in that list. `duration_ms` is total elapsed
-wall time and includes any dialog-blocked interval. Control inspection includes bounded
+immediate entries in that list. Control inspection includes bounded
 option values for combo boxes and AWT choices. `fiji_ui_dialog_respond` remains
 the dialog-specific action by exact button text.
 `fiji_ui_window_close` asynchronously dispatches the normal `WINDOW_CLOSING`

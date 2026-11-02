@@ -90,7 +90,6 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 
 		final Execution execution = new Execution(newRunID(),
 			scriptID, kind);
-		execution.startedAt = System.currentTimeMillis();
 		executions.put(execution.runID, execution);
 
 		final Thread startupThread = new Thread(() -> {
@@ -435,7 +434,6 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		}
 		if (execution.environmentCapture != null) execution.environment = execution
 			.environmentCapture.finish();
-		execution.finishedAt = System.currentTimeMillis();
 		synchronized (execution) {
 			execution.notifyAll();
 		}
@@ -466,7 +464,6 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			result.addProperty("run_id", execution.runID);
 			result.addProperty("status", execution.status.toString());
 			if (waitExpired) result.addProperty("wait_expired", true);
-			result.addProperty("duration_ms", execution.elapsedMillis());
 			result.addProperty("script_id", execution.scriptID.toString());
 			addTextProperty(result, "script_name", execution.scriptName);
 
@@ -574,8 +571,6 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		private volatile Status status = Status.RUNNING;
 		private volatile boolean startupComplete;
 		private volatile String scriptName;
-		private volatile long startedAt;
-		private volatile long finishedAt;
 		private volatile String diagnostic;
 		private volatile TextLogs logs;
 		private volatile TextLogs logsBefore;
@@ -594,11 +589,6 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 			this.runID = runID;
 			this.scriptID = scriptID;
 			this.kind = kind;
-		}
-
-		private long elapsedMillis() {
-			final long end = finishedAt > 0 ? finishedAt : System.currentTimeMillis();
-			return Math.max(0, end - startedAt);
 		}
 
 		private ExecutionResult snapshot() {

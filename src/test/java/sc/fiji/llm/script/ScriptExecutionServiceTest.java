@@ -98,8 +98,7 @@ public class ScriptExecutionServiceTest {
 		final JsonObject json = result.toJson();
 		assertEquals("running", json.get("status").getAsString());
 		assertTrue(json.get("run_id").getAsString().length() <= 12);
-		assertTrue(json.has("duration_ms"));
-		assertFalse(json.has("elapsed_ms"));
+		assertFalse(json.has("duration_ms"));
 		assertTrue(json.get("wait_expired").getAsBoolean());
 		assertFalse(json.has("completion_state"));
 		assertFalse(json.has("completed"));
