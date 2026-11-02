@@ -31,6 +31,7 @@ package sc.fiji.llm.script;
 import com.google.gson.JsonObject;
 
 import net.imagej.ImageJService;
+import sc.fiji.llm.execution.AsyncRunRegistry;
 
 /** Service for running scripts through the SciJava Script Editor. */
 public interface ScriptExecutionService extends ImageJService {
@@ -61,7 +62,12 @@ public interface ScriptExecutionService extends ImageJService {
 		}
 	}
 
-	/** Starts a run and waits for completion, a blocking dialog, or the wait limit. */
+	/**
+	 * Starts a run and waits for completion, a blocking dialog, or the wait limit.
+	 * Only one run of each kind may be active at a time.
+	 *
+	 * @throws AsyncRunRegistry.RunInProgressException if a run of this kind is already active
+	 */
 	ExecutionResult run(ScriptID scriptID, RunKind kind, boolean returnWhenBlocked);
 
 	/** Returns the current state of a previously started run. */

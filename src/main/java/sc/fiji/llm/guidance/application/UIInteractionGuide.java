@@ -69,6 +69,8 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			  `blocked_by_dialog`, inspect and answer the exact dialog, then continue polling.
 				Use `changes.controls` to see changed paths and their resulting states; a `null`
 				state means that path no longer exists. Refresh control paths after UI changes.
+				Only one UI action may run at a time; control interactions and frame closes share
+				that slot. If a start is rejected, poll the active run using the recommended status tool.
 			- Use `fiji_ui_window_close` only when closing a frame is explicitly requested.
 			  It requests normal window-manager close handling; poll
 			  `fiji_ui_window_close_status` and handle any reported save dialog explicitly.

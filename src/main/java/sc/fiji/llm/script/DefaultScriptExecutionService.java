@@ -31,9 +31,7 @@ package sc.fiji.llm.script;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.SwingUtilities;
 
@@ -51,6 +49,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import net.imagej.legacy.LegacyService;
+import sc.fiji.llm.execution.AsyncRunRegistry;
 import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentImpact;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.PixelChangeTracking;
@@ -77,7 +76,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 	@Parameter
 	private EnvironmentSnapshotService environmentSnapshotService;
 
-	private final Map<String, Execution> executions = new ConcurrentHashMap<>();
+	private final AsyncRunRegistry<RunKind, Execution> executions = new AsyncRunRegistry<>();
 
 	/** Starts a run and waits for completion, a blocking dialog, or the wait limit. */
 	@Override
@@ -90,7 +89,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 
 		final Execution execution = new Execution(newRunID(),
 			scriptID, kind);
-		executions.put(execution.runID, execution);
+		executions.start(kind, execution.runID, execution);
 
 		final Thread startupThread = new Thread(() -> {
 			try {
@@ -434,6 +433,7 @@ public final class DefaultScriptExecutionService extends AbstractService impleme
 		}
 		if (execution.environmentCapture != null) execution.environment = execution
 			.environmentCapture.finish();
+		executions.complete(execution.runID);
 		synchronized (execution) {
 			execution.notifyAll();
 		}

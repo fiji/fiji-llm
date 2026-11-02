@@ -53,6 +53,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import net.imagej.legacy.LegacyService;
 import sc.fiji.llm.data.ImageJ1HelperService;
+import sc.fiji.llm.execution.AsyncRunRegistry;
 import sc.fiji.llm.guidance.workflows.CreatingMacrosGuide;
 import sc.fiji.llm.script.ScriptContextItem;
 import sc.fiji.llm.script.ScriptContextUtilities;
@@ -351,7 +352,7 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return output and errors produced by this run, plus logs. This call waits up to 30 seconds for the macro to finish or pause on a new modal dialog." }, name = "fiji_macro_run")
+	@Tool(value = { "Start the active .ijm macro through the visible Script Editor and return output and errors produced by this run, plus logs. Only one macro run may be active; if one is active, poll its run ID with fiji_macro_run_status before starting another. This call waits up to 30 seconds for the macro to finish or pause on a new modal dialog." }, name = "fiji_macro_run")
 	public String runMacro() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -370,6 +371,11 @@ public class ImageJMacroToolPlugin extends AbstractAiToolPlugin {
 
 			return scriptExecutionService.run(scriptID,
 				ScriptExecutionService.RunKind.MACRO, true).toJson().toString();
+		}
+		catch (final AsyncRunRegistry.RunInProgressException e) {
+			return jsonError("A macro run is already active. Poll fiji_macro_run_status with run_id " +
+				e.getActiveRunID() + " before starting another macro.", ErrorOptions.withTool(
+					"fiji_macro_run_status"));
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_macro_run: " + e.getMessage(),

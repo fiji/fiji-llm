@@ -104,6 +104,12 @@ the workflow ambiguous even if the underlying operation succeeds.
       continue, and is omitted when no follow-up is needed.
 - [ ] Paused, asynchronous, dialog-driven, and stateful workflows expose the
       identifiers and status fields needed to resume or inspect the operation.
+- [ ] Start one run in each category (script, macro, command, and UI action).
+      Verify a second same-category start is rejected with the active `run_id`
+      and correct status tool, while different categories remain independent.
+      Verify UI control interaction and frame close share one category. Terminal
+      results are retained for ten minutes from completion; verify exact expiry
+      with the registry's clock-controlled unit test.
 - [ ] Errors explain what failed and provide a useful recovery path without
       claiming success or hiding relevant partial state.
 - [ ] Destructive or broadly state-changing operations expose appropriate

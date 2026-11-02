@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -62,6 +61,7 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.execution.AsyncRunRegistry;
 import sc.fiji.llm.execution.EnvironmentSnapshotService;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentCapture;
 import sc.fiji.llm.execution.EnvironmentSnapshotService.EnvironmentImpact;
@@ -82,6 +82,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 	private static final long UI_SETTLE_DELAY_MS = 250;
 	private static final long COMMAND_WAIT_TIMEOUT_MS = 30000;
 	private static final long COMMAND_POLL_INTERVAL_MS = 50;
+	private static final String COMMAND_RUN_CATEGORY = "command";
 
 	@Parameter
 	private SearchService searchService;
@@ -95,7 +96,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 	@Parameter
 	private EnvironmentSnapshotService environmentSnapshotService;
 
-	private final Map<String, CommandExecution> executions = new ConcurrentHashMap<>();
+	private final AsyncRunRegistry<String, CommandExecution> executions = new AsyncRunRegistry<>();
 
 	public CommandUseToolPlugin() {
 		super(CommandUseToolPlugin.class);
@@ -111,7 +112,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		return "Command Interaction Tools";
 	}
 
-	@Tool(value = { "Execute an ImageJ command. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and log output observed during the operation." },
+	@Tool(value = { "Execute an ImageJ command. Only one command run can be active at a time; if one is active, poll its run ID with fiji_command_run_status before starting another. Commands that need an image generally use Fiji's active image, so verify the intended image is active before running when multiple images are open. Returns command status, environment impact, and log output observed during the operation." },
 		name = "fiji_command_run" )
 	public String runCommand(@P(name = "menu_path", value = "Exact menu path from fiji_command_search") String menuPath) {
 		EnvironmentSnapshotService.EnvironmentCapture capture = null;
@@ -131,15 +132,29 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 					ErrorOptions.with("fiji_command_search", RunningCommandsGuide.ID));
 			}
 
-			capture = environmentSnapshotService.capture(PixelChangeTracking.FINAL_SHA256);
-			// Run the module - this goes through the same path as the search panel
-			// and includes automatic recorder integration.
 			final String runID = newRunID();
-			final Future<Module> future = moduleService.run(moduleInfo, true);
 			final CommandExecution execution = new CommandExecution(runID, moduleInfo,
-				menuPath, future, capture);
-			executions.put(runID, execution);
+				menuPath);
+			executions.start(COMMAND_RUN_CATEGORY, runID, execution);
+			try {
+				capture = environmentSnapshotService.capture(PixelChangeTracking.FINAL_SHA256);
+				execution.capture = capture;
+				// Run the module - this goes through the same path as the search panel
+				// and includes automatic recorder integration.
+				execution.future = moduleService.run(moduleInfo, true);
+			}
+			catch (final RuntimeException e) {
+				executions.remove(runID);
+				if (capture != null) return commandError(menuPath, capture.finish(), e.getMessage());
+				throw e;
+			}
+			startCommandMonitor(execution);
 			return awaitCommand(execution);
+		}
+		catch (final AsyncRunRegistry.RunInProgressException e) {
+			return jsonError("A command run is already active. Poll fiji_command_run_status with run_id " +
+				e.getActiveRunID() + " before starting another command.", ErrorOptions.withTool(
+					"fiji_command_run_status"));
 		}
 		catch (RuntimeException e) {
 			if (capture != null) {
@@ -161,8 +176,44 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		if (execution == null) {
 			return jsonError("No command run found for run_id: " + runID);
 		}
+		if (execution.future == null) return startingCommandState(execution);
 		return execution.future.isDone() ? finishCommand(execution) : currentCommandState(
 			execution, false);
+	}
+
+	private String startingCommandState(final CommandExecution execution) {
+		final JsonObject command = new JsonObject();
+		command.addProperty("name", execution.moduleInfo.getTitle());
+		command.addProperty("menu_path", execution.menuPath);
+		final JsonObject result = new JsonObject();
+		result.add("executed_command", command);
+		result.addProperty("status", "running");
+		result.addProperty("run_id", execution.runID);
+		ToolRecommendationUtils.addToolRecommendations(result, "fiji_command_run_status");
+		return result.toString();
+	}
+
+	private void startCommandMonitor(final CommandExecution execution) {
+		final Thread monitor = new Thread(() -> {
+			try {
+				execution.future.get();
+			}
+			catch (final CancellationException | ExecutionException e) {
+				// finishCommand captures the terminal failure.
+			}
+			catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+			finishCommand(execution);
+		}, "Fiji-command-run-" + execution.runID);
+		monitor.setDaemon(true);
+		try {
+			monitor.start();
+		}
+		catch (final RuntimeException e) {
+			// Status polling can still observe and finalize the run.
+		}
 	}
 
 	private String awaitCommand(final CommandExecution execution) {
@@ -207,6 +258,7 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 			final EnvironmentImpact impact = execution.capture.finish();
 			execution.finishedResult = commandResult(execution, status, impact, false,
 				error);
+			executions.complete(execution.runID);
 			return execution.finishedResult;
 		}
 	}
@@ -266,19 +318,16 @@ public class CommandUseToolPlugin extends AbstractAiToolPlugin {
 		private final String runID;
 		private final ModuleInfo moduleInfo;
 		private final String menuPath;
-		private final Future<Module> future;
-		private final EnvironmentCapture capture;
+		private volatile Future<Module> future;
+		private volatile EnvironmentCapture capture;
 		private String finishedResult;
 
 		private CommandExecution(final String runID, final ModuleInfo moduleInfo,
-			final String menuPath, final Future<Module> future,
-			final EnvironmentCapture capture)
+			final String menuPath)
 		{
 			this.runID = runID;
 			this.moduleInfo = moduleInfo;
 			this.menuPath = menuPath;
-			this.future = future;
-			this.capture = capture;
 		}
 	}
 

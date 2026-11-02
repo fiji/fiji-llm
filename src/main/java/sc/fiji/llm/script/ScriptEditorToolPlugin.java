@@ -51,6 +51,7 @@ import com.google.gson.JsonObject;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import sc.fiji.llm.execution.AsyncRunRegistry;
 import sc.fiji.llm.guidance.workflows.ScriptingGuide;
 import sc.fiji.llm.log.TextLogs;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
@@ -325,7 +326,7 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return output and errors produced by this run, plus console stdout/stderr and ImageJ/SciJava logs. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog." }, name = "fiji_script_run")
+	@Tool(value = { "Start the active non-macro script through the visible Script Editor and return output and errors produced by this run, plus console stdout/stderr and ImageJ/SciJava logs. Only one non-macro script run may be active; if one is active, poll its run ID with fiji_script_run_status before starting another. This call waits up to 30 seconds for the script to finish or pause on a new modal dialog." }, name = "fiji_script_run")
 	public String runScript() {
 		try {
 			final ScriptID scriptID = TextEditorUtils.getActiveScriptID();
@@ -344,6 +345,11 @@ public class ScriptEditorToolPlugin extends AbstractAiToolPlugin {
 			final ScriptExecutionService.ExecutionResult execution = scriptExecutionService
 				.run(scriptID, ScriptExecutionService.RunKind.SCRIPT, true);
 			return stringProp("ran_script", execution.toJson());
+		}
+		catch (final AsyncRunRegistry.RunInProgressException e) {
+			return jsonError("A script run is already active. Poll fiji_script_run_status with run_id " +
+				e.getActiveRunID() + " before starting another script.", ErrorOptions.withTool(
+					"fiji_script_run_status"));
 		}
 		catch (Exception e) {
 			return jsonError("Failed to run fiji_script_run: " + e.getMessage(),

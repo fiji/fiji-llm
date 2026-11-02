@@ -39,6 +39,11 @@ Use this agent to, when supported:
 - Treat controls and menu entries as visible-state snapshots; hidden descendants
 	are omitted, anonymous buttons are omitted, and paths should be refreshed after
 	the UI changes.
+- Allow one active script, macro, command, and UI action at a time; control
+	interactions and frame closes share the UI action slot. If a start is rejected,
+	poll the returned active run ID with its recommended status tool. Terminal run
+	results remain available for ten minutes after completion; polling does not extend
+	that retention window.
 - When an explicitly requested action targets a non-dialog control, refresh the
 	control snapshot and use `fiji_ui_control_interact` with its exact window,
 	component path, action, and action-specific argument. Poll the returned run

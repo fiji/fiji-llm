@@ -34,7 +34,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.SwingUtilities;
@@ -52,6 +51,7 @@ import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
+import sc.fiji.llm.execution.AsyncRunRegistry;
 import sc.fiji.llm.image.ImageRenderingService;
 import sc.fiji.llm.tools.AbstractAiToolPlugin;
 import sc.fiji.llm.tools.AiToolPlugin;
@@ -64,8 +64,9 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 	private static final Gson GSON = new Gson();
 	private static final long INTERACTION_MONITOR_INTERVAL_MS = 50;
 	private static final int MAX_INTERACTION_MENU_ITEMS = 50;
+	private static final String UI_ACTION_CATEGORY = "ui";
 
-	private final Map<String, InteractionRun> interactionRuns = new ConcurrentHashMap<>();
+	private final AsyncRunRegistry<String, InteractionRun> interactionRuns = new AsyncRunRegistry<>();
 
 	@Parameter
 	private ImageRenderingService imageRenderingService;
@@ -190,7 +191,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 	 * @param index zero-based item or row index for {@code select}
 	 * @return JSON containing a run ID and current interaction status
 	 */
-	@Tool(value = { "Asynchronously interact with one exact visible control in an AWT or Swing window. Returns a run_id immediately; poll fiji_ui_control_interact_status until completed, failed, or blocked_by_dialog. Actions: click (enabled buttons), set_text (editable non-password text fields or areas, requires text), set_checked (checkboxes or toggle buttons, requires checked), select (choices, combo boxes, lists, tables, or visible tree rows, requires a zero-based index). Completion includes only UI changes observed between the start and end of the action." }, name = "fiji_ui_control_interact")
+	@Tool(value = { "Asynchronously interact with one exact visible control in an AWT or Swing window. Only one UI action may be active at a time; frame closing and control interactions share this limit. If one is active, poll its run ID with the recommended status tool before starting another. Returns a run_id immediately; poll fiji_ui_control_interact_status until completed, failed, or blocked_by_dialog. Actions: click (enabled buttons), set_text (editable non-password text fields or areas, requires text), set_checked (checkboxes or toggle buttons, requires checked), select (choices, combo boxes, lists, tables, or visible tree rows, requires a zero-based index). Completion includes only UI changes observed between the start and end of the action." }, name = "fiji_ui_control_interact")
 	public String interactWithControl(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read") final String windowTitle,
 		@P(name = "window_class_name", value = "Exact window class name from fiji_ui_windows_read; use it to distinguish windows with the same title", required = false) final String windowClassName,
 		@P(name = "component_path", value = "Exact component path from fiji_ui_controls_read for the target control") final String componentPath,
@@ -213,7 +214,12 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		final InteractionRun run = new InteractionRun(newInteractionRunID(), windowTitle.trim(),
 			windowClassName, componentPath.trim(), normalizedAction,
 			"fiji_ui_control_interact_status");
-		interactionRuns.put(run.runID, run);
+		try {
+			interactionRuns.start(UI_ACTION_CATEGORY, run.runID, run);
+		}
+		catch (final AsyncRunRegistry.RunInProgressException e) {
+			return uiRunInProgressError(e);
+		}
 		startInteraction(run, () -> AWTDialogUtils.interactWithControl(run.windowTitle,
 			run.windowClassName, run.componentPath, run.action, text, checked, index));
 		return interactionRunJson(run).toString();
@@ -231,7 +237,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 	 * @param windowClassName optional class name to disambiguate windows with the same title
 	 * @return JSON containing a run ID and current close status
 	 */
-	@Tool(value = { "Asynchronously request the normal window-manager close action for one exact visible frame. Returns a run_id immediately; poll fiji_ui_window_close_status until completed, failed, or blocked_by_dialog. A blocking save prompt is reported for explicit handling; completion includes the frame visibility change." }, name = "fiji_ui_window_close")
+	@Tool(value = { "Asynchronously request the normal window-manager close action for one exact visible frame. Only one UI action may be active at a time; frame closing and control interactions share this limit. If one is active, poll its run ID with the recommended status tool before starting another. Returns a run_id immediately; poll fiji_ui_window_close_status until completed, failed, or blocked_by_dialog. A blocking save prompt is reported for explicit handling; completion includes the frame visibility change." }, name = "fiji_ui_window_close")
 	public String closeWindow(@P(name = "window_title", value = "Exact frame title from fiji_ui_windows_read") final String windowTitle,
 		@P(name = "window_class_name", value = "Exact frame class name from fiji_ui_windows_read; use it to distinguish windows with the same title", required = false) final String windowClassName)
 	{
@@ -241,7 +247,12 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 
 		final InteractionRun run = new InteractionRun(newInteractionRunID(), windowTitle.trim(),
 			windowClassName, null, "close_window", "fiji_ui_window_close_status");
-		interactionRuns.put(run.runID, run);
+		try {
+			interactionRuns.start(UI_ACTION_CATEGORY, run.runID, run);
+		}
+		catch (final AsyncRunRegistry.RunInProgressException e) {
+			return uiRunInProgressError(e);
+		}
 		startInteraction(run, () -> AWTDialogUtils.closeWindow(run.windowTitle,
 			run.windowClassName));
 		return interactionRunJson(run).toString();
@@ -262,6 +273,17 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		return interactionRunJson(run).toString();
 	}
 
+	private String uiRunInProgressError(final AsyncRunRegistry.RunInProgressException exception)
+	{
+		final InteractionRun activeRun = interactionRuns.get(exception.getActiveRunID());
+		if (activeRun == null) return jsonError("A UI action is already active with run_id " +
+			exception.getActiveRunID() + ". Poll its status before starting another UI action.");
+		final String statusToolName = activeRun.statusToolName;
+		return jsonError("A UI action is already active. Poll " + statusToolName +
+			" with run_id " + exception.getActiveRunID() + " before starting another UI action.",
+			ErrorOptions.withTool(statusToolName));
+	}
+
 	private void startInteraction(final InteractionRun run,
 		final InteractionOperation operation)
 	{
@@ -272,7 +294,7 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			monitor.start();
 		}
 		catch (final RuntimeException e) {
-			run.fail(e.getMessage() == null ? e.toString() : e.getMessage());
+			failInteraction(run, e.getMessage() == null ? e.toString() : e.getMessage());
 			return;
 		}
 
@@ -281,10 +303,10 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				final JsonObject initialState = captureInteractionState(run);
 				operation.execute();
 				final JsonObject finalState = captureInteractionState(run);
-				run.complete(interactionDelta(run, initialState, finalState));
+				completeInteraction(run, interactionDelta(run, initialState, finalState));
 			}
 			catch (final Throwable t) {
-				run.fail(t.getMessage() == null ? t.toString() : t.getMessage());
+				failInteraction(run, t.getMessage() == null ? t.toString() : t.getMessage());
 			}
 		}, "Fiji-ui-interaction-" + run.runID);
 		worker.setDaemon(true);
@@ -292,8 +314,18 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 			worker.start();
 		}
 		catch (final RuntimeException e) {
-			run.fail(e.getMessage() == null ? e.toString() : e.getMessage());
+			failInteraction(run, e.getMessage() == null ? e.toString() : e.getMessage());
 		}
+	}
+
+	private void completeInteraction(final InteractionRun run, final JsonObject snapshot) {
+		run.complete(snapshot);
+		interactionRuns.complete(run.runID);
+	}
+
+	private void failInteraction(final InteractionRun run, final String message) {
+		run.fail(message);
+		interactionRuns.complete(run.runID);
 	}
 
 	private void monitorInteraction(final InteractionRun run) {
