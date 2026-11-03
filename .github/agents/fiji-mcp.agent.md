@@ -57,9 +57,12 @@ Use this agent to, when supported:
 	with its exact title and class when needed. Poll `fiji_ui_window_close_status`;
 	if a save dialog appears, inspect it and respond only after the intended
 	choice is clear. Use `fiji_ui_dialog_close` for dialogs themselves.
-- Use `fiji_ui_screenshot` when visual context is useful. It captures current
-	screen pixels and may include overlapping windows; requested focus changes
-	are best effort and the returned metadata reports whether focus was restored.
+- Use `fiji_ui_screenshot` when visual context is useful. It renders the whole
+	window offscreen without requesting focus or including overlapping windows;
+	visible AWT `Canvas` children are painted into the window image. Some native or
+	accelerated components may still render incompletely. Use
+	`fiji_ui_screen_capture` only when actual screen pixels are needed; other
+	windows may occlude the target and requested focus changes are best effort.
 - Save or export requested images, ROIs, tables, and other results to user-specified locations.
 - Run non-`.ijm` scripts with `fiji_script_run`; run `.ijm` macros with
 	`fiji_macro_run` through the visible Script Editor. When either run returns

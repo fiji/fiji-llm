@@ -31,12 +31,14 @@ package sc.fiji.llm.ui;
 
 import java.awt.AWTException;
 import java.awt.Button;
+import java.awt.Canvas;
 import java.awt.Checkbox;
 import java.awt.Choice;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Frame;
+import java.awt.Graphics2D;
 import java.awt.IllegalComponentStateException;
 import java.awt.KeyboardFocusManager;
 import java.awt.Label;
@@ -132,12 +134,17 @@ public final class AWTDialogUtils {
 			windowClassName), parentPath));
 	}
 
-	/** Captures a visible window or component, restoring the previous focus afterward. */
+	/** Captures a visible window's screen pixels, restoring the previous focus afterward.
+	 *
+	 * @param windowTitle exact title of the visible window
+	 * @param windowClassName optional exact class name to disambiguate windows
+	 * @return the window screenshot and capture metadata
+	 */
 	public static ScreenshotResult captureScreenshot(final String windowTitle,
-		final String windowClassName, final String componentPath)
+		final String windowClassName)
 	{
 		final CaptureTarget target = invokeOnEdt(() -> prepareCapture(windowTitle,
-			windowClassName, componentPath));
+			windowClassName, true));
 		byte[] pngBytes;
 		boolean restored = !target.focusRequested;
 		try {
@@ -153,9 +160,107 @@ public final class AWTDialogUtils {
 		finally {
 			if (target.focusRequested) restored = invokeOnEdt(() -> restoreFocus(target));
 		}
-		return new ScreenshotResult(pngBytes, target.windowInfo, target.controlInfo,
-			target.bounds, target.previousWindow, target.previousFocusOwner,
+		return new ScreenshotResult(pngBytes, target.windowInfo, target.bounds,
+			target.previousWindow, target.previousFocusOwner,
 			target.focusRequested, restored);
+	}
+
+	/** Renders a visible window offscreen, without changing focus.
+	 *
+	 * @param windowTitle exact title of the visible window
+	 * @param windowClassName optional exact class name to disambiguate windows
+	 * @return the rendered window and capture metadata
+	 */
+	public static ScreenshotResult renderScreenshot(final String windowTitle,
+		final String windowClassName)
+	{
+		final RenderedCapture capture = invokeOnEdt(() -> {
+			final CaptureTarget target = prepareCapture(windowTitle, windowClassName, false);
+			return new RenderedCapture(target, paintComponentTree(target.window));
+		});
+		final byte[] pngBytes;
+		try {
+			pngBytes = encodePng(capture.image);
+		}
+		catch (final IOException e) {
+			throw new IllegalStateException("Could not encode the rendered UI", e);
+		}
+		final CaptureTarget target = capture.target;
+		return new ScreenshotResult(pngBytes, target.windowInfo, target.bounds, null, null,
+			false, true);
+	}
+
+	static BufferedImage renderComponent(final Component component) {
+		return invokeOnEdt(() -> paintComponentTree(component));
+	}
+
+	private static BufferedImage paintComponentTree(final Component component) {
+		final BufferedImage image = paintComponent(component);
+		if (!(component instanceof Container container)) return image;
+
+		final Graphics2D graphics = image.createGraphics();
+		try {
+			paintCanvasChildren(component, container, graphics);
+		}
+		finally {
+			graphics.dispose();
+		}
+		return image;
+	}
+
+	/** Repaints visible heavyweight canvases that parent painting may omit. */
+	private static void paintCanvasChildren(final Component ancestor,
+		final Container container, final Graphics2D graphics)
+	{
+		for (final Component child : container.getComponents()) {
+			if (!child.isVisible()) continue;
+			if (child instanceof Canvas && child.getWidth() > 0 && child.getHeight() > 0) {
+				final Point location = locationInAncestor(child, ancestor);
+				final Graphics2D childGraphics = (Graphics2D) graphics.create(location.x,
+					location.y, child.getWidth(), child.getHeight());
+				try {
+					child.paint(childGraphics);
+				}
+				finally {
+					childGraphics.dispose();
+				}
+			}
+			if (child instanceof Container childContainer) paintCanvasChildren(ancestor,
+				childContainer, graphics);
+		}
+	}
+
+	private static Point locationInAncestor(final Component component,
+		final Component ancestor)
+	{
+		int x = 0;
+		int y = 0;
+		Component current = component;
+		while (current != ancestor) {
+			if (current == null) throw new IllegalArgumentException(
+				"Component is not a descendant of the capture window");
+			x += current.getX();
+			y += current.getY();
+			current = current.getParent();
+		}
+		return new Point(x, y);
+	}
+
+	private static BufferedImage paintComponent(final Component component) {
+		final int width = component.getWidth();
+		final int height = component.getHeight();
+		if (width <= 0 || height <= 0) throw new IllegalStateException(
+			"Target component has no usable dimensions");
+		final BufferedImage image = new BufferedImage(width, height,
+			BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D graphics = image.createGraphics();
+		try {
+			component.paint(graphics);
+		}
+		finally {
+			graphics.dispose();
+		}
+		return image;
 	}
 
 	private static <T> T invokeOnEdt(final EdtOperation<T> operation) {
@@ -597,30 +702,24 @@ public final class AWTDialogUtils {
 	}
 
 	private static CaptureTarget prepareCapture(final String windowTitle,
-		final String windowClassName, final String componentPath)
+		final String windowClassName, final boolean requestFocus)
 	{
 		final Window targetWindow = findVisibleWindow(windowTitle, windowClassName);
-		final Component targetComponent = findComponent(targetWindow, componentPath);
-		if (!targetComponent.isShowing()) throw new IllegalStateException(
-			"Target component is not showing: " + normalize(componentPath));
-		final Window previousWindow = KeyboardFocusManager.getCurrentKeyboardFocusManager()
-			.getActiveWindow();
-		final Component previousFocusOwner = KeyboardFocusManager
-			.getCurrentKeyboardFocusManager().getFocusOwner();
-		final boolean focusRequested = !targetWindow.isActive();
+		final KeyboardFocusManager focusManager = KeyboardFocusManager
+			.getCurrentKeyboardFocusManager();
+		final Window previousWindow = requestFocus ? focusManager.getActiveWindow() : null;
+		final Component previousFocusOwner = requestFocus ? focusManager.getFocusOwner() :
+			null;
+		final boolean focusRequested = requestFocus && !targetWindow.isActive();
 		if (focusRequested) {
 			targetWindow.toFront();
-			if (targetComponent != targetWindow && targetComponent.isFocusable()) targetComponent
-				.requestFocusInWindow();
-			else targetWindow.requestFocus();
+			targetWindow.requestFocus();
 		}
-		final Rectangle bounds = screenBounds(targetComponent);
+		final Rectangle bounds = screenBounds(targetWindow);
 		if (bounds == null || bounds.width <= 0 || bounds.height <= 0) throw new IllegalStateException(
-			"Target component has no usable screen bounds");
-		return new CaptureTarget(bounds, describeWindow(targetWindow), targetComponent ==
-			targetWindow ? null : describeControl(
-				targetComponent, normalize(componentPath)), previousWindow, previousFocusOwner,
-			focusRequested);
+			"Target window has no usable screen bounds");
+		return new CaptureTarget(targetWindow, bounds, describeWindow(targetWindow),
+			previousWindow, previousFocusOwner, focusRequested);
 	}
 
 	private static boolean restoreFocus(final CaptureTarget target) {
@@ -1117,23 +1216,34 @@ public final class AWTDialogUtils {
 
 	private static final class CaptureTarget {
 
+		private final Window window;
 		private final Rectangle bounds;
 		private final WindowInfo windowInfo;
-		private final ControlInfo controlInfo;
 		private final Window previousWindow;
 		private final Component previousFocusOwner;
 		private final boolean focusRequested;
 
-		private CaptureTarget(final Rectangle bounds, final WindowInfo windowInfo,
-			final ControlInfo controlInfo, final Window previousWindow,
+		private CaptureTarget(final Window window, final Rectangle bounds,
+			final WindowInfo windowInfo, final Window previousWindow,
 			final Component previousFocusOwner, final boolean focusRequested)
 		{
+			this.window = window;
 			this.bounds = new Rectangle(bounds);
 			this.windowInfo = windowInfo;
-			this.controlInfo = controlInfo;
 			this.previousWindow = previousWindow;
 			this.previousFocusOwner = previousFocusOwner;
 			this.focusRequested = focusRequested;
+		}
+	}
+
+	private static final class RenderedCapture {
+
+		private final CaptureTarget target;
+		private final BufferedImage image;
+
+		private RenderedCapture(final CaptureTarget target, final BufferedImage image) {
+			this.target = target;
+			this.image = image;
 		}
 	}
 
@@ -1325,7 +1435,6 @@ public final class AWTDialogUtils {
 
 		private final byte[] pngBytes;
 		private final WindowInfo windowInfo;
-		private final ControlInfo controlInfo;
 		private final Rectangle bounds;
 		private final Window previousWindow;
 		private final Component previousFocusOwner;
@@ -1333,13 +1442,12 @@ public final class AWTDialogUtils {
 		private final boolean restored;
 
 		private ScreenshotResult(final byte[] pngBytes, final WindowInfo windowInfo,
-			final ControlInfo controlInfo, final Rectangle bounds,
+			final Rectangle bounds,
 			final Window previousWindow, final Component previousFocusOwner,
 			final boolean focusRequested, final boolean restored)
 		{
 			this.pngBytes = pngBytes.clone();
 			this.windowInfo = windowInfo;
-			this.controlInfo = controlInfo;
 			this.bounds = new Rectangle(bounds);
 			this.previousWindow = previousWindow;
 			this.previousFocusOwner = previousFocusOwner;
@@ -1353,10 +1461,6 @@ public final class AWTDialogUtils {
 
 		public WindowInfo getWindowInfo() {
 			return windowInfo;
-		}
-
-		public ControlInfo getControlInfo() {
-			return controlInfo;
 		}
 
 		public Rectangle getBounds() {

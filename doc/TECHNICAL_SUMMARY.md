@@ -165,12 +165,13 @@ the dialog-specific action by exact button text.
 `fiji_ui_window_close` asynchronously dispatches the normal `WINDOW_CLOSING`
 event to one exact visible frame. Poll `fiji_ui_window_close_status`; a save
 prompt is reported as `blocked_by_dialog` and must be handled explicitly.
-`fiji_ui_screenshot` captures the current screen pixels for a visible window or
-showing component as an MCP image content block. It requests focus and restores
-the previous focus only when the target is not already active. Another window may
-still overlap or occlude the target, and native UI is not guaranteed to be
-captured semantically or visually; inspect the returned `focus_requested` and
-`focus_restored` metadata.
+`fiji_ui_screenshot` paints the whole visible window offscreen as an MCP image
+content block without requesting focus or including overlapping windows. It
+repaints visible AWT `Canvas` children into the window image because heavyweight
+children may not appear in a parent paint. Some native or accelerated UI may still
+render incompletely. `fiji_ui_screen_capture` captures the window's current screen
+pixels instead; it may include occluding windows and requests focus when the target
+is inactive. Inspect `focus_requested` and `focus_restored` in its metadata.
 
 `fiji_command_run` can return `running` or `blocked_by_dialog` with a `run_id`; `fiji_command_run_status` reports the current state until the command completes. A wait expiry does not cancel the command. `fiji_command_run`, `fiji_script_run`, and `fiji_macro_run` use `EnvironmentSnapshotService` for lightweight operation-impact reporting, serialized in the optional `environment_impact` field. The report omits unchanged and empty values, and includes only changed image, active-image, Results table, and dialog metadata, plus non-empty ImageJ/SciJava log deltas and run-scoped ConsoleService stdout/stderr. Audited command and script captures also include bounded SHA-256 fingerprints of ImgLib2 native storage or pixel values; live snapshots defer pixel hashing and report `pixel_changes: "deferred"`. Large samples report `pixel_changes: "inconclusive"` when their sampled prefix matches, and lazy images (cell-backed images and ImageJ virtual stacks) are skipped. No image pixels are copied into the report. Script execution also includes captured stderr in its `errors` field.
 

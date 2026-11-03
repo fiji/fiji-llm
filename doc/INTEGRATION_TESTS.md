@@ -56,8 +56,8 @@ For each category, send this prompt:
       kept local, and attach an image. Confirm that the attachment still adds
       image metadata but does not send image pixels.
 - [ ] With the lock enabled, ask the hosted model to use `fiji_image_view`,
-      `fiji_image_preview`, and `fiji_ui_screenshot`. Each pixel-producing tool
-      should return the privacy error instead of an image result; metadata-only
+      `fiji_image_preview`, `fiji_ui_screenshot`, and `fiji_ui_screen_capture`.
+      Each pixel-producing tool should return the privacy error instead of an image result; metadata-only
       tools such as `fiji_image_list` and `fiji_image_details` should continue
       to work.
 - [ ] Re-enable image access and repeat the image and UI screenshot checks,
@@ -236,14 +236,15 @@ With Fiji showing at least one ordinary AWT or Swing window:
       that menu with `fiji_ui_menu_read` using its path, then repeat for
       `ImageJ 1.x` and verify the `Batch` submenu appears without its
       descendants. Verify reading a closed submenu does not expose its children.
-4. Call `fiji_ui_screenshot` and verify the result contains JSON metadata plus
-      an MCP `image` content block with PNG data. Screenshots request focus
-      automatically only when the target is not already active; verify the
-      `focus_requested` and `focus_restored` metadata. Focus activation and
-      restoration are best effort and do not guarantee an unobstructed capture.
-5. Use a returned showing component path to capture a component crop, and
-      verify that a hidden or ambiguous target returns a text error rather than an
-      image block.
+4. Call `fiji_ui_screenshot` for a visible window and verify the result contains
+      JSON metadata with `capture_method: "window_paint"` plus an MCP `image`
+      content block with PNG data. Verify it does not request focus and is
+      unaffected by an overlapping window.
+5. Open an ImageJ image window and call `fiji_ui_screenshot` by its exact window
+      title and class. Verify its image canvas is visible in the rendered window.
+      Then call `fiji_ui_screen_capture` for an inactive window and verify the
+      result contains `capture_method: "screen_pixels"`; focus changes are best
+      effort and the pixels may include occluding windows.
 6. With a disposable frame that has no unsaved state, call
       `fiji_ui_window_close` with its exact title and class. Verify it returns a
       `run_id`; poll `fiji_ui_window_close_status` until terminal and verify the

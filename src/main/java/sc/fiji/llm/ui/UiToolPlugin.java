@@ -647,20 +647,47 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 	}
 
-	@Tool(value = { "Capture a PNG screenshot of one visible window or component using current screen pixels. The capture may include overlapping or occluding windows, and requested focus changes are best effort." }, name = "fiji_ui_screenshot")
+	/**
+	 * Renders one visible window offscreen without changing focus.
+	 *
+	 * @param windowTitle exact title from {@code fiji_ui_windows_read}
+	 * @param windowClassName optional class name to disambiguate windows with the same title
+	 * @return image content and metadata, or a text error
+	 */
+	@Tool(value = { "Render one visible AWT or Swing window into a PNG by painting it offscreen. This does not request focus and is unaffected by overlapping windows. Visible AWT Canvas children are painted into the window image separately. Some native or accelerated UI may still render incompletely, including ImageJ GenericDialogs. Respects the pixel-sharing privacy setting." }, name = "fiji_ui_screenshot")
 	public List<Content> screenshot(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read") final String windowTitle,
-		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName,
-		@P(name = "component_path", value = "Component path from fiji_ui_controls_read, to crop to that component", required = false) final String componentPath)
+		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName)
+	{
+		return captureUiScreenshot(windowTitle, windowClassName, false);
+	}
+
+	/**
+	 * Captures current screen pixels for one visible window.
+	 *
+	 * @param windowTitle exact title from {@code fiji_ui_windows_read}
+	 * @param windowClassName optional class name to disambiguate windows with the same title
+	 * @return image content and metadata, or a text error
+	 */
+	@Tool(value = { "Capture current screen pixels for one visible window as a PNG. Other windows may occlude the target; focus changes are best effort and OS screen-capture permissions may be required. Respects the pixel-sharing privacy setting." }, name = "fiji_ui_screen_capture")
+	public List<Content> screenCapture(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read") final String windowTitle,
+		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName)
+	{
+		return captureUiScreenshot(windowTitle, windowClassName, true);
+	}
+
+	private List<Content> captureUiScreenshot(final String windowTitle,
+		final String windowClassName, final boolean screenPixels)
 	{
 		try {
 			if (!imageRenderingService.isPixelSharingAllowed()) return List.of(TextContent
 				.from(jsonError(ImageRenderingService.PIXEL_SHARING_DISABLED_MESSAGE)));
-			final AWTDialogUtils.ScreenshotResult screenshot = AWTDialogUtils
-				.captureScreenshot(windowTitle, windowClassName, componentPath);
+			final AWTDialogUtils.ScreenshotResult screenshot = screenPixels ? AWTDialogUtils
+				.captureScreenshot(windowTitle, windowClassName) : AWTDialogUtils
+					.renderScreenshot(windowTitle, windowClassName);
 			final JsonObject metadata = new JsonObject();
 			metadata.add("window", windowJson(screenshot.getWindowInfo()));
-			if (screenshot.getControlInfo() != null) metadata.add("control", controlJson(
-				screenshot.getControlInfo()));
+			metadata.addProperty("capture_method", screenPixels ? "screen_pixels" :
+				"window_paint");
 			metadata.add("capture_bounds", boundsJson(screenshot.getBounds()));
 			if (screenshot.isFocusRequested()) {
 				metadata.addProperty("focus_requested", true);
@@ -680,7 +707,9 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				.getEncoder().encodeToString(screenshot.getPngBytes()), "image/png"));
 		}
 		catch (final RuntimeException e) {
-			return List.of(TextContent.from(jsonError("Failed to run fiji_ui_screenshot: " + e
+			final String toolName = screenPixels ? "fiji_ui_screen_capture" :
+				"fiji_ui_screenshot";
+			return List.of(TextContent.from(jsonError("Failed to run " + toolName + ": " + e
 				.getMessage())));
 		}
 	}

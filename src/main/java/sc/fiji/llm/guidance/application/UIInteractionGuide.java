@@ -79,8 +79,12 @@ public class UIInteractionGuide extends AbstractAgentGuide {
 			- Use `fiji_ui_dialog_respond` only after reading the dialogs, with the exact
 			  title and button; use `fiji_ui_dialog_close` with the exact title when closing
 			  without selecting a button. Check post-action state afterward.
-			- Use `fiji_ui_screenshot` when visual context is useful for a vision-capable
-			  client.
+			- Use `fiji_ui_screenshot` for offscreen rendering of the whole window when
+			  visual context is useful. It does not request focus or include overlapping
+			  windows; some native or accelerated components may render incompletely.
+			- Use `fiji_ui_screen_capture` only when actual screen pixels are needed.
+			  Other windows may occlude the target, and requested focus changes are best
+			  effort.
 			""".strip();
 
 	public UIInteractionGuide() {
