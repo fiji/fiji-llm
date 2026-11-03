@@ -143,17 +143,22 @@ public class FijiAssistantChat {
 		"""
 ## Welcome to Fiji Chat!
 
-Do you need support with:
-- Image analysis
-- Writing scripts and macros
-- Navigating Fiji
-- Something else?
+New here? [Take a quick tour →](%s)
 
-AI responses may be inaccurate.
-Always verify important results.
+You can ask anything, or start with one of these:
 
-**New to Fiji Chat?** Click **?** to learn more.
-		""";
+[What options are available for segmenting nuclei? How would I choose between them?](%s)
+
+[What preprocessing steps should I use for this image, and why?](%s)
+
+[Update this macro to work on all TIFF files in a selected folder.](%s)
+
+[My script just failed. Can you explain what went wrong and fix it?](%s)
+
+*Note: AI responses may be inaccurate. Always verify important results.*
+		""".formatted(ChatMessagePanel.PROMPT_LINK, ChatMessagePanel.PROMPT_LINK,
+			ChatMessagePanel.PROMPT_LINK, ChatMessagePanel.PROMPT_LINK,
+			ChatMessagePanel.TOUR_LINK);
 
 	private static enum Sender {
 			USER, ASSISTANT, SYSTEM, ERROR
@@ -665,7 +670,8 @@ Be concise, patient, humble, and collaborative.
 		frame.setLocationRelativeTo(null);
 
 		welcomePanel = new ChatMessagePanel(ChatMessagePanel.MessageType.SYSTEM,
-			WELCOME_MESSAGE, CHAT_FONT_SIZE);
+			WELCOME_MESSAGE, CHAT_FONT_SIZE, this::insertSuggestedPrompt,
+			this::launchGuide);
 		addMessagePanelToChat(welcomePanel);
 		startModelPreparation();
 	}
@@ -675,6 +681,12 @@ Be concise, patient, humble, and collaborative.
 		if (modelReady) {
 			inputArea.requestFocus();
 		}
+	}
+
+	private void insertSuggestedPrompt(final String prompt) {
+		inputArea.setText(prompt);
+		inputArea.setCaretPosition(inputArea.getDocument().getLength());
+		inputArea.requestFocusInWindow();
 	}
 
 	boolean focusIfVisible() {

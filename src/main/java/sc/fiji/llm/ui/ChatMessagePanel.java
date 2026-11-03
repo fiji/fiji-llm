@@ -45,6 +45,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
@@ -61,6 +62,8 @@ import javax.swing.border.AbstractBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -88,6 +91,9 @@ import sc.fiji.llm.chat.ActivityRecord;
  */
 public class ChatMessagePanel extends JPanel {
 
+	static final String PROMPT_LINK = "https://fiji-chat.invalid/prompt";
+	static final String TOUR_LINK = "https://fiji-chat.invalid/tour";
+
 	private static final int ICON_SIZE = 32;
 	private static final int ICON_GAP = 4;
 	private static final int MARGIN = 10;
@@ -109,6 +115,8 @@ public class ChatMessagePanel extends JPanel {
 	private JLabel iconLabel;
 	private MessageType messageType;
 	private String renderedHtml;
+	private final Consumer<String> promptLinkHandler;
+	private final Runnable tourLinkHandler;
 	private int thinkingStage = -1;
 	private final StringBuilder rawMarkdown;
 	private ActivityLog activityLog;
@@ -206,7 +214,22 @@ public class ChatMessagePanel extends JPanel {
 	public ChatMessagePanel(final MessageType type, final String message,
 		final float fontSize)
 	{
+		this(type, message, fontSize, null);
+	}
+
+	ChatMessagePanel(final MessageType type, final String message,
+		final float fontSize, final Consumer<String> promptLinkHandler)
+	{
+		this(type, message, fontSize, promptLinkHandler, null);
+	}
+
+	ChatMessagePanel(final MessageType type, final String message,
+		final float fontSize, final Consumer<String> promptLinkHandler,
+		final Runnable tourLinkHandler)
+	{
 		this.textFontSize = fontSize;
+		this.promptLinkHandler = promptLinkHandler;
+		this.tourLinkHandler = tourLinkHandler;
 		this.rawMarkdown = new StringBuilder(message == null ? "" : message);
 		this.messageType = type;
 		setLayout(new MigLayout("insets 0 0 0 0, fillx", "", "[]"));
@@ -459,6 +482,17 @@ public class ChatMessagePanel extends JPanel {
 				@Override
 				public void hyperlinkUpdate(final HyperlinkEvent e) {
 					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+						if (TOUR_LINK.equals(e.getDescription())) {
+							if (tourLinkHandler != null) tourLinkHandler.run();
+							return;
+						}
+						if (PROMPT_LINK.equals(e.getDescription())) {
+							if (promptLinkHandler != null) {
+								final String prompt = getHyperlinkText(e);
+								if (!prompt.isBlank()) promptLinkHandler.accept(prompt);
+							}
+							return;
+						}
 						try {
 							if (Desktop.isDesktopSupported()) {
 								Desktop.getDesktop().browse(e.getURL().toURI());
@@ -494,6 +528,21 @@ public class ChatMessagePanel extends JPanel {
 		return textPane;
 	}
 
+	private String getHyperlinkText(final HyperlinkEvent event) {
+		final Element element = event.getSourceElement();
+		if (element == null) return "";
+		final Document document = textPane.getDocument();
+		final int start = Math.max(0, element.getStartOffset());
+		final int end = Math.min(document.getLength(), element.getEndOffset());
+		if (start >= end) return "";
+		try {
+			return document.getText(start, end - start).trim();
+		}
+		catch (final BadLocationException e) {
+			return "";
+		}
+	}
+
 	private void applyTextPaneStyles(final StyleSheet styleSheet,
 		final MessageType type)
 	{
@@ -501,8 +550,8 @@ public class ChatMessagePanel extends JPanel {
 		final Color textColor = getTextColor(bubbleBackground);
 		final Color codeBackground = blend(bubbleBackground, textColor, 0.10f);
 		final Color codeBorder = blend(bubbleBackground, textColor, 0.35f);
-		final Color linkColor = getTextColor(bubbleBackground, new Color(45, 120,
-			190));
+		final Color linkColor = getTextColor(bubbleBackground, new Color(0, 86,
+			179));
 		styleSheet.addRule("body { font-family: Dialog, Arial, sans-serif; font-size: " +
 			(int) textFontSize + "px; color: " + cssColor(textColor) + "; }");
 		styleSheet.addRule("pre { font-family: monospace; background: " + cssColor(
@@ -514,14 +563,15 @@ public class ChatMessagePanel extends JPanel {
 			"; margin-left: 8px; padding-left: 8px; border-left: 3px solid " +
 			cssColor(codeBorder) + "; }");
 		styleSheet.addRule("a { color: " + cssColor(linkColor) +
-			"; text-decoration: none; }");
+			"; text-decoration: underline; }");
 		styleSheet.addRule("img { max-width: 100%; }");
 		styleSheet.addRule("body { margin: " + ((type == MessageType.SYSTEM || type ==
 			MessageType.ERROR) ? "0" : "1px") + "; }");
 		styleSheet.addRule("div { margin: 1px; }");
 		if (type == MessageType.SYSTEM || type == MessageType.ERROR) {
 			styleSheet.addRule("h1, h2, h3 { margin-top: 0; margin-bottom: 8px; }");
-			styleSheet.addRule("ul, ol { margin-top: 0; margin-bottom: 8px; padding-left: 24px; }");
+			styleSheet.addRule("ul, ol { margin-top: 0; margin-bottom: 8px; margin-left: 0; padding-left: 18px; }");
+			styleSheet.addRule("li { padding-left: 3px; }");
 			styleSheet.addRule("p { margin-top: 0; margin-bottom: 8px; }");
 		}
 		else {
