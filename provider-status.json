@@ -1,18 +1,290 @@
 {
   "Gemini": {
-    "models_documentation_last_modified": "2026-10-26",
+    "models_documentation_last_modified": "2026-11-03",
     "models_documentation": {
-      "url": "https://ai.google.dev/gemini-api/docs/models",
+      "url": "https://aistudio.google.com/docs/models",
       "status": 200,
       "final_url": "https://aistudio.google.com/docs/models",
-      "content_error": "java.io.IOException: Gemini model facts not found"
+      "baseline_established": true,
+      "facts": {
+        "models": {
+          "antigravity-preview-09-2026": {
+            "lifecycle": "unknown"
+          },
+          "deep-research-max-preview-04-2026": {
+            "lifecycle": "unknown"
+          },
+          "deep-research-preview-04-2026": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.0-flash": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-2.0-flash-lite": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-2.5-computer-use-preview-10-2025": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-2.5-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-lite": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-native-audio-preview-12-2025": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-preview-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-pro": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-pro-preview-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3-flash-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3-pro-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3-pro-preview": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-3.1-flash-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-lite": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-lite-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-lite-preview": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-3.1-flash-live-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-tts-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-pro-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.5-flash-lite": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.5-live-translate-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.5-transcribe": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.6-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-flash-lite-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-flash-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-live": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-live-extended-thinking": {
+            "lifecycle": "unknown"
+          },
+          "gemini-4-argon": {
+            "lifecycle": "unknown"
+          },
+          "gemini-embedding-001": {
+            "lifecycle": "unknown"
+          },
+          "gemini-embedding-2": {
+            "lifecycle": "unknown"
+          },
+          "gemini-nano-banana-2.1": {
+            "lifecycle": "unknown"
+          },
+          "gemini-omni-1.1-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-robotics-er-1.6-preview": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-robotics-er-2-preview": {
+            "lifecycle": "unknown"
+          },
+          "imagen-4.0-generate": {
+            "lifecycle": "shut-down"
+          },
+          "lyria-3-clip-preview": {
+            "lifecycle": "unknown"
+          },
+          "lyria-3-pro-preview": {
+            "lifecycle": "unknown"
+          },
+          "lyria-3.5": {
+            "lifecycle": "unknown"
+          },
+          "lyria-realtime-exp": {
+            "lifecycle": "unknown"
+          }
+        }
+      },
+      "baseline_facts": {
+        "models": {
+          "antigravity-preview-09-2026": {
+            "lifecycle": "unknown"
+          },
+          "deep-research-max-preview-04-2026": {
+            "lifecycle": "unknown"
+          },
+          "deep-research-preview-04-2026": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.0-flash": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-2.0-flash-lite": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-2.5-computer-use-preview-10-2025": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-2.5-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-lite": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-native-audio-preview-12-2025": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-flash-preview-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-pro": {
+            "lifecycle": "unknown"
+          },
+          "gemini-2.5-pro-preview-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3-flash-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3-pro-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3-pro-preview": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-3.1-flash-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-lite": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-lite-image": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-lite-preview": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-3.1-flash-live-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-flash-tts-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.1-pro-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.5-flash-lite": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.5-live-translate-preview": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.5-transcribe": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.6-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-flash-lite-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-flash-tts": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-live": {
+            "lifecycle": "unknown"
+          },
+          "gemini-3.8-live-extended-thinking": {
+            "lifecycle": "unknown"
+          },
+          "gemini-4-argon": {
+            "lifecycle": "unknown"
+          },
+          "gemini-embedding-001": {
+            "lifecycle": "unknown"
+          },
+          "gemini-embedding-2": {
+            "lifecycle": "unknown"
+          },
+          "gemini-nano-banana-2.1": {
+            "lifecycle": "unknown"
+          },
+          "gemini-omni-1.1-flash": {
+            "lifecycle": "unknown"
+          },
+          "gemini-robotics-er-1.6-preview": {
+            "lifecycle": "shut-down"
+          },
+          "gemini-robotics-er-2-preview": {
+            "lifecycle": "unknown"
+          },
+          "imagen-4.0-generate": {
+            "lifecycle": "shut-down"
+          },
+          "lyria-3-clip-preview": {
+            "lifecycle": "unknown"
+          },
+          "lyria-3-pro-preview": {
+            "lifecycle": "unknown"
+          },
+          "lyria-3.5": {
+            "lifecycle": "unknown"
+          },
+          "lyria-realtime-exp": {
+            "lifecycle": "unknown"
+          }
+        }
+      }
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1479761717:1793715562983726"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-383234233:1793725360907187"
     },
-    "health": "unhealthy"
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation_last_modified": "2026-10-27",
@@ -134,9 +406,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-11-03T14:19:24.366886640Z",
-  "status": "unhealthy",
-  "failures": [
-    "Gemini models documentation content check failed: Gemini model facts not found"
-  ]
+  "checked_at": "2026-11-03T17:02:42.329443609Z",
+  "status": "healthy",
+  "failures": []
 }
