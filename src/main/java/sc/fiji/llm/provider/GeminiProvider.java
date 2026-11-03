@@ -34,6 +34,8 @@ import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -55,6 +57,22 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiTokenCountEstimator;
  */
 @Plugin(type = LLMProvider.class, name = "Gemini", priority = ProviderPriority.GEMINI)
 public class GeminiProvider extends AbstractHostedProvider {
+
+	private static final Pattern SOURCE_CARD = Pattern.compile(
+		"\\{%\\s*card\\b([^%]*?)%\\}");
+	private static final Pattern SOURCE_TABLE = Pattern.compile(
+		"\\{%\\s*table\\b.*?%\\}(.*?)\\{%\\s*/table\\s*%\\}",
+		Pattern.DOTALL);
+	private static final Pattern SOURCE_MODEL_HREF = Pattern.compile(
+		"href\\s*=\\s*\"[^\"]*/docs/models/([^\"/?#]+)\"");
+	private static final Pattern SOURCE_BADGE = Pattern.compile(
+		"badge\\s*=\\s*\"([^\"]+)\"");
+	private static final Pattern SOURCE_ENDPOINT = Pattern.compile(
+		"(?m)^\\s*\\*\\s*`([^`]+)`\\s*$");
+	private static final Pattern SOURCE_HEADING = Pattern.compile(
+		"(?m)^\\s*#{1,6}\\s+([^\\r\\n]+)");
+	private static final Pattern SHUT_DOWN = Pattern.compile("shut down",
+		Pattern.CASE_INSENSITIVE);
 
 	private static final int MAX_INPUT_TOKENS = 1_048_576;
 	private static final int MEMORY_CONTEXT_PERCENTAGE = 75;
@@ -78,15 +96,35 @@ public class GeminiProvider extends AbstractHostedProvider {
 
 	@Override
 	public String getModelsDocumentationUrl() {
-		return "https://ai.google.dev/gemini-api/docs/models";
+		return "https://aistudio.google.com/docs/models";
 	}
 
 	@Override
 	public JsonObject getModelsDocumentationFacts(final String html)
 		throws IOException
 	{
-		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
 		final Map<String, String> modelLifecycles = new TreeMap<>();
+		parseHtml(html, modelLifecycles);
+		parsePlainText(html, modelLifecycles);
+		if (modelLifecycles.isEmpty()) throw new IOException("Gemini model facts not found");
+		final JsonObject models = new JsonObject();
+		for (final Map.Entry<String, String> entry : modelLifecycles.entrySet()) {
+			final JsonObject model = new JsonObject();
+			model.addProperty("lifecycle", entry.getValue());
+			models.add(entry.getKey(), model);
+		}
+		final JsonObject facts = new JsonObject();
+		facts.add("models", models);
+		return facts;
+	}
+
+	/**
+	 * Extracts model facts from rendered HTML tables.
+	 */
+	private void parseHtml(final String html,
+		final Map<String, String> modelLifecycles)
+	{
+		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
 		String lifecycle = "unknown";
 		for (final Element element : document.select("h2, h3, h4, table")) {
 			if (!"table".equals(element.tagName())) {
@@ -103,16 +141,48 @@ public class GeminiProvider extends AbstractHostedProvider {
 				modelLifecycles.put(modelId, rowLifecycle);
 			}
 		}
-		if (modelLifecycles.isEmpty()) throw new IOException("Gemini model facts not found");
-		final JsonObject models = new JsonObject();
-		for (final Map.Entry<String, String> entry : modelLifecycles.entrySet()) {
-			final JsonObject model = new JsonObject();
-			model.addProperty("lifecycle", entry.getValue());
-			models.add(entry.getKey(), model);
+	}
+
+	/**
+	 * Extracts model facts from Google's plain-text documentation directives.
+	 */
+	private static void parsePlainText(final String source,
+		final Map<String, String> modelLifecycles)
+	{
+		final Map<String, String> cardLifecycles = new TreeMap<>();
+		final Matcher cards = SOURCE_CARD.matcher(source);
+		while (cards.find()) {
+			final Matcher modelHref = SOURCE_MODEL_HREF.matcher(cards.group(1));
+			final Matcher badge = SOURCE_BADGE.matcher(cards.group(1));
+			if (!modelHref.find() || !badge.find()) continue;
+			final String lifecycle = lifecycleFromHeading(badge.group(1), "unknown");
+			if (!"unknown".equals(lifecycle)) cardLifecycles.put(modelHref.group(1),
+				lifecycle);
 		}
-		final JsonObject facts = new JsonObject();
-		facts.add("models", models);
-		return facts;
+
+		final Matcher tables = SOURCE_TABLE.matcher(source);
+		while (tables.find()) {
+			final String sectionLifecycle = lifecycleBefore(source, tables.start());
+			for (final String row : tables.group(1).split("(?m)^\\s*---\\s*$")) {
+				final Matcher endpoint = SOURCE_ENDPOINT.matcher(row);
+				if (!endpoint.find()) continue;
+				final String modelId = endpoint.group(1).trim();
+				if (modelId.isBlank() || !modelId.contains("-")) continue;
+				final String lifecycle;
+				if (SHUT_DOWN.matcher(row).find()) lifecycle = "shut-down";
+				else if ("previous".equals(sectionLifecycle)) lifecycle = "previous";
+				else lifecycle = cardLifecycles.getOrDefault(modelId, sectionLifecycle);
+				modelLifecycles.put(modelId, lifecycle);
+			}
+		}
+	}
+
+	private static String lifecycleBefore(final String source, final int position) {
+		final Matcher headings = SOURCE_HEADING.matcher(source.substring(0, position));
+		String lifecycle = "unknown";
+		while (headings.find()) lifecycle = lifecycleFromHeading(headings.group(1),
+			lifecycle);
+		return lifecycle;
 	}
 
 	private static String lifecycleFromHeading(final String heading,
@@ -129,7 +199,7 @@ public class GeminiProvider extends AbstractHostedProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 26);
+		return LocalDate.of(2026, 11, 03);
 	}
 
 	@Override

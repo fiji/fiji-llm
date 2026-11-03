@@ -91,6 +91,32 @@ public class ProviderCapabilityTest {
 		assertNotEquals(geminiProvider.getModelsDocumentationFacts(gemini),
 			geminiProvider.getModelsDocumentationFacts(gemini.replace(
 				"gemini-lite", "gemini-new")));
+
+		final String geminiSource = "## Gemini 3 {% id=\"gemini-3\" %}\n" +
+			"{% card badge=\"New\" href=\"/docs/models/gemini-3.8-flash\" " +
+			"title=\"Gemini 3.8 Flash\" variant=\"model\" /%}\n" +
+			"{% card badge=\"Stable\" href=\"/docs/models/gemini-3.6-flash\" " +
+			"title=\"Gemini 3.6 Flash\" variant=\"model\" /%}\n" +
+			"## All Gemini 3 models {% id=\"all-gemini-3-models\" %}\n" +
+			"{% table variant=\"model\" %}\n" +
+			"  * Model\n  * Endpoint\n\n  ---\n\n" +
+			"  * [Gemini 3.8 Flash](/docs/models/gemini-3.8-flash)\n" +
+			"  * `gemini-3.8-flash`\n\n  ---\n\n" +
+			"  * [Gemini 3.6 Flash](/docs/models/gemini-3.6-flash)\n" +
+			"  * `gemini-3.6-flash`\n{% /table %}\n" +
+			"## Previous models {% id=\"previous-models\" %}\n" +
+			"{% table variant=\"model\" %}\n  * Model\n  * Endpoint\n" +
+			"\n  ---\n\n  * [Gemini 2.0 Flash](/docs/models/" +
+			"gemini-2.0-flash) (Shut down)\n  * `gemini-2.0-flash`\n" +
+			"{% /table %}";
+		final JsonObject geminiSourceFacts = geminiProvider
+			.getModelsDocumentationFacts(geminiSource).getAsJsonObject("models");
+		assertEquals("unknown", geminiSourceFacts.get("gemini-3.8-flash")
+			.getAsJsonObject().get("lifecycle").getAsString());
+		assertEquals("stable", geminiSourceFacts.get("gemini-3.6-flash")
+			.getAsJsonObject().get("lifecycle").getAsString());
+		assertEquals("shut-down", geminiSourceFacts.get("gemini-2.0-flash")
+			.getAsJsonObject().get("lifecycle").getAsString());
 	}
 
 	@Test
