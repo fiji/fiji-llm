@@ -100,24 +100,15 @@ public class Fiji_Chat extends DynamicCommand {
 	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
 		persist = false, required = false)
 	private String welcomeMessage = "<html><body style='width: " + WIDTH +
-		"px'>" + "<h1 style='text-align: center'>Welcome to Fiji Chat!</h1>" +
-		"<p>For detailed documentation, see <a href=\"https://github.com/fiji/fiji-llm\" " +
-		"style='color: #1a5fb4; text-decoration: underline;'>the README</a>.<br />" +
-		"AI may be inaccurate. Always verify important results.<br /><br />" +
-		"This feature is under active development.<br />" +
-		"Please <a href=\"https://forum.image.sc/tag/llm\" " +
-		"style='color: #1a5fb4; text-decoration: underline;'>contact us on the forum</a> " +
-		"with issues or requests." +
-		"</p></body></html>";
-
-	@Parameter(label = "", visibility = org.scijava.ItemVisibility.MESSAGE,
-		persist = false, required = false)
-	private String providerMessage = "<html><div style='width: " + WIDTH +
-		"px;'><hr style='border: none; border-top: 2px solid #cccccc; margin: 0;'></div>" +
-		"<body style='width: " + WIDTH + "px'>" +
-		"<h2 style='text-align: center'>Getting Started</h2>" +
-		"<p>1. Select an <b>AI Service</b> (e.g. ChatGPT or Claude).<br />" +
-		"2. Select a specific <b>Chat Model</b> to talk with." +
+		"px'>" + "<h1 style='text-align: center'>Get Started with Fiji Chat</h1>" +
+		"<p>This feature is under active development.<br />" +
+		"See <a href=\"https://github.com/fiji/fiji-llm\" " +
+		"style='color: #1a5fb4; text-decoration: underline;'>the README</a> for documentation.<br />" +
+		"<a href=\"https://forum.image.sc/tag/llm\" " +
+		"style='color: #1a5fb4; text-decoration: underline;'>Contact us on the forum</a> " +
+		"with feedback, issues, or requests." +
+		"<p>1. Choose an <b>AI service</b> (e.g. ChatGPT or Claude).<br />" +
+		"2. Choose a <b>chat model</b>." +
 		"</p></body></html>";
 
 	@Parameter(label = "AI Service →", callback = "providerChanged",
