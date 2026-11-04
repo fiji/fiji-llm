@@ -5,7 +5,6 @@
       "url": "https://aistudio.google.com/docs/models",
       "status": 200,
       "final_url": "https://aistudio.google.com/docs/models",
-      "baseline_established": true,
       "facts": {
         "models": {
           "antigravity-preview-09-2026": {
@@ -282,7 +281,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-383234233:1793725360907187"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1912963700:1793802981530624"
     },
     "health": "healthy"
   },
@@ -406,7 +405,7 @@
     },
     "health": "healthy"
   },
-  "checked_at": "2026-11-03T17:02:42.329443609Z",
+  "checked_at": "2026-11-04T14:36:22.613016854Z",
   "status": "healthy",
   "failures": []
 }
