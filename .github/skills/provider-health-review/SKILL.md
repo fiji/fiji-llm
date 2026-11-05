@@ -87,15 +87,17 @@ content error, or for HTTP 400, 404, 408, 410, or 5xx. Other statuses such as
 401 or 403 are recorded but do not by themselves make the provider unhealthy.
 Changes in extracted documentation facts produce `review_required`; an
 existing model review can also be carried forward until the provider date is
-updated after review. When the provider date equals the current UTC date, the
-run establishes the extracted facts as the new baseline. `Last-Modified` is
+updated after review. A change to `getModelsDocumentationLastModified()` from
+the last successfully accepted date establishes the extracted facts as the new
+baseline. The workflow can run on pushes to `main` as well as on schedule, so
+reviewed provider metadata is accepted without a manual dispatch. The accepted
+date advances only after documentation is fetched and parsed successfully;
+failed checks leave it unchanged for a later retry. `Last-Modified` is
 recorded for diagnostics but does not independently trigger model review. An
 Actions run can therefore fail because the result is `review_required`, rather
 than because the workflow itself failed.
 
-When a provider's `getModelsDocumentationLastModified()` date equals the
-current UTC run date, that run establishes a new documentation baseline. The
-probe still fetches and parses the documentation body on every successful
+The probe fetches and parses the documentation body on every successful
 documentation check, and it checks HTTP status, redirects, API-key URLs, and
 parser errors. Published provider state keeps the accepted `baseline_facts`
 separate from the latest observed `facts`; pending review runs never replace

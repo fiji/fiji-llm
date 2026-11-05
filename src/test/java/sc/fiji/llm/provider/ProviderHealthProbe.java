@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,15 +81,23 @@ public final class ProviderHealthProbe {
 				if (!provider.requiresApiKey()) continue;
 
 				final JsonObject providerState = new JsonObject();
-				providerState.addProperty("models_documentation_last_modified", provider
-					.getModelsDocumentationLastModified().toString());
 				final JsonObject previousProviderState = previousState.has(provider
 					.getName()) ? previousState.getAsJsonObject(provider.getName()) : null;
+				final LocalDate lastAcceptedDate = lastAcceptedDocumentationDate(
+					previousProviderState);
+				final boolean establishBaseline = shouldEstablishDocumentationBaseline(provider,
+					lastAcceptedDate);
 				checkUrl(provider, "models_documentation", provider
 					.getModelsDocumentationUrl(), providerState, previousProviderState,
-					failures);
+					establishBaseline, failures);
 				checkUrl(provider, "api_key", provider.getApiKeyUrl(), providerState,
-					previousProviderState, failures);
+				previousProviderState, false, failures);
+				final boolean baselineEstablished = isTrue(providerState,
+					"models_documentation", "baseline_established");
+				final LocalDate acceptedDate = acceptedDocumentationDate(provider,
+					lastAcceptedDate, baselineEstablished);
+				if (acceptedDate != null) providerState.addProperty(
+					"models_documentation_last_modified", acceptedDate.toString());
 				carryForwardModelReview(provider, providerState, previousProviderState,
 					failures);
 				providerState.addProperty("health", healthStatus(providerState));
@@ -118,11 +125,28 @@ public final class ProviderHealthProbe {
 		return value;
 	}
 
+	private static LocalDate lastAcceptedDocumentationDate(
+		final JsonObject previousProviderState)
+	{
+		if (previousProviderState == null || !previousProviderState.has(
+			"models_documentation_last_modified")) return null;
+		return LocalDate.parse(previousProviderState.get(
+			"models_documentation_last_modified").getAsString());
+	}
+
+	static LocalDate acceptedDocumentationDate(final LLMProvider provider,
+		final LocalDate lastAcceptedDate, final boolean baselineEstablished)
+	{
+		return baselineEstablished ? provider.getModelsDocumentationLastModified() :
+			lastAcceptedDate;
+	}
+
 	private static void carryForwardModelReview(final LLMProvider provider,
 		final JsonObject currentProviderState,
 		final JsonObject previousProviderState, final List<String> failures)
 	{
-		if (isDocumentationBaseline(provider)) return;
+		if (isTrue(currentProviderState, "models_documentation",
+			"baseline_established")) return;
 		if (previousProviderState == null) return;
 
 		final JsonObject previousModels = previousProviderState.has(
@@ -146,7 +170,8 @@ public final class ProviderHealthProbe {
 
 	private static void checkUrl(final LLMProvider provider, final String name,
 		final String url, final JsonObject currentProviderState,
-		final JsonObject previousProviderState, final List<String> failures)
+		final JsonObject previousProviderState, final boolean establishBaseline,
+		final List<String> failures)
 	{
 		final JsonObject current = new JsonObject();
 		current.addProperty("url", url == null ? "" : url);
@@ -161,13 +186,11 @@ public final class ProviderHealthProbe {
 			final int status = response.statusCode();
 			current.addProperty("status", status);
 			current.addProperty("final_url", response.uri().toString());
-			if ("models_documentation".equals(name) && isDocumentationBaseline(
-				provider)) current.addProperty("baseline_established", true);
 			response.headers().firstValue("Last-Modified").ifPresent(value -> current
 				.addProperty("last_modified", value));
 			if ("models_documentation".equals(name) && !isBrokenStatus(status)) {
 				checkModelsDocumentationContent(provider, response.uri(), current,
-					failures);
+					establishBaseline, failures);
 			}
 			if (isBrokenStatus(status)) failures.add(provider.getName() + " " + name +
 				" returned HTTP " + status + " for " + url);
@@ -185,7 +208,8 @@ public final class ProviderHealthProbe {
 
 	private static void checkModelsDocumentationContent(final LLMProvider provider,
 		final URI uri,
-		final JsonObject current, final List<String> failures)
+		final JsonObject current, final boolean establishBaseline,
+		final List<String> failures)
 	{
 		try {
 			final HttpRequest request = HttpRequest.newBuilder(uri).timeout(
@@ -200,7 +224,10 @@ public final class ProviderHealthProbe {
 			if (provider instanceof GeminiProvider gemini) enrichNewGeminiModelLifecycles(
 				gemini, response.body(), facts);
 			current.add("facts", facts);
-			if (isDocumentationBaseline(provider)) current.add("baseline_facts", facts);
+			if (establishBaseline) {
+				current.add("baseline_facts", facts);
+				current.addProperty("baseline_established", true);
+			}
 		}
 		catch (final IOException | InterruptedException e) {
 			if (e instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -254,7 +281,7 @@ public final class ProviderHealthProbe {
 		final JsonObject previousProviderState, final List<String> failures)
 	{
 		if (!"models_documentation".equals(name) || previousProviderState == null ||
-			!previousProviderState.has(name) || isDocumentationBaseline(provider)) return;
+			!previousProviderState.has(name) || current.has("baseline_established")) return;
 		final JsonObject previous = previousProviderState.getAsJsonObject(name);
 		if (!current.has("facts")) return;
 		if (!previous.has("baseline_facts")) {
@@ -326,14 +353,11 @@ public final class ProviderHealthProbe {
 			" to " + current);
 	}
 
-	static boolean isDocumentationBaseline(final LLMProvider provider,
-		final LocalDate runDate)
+	static boolean shouldEstablishDocumentationBaseline(final LLMProvider provider,
+		final LocalDate lastAcceptedDate)
 	{
-		return runDate.equals(provider.getModelsDocumentationLastModified());
-	}
-
-	private static boolean isDocumentationBaseline(final LLMProvider provider) {
-		return isDocumentationBaseline(provider, LocalDate.now(ZoneOffset.UTC));
+		return lastAcceptedDate == null || !lastAcceptedDate.equals(provider
+			.getModelsDocumentationLastModified());
 	}
 
 	private static String healthStatus(final JsonObject providerState) {

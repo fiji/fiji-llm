@@ -3,6 +3,13 @@ name: Provider health
 on:
   schedule:
     - cron: "17 6 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/provider-health.yml"
+      - "src/main/java/sc/fiji/llm/provider/**"
+      - "src/test/java/sc/fiji/llm/provider/ProviderHealthProbe.java"
   workflow_dispatch:
 
 concurrency:

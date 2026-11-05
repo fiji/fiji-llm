@@ -182,13 +182,23 @@ public class ProviderCapabilityTest {
 	}
 
 	/**
-	 * Verifies that a provider date equal to the run date establishes a baseline.
+	 * Verifies that a changed provider marker establishes a baseline.
 	 */
 	@Test
-	public void testDocumentationBaselineDate() {
+	public void testDocumentationBaselineMarker() {
 		final GeminiProvider provider = new GeminiProvider();
-		assertTrue(!ProviderHealthProbe.isDocumentationBaseline(provider, LocalDate.of(
-			2026, 10, 8)));
+		final LocalDate currentDate = provider.getModelsDocumentationLastModified();
+		final LocalDate previousDate = currentDate.minusDays(1);
+		assertTrue(!ProviderHealthProbe.shouldEstablishDocumentationBaseline(provider,
+			currentDate));
+		assertTrue(ProviderHealthProbe.shouldEstablishDocumentationBaseline(provider,
+			previousDate));
+		assertTrue(ProviderHealthProbe.shouldEstablishDocumentationBaseline(provider,
+			null));
+		assertEquals(currentDate, ProviderHealthProbe.acceptedDocumentationDate(provider,
+			previousDate, true));
+		assertEquals(previousDate, ProviderHealthProbe.acceptedDocumentationDate(provider,
+			previousDate, false));
 	}
 
 	@Test
