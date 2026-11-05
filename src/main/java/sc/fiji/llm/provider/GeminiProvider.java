@@ -30,6 +30,7 @@
 package sc.fiji.llm.provider;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Map;
@@ -71,6 +72,8 @@ public class GeminiProvider extends AbstractHostedProvider {
 		"(?m)^\\s*\\*\\s*`([^`]+)`\\s*$");
 	private static final Pattern SOURCE_HEADING = Pattern.compile(
 		"(?m)^\\s*#{1,6}\\s+([^\\r\\n]+)");
+	private static final Pattern SOURCE_EXPLICIT_LIFECYCLE = Pattern.compile(
+		"(?im)^\\s*\\*\\s*(stable|preview|experimental)\\s*:\\s*`([^`]+)`\\s*$");
 	private static final Pattern SHUT_DOWN = Pattern.compile("shut down",
 		Pattern.CASE_INSENSITIVE);
 
@@ -116,6 +119,37 @@ public class GeminiProvider extends AbstractHostedProvider {
 		final JsonObject facts = new JsonObject();
 		facts.add("models", models);
 		return facts;
+	}
+
+	Map<String, URI> modelDocumentationUrlsForNewModels(final String source) {
+		final Map<String, URI> modelDocumentationUrls = new TreeMap<>();
+		final Matcher cards = SOURCE_CARD.matcher(source);
+		while (cards.find()) {
+			final Matcher modelHref = SOURCE_MODEL_HREF.matcher(cards.group(1));
+			final Matcher badge = SOURCE_BADGE.matcher(cards.group(1));
+			if (!modelHref.find() || !badge.find() || !"New".equalsIgnoreCase(badge
+				.group(1))) continue;
+			final String modelId = modelHref.group(1);
+			if (!getAvailableModels().contains(modelId)) continue;
+			modelDocumentationUrls.put(modelId, URI.create(getModelsDocumentationUrl())
+				.resolve("/docs/models/" + modelId));
+		}
+		return modelDocumentationUrls;
+	}
+
+	void updateModelLifecycle(final JsonObject facts, final String modelId,
+		final String modelDocumentation)
+	{
+		final JsonObject models = facts.getAsJsonObject("models");
+		if (models == null || !models.has(modelId)) return;
+
+		final Matcher lifecycle = SOURCE_EXPLICIT_LIFECYCLE.matcher(modelDocumentation);
+		while (lifecycle.find()) {
+			if (!modelId.equals(lifecycle.group(2))) continue;
+			models.getAsJsonObject(modelId).addProperty("lifecycle", lifecycle.group(1)
+				.toLowerCase(Locale.ROOT));
+			return;
+		}
 	}
 
 	/**

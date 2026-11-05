@@ -197,6 +197,8 @@ public final class ProviderHealthProbe {
 			}
 
 			final JsonObject facts = provider.getModelsDocumentationFacts(response.body());
+			if (provider instanceof GeminiProvider gemini) enrichNewGeminiModelLifecycles(
+				gemini, response.body(), facts);
 			current.add("facts", facts);
 			if (isDocumentationBaseline(provider)) current.add("baseline_facts", facts);
 		}
@@ -205,6 +207,23 @@ public final class ProviderHealthProbe {
 			current.addProperty("content_error", e.toString());
 			failures.add(provider.getName() +
 				" models documentation content check failed: " + e.getMessage());
+		}
+	}
+
+	private static void enrichNewGeminiModelLifecycles(
+		final GeminiProvider provider, final String modelCatalog, final JsonObject facts)
+		throws IOException, InterruptedException
+	{
+		for (final Map.Entry<String, URI> entry : provider
+			.modelDocumentationUrlsForNewModels(modelCatalog).entrySet())
+		{
+			final HttpRequest request = HttpRequest.newBuilder(entry.getValue()).timeout(
+				REQUEST_TIMEOUT).GET().build();
+			final HttpResponse<String> response = HTTP_CLIENT.send(request,
+				HttpResponse.BodyHandlers.ofString());
+			if (isBrokenStatus(response.statusCode())) throw new IOException(
+				"GET returned HTTP " + response.statusCode() + " for " + entry.getValue());
+			provider.updateModelLifecycle(facts, entry.getKey(), response.body());
 		}
 	}
 

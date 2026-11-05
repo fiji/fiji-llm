@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -109,13 +110,25 @@ public class ProviderCapabilityTest {
 			"\n  ---\n\n  * [Gemini 2.0 Flash](/docs/models/" +
 			"gemini-2.0-flash) (Shut down)\n  * `gemini-2.0-flash`\n" +
 			"{% /table %}";
-		final JsonObject geminiSourceFacts = geminiProvider
-			.getModelsDocumentationFacts(geminiSource).getAsJsonObject("models");
+		final JsonObject geminiDocumentationFacts = geminiProvider
+			.getModelsDocumentationFacts(geminiSource);
+		final JsonObject geminiSourceFacts = geminiDocumentationFacts.getAsJsonObject(
+			"models");
 		assertEquals("unknown", geminiSourceFacts.get("gemini-3.8-flash")
 			.getAsJsonObject().get("lifecycle").getAsString());
 		assertEquals("stable", geminiSourceFacts.get("gemini-3.6-flash")
 			.getAsJsonObject().get("lifecycle").getAsString());
 		assertEquals("shut-down", geminiSourceFacts.get("gemini-2.0-flash")
+			.getAsJsonObject().get("lifecycle").getAsString());
+		assertEquals(URI.create("https://aistudio.google.com/docs/models/" +
+			"gemini-3.8-flash"), geminiProvider.modelDocumentationUrlsForNewModels(
+				geminiSource).get("gemini-3.8-flash"));
+		assertEquals(1, geminiProvider.modelDocumentationUrlsForNewModels(geminiSource)
+			.size());
+
+		geminiProvider.updateModelLifecycle(geminiDocumentationFacts,
+			"gemini-3.8-flash", "* Stable: `gemini-3.8-flash`\n");
+		assertEquals("stable", geminiSourceFacts.get("gemini-3.8-flash")
 			.getAsJsonObject().get("lifecycle").getAsString());
 	}
 
