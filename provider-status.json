@@ -1,6 +1,5 @@
 {
   "Gemini": {
-    "models_documentation_last_modified": "2026-11-03",
     "models_documentation": {
       "url": "https://aistudio.google.com/docs/models",
       "status": 200,
@@ -89,7 +88,7 @@
             "lifecycle": "stable"
           },
           "gemini-3.8-flash": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.8-flash-lite-tts": {
             "lifecycle": "unknown"
@@ -115,7 +114,7 @@
           "gemini-nano-banana-2.1": {
             "lifecycle": "unknown"
           },
-          "gemini-omni-1.1-flash": {
+          "gemini-omni-1.2-flash": {
             "lifecycle": "unknown"
           },
           "gemini-robotics-er-1.6-preview": {
@@ -183,49 +182,49 @@
             "lifecycle": "unknown"
           },
           "gemini-3-flash-preview": {
-            "lifecycle": "unknown"
+            "lifecycle": "preview"
           },
           "gemini-3-pro-image": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3-pro-preview": {
             "lifecycle": "shut-down"
           },
           "gemini-3.1-flash-image": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.1-flash-lite": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.1-flash-lite-image": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.1-flash-lite-preview": {
             "lifecycle": "shut-down"
           },
           "gemini-3.1-flash-live-preview": {
-            "lifecycle": "unknown"
+            "lifecycle": "preview"
           },
           "gemini-3.1-flash-tts-preview": {
-            "lifecycle": "unknown"
+            "lifecycle": "preview"
           },
           "gemini-3.1-pro-preview": {
             "lifecycle": "unknown"
           },
           "gemini-3.5-flash-lite": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.5-live-translate-preview": {
-            "lifecycle": "unknown"
+            "lifecycle": "preview"
           },
           "gemini-3.5-transcribe": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.6-flash": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.8-flash": {
-            "lifecycle": "unknown"
+            "lifecycle": "stable"
           },
           "gemini-3.8-flash-lite-tts": {
             "lifecycle": "unknown"
@@ -251,7 +250,7 @@
           "gemini-nano-banana-2.1": {
             "lifecycle": "unknown"
           },
-          "gemini-omni-1.1-flash": {
+          "gemini-omni-1.2-flash": {
             "lifecycle": "unknown"
           },
           "gemini-robotics-er-1.6-preview": {
@@ -277,31 +276,17 @@
           }
         }
       },
-      "changes": [
-        "models.gemini-3-flash-preview.lifecycle changed from \"unknown\" to \"preview\"",
-        "models.gemini-3-pro-image.lifecycle changed from \"unknown\" to \"stable\"",
-        "models.gemini-3.1-flash-image.lifecycle changed from \"unknown\" to \"stable\"",
-        "models.gemini-3.1-flash-lite.lifecycle changed from \"unknown\" to \"stable\"",
-        "models.gemini-3.1-flash-lite-image.lifecycle changed from \"unknown\" to \"stable\"",
-        "models.gemini-3.1-flash-live-preview.lifecycle changed from \"unknown\" to \"preview\"",
-        "models.gemini-3.1-flash-tts-preview.lifecycle changed from \"unknown\" to \"preview\"",
-        "models.gemini-3.5-flash-lite.lifecycle changed from \"unknown\" to \"stable\"",
-        "models.gemini-3.5-live-translate-preview.lifecycle changed from \"unknown\" to \"preview\"",
-        "models.gemini-3.5-transcribe.lifecycle changed from \"unknown\" to \"stable\"",
-        "models.gemini-3.6-flash.lifecycle changed from \"unknown\" to \"stable\""
-      ],
-      "changed_since_previous": true,
-      "models_review_required": true
+      "baseline_established": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-987213259:1793889746004595"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1003873188:1793908015104965"
     },
-    "health": "review_required"
+    "models_documentation_last_modified": "2026-11-05",
+    "health": "healthy"
   },
   "ChatGPT": {
-    "models_documentation_last_modified": "2026-10-27",
     "models_documentation": {
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
@@ -360,10 +345,10 @@
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
+    "models_documentation_last_modified": "2026-10-27",
     "health": "healthy"
   },
   "Claude": {
-    "models_documentation_last_modified": "2026-10-26",
     "models_documentation": {
       "url": "https://platform.claude.com/docs/en/models/overview",
       "status": 200,
@@ -418,11 +403,10 @@
       "status": 200,
       "final_url": "https://platform.claude.com/settings/keys"
     },
+    "models_documentation_last_modified": "2026-10-26",
     "health": "healthy"
   },
-  "checked_at": "2026-11-05T14:42:27.613785701Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini models documentation changed:\n- models.gemini-3-flash-preview.lifecycle changed from \"unknown\" to \"preview\"\n- models.gemini-3-pro-image.lifecycle changed from \"unknown\" to \"stable\"\n- models.gemini-3.1-flash-image.lifecycle changed from \"unknown\" to \"stable\"\n- models.gemini-3.1-flash-lite.lifecycle changed from \"unknown\" to \"stable\"\n- models.gemini-3.1-flash-lite-image.lifecycle changed from \"unknown\" to \"stable\"\n- models.gemini-3.1-flash-live-preview.lifecycle changed from \"unknown\" to \"preview\"\n- models.gemini-3.1-flash-tts-preview.lifecycle changed from \"unknown\" to \"preview\"\n- models.gemini-3.5-flash-lite.lifecycle changed from \"unknown\" to \"stable\"\n- models.gemini-3.5-live-translate-preview.lifecycle changed from \"unknown\" to \"preview\"\n- models.gemini-3.5-transcribe.lifecycle changed from \"unknown\" to \"stable\"\n- models.gemini-3.6-flash.lifecycle changed from \"unknown\" to \"stable\"\nReview the extracted facts and update getModelsDocumentationLastModified()"
-  ]
+  "checked_at": "2026-11-05T19:46:56.580195615Z",
+  "status": "healthy",
+  "failures": []
 }
