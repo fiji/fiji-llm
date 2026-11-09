@@ -280,7 +280,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1544447362:1794241490776141"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1009884480:1794252746466588"
     },
     "models_documentation_last_modified": "2026-11-05",
     "health": "healthy"
@@ -290,15 +290,63 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "content_error": "java.io.IOException: OpenAI model facts not found"
+      "facts": {
+        "models": {
+          "gpt-6-astra": {
+            "input_price": "$10 / Input MTok",
+            "output_price": "$50 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-sol": {
+            "input_price": "$2 / Input MTok",
+            "output_price": "$10 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-terra": {
+            "input_price": "$1 / Input MTok",
+            "output_price": "$5 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6-luna": {
+            "input_price": "$0.1 / Input MTok",
+            "output_price": "$0.5 / Output MTok",
+            "lifecycle": "active"
+          }
+        }
+      },
+      "baseline_facts": {
+        "models": {
+          "gpt-6-astra": {
+            "input_price": "$10 / Input MTok",
+            "output_price": "$50 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-sol": {
+            "input_price": "$2 / Input MTok",
+            "output_price": "$10 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6.1-terra": {
+            "input_price": "$1 / Input MTok",
+            "output_price": "$5 / Output MTok",
+            "lifecycle": "active"
+          },
+          "gpt-6-luna": {
+            "input_price": "$0.1 / Input MTok",
+            "output_price": "$0.5 / Output MTok",
+            "lifecycle": "active"
+          }
+        }
+      },
+      "baseline_established": true
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
       "status": 403,
       "final_url": "https://platform.openai.com/api-keys"
     },
-    "models_documentation_last_modified": "2026-10-27",
-    "health": "unhealthy"
+    "models_documentation_last_modified": "2026-11-09",
+    "health": "healthy"
   },
   "Claude": {
     "models_documentation": {
@@ -308,19 +356,19 @@
       "facts": {
         "model_table": {
           "Pricing": [
-            "$10 / input MTok$50 / output MTok",
+            "$8 / input MTok$40 / output MTok",
             "$4 / input MTok$20 / output MTok",
             "$2 / input MTok$10 / output MTok",
             "From $0.10 / input MTokFrom $0.50 / output MTok"
           ],
           "Claude API ID": [
-            "claude-fable-5-1",
+            "claude-fable-5-2",
             "claude-opus-5-5",
             "claude-sonnet-5-5",
             "claude-haiku-5-5"
           ],
           "Retirement": [
-            "Not sooner than September 1, 2027",
+            "Not sooner than November 9, 2027",
             "Not sooner than September 22, 2027",
             "Not sooner than September 28, 2027",
             "Not sooner than October 7, 2027"
@@ -348,7 +396,14 @@
             "Not sooner than October 7, 2027"
           ]
         }
-      }
+      },
+      "changes": [
+        "model_table.Claude API ID[0] changed from \"claude-fable-5-1\" to \"claude-fable-5-2\"",
+        "model_table.Pricing[0] changed from \"$10 / input MTok$50 / output MTok\" to \"$8 / input MTok$40 / output MTok\"",
+        "model_table.Retirement[0] changed from \"Not sooner than September 1, 2027\" to \"Not sooner than November 9, 2027\""
+      ],
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://platform.claude.com/settings/keys",
@@ -356,11 +411,11 @@
       "final_url": "https://platform.claude.com/settings/keys"
     },
     "models_documentation_last_modified": "2026-10-26",
-    "health": "healthy"
+    "health": "review_required"
   },
-  "checked_at": "2026-11-09T16:24:52.524672441Z",
-  "status": "unhealthy",
+  "checked_at": "2026-11-09T19:32:27.709255270Z",
+  "status": "review_required",
   "failures": [
-    "ChatGPT models documentation content check failed: OpenAI model facts not found"
+    "Claude models documentation changed:\n- model_table.Claude API ID[0] changed from \"claude-fable-5-1\" to \"claude-fable-5-2\"\n- model_table.Pricing[0] changed from \"$10 / input MTok$50 / output MTok\" to \"$8 / input MTok$40 / output MTok\"\n- model_table.Retirement[0] changed from \"Not sooner than September 1, 2027\" to \"Not sooner than November 9, 2027\"\nReview the extracted facts and update getModelsDocumentationLastModified()"
   ]
 }
