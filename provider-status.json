@@ -280,7 +280,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS823088321:1793974770083759"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1544447362:1794241490776141"
     },
     "models_documentation_last_modified": "2026-11-05",
     "health": "healthy"
@@ -290,54 +290,7 @@
       "url": "https://developers.openai.com/api/docs/models",
       "status": 200,
       "final_url": "https://developers.openai.com/api/docs/models",
-      "facts": {
-        "models": {
-          "gpt-6-astra": {
-            "input_price": "$10 / Input MTok",
-            "output_price": "$50 / Output MTok",
-            "lifecycle": "active"
-          },
-          "gpt-6.1-sol": {
-            "input_price": "$2 / Input MTok",
-            "output_price": "$10 / Output MTok",
-            "lifecycle": "active"
-          },
-          "gpt-6.1-terra": {
-            "input_price": "$1 / Input MTok",
-            "output_price": "$5 / Output MTok",
-            "lifecycle": "active"
-          },
-          "gpt-6-luna": {
-            "input_price": "$0.1 / Input MTok",
-            "output_price": "$0.5 / Output MTok",
-            "lifecycle": "active"
-          }
-        }
-      },
-      "baseline_facts": {
-        "models": {
-          "gpt-6-astra": {
-            "input_price": "$10 / Input MTok",
-            "output_price": "$50 / Output MTok",
-            "lifecycle": "active"
-          },
-          "gpt-6.1-sol": {
-            "input_price": "$2 / Input MTok",
-            "output_price": "$10 / Output MTok",
-            "lifecycle": "active"
-          },
-          "gpt-6.1-terra": {
-            "input_price": "$1 / Input MTok",
-            "output_price": "$5 / Output MTok",
-            "lifecycle": "active"
-          },
-          "gpt-6-luna": {
-            "input_price": "$0.1 / Input MTok",
-            "output_price": "$0.5 / Output MTok",
-            "lifecycle": "active"
-          }
-        }
-      }
+      "content_error": "java.io.IOException: OpenAI model facts not found"
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
@@ -345,7 +298,7 @@
       "final_url": "https://platform.openai.com/api-keys"
     },
     "models_documentation_last_modified": "2026-10-27",
-    "health": "healthy"
+    "health": "unhealthy"
   },
   "Claude": {
     "models_documentation": {
@@ -405,7 +358,9 @@
     "models_documentation_last_modified": "2026-10-26",
     "health": "healthy"
   },
-  "checked_at": "2026-11-06T14:19:31.300388864Z",
-  "status": "healthy",
-  "failures": []
+  "checked_at": "2026-11-09T16:24:52.524672441Z",
+  "status": "unhealthy",
+  "failures": [
+    "ChatGPT models documentation content check failed: OpenAI model facts not found"
+  ]
 }
