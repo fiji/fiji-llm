@@ -73,11 +73,22 @@ public class ProviderCapabilityTest {
 			.getModelsDocumentationFacts(claudeWithNewModel));
 
 		final String openAI = "<div class='card'><a href='/api/docs/models/gpt-luna'>" +
-			"GPT Luna</a><div><div>Model ID</div>" +
-			"<div>gpt-luna</div></div><div><div>Input price</div>" +
-			"<div>$0.1 / Input MTok</div></div><div><div>Output price</div>" +
-			"<div>$0.5 / Output MTok</div></div></div>";
+			"GPT Luna</a><div class='row'><div><span " +
+			"data-catalogue-label=''>Model ID</span></div><div><button>" +
+			"<span>gpt-luna</span></button></div></div><div class='row'><div>" +
+			"<span data-catalogue-label=''>Input price</span></div><div>" +
+			"<span>$0.1 / Input MTok</span></div></div><div class='row'><div>" +
+			"<span data-catalogue-label=''>Output price</span></div><div>" +
+			"<span>$0.5 / Output MTok</span></div></div></div>";
 		final OpenAIProvider openAIProvider = new OpenAIProvider();
+		final JsonObject openAIFacts = openAIProvider
+			.getModelsDocumentationFacts(openAI).getAsJsonObject("models")
+			.getAsJsonObject("gpt-luna");
+		assertEquals("$0.1 / Input MTok", openAIFacts.get("input_price")
+			.getAsString());
+		assertEquals("$0.5 / Output MTok", openAIFacts.get("output_price")
+			.getAsString());
+		assertEquals("active", openAIFacts.get("lifecycle").getAsString());
 		assertNotEquals(openAIProvider.getModelsDocumentationFacts(openAI),
 			openAIProvider.getModelsDocumentationFacts(openAI.replace("$0.1",
 				"$0.2")));

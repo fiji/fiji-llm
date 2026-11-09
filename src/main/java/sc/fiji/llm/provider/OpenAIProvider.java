@@ -95,8 +95,9 @@ public class OpenAIProvider extends AbstractHostedProvider {
 	{
 		final Document document = Jsoup.parse(html, getModelsDocumentationUrl());
 		final JsonObject models = new JsonObject();
-		for (final Element modelIdLabel : document.select("div").stream().filter(
-			element -> "Model ID".equals(element.ownText().trim())).toList())
+		for (final Element modelIdLabel : document.select(
+			"div, [data-catalogue-label]").stream().filter(element ->
+				"Model ID".equals(element.ownText().trim())).toList())
 		{
 			final String modelId = fieldValue(modelIdLabel);
 			if (modelId.isBlank()) continue;
@@ -133,12 +134,12 @@ public class OpenAIProvider extends AbstractHostedProvider {
 	}
 
 	private static boolean hasField(final Element scope, final String label) {
-		return scope.select("div").stream().anyMatch(element -> label.equals(
-			element.ownText().trim()));
+		return scope.select("div, [data-catalogue-label]").stream().anyMatch(
+			element -> label.equals(element.ownText().trim()));
 	}
 
 	private static String fieldValue(final Element scope, final String label) {
-		for (final Element field : scope.select("div")) {
+		for (final Element field : scope.select("div, [data-catalogue-label]")) {
 			if (label.equals(field.ownText().trim())) return fieldValue(field);
 		}
 		return "";
@@ -146,9 +147,13 @@ public class OpenAIProvider extends AbstractHostedProvider {
 
 	private static String fieldValue(final Element field) {
 		final String label = field.ownText().trim();
-		final String rowText = field.parent().text().trim();
-		return rowText.startsWith(label) ? rowText.substring(label.length()).trim() :
-			"";
+		for (final Element ancestor : field.parents()) {
+			final String rowText = ancestor.text().trim();
+			if (!rowText.startsWith(label)) continue;
+			final String value = rowText.substring(label.length()).trim();
+			if (!value.isEmpty()) return value;
+		}
+		return "";
 	}
 
 	@Override
