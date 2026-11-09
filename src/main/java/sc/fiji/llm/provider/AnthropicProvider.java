@@ -55,7 +55,7 @@ import dev.langchain4j.model.chat.request.ChatRequestParameters;
 public class AnthropicProvider extends AbstractHostedProvider {
 
 	public AnthropicProvider() {
-		super(new HostedModel("claude-haiku-4-5-20251001", "Haiku", 1.0, 5.0),
+		super(new HostedModel("claude-haiku-5-5", "Haiku", 0.50, 2.50),
 			new HostedModel("claude-sonnet-5-5", "Sonnet", 2.0, 10.0),
 			new HostedModel("claude-opus-5-5", "Opus", 4.0, 20.0));
 	}
@@ -115,7 +115,7 @@ public class AnthropicProvider extends AbstractHostedProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 26);
+		return LocalDate.of(2026, 11, 9);
 	}
 
 	@Override

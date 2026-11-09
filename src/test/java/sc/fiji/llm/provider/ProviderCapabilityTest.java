@@ -280,8 +280,10 @@ public class ProviderCapabilityTest {
 		assertEquals(Optional.empty(), openAI.getCost("future-model"));
 
 		final AnthropicProvider anthropic = new AnthropicProvider();
-		assertEquals(new LLMProvider.ModelCost(1.00, 5.00), anthropic.getCost(
+		assertEquals(new LLMProvider.ModelCost(0.50, 2.50), anthropic.getCost(
 			"Haiku").get());
+		assertEquals(LLMProvider.VisionSupport.SUPPORTED, anthropic
+			.getVisionSupport("claude-haiku-5-5"));
 		assertEquals(new LLMProvider.ModelCost(4.00, 20.00), anthropic.getCost(
 			"Opus").get());
 		assertEquals(Optional.empty(), anthropic.getCost("Fable"));
