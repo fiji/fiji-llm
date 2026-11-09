@@ -158,7 +158,7 @@ public class OpenAIProvider extends AbstractHostedProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 10, 27);
+		return LocalDate.of(2026, 11, 9);
 	}
 
 	@Override
