@@ -280,7 +280,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1592390204:1794253728764785"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-1525850419:1794322579545578"
     },
     "models_documentation_last_modified": "2026-11-05",
     "health": "healthy"
@@ -395,8 +395,7 @@
             "Not sooner than October 7, 2027"
           ]
         }
-      },
-      "baseline_established": true
+      }
     },
     "api_key": {
       "url": "https://platform.claude.com/settings/keys",
@@ -406,7 +405,7 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-09T19:48:51.262273402Z",
+  "checked_at": "2026-11-10T14:56:20.452307949Z",
   "status": "healthy",
   "failures": []
 }
