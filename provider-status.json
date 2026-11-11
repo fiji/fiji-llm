@@ -244,6 +244,9 @@
           "gemini-4-argon": {
             "lifecycle": "unknown"
           },
+          "gemini-4-carbon": {
+            "lifecycle": "unknown"
+          },
           "gemini-embedding-001": {
             "lifecycle": "unknown"
           },
@@ -279,19 +282,15 @@
           }
         }
       },
-      "changes": [
-        "models.gemini-4-carbon added: {\"lifecycle\":\"unknown\"}"
-      ],
-      "changed_since_previous": true,
-      "models_review_required": true
+      "baseline_established": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS856350254:1794407209748150"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS556671407:1794414985082031"
     },
-    "models_documentation_last_modified": "2026-11-05",
-    "health": "review_required"
+    "models_documentation_last_modified": "2026-11-11",
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation": {
@@ -413,9 +412,7 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-11T14:26:51.176409720Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini models documentation changed:\n- models.gemini-4-carbon added: {\"lifecycle\":\"unknown\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
-  ]
+  "checked_at": "2026-11-11T16:36:26.403942073Z",
+  "status": "healthy",
+  "failures": []
 }
