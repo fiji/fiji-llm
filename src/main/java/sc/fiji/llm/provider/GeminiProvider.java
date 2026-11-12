@@ -233,7 +233,7 @@ public class GeminiProvider extends AbstractHostedProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 11, 11);
+		return LocalDate.of(2026, 11, 12);
 	}
 
 	@Override
