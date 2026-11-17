@@ -96,9 +96,9 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 		}
 	}
 
-	@Tool(value = { "Inspect supported visible controls in one exact window." }, name = "fiji_ui_controls_read")
-	public String readControls(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read; blank for the active window", required = false) final String windowTitle,
-		@P(name = "window_class_name", value = "Exact window class name for the same window; use it to distinguish windows with the same title", required = false) final String windowClassName)
+	@Tool(value = { "Inspect supported controls in one uniquely matched visible window. Omit window_title to use the active window; pass an empty string to match blank-titled windows." }, name = "fiji_ui_controls_read")
+	public String readControls(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read; omit to use the active window, or pass an empty string to match blank-titled windows", required = false) final String windowTitle,
+		@P(name = "window_class_name", value = "Exact window class name to filter matching windows, especially when the title is blank or duplicated", required = false) final String windowClassName)
 	{
 		try {
 			final JsonArray controls = new JsonArray();
@@ -110,8 +110,9 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 				if (isInteractableControl(control)) hasInteractableControl = true;
 			}
 			final JsonObject result = new JsonObject();
-			if (windowTitle != null && !windowTitle.isBlank()) result.addProperty("window_title",
-				windowTitle);
+			if (windowTitle != null) result.addProperty("window_title", windowTitle.trim());
+			if (windowClassName != null && !windowClassName.isBlank()) result.addProperty(
+				"window_class_name", windowClassName.trim());
 			if (controls.size() > 0) result.add("controls", controls);
 			result.addProperty("count", controls.size());
 			if (hasInteractableControl) ToolRecommendationUtils.addToolRecommendations(result,
@@ -126,7 +127,8 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 	/**
 	 * Reads top-level menu entries or one level of an already-open submenu.
 	 *
-	 * @param windowTitle exact title from {@code fiji_ui_windows_read}
+	 * @param windowTitle exact title from {@code fiji_ui_windows_read}; an empty string matches a
+	 *        blank-titled window
 	 * @param windowClassName optional class name to disambiguate windows with the same title
 	 * @param parentPath submenu path from a previous {@code fiji_ui_menu_read} result; null or
 	 *        blank reads the top-level menu bar
@@ -191,17 +193,17 @@ public class UiToolPlugin extends AbstractAiToolPlugin {
 	 * @param index zero-based item or row index for {@code select}
 	 * @return JSON containing a run ID and current interaction status
 	 */
-	@Tool(value = { "Asynchronously interact with one exact visible control in an AWT or Swing window. Only one UI action may be active at a time; frame closing and control interactions share this limit. If one is active, poll its run ID with the recommended status tool before starting another. Returns a run_id immediately; poll fiji_ui_control_interact_status until completed, failed, or blocked_by_dialog. Actions: click (enabled buttons), set_text (editable non-password text fields or areas, requires text), set_checked (checkboxes or toggle buttons, requires checked), select (choices, combo boxes, lists, tables, or visible tree rows, requires a zero-based index). Completion includes only UI changes observed between the start and end of the action." }, name = "fiji_ui_control_interact")
-	public String interactWithControl(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read") final String windowTitle,
-		@P(name = "window_class_name", value = "Exact window class name from fiji_ui_windows_read; use it to distinguish windows with the same title", required = false) final String windowClassName,
+	@Tool(value = { "Asynchronously interact with one exact visible control in a uniquely matched AWT or Swing window. Use an exact title; an empty window_title matches a blank-titled window, optionally filtered by window_class_name. Multiple matches fail without acting. Only one UI action may be active at a time; frame closing and control interactions share this limit. If one is active, poll its run ID with the recommended status tool before starting another. Returns a run_id immediately; poll fiji_ui_control_interact_status until completed, failed, or blocked_by_dialog. Actions: click (enabled buttons), set_text (editable non-password text fields or areas, requires text), set_checked (checkboxes or toggle buttons, requires checked), select (choices, combo boxes, lists, tables, or visible tree rows, requires a zero-based index). Completion includes only UI changes observed between the start and end of the action." }, name = "fiji_ui_control_interact")
+	public String interactWithControl(@P(name = "window_title", value = "Exact window title from fiji_ui_windows_read; pass an empty string for a blank-titled window") final String windowTitle,
+		@P(name = "window_class_name", value = "Exact window class name to filter matching windows, especially when the title is blank or duplicated", required = false) final String windowClassName,
 		@P(name = "component_path", value = "Exact component path from fiji_ui_controls_read for the target control") final String componentPath,
 		@P(name = "action", value = "Interaction to perform: click, set_text, set_checked, or select") final String action,
 		@P(name = "text", value = "Text to set; required only for set_text", required = false) final String text,
 		@P(name = "checked", value = "Desired true/false state; required only for set_checked", required = false) final Boolean checked,
 		@P(name = "index", value = "Zero-based item or row index; required only for select", required = false) final Integer index)
 	{
-		if (windowTitle == null || windowTitle.isBlank()) {
-			return jsonError("window_title cannot be null or blank");
+		if (windowTitle == null) {
+			return jsonError("window_title cannot be null; pass an empty string for a blank-titled window");
 		}
 		if (componentPath == null || componentPath.isBlank()) {
 			return jsonError("component_path cannot be null or blank");

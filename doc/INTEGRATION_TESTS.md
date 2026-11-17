@@ -220,10 +220,13 @@ With Fiji showing at least one ordinary AWT or Swing window:
 
 1. Call `fiji_ui_windows_read` and verify visible windows include their title,
       class, type, bounds, active state, and modality metadata.
-2. Call `fiji_ui_controls_read` with one exact window title and verify that
+2. Call `fiji_ui_controls_read` with an exact window title and verify that
       supported labels, buttons, text fields, checkboxes, choices, combo boxes, and
-      showing controls include roles and state metadata. Supply the exact window
-      class as well when titles are duplicated. Confirm controls beneath a
+      showing controls include roles and state metadata. Omit `window_title` to
+      target the active window; pass `window_title: ""` to target a blank-titled
+      window. Supply `window_class_name` to filter matches, and verify the result
+      echoes the supplied title, including an empty string, and class. Confirm
+      multiple matching windows return an ambiguity error. Confirm controls beneath a
       non-showing container and buttons without a usable label, accessible name,
       tooltip, or action command are omitted. Confirm described icon buttons
       remain available.
@@ -282,6 +285,11 @@ With Fiji showing at least one ordinary AWT or Swing window:
       in dialogs. For a button that opens a modal dialog, verify the interaction
       returns a `run_id` promptly, polling reports `blocked_by_dialog` and its
       details, and after responding the run completes with a state delta.
+      For a macro using `showMessage`, verify the dialog has an empty title; read
+      its controls with `window_title: ""` and the exact class, then interact with
+      its returned button path and verify the macro completes. With two visible
+      blank-titled windows of the same class, verify reads report ambiguity and
+      interactions fail without acting on either window.
 10. Exercise collection controls with `fiji_ui_controls_read`. Use the N5
       importer window for the dataset tree: expand a branch, select a node, and
       verify role `tree`, `data.visible_row_count`, and `data.nodes`. Each node
@@ -466,7 +474,9 @@ inspected together.
 - [ ] A dialog-paused macro returns `blocked_by_dialog`, a `run_id`, and dialog
       details. `fiji_macro_run_status` reports the same paused run without
       clicking; after `fiji_ui_dialog_respond`, status eventually becomes a
-      completed result.
+      completed result. Include `showMessage` to cover its blank-title modal:
+      target its button with `fiji_ui_controls_read` and
+      `fiji_ui_control_interact` using `window_title: ""` plus the dialog class.
 - [ ] No-image failure: run an image-dependent command without an open image
       and verify the error and any blocking dialog.
 - [ ] Malformed macro syntax: verify the actual macro error rather than only a

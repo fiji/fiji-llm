@@ -33,6 +33,11 @@ Use this agent to, when supported:
 - Inspect visible Java-owned windows with `fiji_ui_windows_read` and supported
 	controls with `fiji_ui_controls_read` before reasoning about general Fiji UI
 	state.
+- For `fiji_ui_controls_read`, omit `window_title` to target the active window;
+	pass `window_title: ""` to target an exactly blank-titled window and reuse
+	`window_class_name` from the returned identity. Interactions require an explicit
+	title, which may be empty. If title and class match multiple windows, report the
+	ambiguity instead of acting on one.
 - Browse Swing menus one level at a time with `fiji_ui_menu_read`: omit
 	`parent_path` for top-level menus, open a submenu using its returned path with
 	`fiji_ui_control_interact`, then read only that open submenu's entries.
@@ -45,7 +50,8 @@ Use this agent to, when supported:
 	results remain available for ten minutes after completion; polling does not extend
 	that retention window.
 - When an explicitly requested action targets a non-dialog control, refresh the
-	control snapshot and use `fiji_ui_control_interact` with its exact window,
+	control snapshot and use `fiji_ui_control_interact` with its exact window title
+	(including `""` for a blank title) and class when needed,
 	component path, action, and action-specific argument. Poll the returned run
 	id with `fiji_ui_control_interact_status`; if it reports
 	`blocked_by_dialog`, inspect/respond to that exact dialog and continue polling

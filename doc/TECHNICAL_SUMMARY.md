@@ -147,6 +147,12 @@ recorder is closed, and an empty buffer is omitted.
 `fiji_ui_windows_read` and `fiji_ui_controls_read` inspect visible Java-owned
 AWT and Swing UI state on the event-dispatch thread. Control paths are snapshot
 selectors and should be re-read before any future state-changing UI action.
+Omitting `window_title` from `fiji_ui_controls_read` selects the active window;
+an explicit empty string matches blank-titled windows. The exact
+`window_class_name` filters candidates, and the result echoes supplied title and
+class selectors. An ambiguous match is an error. `fiji_ui_control_interact`
+requires an explicit title (which may be empty) and uses the same unique-match
+rule.
 Control traversal stops at non-showing components and omits buttons without a
 usable label, accessible name, tooltip, or action command. `fiji_ui_menu_read`
 returns the top-level Swing menus or the immediate entries of one currently open

@@ -294,12 +294,13 @@ public final class AWTDialogUtils {
 	{
 		final String title = normalize(windowTitle);
 		final String className = normalize(windowClassName);
-		if (title.isEmpty()) {
+		if (windowTitle == null) {
 			final Window active = KeyboardFocusManager.getCurrentKeyboardFocusManager()
 				.getActiveWindow();
 			if (active != null && active.isShowing() && matchesWindow(active, className)) return active;
-			throw new IllegalStateException(
-				"No active visible window is available; provide window_title");
+			throw new IllegalStateException(className.isEmpty() ?
+				"No active visible window is available" :
+				"No active visible window has class: " + className);
 		}
 
 		final List<Window> matches = new ArrayList<>();
@@ -307,10 +308,12 @@ public final class AWTDialogUtils {
 			if (window.isShowing() && title.equals(windowTitle(window)) && matchesWindow(
 				window, className)) matches.add(window);
 		}
-		if (matches.isEmpty()) throw new IllegalStateException(
-			"No visible window has title: " + title);
-		if (matches.size() > 1) throw new IllegalStateException(
-			"Multiple visible windows have title: " + title);
+		final String target = title.isEmpty() ? "blank title" : "title: " + title;
+		final String classQualifier = className.isEmpty() ? "" : " and class: " + className;
+		if (matches.isEmpty()) throw new IllegalStateException("No visible window has " + target +
+			classQualifier);
+		if (matches.size() > 1) throw new IllegalStateException("Multiple visible windows have " +
+			target + classQualifier);
 		return matches.get(0);
 	}
 
@@ -832,8 +835,8 @@ public final class AWTDialogUtils {
 		final String windowClassName, final String componentPath, final String action,
 		final String text, final Boolean checked, final Integer index)
 	{
-		if (windowTitle == null || windowTitle.isBlank()) throw new IllegalArgumentException(
-			"Window title is required");
+		if (windowTitle == null) throw new IllegalArgumentException(
+			"Window title is required; use an empty string for a blank-titled window");
 		if (componentPath == null || componentPath.isBlank()) throw new IllegalArgumentException(
 			"Component path is required");
 		if (action == null || action.isBlank()) throw new IllegalArgumentException(
