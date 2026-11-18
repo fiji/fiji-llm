@@ -298,7 +298,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1058198064:1794580659966326"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS403759490:1795027758119151"
     },
     "models_documentation_last_modified": "2026-11-12",
     "health": "healthy"
@@ -310,12 +310,12 @@
       "final_url": "https://developers.openai.com/api/docs/models",
       "facts": {
         "models": {
-          "gpt-6-astra": {
-            "input_price": "$10 / Input MTok",
-            "output_price": "$50 / Output MTok",
+          "gpt-6.2-astra": {
+            "input_price": "$8 / Input MTok",
+            "output_price": "$40 / Output MTok",
             "lifecycle": "active"
           },
-          "gpt-6.1-sol": {
+          "gpt-6.2-sol": {
             "input_price": "$2 / Input MTok",
             "output_price": "$10 / Output MTok",
             "lifecycle": "active"
@@ -355,7 +355,15 @@
             "lifecycle": "active"
           }
         }
-      }
+      },
+      "changes": [
+        "models.gpt-6-astra removed: {\"input_price\":\"$10 / Input MTok\",\"output_price\":\"$50 / Output MTok\",\"lifecycle\":\"active\"}",
+        "models.gpt-6.1-sol removed: {\"input_price\":\"$2 / Input MTok\",\"output_price\":\"$10 / Output MTok\",\"lifecycle\":\"active\"}",
+        "models.gpt-6.2-astra added: {\"input_price\":\"$8 / Input MTok\",\"output_price\":\"$40 / Output MTok\",\"lifecycle\":\"active\"}",
+        "models.gpt-6.2-sol added: {\"input_price\":\"$2 / Input MTok\",\"output_price\":\"$10 / Output MTok\",\"lifecycle\":\"active\"}"
+      ],
+      "changed_since_previous": true,
+      "models_review_required": true
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
@@ -363,7 +371,7 @@
       "final_url": "https://platform.openai.com/api-keys"
     },
     "models_documentation_last_modified": "2026-11-09",
-    "health": "healthy"
+    "health": "review_required"
   },
   "Claude": {
     "models_documentation": {
@@ -423,7 +431,9 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-13T14:37:41.450822608Z",
-  "status": "healthy",
-  "failures": []
+  "checked_at": "2026-11-18T18:49:19.077089915Z",
+  "status": "review_required",
+  "failures": [
+    "ChatGPT models documentation changed:\n- models.gpt-6-astra removed: {\"input_price\":\"$10 / Input MTok\",\"output_price\":\"$50 / Output MTok\",\"lifecycle\":\"active\"}\n- models.gpt-6.1-sol removed: {\"input_price\":\"$2 / Input MTok\",\"output_price\":\"$10 / Output MTok\",\"lifecycle\":\"active\"}\n- models.gpt-6.2-astra added: {\"input_price\":\"$8 / Input MTok\",\"output_price\":\"$40 / Output MTok\",\"lifecycle\":\"active\"}\n- models.gpt-6.2-sol added: {\"input_price\":\"$2 / Input MTok\",\"output_price\":\"$10 / Output MTok\",\"lifecycle\":\"active\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
+  ]
 }
