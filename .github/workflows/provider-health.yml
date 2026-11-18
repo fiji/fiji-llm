@@ -32,6 +32,9 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
+          cache-dependency-path: |
+            pom.xml
+            .github/workflows/provider-health.yml
 
       - name: Probe provider pages
         id: probe
