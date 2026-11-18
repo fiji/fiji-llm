@@ -61,7 +61,7 @@ public class OpenAIProvider extends AbstractHostedProvider {
 	public OpenAIProvider() {
 		super(new HostedModel("gpt-5.6-luna", "Luna 5.6", 0.20, 1.20), new HostedModel(
 			"gpt-6-luna", "Luna 6", 0.10, 0.50), new HostedModel("gpt-6.1-terra",
-			"Terra 6", 1.00, 5.00), new HostedModel("gpt-6.1-sol", "Sol 6", 2.00,
+			"Terra 6", 1.00, 5.00), new HostedModel("gpt-6.2-sol", "Sol 6", 2.00,
 			10.00));
 	}
 
@@ -78,7 +78,7 @@ public class OpenAIProvider extends AbstractHostedProvider {
 	@Override
 	public ChatRequestParameters defaultChatRequestParameters(final String modelName)
 	{
-		final String reasoningEffort = "gpt-6.1-sol".equals(resolveModelName(
+		final String reasoningEffort = "gpt-6.2-sol".equals(resolveModelName(
 			modelName)) ? "medium" : "none";
 		return OpenAiResponsesChatRequestParameters.builder()
 			.reasoningEffort(reasoningEffort).build();
@@ -158,7 +158,7 @@ public class OpenAIProvider extends AbstractHostedProvider {
 
 	@Override
 	public LocalDate getModelsDocumentationLastModified() {
-		return LocalDate.of(2026, 11, 9);
+		return LocalDate.of(2026, 11, 18);
 	}
 
 	@Override

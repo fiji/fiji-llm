@@ -264,7 +264,7 @@ public class ProviderCapabilityTest {
 	public void testOpenAiProviderModelIdUsesSolReasoningEffort() {
 		final OpenAiResponsesChatRequestParameters parameters =
 			(OpenAiResponsesChatRequestParameters) new OpenAIProvider()
-				.defaultChatRequestParameters("gpt-6.1-sol");
+				.defaultChatRequestParameters("gpt-6.2-sol");
 		assertEquals("medium", parameters.reasoningEffort());
 	}
 
