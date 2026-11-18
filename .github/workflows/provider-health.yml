@@ -49,9 +49,21 @@ jobs:
 
           classpath_file="$RUNNER_TEMP/provider-health-classpath"
           mvn_result=0
-          mvn -B -ntp -Dstyle.color=never \
-            test-compile dependency:build-classpath \
-            "-Dmdep.outputFile=$classpath_file" || mvn_result=$?
+          mvn_extra_args=()
+          for attempt in 1 2 3; do
+            mvn_result=0
+            mvn -B -ntp -Dstyle.color=never \
+              -Dhttp.keepAlive=false \
+              -Daether.connector.basic.retryHandler.count=3 \
+              "${mvn_extra_args[@]}" \
+              test-compile dependency:build-classpath \
+              "-Dmdep.outputFile=$classpath_file" && break || mvn_result=$?
+            echo "Maven build attempt $attempt failed (exit code $mvn_result)." >&2
+            if [[ $attempt -lt 3 ]]; then
+              mvn_extra_args=(-U)
+              sleep 5
+            fi
+          done
 
           result=$mvn_result
           if [[ $mvn_result -eq 0 ]]; then
@@ -65,8 +77,8 @@ jobs:
           printf 'probe_exit_code=%s\n' "$result" >> "$GITHUB_OUTPUT"
 
           if [[ ! -s "$output" ]]; then
-            printf '{"checked_at":"%s","status":"unknown","probe_exit_code":%s}\n' \
-              "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$result" > "$output"
+            printf '{"checked_at":"%s","status":"unknown","probe_exit_code":%s,"failures":["Provider health probe command failed with exit code %s"]}\n' \
+              "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$result" "$result" > "$output"
           fi
 
       - name: Generate provider badges
@@ -145,8 +157,18 @@ jobs:
             ' "$1"
           }
 
+          if [[ "${{ steps.probe.outputs.probe_exit_code }}" -ne 0 ]]; then
+            echo "Probe command failed (exit code ${{ steps.probe.outputs.probe_exit_code }}); skipping status commit to preserve existing badges and baselines."
+            exit 0
+          fi
+
+          current_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status.json")"
+          if [[ "$(jq -r '.status' <<<"$current_statuses")" == "unknown" || "$(jq -r '.providers | length' <<<"$current_statuses")" -eq 0 ]]; then
+            echo "Probe output contains no valid provider health entries; skipping status commit to preserve existing badges and baselines."
+            exit 0
+          fi
+
           if git show-ref --verify --quiet refs/remotes/origin/provider-status; then
-            current_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status.json")"
             previous_statuses="$(status_snapshot "$RUNNER_TEMP/provider-status-previous.json")"
             if [[ "$current_statuses" == "$previous_statuses" ]]; then
               echo "Provider health and baseline state unchanged; skipping status commit."
