@@ -149,6 +149,9 @@
           },
           "lyria-realtime-exp": {
             "lifecycle": "unknown"
+          },
+          "models/genie-4": {
+            "lifecycle": "unknown"
           }
         }
       },
@@ -259,6 +262,9 @@
           "gemini-4-hydrogen": {
             "lifecycle": "unknown"
           },
+          "gemini-4-neon": {
+            "lifecycle": "unknown"
+          },
           "gemini-decision-1": {
             "lifecycle": "unknown"
           },
@@ -294,22 +300,21 @@
           },
           "lyria-realtime-exp": {
             "lifecycle": "unknown"
+          },
+          "models/genie-4": {
+            "lifecycle": "unknown"
           }
         }
       },
-      "changes": [
-        "models.gemini-4-neon added: {\"lifecycle\":\"unknown\"}"
-      ],
-      "changed_since_previous": true,
-      "models_review_required": true
+      "baseline_established": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS1698368898:1795103261973282"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-552465259:1795112867116076"
     },
-    "models_documentation_last_modified": "2026-11-12",
-    "health": "review_required"
+    "models_documentation_last_modified": "2026-11-19",
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation": {
@@ -431,9 +436,7 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-19T15:47:43.811325362Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini models documentation changed:\n- models.gemini-4-neon added: {\"lifecycle\":\"unknown\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
-  ]
+  "checked_at": "2026-11-19T18:27:48.912829978Z",
+  "status": "healthy",
+  "failures": []
 }
