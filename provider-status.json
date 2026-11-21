@@ -316,7 +316,7 @@
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-534524132:1795188566455254"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS352856862:1795272128809898"
     },
     "models_documentation_last_modified": "2026-11-19",
     "health": "review_required"
@@ -377,7 +377,7 @@
     },
     "api_key": {
       "url": "https://platform.openai.com/api-keys",
-      "status": 403,
+      "status": 200,
       "final_url": "https://platform.openai.com/api-keys"
     },
     "models_documentation_last_modified": "2026-11-18",
@@ -441,7 +441,7 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-20T15:29:27.929763341Z",
+  "checked_at": "2026-11-21T14:42:10.130768215Z",
   "status": "review_required",
   "failures": [
     "Gemini models documentation changed:\n- models.genie-4 added: {\"lifecycle\":\"unknown\"}\n- models.models/genie-4 removed: {\"lifecycle\":\"unknown\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
