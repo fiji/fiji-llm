@@ -286,6 +286,9 @@
           "gemini-robotics-er-2-preview": {
             "lifecycle": "unknown"
           },
+          "genie-4": {
+            "lifecycle": "unknown"
+          },
           "imagen-4.0-generate": {
             "lifecycle": "shut-down"
           },
@@ -300,26 +303,18 @@
           },
           "lyria-realtime-exp": {
             "lifecycle": "unknown"
-          },
-          "models/genie-4": {
-            "lifecycle": "unknown"
           }
         }
       },
-      "changes": [
-        "models.genie-4 added: {\"lifecycle\":\"unknown\"}",
-        "models.models/genie-4 removed: {\"lifecycle\":\"unknown\"}"
-      ],
-      "changed_since_previous": true,
-      "models_review_required": true
+      "baseline_established": true
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS352856862:1795272128809898"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS859359765:1795534995299109"
     },
-    "models_documentation_last_modified": "2026-11-19",
-    "health": "review_required"
+    "models_documentation_last_modified": "2026-11-24",
+    "health": "healthy"
   },
   "ChatGPT": {
     "models_documentation": {
@@ -441,9 +436,7 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-21T14:42:10.130768215Z",
-  "status": "review_required",
-  "failures": [
-    "Gemini models documentation changed:\n- models.genie-4 added: {\"lifecycle\":\"unknown\"}\n- models.models/genie-4 removed: {\"lifecycle\":\"unknown\"}\nReview the extracted facts and update getModelsDocumentationLastModified()"
-  ]
+  "checked_at": "2026-11-24T15:43:16.824444143Z",
+  "status": "healthy",
+  "failures": []
 }
