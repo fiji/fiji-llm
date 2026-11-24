@@ -305,13 +305,12 @@
             "lifecycle": "unknown"
           }
         }
-      },
-      "baseline_established": true
+      }
     },
     "api_key": {
       "url": "https://aistudio.google.com/api-keys",
       "status": 200,
-      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS859359765:1795534995299109"
+      "final_url": "https://accounts.google.com/v3/signin/identifier?continue\u003dhttps://aistudio.google.com/api-keys\u0026followup\u003dhttps://aistudio.google.com/api-keys\u0026ltmpl\u003daistudio\u0026passive\u003d1209600\u0026flowName\u003dWebLiteSignIn\u0026flowEntry\u003dServiceLogin\u0026dsh\u003dS-234485296:1795542543174142"
     },
     "models_documentation_last_modified": "2026-11-24",
     "health": "healthy"
@@ -436,7 +435,7 @@
     "models_documentation_last_modified": "2026-11-09",
     "health": "healthy"
   },
-  "checked_at": "2026-11-24T15:43:16.824444143Z",
+  "checked_at": "2026-11-24T17:49:04.596048872Z",
   "status": "healthy",
   "failures": []
 }
